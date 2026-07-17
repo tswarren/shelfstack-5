@@ -73,7 +73,6 @@ The organization is the shared administrative and catalog boundary for:
 * products and product variants;  
 * generated identifiers;  
 * departments;  
-* display categories;  
 * merchandise classes;  
 * formats and conditions;  
 * tax categories;  
@@ -547,7 +546,6 @@ It does not own store inventory quantity or completed transaction history.
 This domain owns:
 
 * departments;  
-* display categories;  
 * merchandise classes;  
 * tax categories;  
 * store tax rates and rules;  
@@ -559,7 +557,27 @@ This domain owns:
 
 It provides effective classifications and policy defaults to the catalog, inventory, POS, and reporting domains.
 
-## 1.5.4 Vendors and purchasing
+## 1.5.4 Product requests
+
+This domain owns:
+
+* product requests;  
+* request type;  
+* requested quantity;  
+* priority and needed-by date;  
+* nullable v1 customer reference;  
+* requesting user and assigned buyer;  
+* request lifecycle and fulfilment summary.
+
+It records demand that the store may attempt to fulfil.
+
+It references but does not own:
+
+* inventory reservations for physically present supply;  
+* purchase-order allocations for expected future supply;  
+* purchase orders, receipts, and POS fulfilment activity.
+
+## 1.5.5 Vendors and purchasing
 
 This domain owns:
 
@@ -572,9 +590,10 @@ This domain owns:
 * expected delivery;  
 * purchasing history.
 
-It determines what the store intends to acquire.
+It determines what the store intends to acquire and owns purchase-order
+allocations that commit expected supply to Product Requests.
 
-## 1.5.5 Receiving and inventory
+## 1.5.6 Receiving and inventory
 
 This domain owns:
 
@@ -590,7 +609,7 @@ This domain owns:
 
 It is the authoritative source for what physical merchandise each store possesses and what portion is currently sellable.
 
-## 1.5.6 Point of sale
+## 1.5.7 Point of sale
 
 This domain owns:
 
@@ -610,7 +629,7 @@ It coordinates catalog, classification, inventory, authorization, stored value, 
 
 It does not replace those domains.
 
-## 1.5.7 Stored value
+## 1.5.8 Stored value
 
 This domain owns:
 
@@ -626,7 +645,7 @@ This domain owns:
 
 Stored-value activity may originate in POS, returns, or future buyback workflows, but its balance remains governed by its own ledger.
 
-## 1.5.8 Reporting and reconciliation
+## 1.5.9 Reporting and reconciliation
 
 This domain consumes:
 
@@ -1184,7 +1203,7 @@ Completed POS lines retain the values required to reproduce the original result,
 * identifiers;  
 * description;  
 * department;  
-* display category;  
+* merchandise class;  
 * tax category;  
 * return policy;  
 * regular and selling price;  
@@ -1392,7 +1411,6 @@ This provides the store and user context required by every operational domain.
 Establish:
 
 * departments;  
-* display categories;  
 * merchandise classes;  
 * formats;  
 * conditions;  
@@ -1413,8 +1431,7 @@ The objective is to define a complete minimum sellable variant.
 
 Establish:
 
-* customer requests;  
-* staff purchase suggestions;  
+* `product_requests` for customer requests and staff purchase suggestions;  
 * buyer-review queue;  
 * vendors;  
 * variant-vendor sources;  
@@ -1423,7 +1440,7 @@ Establish:
 * purchase orders;  
 * purchase-order lines;  
 * ordered and cancelled quantities;  
-* customer-request allocations;  
+* `purchase_order_allocations`;  
 * on-order calculation.
 
 This phase should favor a minimal acquisition workflow and avoid introducing unnecessary sourcing, status, and approval layers.
@@ -1593,7 +1610,7 @@ Variants define what is sold, purchased, priced, taxed, and tracked.
 
 Inventory units define exact physical copies when individual identity matters.
 
-Departments, display categories, merchandise classes, tax categories, and formats remain separate because they answer different business questions.
+Departments, merchandise classes, tax categories, and formats remain separate because they answer different business questions.
 
 Purchasing records intent.
 

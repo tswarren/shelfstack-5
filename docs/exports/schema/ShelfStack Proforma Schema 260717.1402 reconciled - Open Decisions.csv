@@ -1,0 +1,17 @@
+﻿Area,Current Workbook Approach,Decision Needed,Current Decision / Guardrail,Status
+Accounting mappings,Retain direct GL account-code fields on departments for now.,Replace with an effective-dated mapping table only when store-specific or multi-system mappings are required.,GL account-code fields will remain on the department record.,Open
+Department hierarchy,parent_department_id and postable are included.,Confirm whether reporting-only parent departments are required in the first release.,"Parent level reporting departments will be used, identified by `postable` = false.",Open
+Publication metadata,Relevant fields are consolidated on products.,Reintroduce a publication_details extension only if bibliographic depth or ONIX integration justifies it.,,Open
+Publisher/manufacturer identity,Stored as name fields on products.,"Decide whether publishers, manufacturers, and purchasing vendors share a future party model.",,Open
+Weighted quantities,POS and inventory quantities are integers in this workbook.,Change to decimals only when weighted or bulk merchandise is in active scope.,,Deferred
+Promotion definitions,pos_discounts can reference a future promotion_id.,Design promotion definitions and application-participant records before implementing advanced promotions.,,Deferred
+Customer domain,Phase 3 Product Requests and later POS records use nullable customer_reference strings; no customers table or customer_id FK is included in v1.,"Design the Customer domain, reusable tax exemptions, notifications, deposits, and customer holds before introducing customers.id.",Opaque customer references are accepted for v1 and must not be treated as stable Customer identity.,Deferred
+Store configuration,Core store and session fields are included.,"Decide whether thresholds and behavioral settings belong on stores, a store_configurations table, or policy tables.",,Open
+Receipt sequence storage,receipt_sequence is stored on completed transactions.,Choose whether the locked next sequence is maintained on stores or in a dedicated sequence table.,,Open
+Inventory unavailable buckets,stock_balances stores total unavailable quantity; ledger records status changes.,Add inventory_status_balances if current damaged/inspection/RTV quantities must be queried without ledger aggregation.,,Open
+Inventory transfers,Ledger movement types anticipate transfer_in and transfer_out.,"Design transfer documents, in-transit ownership, receipt, and discrepancy workflow before adding tables.",,Deferred
+Returns to vendor,Return disposition and ledger movement anticipate RTV.,"Design RTV authorization, shipment, and vendor-credit documents before adding tables.",,Deferred
+Buyback,"Used variants, inventory units, trade credit, and cash movements provide prerequisites.","Design seller intake, offer, acceptance, payout, and acquisition records separately.",,Deferred
+Stored-value replacement and expiration,Accounts and entries support the current baseline only.,"Add replacement, transfer, expiration, and legal-policy fields only when those workflows are defined.",,Deferred
+Accounting export,Departments retain direct GL codes.,Design export batches and corrective exports only after the target accounting integration is known.,,Deferred
+Purchase-order allocation lifecycle,Phase 3 persists active and cancelled allocations only.,Define received and fulfilled transitions with Receiving and Request fulfilment posting rules.,Do not scaffold received or fulfilled transitions until Phase 4 hooks are designed.,Open

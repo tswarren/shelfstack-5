@@ -26,7 +26,7 @@ It does not merge demand with supply. Product Requests, Purchase-Order Allocatio
 - priority;
 - needed-by date;
 - requesting User;
-- Customer reference when applicable;
+- nullable opaque Customer reference for v1;
 - request notes;
 - request lifecycle;
 - fulfilment summary and buyer-review state.
@@ -69,9 +69,10 @@ Suggested attributes:
 
 - Store;
 - request type;
-- Customer when applicable;
-- Product;
+- nullable `customer_reference` string for v1 Customer Requests;
+- Product when resolved;
 - Product Variant when known;
+- requested description when Product is unresolved;
 - requested quantity;
 - priority;
 - needed-by date;
@@ -92,6 +93,22 @@ closed
 ```
 
 Detailed sourcing progress should be derived from active Reservations and Allocations rather than encoded through many request statuses.
+
+## V1 Customer reference
+
+The first Product Requests schema does not introduce a `customers` table or a `customer_id` foreign key.
+
+Customer Requests may store a nullable opaque `customer_reference` string. This may contain a name, order reference, or another staff-entered locator sufficient for the immediate workflow.
+
+`customer_reference`:
+
+- is not stable Customer identity;
+- must not be used as a durable cross-record Customer key;
+- may be replaced or migrated when the Customer domain is designed;
+- does not provide notifications, reusable tax exemptions, deposits, or Customer history.
+
+A Request may begin before its Product is resolved. When `product_id` is null, the Request should retain a `requested_description` sufficient for buyer review. `product_variant_id` remains nullable until an exact Variant is required or selected.
+
 
 ## Supply coverage
 
@@ -133,7 +150,7 @@ A buyer may select or create a Vendor Source, add quantity to a Purchase Order, 
 
 When allocated merchandise is accepted:
 
-- the Allocation is marked received or fulfilled under the final workflow;
+- Phase 4 posting rules determine whether the Allocation becomes `received`/`fulfilled`, a derived state, or a separate fulfilment event (Phase 3 persists only `active` and `cancelled`);
 - merchandise may become Reserved for the Customer;
 - notification or pickup may occur when Customer capability exists;
 - final sale or delivery fulfils the Request.
@@ -173,8 +190,9 @@ requests.allocate_on_order_supply
 requests.decline
 requests.cancel
 requests.close
-requests.view_customer_details
 ```
+
+`requests.view_customer_details` is reserved for a future Customer domain and is not part of the v1 `customer_reference` model.
 
 ## Audit requirements
 
@@ -190,11 +208,11 @@ Audit Request creation, quantity and Product changes, priority and needed-by cha
 - Staff Suggestions do not ordinarily create customer obligations.
 - Active coverage must not exceed requested quantity without an explicit change.
 - Supply cannot be allocated or reserved beyond available quantity.
+- V1 Customer Requests use `customer_reference`; they do not require or imply a Customer master record.
 
 ## Open questions
 
-- What minimum Customer data is required before a full Customer domain exists?
-- When and how are Customers notified?
+- When and how are Customers notified after the Customer domain is introduced?
 - What statuses are required beyond the high-level lifecycle?
 - How are substitutions approved?
 - May one Request accept several alternative Products or Variants?

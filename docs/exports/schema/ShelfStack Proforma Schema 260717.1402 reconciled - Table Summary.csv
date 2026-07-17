@@ -1,0 +1,58 @@
+﻿Domain,Table,Purpose,Design Status,Field Count
+Classification and Configuration,departments,Hierarchical financial and managerial classification for merchandise activity.,Recommended — preserves earlier financial-category design,23
+Classification and Configuration,merchandise_classes,"Hierarchical merchandising, shelving, browsing, buyer-organization, reporting, and default-Department structure.",Recommended — sole merchandising hierarchy under ADR-0003,17
+Classification and Configuration,product_formats,"Controlled vocabulary for physical or commercial format, such as Hardcover, Vinyl, or Greeting Card.",Recommended — retains earlier normalized format model,10
+Classification and Configuration,product_conditions,Controlled vocabulary for general or copy-specific condition.,Recommended,9
+Classification and Configuration,cash_movement_types,Configurable reasons and behavior for non-sale cash movement.,Recommended,10
+Classification and Configuration,discount_reasons,Auditable discount reason with optional default calculation and policy behavior.,Recommended — preserves earlier configurable reason design,13
+Classification and Configuration,return_policies,Reusable baseline policy governing return eligibility.,Recommended — intentionally minimal pending fuller policy design,9
+Classification and Configuration,return_reasons,Reason supplied for a customer return; distinct from actual inventory disposition.,Recommended — replaces return_to_stock Boolean,8
+Classification and Configuration,tax_categories,Describes merchandise for tax treatment; actual rates are store- and date-specific.,Recommended,7
+Classification and Configuration,store_tax_rates,Effective-dated jurisdictional tax rates configured for a store.,Recommended — tax rate precision corrected,12
+Classification and Configuration,store_tax_rules,Connects a tax category to one or more store rates and calculation rules.,Recommended — renamed from store_tax_category_rates,11
+Classification and Configuration,stored_value_adjustment_reasons,Controlled reasons for manual stored-value ledger adjustments.,Recommended,7
+Classification and Configuration,tender_types,Configures tender behavior and optional cashier reference prompts.,Recommended — retains configurable reference fields,19
+Organization and Authorization,permissions,Granular capabilities evaluated by stable machine-readable code.,Recommended,8
+Organization and Authorization,roles,Organization-owned reusable permission and authority templates.,Recommended — assignment_scope removed,9
+Organization and Authorization,role_permissions,Join between roles and granular permissions.,Recommended,5
+Organization and Authorization,users,Authenticated users whose actual identity is retained on operational activity.,Recommended — detailed earlier authentication fields retained,17
+Organization and Authorization,store_memberships,"Explicit user authorization for one store, one role, effective dates, and optional authority-limit overrides.",Recommended — replaces user_roles,17
+Organization and Authorization,organizations,Administrative and shared-catalog boundary for one ShelfStack installation.,Recommended — later project addition,9
+Organization and Authorization,stores,"Primary operational boundary for inventory, POS, tax, receipt numbering, and reconciliation.",Recommended,22
+Point of Sale,business_days,"Store-wide operational reporting period, which may cross calendar midnight.",Recommended,13
+Organization and Authorization,pos_devices,Physical or logical POS devices assigned permanently to one store.,Recommended,9
+Organization and Authorization,cash_drawers,"Physical cash drawers, distinct from POS devices.",Recommended — later project addition,7
+Point of Sale,pos_sessions,"Accountability period for one POS device and, when cash-enabled, one cash drawer.",Recommended,21
+Point of Sale,pos_session_cash_counts,"Immutable opening, closing, manager recount, and reconciled cash counts.",Recommended — later project addition,8
+Catalog and Products,products,"Universal commercial Product record shared by all Stores, including its primary Merchandise Class assignment.",Recommended — display-category fields removed,46
+Catalog and Products,product_variants,"Exact sellable configuration used by pricing, purchasing, inventory, and POS, with optional Merchandise-Class override.",Recommended — display-category fields removed,21
+Catalog and Products,product_options,Option dimensions used by option and matrix product structures.,Recommended,6
+Catalog and Products,product_option_values,Permitted values within one product option.,Recommended,6
+Catalog and Products,product_variant_option_values,Join assigning exact option values to a variant.,Recommended,5
+Product Requests,product_requests,"Store-scoped customer demand or staff purchasing suggestion, separate from supply allocations and inventory reservations.",Recommended — required Phase 3 table under ADR-0005,16
+Vendors and Purchasing,vendors,Organizations from which the bookstore purchases merchandise.,Recommended — domain expansion beyond earlier dictionary scope,14
+Vendors and Purchasing,product_variant_vendors,"Vendor-specific source, cost, ordering, and returnability information for a variant.",Recommended — aligns with purchasing plan,18
+Vendors and Purchasing,purchase_orders,Store-specific intent to acquire merchandise from one vendor.,Recommended table; status enum remains Proposed,16
+Vendors and Purchasing,purchase_order_lines,"Variant-level ordered quantity, expected cost, snapshots, and fulfilment totals.",Recommended — special_order_quantity and tbo_required removed,18
+Vendors and Purchasing,purchase_order_allocations,Commitment of expected Purchase-Order-Line quantity to a Product Request.,Recommended — required Phase 3 table under ADR-0005,11
+Receiving and Inventory,receipts,One Store/Vendor shipment or receiving event; PO linkage occurs only on Receipt Lines.,Recommended table; correction/status details remain Proposed,14
+Receiving and Inventory,receipt_lines,"Accepted, rejected, damaged, and inspection quantities and actual received cost.",Recommended,18
+Receiving and Inventory,stock_balances,Current store-and-variant inventory summary.,Recommended — core later inventory decision,12
+Receiving and Inventory,inventory_units,One exact physical copy for individually tracked merchandise.,Recommended — renamed and expanded from earlier inventory_units,16
+Receiving and Inventory,inventory_ledger_entries,Append-only explanation of every on-hand quantity or availability-status movement.,Recommended — core later inventory decision,17
+Receiving and Inventory,inventory_reservations,Explicit temporary commitment of physically present quantity or an exact Unit to a POS Line or Product Request.,Recommended — Product Request source added,17
+Receiving and Inventory,inventory_adjustments,Controlled working document for manual inventory or availability corrections.,Recommended — proposed support table,10
+Receiving and Inventory,inventory_adjustment_lines,Variant or exact-unit adjustment lines that post inventory-ledger entries.,Recommended — proposed support table,11
+Point of Sale,pos_transactions,"Mixed checkout container containing sales, Returns, Stored Value, and received or refunded Tenders.",Recommended — nullable customer_reference; no Customer FK in v1,33
+Point of Sale,pos_line_items,"Immutable completed sale or Return facts and removable pending Lines, including Merchandise-Class history.",Recommended — merchandise_class_id replaces display_category_id,48
+Point of Sale,pos_discounts,Realized line or transaction discount decision.,Recommended,16
+Point of Sale,pos_discount_allocations,Stored allocation of realized discount amounts to eligible POS lines.,Recommended,6
+Point of Sale,pos_line_item_taxes,Historical tax components calculated for one completed POS line.,Recommended — tax precision corrected,9
+Point of Sale,pos_tax_exemptions,Transaction-level snapshot of exemption evidence and any approval used.,Recommended — replaces line-only tax_exempt Boolean,14
+Point of Sale,pos_tenders,Received or refunded tender used to settle a POS transaction.,Recommended — expanded from earlier minimal tender model,22
+Point of Sale,pos_cash_movements,"Non-sale cash movement affecting a business day, session, or drawer.",Recommended,13
+Point of Sale,pos_approvals,Independent auditable approval of a restricted POS or cash action.,Recommended — renamed from pos_overrides,17
+Point of Sale,pos_receipt_print_events,"Audit of original receipts, reprints, gift receipts, return receipts, and post-void receipts.",Recommended — later project addition,6
+Stored Value,stored_value_accounts,"Gift-card, store-credit, or trade-credit account with cached current balance.",Recommended,11
+Stored Value,stored_value_entries,Append-only stored-value liability ledger.,Recommended,12
+Reporting and Reconciliation,reconciliation_adjustments,Explicit acknowledged difference recorded without rewriting completed transactions or tenders.,Recommended — minimal current reconciliation support,11

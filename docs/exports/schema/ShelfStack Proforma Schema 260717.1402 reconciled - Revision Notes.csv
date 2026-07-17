@@ -1,0 +1,28 @@
+﻿Change Type,Object,Rationale
+Removed table,product_identifiers,Superseded by products.identifier plus optional products.alternate_identifier; ISBN-10 and UPC/EAN equivalence are normalized during lookup.
+Removed table,publication_details,Publication-oriented fields are consolidated on products for the current working scope.
+Renamed table,user_roles → store_memberships,"Store access, role, active dates, and numeric authority limits belong to explicit membership."
+Renamed table,store_tax_category_rates → store_tax_rules,"The record controls taxable fraction, order, compounding, and effective dates."
+Renamed table,pos_overrides → pos_approvals,The record is an independent auditable authorization event.
+Renamed field,inventory_units.sku → unit_identifier,An exact-copy identifier is not another product or variant SKU.
+Reworked lifecycle,pos_transactions,"Removed transaction_type and mutable void state; transactions may mix sales and returns and use open, suspended, completed, cancelled."
+Reworked lifecycle,pos_line_items,Added direction and pending/completed/removed states; returns and post-voids create new linked lines.
+Added foundation,stock_balances,Authoritative store-and-variant quantities and moving average cost.
+Added foundation,inventory_ledger_entries,Append-only explanation of on-hand and availability movements.
+Added foundation,inventory_reservations,Explicit reservation records tied initially to POS lines.
+Added foundation,organizations,Administrative and shared-catalog boundary.
+Added foundation,cash_drawers,Separates physical till accountability from POS devices.
+Added foundation,pos_session_cash_counts,Preserves original and recount cash counts without overwriting.
+Added foundation,pos_receipt_print_events,"Audits receipt originals, reprints, gift receipts, and correction receipts."
+Corrected model,return_reasons,Reason no longer directly determines return-to-stock; actual disposition is stored on the return line.
+Corrected precision,tax rates,Tax rates use decimal precision rather than basis points.
+Removed table,display_categories,ADR-0003 establishes Merchandise Classes as the sole merchandising hierarchy.
+Removed fields,products.default_display_category_id; product_variants.display_category_id,Products use merchandise_class_id; Variants may override it.
+Replaced field,pos_line_items.display_category_id → merchandise_class_id,Completed POS history snapshots the accepted merchandising classification.
+Added Phase 3 table,product_requests,Customer Requests and Staff Suggestions are first-class demand records.
+Added Phase 3 table,purchase_order_allocations,Future Purchase-Order supply is committed to Product Requests separately from physical Reservations.
+Removed PO-line substitutes,special_order_quantity; tbo_required,Demand and buyer-review state derive from Product Requests and Allocations.
+Expanded source model,inventory_reservations.source_type,Reservations may be owned by pos_line_item or product_request.
+Replaced deferred FK,pos_transactions.customer_id → customer_reference,V1 uses an opaque nullable reference without a Customers table.
+Removed field,receipts.purchase_order_id,A Receipt may fulfil several Purchase Orders; linkage belongs at Receipt-Line level.
+Aligned domains,Schema Dictionary Domain column,Labels now match the nine architecture domains.

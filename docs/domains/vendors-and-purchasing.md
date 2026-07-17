@@ -175,16 +175,27 @@ Suggested attributes:
 - status;
 - timestamps.
 
-Suggested lifecycle concepts:
+The allocation status model remains Proposed.
+
+The Phase 3 schema includes only:
 
 ```text
 active
-received
-fulfilled
 cancelled
 ```
 
-The exact status model remains Proposed.
+`active` means the expected quantity remains committed to the Product Request.
+
+`cancelled` releases the commitment and requires cancellation identity, time, and reason.
+
+The following statuses are deferred until Receiving and Request-fulfilment posting rules exist:
+
+```text
+received
+fulfilled
+```
+
+Receipt posting in Phase 4 must define whether these become persisted statuses, derived states, or separate fulfilment events.
 
 Allocation does not increase On Hand or Reserved physical inventory.
 
@@ -251,6 +262,7 @@ Audit Vendor and Vendor-Source changes, Purchase-Order creation, line additions 
 - Purchasing never changes On Hand.
 - On Order is expected supply, not physical inventory.
 - Allocation does not create physical Reservation.
+- Phase 3 persists only `active` and `cancelled` allocation statuses.
 - Active Allocations do not exceed uncommitted open quantity.
 - Receiving, not Purchasing, creates inventory.
 - Historical lines retain sufficient snapshots.
@@ -259,6 +271,7 @@ Audit Vendor and Vendor-Source changes, Purchase-Order creation, line additions 
 ## Open questions
 
 - What is the final Purchase-Order status set?
+- Which Phase 4 events transition an active Allocation to received or fulfilled, and should those states be persisted or derived?
 - Is internal submission or approval distinct from Vendor placement?
 - Are order numbers Store-specific or Organization-wide?
 - Are costs captured as net cost, list and discount, or both?

@@ -1,0 +1,811 @@
+﻿Domain,Table,Field,Type,Constraints,Notes / Enum Values
+Classification and Configuration,departments,id,bigint,"primary key, auto-increment",
+Classification and Configuration,departments,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,departments,parent_department_id,bigint,FK: departments,Null for a top-level department.
+Classification and Configuration,departments,department_number,string,null: false; limit: 10; unique with organization_id,Human-facing financial department number; string preserves leading zeroes.
+Classification and Configuration,departments,name,string,null: false,
+Classification and Configuration,departments,code,string,null: false; unique with organization_id,Stable machine-readable code.
+Classification and Configuration,departments,postable,boolean,"null: false, default: true",False for reporting-only parent departments.
+Classification and Configuration,departments,inventory_asset_gl_account_code,string,limit: 20,Direct mapping retained pending a later accounting-mapping decision.
+Classification and Configuration,departments,sales_revenue_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,sales_returns_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,sales_discounts_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,cogs_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,vendor_returns_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,inventory_shrinkage_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,inventory_write_down_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,inventory_adjustment_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,freight_in_gl_account_code,string,limit: 20,
+Classification and Configuration,departments,default_tax_category_id,bigint,FK: tax_categories,Default only; variants and products may override.
+Classification and Configuration,departments,maximum_merchandise_discount,integer,,Maximum merchandise discount for items posting to this department; user authority is evaluated separately.
+Classification and Configuration,departments,default_return_policy_id,bigint,FK: return_policies,Department-level default; product or variant policy may override.
+Classification and Configuration,departments,active,boolean,"null: false, default: true",
+Classification and Configuration,departments,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,departments,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,merchandise_classes,id,bigint,"primary key, auto-increment",
+Classification and Configuration,merchandise_classes,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,merchandise_classes,parent_id,bigint,FK: merchandise_classes,Added: 26-07-17
+Classification and Configuration,merchandise_classes,code,string,null: false; unique with organization_id,
+Classification and Configuration,merchandise_classes,name,string,null: false,
+Classification and Configuration,merchandise_classes,level,string,null: false,"primary, secondary, minor"
+Classification and Configuration,merchandise_classes,description,text,,
+Classification and Configuration,merchandise_classes,default_department_id,bigint,"FK: departments, null: false",
+Classification and Configuration,merchandise_classes,default_used_department_id,bigint,FK: departments,Optional interim used-merchandise Department default; does not create a separate merchandising hierarchy.
+Classification and Configuration,merchandise_classes,default_inventory_tracking_mode,string,,"Optional setup default only: quantity, individual, none. Runtime authority is product_variants.inventory_tracking_mode."
+Classification and Configuration,merchandise_classes,default_discountability,string,,"allowed, not_allowed, approval_required."
+Classification and Configuration,merchandise_classes,default_returnability,string,,"allowed, not_allowed, approval_required."
+Classification and Configuration,merchandise_classes,default_tax_category_id,bigint,FK: tax_categories,
+Classification and Configuration,merchandise_classes,shelving_guidance,text,,
+Classification and Configuration,merchandise_classes,active,boolean,"null: false, default: true",
+Classification and Configuration,merchandise_classes,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,merchandise_classes,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,product_formats,id,bigint,"primary key, auto-increment",
+Classification and Configuration,product_formats,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,product_formats,name,string,null: false,"Examples: Hardcover, Trade Paperback, Vinyl Record, Greeting Card."
+Classification and Configuration,product_formats,code,string,null: false; unique with organization_id,Stable internal code.
+Classification and Configuration,product_formats,short_code,string,limit: 2; unique with organization_id,Bookstore or industry-facing abbreviation where applicable.
+Classification and Configuration,product_formats,format_family,string,,"book, recorded_music, video, game, periodical, stationery, gift, cafe, service, digital, other."
+Classification and Configuration,product_formats,default_inventory_tracking_mode,string,,"Optional setup default only: quantity, individual, none."
+Classification and Configuration,product_formats,active,boolean,"null: false, default: true",
+Classification and Configuration,product_formats,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,product_formats,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,product_conditions,id,bigint,"primary key, auto-increment",
+Classification and Configuration,product_conditions,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,product_conditions,name,string,null: false,"Examples: New, Like New, Very Good, Good, Fair, Poor, Collectible."
+Classification and Configuration,product_conditions,code,string,null: false; unique with organization_id,
+Classification and Configuration,product_conditions,description,text,,
+Classification and Configuration,product_conditions,position,smallint,"null: false, default: 0",
+Classification and Configuration,product_conditions,active,boolean,"null: false, default: true",
+Classification and Configuration,product_conditions,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,product_conditions,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,cash_movement_types,id,bigint,"primary key, auto-increment",
+Classification and Configuration,cash_movement_types,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,cash_movement_types,name,string,null: false,
+Classification and Configuration,cash_movement_types,code,string,null: false; unique with organization_id,
+Classification and Configuration,cash_movement_types,direction,string,null: false,"cash_in, cash_out."
+Classification and Configuration,cash_movement_types,requires_approval,boolean,"null: false, default: true",
+Classification and Configuration,cash_movement_types,requires_reference,boolean,"null: false, default: true",
+Classification and Configuration,cash_movement_types,active,boolean,"null: false, default: true",
+Classification and Configuration,cash_movement_types,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,cash_movement_types,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,discount_reasons,id,bigint,"primary key, auto-increment",
+Classification and Configuration,discount_reasons,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,discount_reasons,name,string,null: false,
+Classification and Configuration,discount_reasons,code,string,null: false; unique with organization_id,
+Classification and Configuration,discount_reasons,default_calculation_method,string,null: false,"percentage, fixed_amount, fixed_price."
+Classification and Configuration,discount_reasons,default_rate_bps,integer,,Used when default method is percentage.
+Classification and Configuration,discount_reasons,default_amount_cents,integer,,Used when default method is fixed_amount or fixed_price.
+Classification and Configuration,discount_reasons,maximum_rate_bps,integer,,Maximum merchandise rate permitted for this reason; user authority is separate.
+Classification and Configuration,discount_reasons,requires_approval,boolean,"null: false, default: true",
+Classification and Configuration,discount_reasons,resulting_return_policy_id,bigint,FK: return_policies,"Optional policy imposed by the discount, such as final sale."
+Classification and Configuration,discount_reasons,active,boolean,"null: false, default: true",
+Classification and Configuration,discount_reasons,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,discount_reasons,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,return_policies,id,bigint,"primary key, auto-increment",
+Classification and Configuration,return_policies,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,return_policies,name,string,null: false,
+Classification and Configuration,return_policies,code,string,null: false; unique with organization_id,
+Classification and Configuration,return_policies,final_sale,boolean,"null: false, default: false",
+Classification and Configuration,return_policies,return_window_days,smallint,,Null where no time limit applies or returns are prohibited.
+Classification and Configuration,return_policies,active,boolean,"null: false, default: true",
+Classification and Configuration,return_policies,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,return_policies,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,return_reasons,id,bigint,"primary key, auto-increment",
+Classification and Configuration,return_reasons,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,return_reasons,name,string,null: false,
+Classification and Configuration,return_reasons,code,string,null: false; unique with organization_id,
+Classification and Configuration,return_reasons,default_return_disposition,string,,"Optional suggestion: return_to_stock, inspection_required, damaged, return_to_vendor, discard, non_inventory."
+Classification and Configuration,return_reasons,active,boolean,"null: false, default: true",
+Classification and Configuration,return_reasons,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,return_reasons,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,tax_categories,id,bigint,"primary key, auto-increment",
+Classification and Configuration,tax_categories,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,tax_categories,name,string,null: false; unique with organization_id,
+Classification and Configuration,tax_categories,code,string,null: false; unique with organization_id,
+Classification and Configuration,tax_categories,active,boolean,"null: false, default: true",
+Classification and Configuration,tax_categories,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,tax_categories,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,store_tax_rates,id,bigint,"primary key, auto-increment",
+Classification and Configuration,store_tax_rates,store_id,bigint,"FK: stores, null: false",
+Classification and Configuration,store_tax_rates,name,string,"null: false, limit: 40",
+Classification and Configuration,store_tax_rates,code,string,null: false; unique with store_id,
+Classification and Configuration,store_tax_rates,receipt_code,string,"null: false, limit: 3",Short identifier printed on receipts.
+Classification and Configuration,store_tax_rates,jurisdiction_name,string,,
+Classification and Configuration,store_tax_rates,rate,"decimal(10,8)",null: false,Decimal rate; 0.13000000 represents 13%.
+Classification and Configuration,store_tax_rates,effective_from,date,,
+Classification and Configuration,store_tax_rates,effective_to,date,,
+Classification and Configuration,store_tax_rates,active,boolean,"null: false, default: true",
+Classification and Configuration,store_tax_rates,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,store_tax_rates,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,store_tax_rules,id,bigint,"primary key, auto-increment",
+Classification and Configuration,store_tax_rules,tax_category_id,bigint,"FK: tax_categories, null: false",
+Classification and Configuration,store_tax_rules,store_tax_rate_id,bigint,"FK: store_tax_rates, null: false",The rate identifies the store.
+Classification and Configuration,store_tax_rules,taxable_fraction,"decimal(10,8)","null: false, default: 1",1.0 means fully taxable.
+Classification and Configuration,store_tax_rules,calculation_order,smallint,"null: false, default: 0",Calculation and receipt display order.
+Classification and Configuration,store_tax_rules,compounds_on_prior_tax,boolean,"null: false, default: false",
+Classification and Configuration,store_tax_rules,effective_from,date,,
+Classification and Configuration,store_tax_rules,effective_to,date,,
+Classification and Configuration,store_tax_rules,active,boolean,"null: false, default: true",
+Classification and Configuration,store_tax_rules,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,store_tax_rules,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,stored_value_adjustment_reasons,id,bigint,"primary key, auto-increment",
+Classification and Configuration,stored_value_adjustment_reasons,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,stored_value_adjustment_reasons,name,string,null: false,
+Classification and Configuration,stored_value_adjustment_reasons,code,string,null: false; unique with organization_id,
+Classification and Configuration,stored_value_adjustment_reasons,active,boolean,"null: false, default: true",
+Classification and Configuration,stored_value_adjustment_reasons,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,stored_value_adjustment_reasons,updated_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,tender_types,id,bigint,"primary key, auto-increment",
+Classification and Configuration,tender_types,organization_id,bigint,"FK: organizations, null: false",
+Classification and Configuration,tender_types,tender_category,string,null: false,"cash, card, check, stored_value, other."
+Classification and Configuration,tender_types,name,string,null: false,
+Classification and Configuration,tender_types,code,string,null: false; unique with organization_id,
+Classification and Configuration,tender_types,shortcut,string,limit: 3; unique with organization_id,Optional POS keyboard shortcut.
+Classification and Configuration,tender_types,payment_enabled,boolean,"null: false, default: true",
+Classification and Configuration,tender_types,refund_enabled,boolean,"null: false, default: true",
+Classification and Configuration,tender_types,allows_over_tender,boolean,"null: false, default: false",
+Classification and Configuration,tender_types,provides_change,boolean,"null: false, default: false",
+Classification and Configuration,tender_types,reference_1_requirement,string,"null: false, default: none","none, optional, required."
+Classification and Configuration,tender_types,reference_1_label,string,limit: 20,
+Classification and Configuration,tender_types,reference_1_mask,string,,
+Classification and Configuration,tender_types,reference_2_requirement,string,"null: false, default: none","none, optional, required."
+Classification and Configuration,tender_types,reference_2_label,string,limit: 20,
+Classification and Configuration,tender_types,reference_2_mask,string,,
+Classification and Configuration,tender_types,active,boolean,"null: false, default: true",
+Classification and Configuration,tender_types,created_at,datetime,null: false,Rails timestamp.
+Classification and Configuration,tender_types,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,permissions,id,bigint,"primary key, auto-increment",
+Organization and Authorization,permissions,code,string,"null: false, unique","Examples: pos.complete_transaction, inventory.release_reservation."
+Organization and Authorization,permissions,name,string,null: false,
+Organization and Authorization,permissions,description,text,,
+Organization and Authorization,permissions,permission_group,string,,"Administrative grouping such as pos, inventory, catalog, purchasing."
+Organization and Authorization,permissions,active,boolean,"null: false, default: true",
+Organization and Authorization,permissions,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,permissions,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,roles,id,bigint,"primary key, auto-increment",
+Organization and Authorization,roles,organization_id,bigint,"FK: organizations, null: false",
+Organization and Authorization,roles,code,string,null: false; unique with organization_id,
+Organization and Authorization,roles,name,string,null: false; unique with organization_id,
+Organization and Authorization,roles,description,text,,
+Organization and Authorization,roles,system_template,boolean,"null: false, default: false",
+Organization and Authorization,roles,active,boolean,"null: false, default: true",
+Organization and Authorization,roles,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,roles,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,role_permissions,id,bigint,"primary key, auto-increment",
+Organization and Authorization,role_permissions,role_id,bigint,"FK: roles, null: false; unique with permission_id",
+Organization and Authorization,role_permissions,permission_id,bigint,"FK: permissions, null: false; unique with role_id",
+Organization and Authorization,role_permissions,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,role_permissions,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,users,id,bigint,"primary key, auto-increment",
+Organization and Authorization,users,username,string,"null: false, unique",
+Organization and Authorization,users,user_number,integer,unique,Human-facing employee or user number.
+Organization and Authorization,users,first_name,string,,
+Organization and Authorization,users,last_name,string,,
+Organization and Authorization,users,email,string,,
+Organization and Authorization,users,password_digest,string,,
+Organization and Authorization,users,pin_digest,string,,
+Organization and Authorization,users,default_store_id,bigint,FK: stores,Navigation convenience; does not grant access.
+Organization and Authorization,users,active,boolean,"null: false, default: true",
+Organization and Authorization,users,locked_at,datetime,,Temporary authentication lock state.
+Organization and Authorization,users,last_login_at,datetime,,
+Organization and Authorization,users,failed_login_attempts,integer,"null: false, default: 0",
+Organization and Authorization,users,password_changed_at,datetime,,
+Organization and Authorization,users,pin_changed_at,datetime,,
+Organization and Authorization,users,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,users,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,store_memberships,id,bigint,"primary key, auto-increment",
+Organization and Authorization,store_memberships,user_id,bigint,"FK: users, null: false; unique with store_id",
+Organization and Authorization,store_memberships,store_id,bigint,"FK: stores, null: false; unique with user_id",
+Organization and Authorization,store_memberships,role_id,bigint,"FK: roles, null: false",
+Organization and Authorization,store_memberships,active,boolean,"null: false, default: true",
+Organization and Authorization,store_memberships,starts_on,date,,
+Organization and Authorization,store_memberships,ends_on,date,,
+Organization and Authorization,store_memberships,maximum_discount_rate,"decimal(10,8)",,Membership override; role or store default applies when null.
+Organization and Authorization,store_memberships,maximum_discount_amount_cents,integer,,
+Organization and Authorization,store_memberships,maximum_price_override_rate,"decimal(10,8)",,
+Organization and Authorization,store_memberships,maximum_cash_refund_cents,integer,,
+Organization and Authorization,store_memberships,maximum_no_receipt_return_cents,integer,,
+Organization and Authorization,store_memberships,maximum_paid_out_cents,integer,,
+Organization and Authorization,store_memberships,cash_variance_review_threshold_cents,integer,,
+Organization and Authorization,store_memberships,assigned_by_user_id,bigint,FK: users,
+Organization and Authorization,store_memberships,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,store_memberships,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,organizations,id,bigint,"primary key, auto-increment",
+Organization and Authorization,organizations,code,string,"null: false, unique",
+Organization and Authorization,organizations,name,string,null: false,
+Organization and Authorization,organizations,legal_name,string,,
+Organization and Authorization,organizations,default_currency_code,string,"null: false, limit: 3",ISO 4217.
+Organization and Authorization,organizations,default_timezone,string,null: false,IANA time-zone identifier.
+Organization and Authorization,organizations,active,boolean,"null: false, default: true",
+Organization and Authorization,organizations,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,organizations,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,stores,id,bigint,"primary key, auto-increment",
+Organization and Authorization,stores,organization_id,bigint,"FK: organizations, null: false",
+Organization and Authorization,stores,code,string,null: false; unique with organization_id,Stable operational code; string preserves leading zeroes.
+Organization and Authorization,stores,store_number,string,unique with organization_id,Optional human-facing number where distinct from code.
+Organization and Authorization,stores,name,string,null: false,
+Organization and Authorization,stores,legal_name,string,,
+Organization and Authorization,stores,address_line_1,string,,
+Organization and Authorization,stores,address_line_2,string,,
+Organization and Authorization,stores,city,string,,
+Organization and Authorization,stores,region,string,,"State, province, or region."
+Organization and Authorization,stores,postal_code,string,limit: 12,
+Organization and Authorization,stores,country_code,string,limit: 2,ISO 3166-1 alpha-2.
+Organization and Authorization,stores,phone,string,limit: 30,
+Organization and Authorization,stores,email,string,,
+Organization and Authorization,stores,san_number,string,limit: 8,"Standard Address Number, where applicable."
+Organization and Authorization,stores,timezone,string,null: false,IANA time-zone identifier.
+Organization and Authorization,stores,currency_code,string,"null: false, limit: 3",ISO 4217.
+Organization and Authorization,stores,receipt_header,text,,
+Organization and Authorization,stores,receipt_footer,text,,
+Organization and Authorization,stores,active,boolean,"null: false, default: true",
+Organization and Authorization,stores,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,stores,updated_at,datetime,null: false,Rails timestamp.
+Point of Sale,business_days,id,bigint,"primary key, auto-increment",
+Point of Sale,business_days,store_id,bigint,"FK: stores, null: false",
+Point of Sale,business_days,business_date,date,null: false; unique with store_id,
+Point of Sale,business_days,status,string,"null: false, default: open","open, closed, reconciled."
+Point of Sale,business_days,opened_at,datetime,null: false,
+Point of Sale,business_days,opened_by_user_id,bigint,FK: users,
+Point of Sale,business_days,closed_at,datetime,,
+Point of Sale,business_days,closed_by_user_id,bigint,FK: users,
+Point of Sale,business_days,reconciled_at,datetime,,
+Point of Sale,business_days,reconciled_by_user_id,bigint,FK: users,
+Point of Sale,business_days,z_report_number,string,,
+Point of Sale,business_days,created_at,datetime,null: false,Rails timestamp.
+Point of Sale,business_days,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,pos_devices,id,bigint,"primary key, auto-increment",
+Organization and Authorization,pos_devices,store_id,bigint,"FK: stores, null: false",
+Organization and Authorization,pos_devices,code,string,null: false; unique with store_id,
+Organization and Authorization,pos_devices,name,string,null: false,
+Organization and Authorization,pos_devices,device_type,string,"null: false, default: register","register, mobile_pos, back_office, self_checkout."
+Organization and Authorization,pos_devices,active,boolean,"null: false, default: true",
+Organization and Authorization,pos_devices,last_seen_at,datetime,,
+Organization and Authorization,pos_devices,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,pos_devices,updated_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,cash_drawers,id,bigint,"primary key, auto-increment",
+Organization and Authorization,cash_drawers,store_id,bigint,"FK: stores, null: false",
+Organization and Authorization,cash_drawers,code,string,null: false; unique with store_id,
+Organization and Authorization,cash_drawers,name,string,null: false,
+Organization and Authorization,cash_drawers,active,boolean,"null: false, default: true",
+Organization and Authorization,cash_drawers,created_at,datetime,null: false,Rails timestamp.
+Organization and Authorization,cash_drawers,updated_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_sessions,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_sessions,business_day_id,bigint,"FK: business_days, null: false",
+Point of Sale,pos_sessions,store_id,bigint,"FK: stores, null: false",Retained explicitly for validation and reporting.
+Point of Sale,pos_sessions,pos_device_id,bigint,"FK: pos_devices, null: false",
+Point of Sale,pos_sessions,cash_drawer_id,bigint,FK: cash_drawers,Null for card-only sessions.
+Point of Sale,pos_sessions,responsible_user_id,bigint,FK: users,Primary accountable user; transaction cashier is stored separately.
+Point of Sale,pos_sessions,session_number,string,null: false; unique with store_id,
+Point of Sale,pos_sessions,status,string,"null: false, default: open","open, closed, reconciled."
+Point of Sale,pos_sessions,opened_at,datetime,null: false,
+Point of Sale,pos_sessions,opened_by_user_id,bigint,FK: users,
+Point of Sale,pos_sessions,closed_at,datetime,,
+Point of Sale,pos_sessions,closed_by_user_id,bigint,FK: users,
+Point of Sale,pos_sessions,reconciled_at,datetime,,
+Point of Sale,pos_sessions,reconciled_by_user_id,bigint,FK: users,
+Point of Sale,pos_sessions,opening_cash_cents,integer,,
+Point of Sale,pos_sessions,expected_cash_cents,integer,,
+Point of Sale,pos_sessions,counted_cash_cents,integer,,
+Point of Sale,pos_sessions,cash_variance_cents,integer,,
+Point of Sale,pos_sessions,z_report_number,string,,
+Point of Sale,pos_sessions,created_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_sessions,updated_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_session_cash_counts,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_session_cash_counts,pos_session_id,bigint,"FK: pos_sessions, null: false",
+Point of Sale,pos_session_cash_counts,count_type,string,null: false,"opening, closing, manager_recount, reconciled."
+Point of Sale,pos_session_cash_counts,total_cents,integer,null: false,
+Point of Sale,pos_session_cash_counts,denomination_detail,json,,Optional denomination quantities and totals.
+Point of Sale,pos_session_cash_counts,counted_by_user_id,bigint,"FK: users, null: false",
+Point of Sale,pos_session_cash_counts,counted_at,datetime,null: false,
+Point of Sale,pos_session_cash_counts,created_at,datetime,null: false,Rails timestamp.
+Catalog and Products,products,id,bigint,"primary key, auto-increment",
+Catalog and Products,products,organization_id,bigint,"FK: organizations, null: false",
+Catalog and Products,products,identifier,string,null: false; unique with organization_id,"Canonical ISBN-13/EAN-13, UPC-A, other approved trade identifier, or ShelfStack 29-prefix local identifier."
+Catalog and Products,products,alternate_identifier,string,indexed; not unique,Optional alternate lookup value; ISBN-10 is not stored solely for lookup.
+Catalog and Products,products,identifier_generated,boolean,"null: false, default: false",
+Catalog and Products,products,identifier_validation_status,string,"null: false, default: valid","valid, warning, unknown, not_applicable."
+Catalog and Products,products,identifier_warning,text,,
+Catalog and Products,products,name,string,null: false,Universal product name; UI may label this Title for books.
+Catalog and Products,products,subtitle,string,,
+Catalog and Products,products,description,text,,
+Catalog and Products,products,features,text,,
+Catalog and Products,products,internal_notes,text,,
+Catalog and Products,products,product_type,string,null: false,"book, recorded_music, video, periodical, game, stationery, gift, cafe, service, other."
+Catalog and Products,products,product_format_id,bigint,"FK: product_formats, null: false",
+Catalog and Products,products,default_department_id,bigint,FK: departments,
+Catalog and Products,products,default_tax_category_id,bigint,FK: tax_categories,
+Catalog and Products,products,merchandise_class_id,bigint,FK: merchandise_classes,"Primary merchandising assignment; required before sale eligibility for ordinary merchandise, nullable for incomplete or non-merchandise records."
+Catalog and Products,products,variant_structure,string,"null: false, default: single","single, options, matrix."
+Catalog and Products,products,list_price_cents,integer,,External list price or MSRP; null where not applicable or unknown.
+Catalog and Products,products,publisher_or_manufacturer_name,string,,String retained until publisher/manufacturer party model is designed.
+Catalog and Products,products,imprint_or_brand_name,string,,
+Catalog and Products,products,publication_or_release_date,date,,
+Catalog and Products,products,publication_status,string,,"active, not_yet_published, out_of_print, out_of_stock_indefinitely, cancelled, postponed."
+Catalog and Products,products,edition_type,string,,"Examples: illustrated, large_print, revised, signed_edition."
+Catalog and Products,products,edition_description,string,,
+Catalog and Products,products,series_name,string,,
+Catalog and Products,products,series_number,string,,Supports values such as 1.5 or Volume II.
+Catalog and Products,products,audience_range_type,string,,"age, grade."
+Catalog and Products,products,audience_range_from,smallint,,
+Catalog and Products,products,audience_range_to,smallint,,
+Catalog and Products,products,page_count,integer,,
+Catalog and Products,products,language_code,string,,Prefer ISO language code.
+Catalog and Products,products,previous_edition_product_id,bigint,FK: products,
+Catalog and Products,products,next_edition_product_id,bigint,FK: products,
+Catalog and Products,products,height_inches,"decimal(8,3)",,
+Catalog and Products,products,width_inches,"decimal(8,3)",,
+Catalog and Products,products,depth_inches,"decimal(8,3)",,
+Catalog and Products,products,weight_pounds,"decimal(8,3)",,
+Catalog and Products,products,discountability_setting,string,"null: false, default: inherit","inherit, allowed, not_allowed, approval_required."
+Catalog and Products,products,returnability_setting,string,"null: false, default: inherit","inherit, allowed, not_allowed, approval_required."
+Catalog and Products,products,status,string,"null: false, default: active","active, inactive, discontinued."
+Catalog and Products,products,sellable,boolean,"null: false, default: true",
+Catalog and Products,products,available_from,date,,
+Catalog and Products,products,available_until,date,,
+Catalog and Products,products,created_at,datetime,null: false,Rails timestamp.
+Catalog and Products,products,updated_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_variants,id,bigint,"primary key, auto-increment",
+Catalog and Products,product_variants,product_id,bigint,"FK: products, null: false",
+Catalog and Products,product_variants,sku,string,"null: false, unique",ShelfStack-generated 28-prefix EAN-13 SKU.
+Catalog and Products,product_variants,name,string,null: false,Use Standard where the product has one implicit variant.
+Catalog and Products,product_variants,description,text,,
+Catalog and Products,product_variants,inventory_tracking_mode,string,"null: false, default: quantity","quantity, individual, none."
+Catalog and Products,product_variants,default_product_condition_id,bigint,FK: product_conditions,Default for quantity stock and newly created inventory units.
+Catalog and Products,product_variants,regular_price_cents,integer,,Current normal selling price; null blocks ordinary sale.
+Catalog and Products,product_variants,department_id,bigint,FK: departments,Optional override of product default.
+Catalog and Products,product_variants,tax_category_id,bigint,FK: tax_categories,Optional override of product default.
+Catalog and Products,product_variants,merchandise_class_id,bigint,FK: merchandise_classes,Optional override of the Product's primary Merchandise Class.
+Catalog and Products,product_variants,discountability_setting,string,"null: false, default: inherit","inherit, allowed, not_allowed, approval_required."
+Catalog and Products,product_variants,returnability_setting,string,"null: false, default: inherit","inherit, allowed, not_allowed, approval_required."
+Catalog and Products,product_variants,return_policy_id,bigint,FK: return_policies,
+Catalog and Products,product_variants,status,string,"null: false, default: active","active, inactive, discontinued."
+Catalog and Products,product_variants,sellable,boolean,"null: false, default: true",
+Catalog and Products,product_variants,purchasable,boolean,"null: false, default: true",
+Catalog and Products,product_variants,available_from,date,,
+Catalog and Products,product_variants,available_until,date,,
+Catalog and Products,product_variants,created_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_variants,updated_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_options,id,bigint,"primary key, auto-increment",
+Catalog and Products,product_options,product_id,bigint,"FK: products, null: false; unique with name",
+Catalog and Products,product_options,name,string,null: false,"Examples: Size, Color, Binding."
+Catalog and Products,product_options,position,smallint,"null: false, default: 0",
+Catalog and Products,product_options,created_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_options,updated_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_option_values,id,bigint,"primary key, auto-increment",
+Catalog and Products,product_option_values,product_option_id,bigint,"FK: product_options, null: false; unique with value",
+Catalog and Products,product_option_values,value,string,null: false,"Examples: Large, Blue, Hardcover."
+Catalog and Products,product_option_values,position,smallint,"null: false, default: 0",
+Catalog and Products,product_option_values,created_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_option_values,updated_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_variant_option_values,id,bigint,"primary key, auto-increment",
+Catalog and Products,product_variant_option_values,product_variant_id,bigint,"FK: product_variants, null: false; unique with product_option_value_id",
+Catalog and Products,product_variant_option_values,product_option_value_id,bigint,"FK: product_option_values, null: false; unique with product_variant_id",
+Catalog and Products,product_variant_option_values,created_at,datetime,null: false,Rails timestamp.
+Catalog and Products,product_variant_option_values,updated_at,datetime,null: false,Rails timestamp.
+Product Requests,product_requests,id,bigint,"primary key, auto-increment",
+Product Requests,product_requests,store_id,bigint,"FK: stores, null: false",Store scope; Organization is implied by Store.
+Product Requests,product_requests,request_type,string,null: false,"customer_request, staff_suggestion."
+Product Requests,product_requests,status,string,"null: false, default: open","open, fulfilled, declined, cancelled, closed."
+Product Requests,product_requests,product_id,bigint,FK: products,Nullable until the requested Product is resolved.
+Product Requests,product_requests,product_variant_id,bigint,FK: product_variants,Nullable until an exact Variant is required or resolved.
+Product Requests,product_requests,requested_description,string,,Required when product_id is null; preserves the staff/customer wording used to begin the request.
+Product Requests,product_requests,requested_quantity,integer,null: false,Must be greater than zero. Active Reservation plus Allocation coverage must not exceed this value without an explicit quantity change.
+Product Requests,product_requests,priority,string,"null: false, default: normal","normal, high, urgent."
+Product Requests,product_requests,needed_by_on,date,,
+Product Requests,product_requests,customer_reference,string,,Nullable opaque v1 customer reference; no customers table is implemented in this phase.
+Product Requests,product_requests,requested_by_user_id,bigint,"FK: users, null: false",
+Product Requests,product_requests,assigned_buyer_user_id,bigint,FK: users,
+Product Requests,product_requests,notes,text,,
+Product Requests,product_requests,created_at,datetime,null: false,Rails timestamp.
+Product Requests,product_requests,updated_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,vendors,id,bigint,"primary key, auto-increment",
+Vendors and Purchasing,vendors,organization_id,bigint,"FK: organizations, null: false",
+Vendors and Purchasing,vendors,code,string,null: false; unique with organization_id,
+Vendors and Purchasing,vendors,name,string,null: false,
+Vendors and Purchasing,vendors,legal_name,string,,
+Vendors and Purchasing,vendors,active,boolean,"null: false, default: true",
+Vendors and Purchasing,vendors,ordering_contact,string,,
+Vendors and Purchasing,vendors,ordering_email,string,,
+Vendors and Purchasing,vendors,phone,string,,
+Vendors and Purchasing,vendors,account_reference,string,,
+Vendors and Purchasing,vendors,default_supplier_discount_bps,integer,,Default vendor discount from list cost.
+Vendors and Purchasing,vendors,notes,text,,
+Vendors and Purchasing,vendors,created_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,vendors,updated_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,product_variant_vendors,id,bigint,"primary key, auto-increment",
+Vendors and Purchasing,product_variant_vendors,product_variant_id,bigint,"FK: product_variants, null: false; unique with vendor_id",
+Vendors and Purchasing,product_variant_vendors,vendor_id,bigint,"FK: vendors, null: false; unique with product_variant_id",
+Vendors and Purchasing,product_variant_vendors,vendor_item_code,string,,
+Vendors and Purchasing,product_variant_vendors,vendor_identifier,string,,
+Vendors and Purchasing,product_variant_vendors,list_cost_cents,integer,,
+Vendors and Purchasing,product_variant_vendors,discount_bps,integer,,
+Vendors and Purchasing,product_variant_vendors,expected_unit_cost_cents,integer,,
+Vendors and Purchasing,product_variant_vendors,minimum_order_quantity,integer,,
+Vendors and Purchasing,product_variant_vendors,order_multiple,integer,,
+Vendors and Purchasing,product_variant_vendors,returnable,boolean,,
+Vendors and Purchasing,product_variant_vendors,preferred,boolean,"null: false, default: false",
+Vendors and Purchasing,product_variant_vendors,active,boolean,"null: false, default: true",
+Vendors and Purchasing,product_variant_vendors,last_ordered_at,datetime,,
+Vendors and Purchasing,product_variant_vendors,last_received_at,datetime,,
+Vendors and Purchasing,product_variant_vendors,notes,text,,
+Vendors and Purchasing,product_variant_vendors,created_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,product_variant_vendors,updated_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_orders,id,bigint,"primary key, auto-increment",
+Vendors and Purchasing,purchase_orders,store_id,bigint,"FK: stores, null: false",
+Vendors and Purchasing,purchase_orders,vendor_id,bigint,"FK: vendors, null: false",
+Vendors and Purchasing,purchase_orders,purchase_order_number,string,null: false; unique with store_id,
+Vendors and Purchasing,purchase_orders,status,string,"null: false, default: draft","Proposed only: draft, submitted, ordered, received, closed, cancelled. Final PO status model remains Open; do not scaffold as settled."
+Vendors and Purchasing,purchase_orders,ordered_on,date,,
+Vendors and Purchasing,purchase_orders,expected_on,date,,
+Vendors and Purchasing,purchase_orders,submitted_at,datetime,,
+Vendors and Purchasing,purchase_orders,submitted_by_user_id,bigint,FK: users,
+Vendors and Purchasing,purchase_orders,ordered_at,datetime,,
+Vendors and Purchasing,purchase_orders,ordered_by_user_id,bigint,FK: users,
+Vendors and Purchasing,purchase_orders,buyer_user_id,bigint,FK: users,
+Vendors and Purchasing,purchase_orders,vendor_reference,string,,
+Vendors and Purchasing,purchase_orders,notes,text,,
+Vendors and Purchasing,purchase_orders,created_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_orders,updated_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_order_lines,id,bigint,"primary key, auto-increment",
+Vendors and Purchasing,purchase_order_lines,purchase_order_id,bigint,"FK: purchase_orders, null: false",
+Vendors and Purchasing,purchase_order_lines,position,smallint,"null: false, default: 0",
+Vendors and Purchasing,purchase_order_lines,product_variant_id,bigint,"FK: product_variants, null: false",
+Vendors and Purchasing,purchase_order_lines,product_variant_vendor_id,bigint,FK: product_variant_vendors,
+Vendors and Purchasing,purchase_order_lines,description_snapshot,string,null: false,
+Vendors and Purchasing,purchase_order_lines,sku_snapshot,string,null: false,
+Vendors and Purchasing,purchase_order_lines,vendor_item_code_snapshot,string,,
+Vendors and Purchasing,purchase_order_lines,ordered_quantity,integer,null: false,
+Vendors and Purchasing,purchase_order_lines,cancelled_quantity,integer,"null: false, default: 0",
+Vendors and Purchasing,purchase_order_lines,received_quantity,integer,"null: false, default: 0",Derived from posted accepted receipt lines where feasible.
+Vendors and Purchasing,purchase_order_lines,list_cost_cents,integer,,
+Vendors and Purchasing,purchase_order_lines,discount_bps,integer,,
+Vendors and Purchasing,purchase_order_lines,expected_unit_cost_cents,integer,,
+Vendors and Purchasing,purchase_order_lines,returnable_snapshot,boolean,,
+Vendors and Purchasing,purchase_order_lines,notes,text,,
+Vendors and Purchasing,purchase_order_lines,created_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_order_lines,updated_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_order_allocations,id,bigint,"primary key, auto-increment",
+Vendors and Purchasing,purchase_order_allocations,purchase_order_line_id,bigint,"FK: purchase_order_lines, null: false; unique with product_request_id",
+Vendors and Purchasing,purchase_order_allocations,product_request_id,bigint,"FK: product_requests, null: false; unique with purchase_order_line_id",
+Vendors and Purchasing,purchase_order_allocations,quantity,integer,null: false,Must be greater than zero. Sum of active allocations must not exceed PO-Line open quantity or Product-Request remaining quantity.
+Vendors and Purchasing,purchase_order_allocations,status,string,"null: false, default: active","Phase 3: active, cancelled. received and fulfilled are deferred until Phase 4 posting rules exist."
+Vendors and Purchasing,purchase_order_allocations,created_by_user_id,bigint,"FK: users, null: false",
+Vendors and Purchasing,purchase_order_allocations,cancelled_at,datetime,,
+Vendors and Purchasing,purchase_order_allocations,cancelled_by_user_id,bigint,FK: users,
+Vendors and Purchasing,purchase_order_allocations,cancellation_reason,text,,Required when status is cancelled.
+Vendors and Purchasing,purchase_order_allocations,created_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_order_allocations,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,receipts,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,receipts,store_id,bigint,"FK: stores, null: false",
+Receiving and Inventory,receipts,vendor_id,bigint,FK: vendors,
+Receiving and Inventory,receipts,receipt_number,string,null: false; unique with store_id,
+Receiving and Inventory,receipts,vendor_document_number,string,,Packing slip or vendor invoice reference.
+Receiving and Inventory,receipts,status,string,"null: false, default: draft","Proposed only: draft, posted, corrected, cancelled. Posted-receipt correction workflow remains Open."
+Receiving and Inventory,receipts,received_at,datetime,null: false,
+Receiving and Inventory,receipts,received_by_user_id,bigint,"FK: users, null: false",
+Receiving and Inventory,receipts,posted_at,datetime,,
+Receiving and Inventory,receipts,posted_by_user_id,bigint,FK: users,
+Receiving and Inventory,receipts,correction_of_receipt_id,bigint,FK: receipts,
+Receiving and Inventory,receipts,notes,text,,
+Receiving and Inventory,receipts,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,receipts,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,receipt_lines,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,receipt_lines,receipt_id,bigint,"FK: receipts, null: false",
+Receiving and Inventory,receipt_lines,purchase_order_line_id,bigint,FK: purchase_order_lines,
+Receiving and Inventory,receipt_lines,product_variant_id,bigint,"FK: product_variants, null: false",
+Receiving and Inventory,receipt_lines,description_snapshot,string,null: false,
+Receiving and Inventory,receipt_lines,sku_snapshot,string,null: false,
+Receiving and Inventory,receipt_lines,delivered_quantity,integer,"null: false, default: 0",
+Receiving and Inventory,receipt_lines,accepted_quantity,integer,"null: false, default: 0",Only accepted quantity enters on-hand inventory.
+Receiving and Inventory,receipt_lines,rejected_quantity,integer,"null: false, default: 0",
+Receiving and Inventory,receipt_lines,damaged_quantity,integer,"null: false, default: 0",Accepted into unavailable damaged status.
+Receiving and Inventory,receipt_lines,inspection_quantity,integer,"null: false, default: 0",Accepted into unavailable inspection status.
+Receiving and Inventory,receipt_lines,list_cost_cents,integer,,
+Receiving and Inventory,receipt_lines,discount_bps,integer,,
+Receiving and Inventory,receipt_lines,unit_cost_cents,integer,,Actual acquisition cost used for inventory.
+Receiving and Inventory,receipt_lines,discrepancy_reason,string,,"Shortage, overage, damage, substitution, cost variance, other."
+Receiving and Inventory,receipt_lines,notes,text,,
+Receiving and Inventory,receipt_lines,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,receipt_lines,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,stock_balances,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,stock_balances,store_id,bigint,"FK: stores, null: false; unique with product_variant_id",
+Receiving and Inventory,stock_balances,product_variant_id,bigint,"FK: product_variants, null: false; unique with store_id",
+Receiving and Inventory,stock_balances,on_hand,integer,"null: false, default: 0",
+Receiving and Inventory,stock_balances,reserved,integer,"null: false, default: 0",
+Receiving and Inventory,stock_balances,unavailable,integer,"null: false, default: 0",
+Receiving and Inventory,stock_balances,on_order,integer,"null: false, default: 0",Cached expected-supply quantity maintained only by Purchasing/Receiving posting services; never changed by POS.
+Receiving and Inventory,stock_balances,moving_average_cost_cents,integer,,
+Receiving and Inventory,stock_balances,last_received_at,datetime,,
+Receiving and Inventory,stock_balances,lock_version,integer,"null: false, default: 0",Optimistic locking for concurrent inventory updates.
+Receiving and Inventory,stock_balances,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,stock_balances,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_units,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,inventory_units,product_variant_id,bigint,"FK: product_variants, null: false",Parent variant must use individual tracking.
+Receiving and Inventory,inventory_units,store_id,bigint,"FK: stores, null: false",
+Receiving and Inventory,inventory_units,unit_identifier,string,"null: false, unique",ShelfStack-generated 27-prefix EAN-13 identifier.
+Receiving and Inventory,inventory_units,condition_id,bigint,"FK: product_conditions, null: false",
+Receiving and Inventory,inventory_units,acquisition_cost_cents,integer,,
+Receiving and Inventory,inventory_units,price_cents,integer,,Optional unit-specific selling price.
+Receiving and Inventory,inventory_units,description,string,,Copy-specific public description.
+Receiving and Inventory,inventory_units,internal_notes,text,,
+Receiving and Inventory,inventory_units,status,string,"null: false, default: available","Phase 4 baseline: available, reserved, sold, inspection, damaged, discarded. Deferred-capable: rtv, in_transfer; those workflows are not yet implemented."
+Receiving and Inventory,inventory_units,acquisition_source_type,string,,"receipt_line, return_line, buyback, adjustment, other."
+Receiving and Inventory,inventory_units,acquisition_source_id,bigint,,Polymorphic source identifier.
+Receiving and Inventory,inventory_units,acquired_at,datetime,,
+Receiving and Inventory,inventory_units,sold_pos_line_item_id,bigint,FK: pos_line_items,
+Receiving and Inventory,inventory_units,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_units,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_ledger_entries,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,inventory_ledger_entries,store_id,bigint,"FK: stores, null: false",
+Receiving and Inventory,inventory_ledger_entries,product_variant_id,bigint,"FK: product_variants, null: false",
+Receiving and Inventory,inventory_ledger_entries,inventory_unit_id,bigint,FK: inventory_units,
+Receiving and Inventory,inventory_ledger_entries,movement_type,string,null: false,"receipt, sale, customer_return, adjustment_increase, adjustment_decrease, transfer_out, transfer_in, rtv_shipment, discard, post_void, correction."
+Receiving and Inventory,inventory_ledger_entries,quantity_delta,integer,null: false,Signed on-hand quantity effect; zero is permitted for status-only movement.
+Receiving and Inventory,inventory_ledger_entries,from_status,string,,
+Receiving and Inventory,inventory_ledger_entries,to_status,string,,
+Receiving and Inventory,inventory_ledger_entries,unit_cost_cents,integer,,
+Receiving and Inventory,inventory_ledger_entries,extended_cost_cents,integer,,
+Receiving and Inventory,inventory_ledger_entries,source_type,string,null: false,"receipt_line, pos_line_item, inventory_adjustment_line, other."
+Receiving and Inventory,inventory_ledger_entries,source_id,bigint,null: false,Polymorphic source identifier.
+Receiving and Inventory,inventory_ledger_entries,reverses_entry_id,bigint,FK: inventory_ledger_entries,
+Receiving and Inventory,inventory_ledger_entries,posted_at,datetime,null: false,
+Receiving and Inventory,inventory_ledger_entries,posted_by_user_id,bigint,FK: users,
+Receiving and Inventory,inventory_ledger_entries,reason,text,,
+Receiving and Inventory,inventory_ledger_entries,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_reservations,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,inventory_reservations,store_id,bigint,"FK: stores, null: false",
+Receiving and Inventory,inventory_reservations,product_variant_id,bigint,"FK: product_variants, null: false",
+Receiving and Inventory,inventory_reservations,inventory_unit_id,bigint,FK: inventory_units,Required for individually tracked merchandise.
+Receiving and Inventory,inventory_reservations,source_type,string,null: false,"Initial values: pos_line_item, product_request. Additional source types require an explicit owning workflow."
+Receiving and Inventory,inventory_reservations,source_id,bigint,null: false,Polymorphic source identifier; may reference pos_line_items.id or product_requests.id according to source_type.
+Receiving and Inventory,inventory_reservations,pos_transaction_id,bigint,FK: pos_transactions,
+Receiving and Inventory,inventory_reservations,pos_line_item_id,bigint,FK: pos_line_items,
+Receiving and Inventory,inventory_reservations,quantity,integer,"null: false, default: 1",
+Receiving and Inventory,inventory_reservations,status,string,"null: false, default: active","active, released, converted."
+Receiving and Inventory,inventory_reservations,reserved_at,datetime,null: false,
+Receiving and Inventory,inventory_reservations,released_at,datetime,,
+Receiving and Inventory,inventory_reservations,converted_at,datetime,,
+Receiving and Inventory,inventory_reservations,released_by_user_id,bigint,FK: users,
+Receiving and Inventory,inventory_reservations,release_reason,text,,
+Receiving and Inventory,inventory_reservations,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_reservations,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_adjustments,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,inventory_adjustments,store_id,bigint,"FK: stores, null: false",
+Receiving and Inventory,inventory_adjustments,adjustment_number,string,null: false; unique with store_id,
+Receiving and Inventory,inventory_adjustments,status,string,"null: false, default: draft","draft, submitted, posted, cancelled."
+Receiving and Inventory,inventory_adjustments,reason,text,null: false,
+Receiving and Inventory,inventory_adjustments,created_by_user_id,bigint,"FK: users, null: false",
+Receiving and Inventory,inventory_adjustments,posted_by_user_id,bigint,FK: users,
+Receiving and Inventory,inventory_adjustments,posted_at,datetime,,
+Receiving and Inventory,inventory_adjustments,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_adjustments,updated_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_adjustment_lines,id,bigint,"primary key, auto-increment",
+Receiving and Inventory,inventory_adjustment_lines,inventory_adjustment_id,bigint,"FK: inventory_adjustments, null: false",
+Receiving and Inventory,inventory_adjustment_lines,product_variant_id,bigint,"FK: product_variants, null: false",
+Receiving and Inventory,inventory_adjustment_lines,inventory_unit_id,bigint,FK: inventory_units,
+Receiving and Inventory,inventory_adjustment_lines,quantity_delta,integer,"null: false, default: 0",
+Receiving and Inventory,inventory_adjustment_lines,from_status,string,,
+Receiving and Inventory,inventory_adjustment_lines,to_status,string,,
+Receiving and Inventory,inventory_adjustment_lines,unit_cost_cents,integer,,
+Receiving and Inventory,inventory_adjustment_lines,reason,text,,
+Receiving and Inventory,inventory_adjustment_lines,created_at,datetime,null: false,Rails timestamp.
+Receiving and Inventory,inventory_adjustment_lines,updated_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_transactions,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_transactions,public_id,string,"null: false, unique",Non-sequential identifier assigned when opened.
+Point of Sale,pos_transactions,store_id,bigint,"FK: stores, null: false",
+Point of Sale,pos_transactions,status,string,"null: false, default: open","open, suspended, completed, cancelled."
+Point of Sale,pos_transactions,origin_pos_session_id,bigint,"FK: pos_sessions, null: false",
+Point of Sale,pos_transactions,active_pos_session_id,bigint,FK: pos_sessions,Session currently editing the transaction.
+Point of Sale,pos_transactions,completed_pos_session_id,bigint,FK: pos_sessions,Completion and financial reporting session.
+Point of Sale,pos_transactions,customer_reference,string,,Nullable opaque v1 customer reference; no customers table is implemented in this phase.
+Point of Sale,pos_transactions,opened_by_user_id,bigint,"FK: users, null: false",
+Point of Sale,pos_transactions,cashier_user_id,bigint,FK: users,Actual completing cashier.
+Point of Sale,pos_transactions,salesperson_user_id,bigint,FK: users,
+Point of Sale,pos_transactions,receipt_sequence,bigint,,Assigned atomically only on successful completion.
+Point of Sale,pos_transactions,receipt_number,string,unique with store_id,Nullable until completion.
+Point of Sale,pos_transactions,opened_at,datetime,null: false,
+Point of Sale,pos_transactions,suspended_at,datetime,,
+Point of Sale,pos_transactions,completed_at,datetime,,
+Point of Sale,pos_transactions,cancelled_at,datetime,,
+Point of Sale,pos_transactions,cancelled_by_user_id,bigint,FK: users,
+Point of Sale,pos_transactions,cancellation_reason,text,,
+Point of Sale,pos_transactions,reverses_pos_transaction_id,bigint,FK: pos_transactions,Original completed transaction for a full post-void.
+Point of Sale,pos_transactions,post_void_reason,text,,
+Point of Sale,pos_transactions,post_void_authorized_by_user_id,bigint,FK: users,
+Point of Sale,pos_transactions,sale_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,return_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,discount_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,tax_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,net_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,tender_received_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,tender_refunded_total_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,balance_due_cents,integer,"null: false, default: 0",
+Point of Sale,pos_transactions,completion_idempotency_key,string,unique,
+Point of Sale,pos_transactions,created_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_transactions,updated_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_line_items,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_line_items,pos_transaction_id,bigint,"FK: pos_transactions, null: false",
+Point of Sale,pos_line_items,status,string,"null: false, default: pending","pending, completed, removed."
+Point of Sale,pos_line_items,direction,string,null: false,"sale, return."
+Point of Sale,pos_line_items,line_kind,string,null: false,"product, open_ring, stored_value."
+Point of Sale,pos_line_items,position,smallint,"null: false, default: 0",
+Point of Sale,pos_line_items,product_id,bigint,FK: products,Snapshot reference for product lines.
+Point of Sale,pos_line_items,product_variant_id,bigint,FK: product_variants,
+Point of Sale,pos_line_items,inventory_unit_id,bigint,FK: inventory_units,Required for individually tracked product sales.
+Point of Sale,pos_line_items,stored_value_account_id,bigint,FK: stored_value_accounts,Used for stored-value issuance or reload lines.
+Point of Sale,pos_line_items,department_id,bigint,FK: departments,Historical posting snapshot.
+Point of Sale,pos_line_items,merchandise_class_id,bigint,FK: merchandise_classes,Historical merchandising-classification snapshot; required for completed product lines where resolved.
+Point of Sale,pos_line_items,tax_category_id,bigint,FK: tax_categories,Historical tax classification snapshot.
+Point of Sale,pos_line_items,return_policy_id,bigint,FK: return_policies,Historical return-policy snapshot.
+Point of Sale,pos_line_items,description_snapshot,string,null: false,
+Point of Sale,pos_line_items,sku_snapshot,string,,
+Point of Sale,pos_line_items,identifier_snapshot,string,,
+Point of Sale,pos_line_items,condition_snapshot,string,,
+Point of Sale,pos_line_items,format_snapshot,string,,
+Point of Sale,pos_line_items,inventory_tracking_mode_snapshot,string,,"quantity, individual, none."
+Point of Sale,pos_line_items,quantity,integer,"null: false, default: 1",Weighted merchandise is deferred; use integer quantity for the initial release.
+Point of Sale,pos_line_items,unit_regular_price_cents,integer,,
+Point of Sale,pos_line_items,unit_selling_price_cents,integer,,Price after approved price override and before discounts.
+Point of Sale,pos_line_items,gross_amount_cents,integer,,
+Point of Sale,pos_line_items,discount_amount_cents,integer,"null: false, default: 0",Cached sum of discount allocations.
+Point of Sale,pos_line_items,net_amount_cents,integer,,
+Point of Sale,pos_line_items,tax_amount_cents,integer,"null: false, default: 0",Cached sum of line tax components.
+Point of Sale,pos_line_items,total_amount_cents,integer,,
+Point of Sale,pos_line_items,unit_cost_cents,integer,,Historical moving-average or exact-unit cost.
+Point of Sale,pos_line_items,extended_cost_cents,integer,,
+Point of Sale,pos_line_items,price_source,string,,"variant, inventory_unit, future price book, override."
+Point of Sale,pos_line_items,cost_source,string,,"moving_average, inventory_unit, manual, unavailable."
+Point of Sale,pos_line_items,price_override_reason,text,,
+Point of Sale,pos_line_items,price_override_by_user_id,bigint,FK: users,
+Point of Sale,pos_line_items,original_pos_line_item_id,bigint,FK: pos_line_items,Original completed sale line for a linked return.
+Point of Sale,pos_line_items,return_source,string,,"linked_sale, external_receipt, gift_receipt, no_receipt."
+Point of Sale,pos_line_items,refund_basis,string,,"original_sale, verified_receipt, current_price, lowest_recent_price, manual."
+Point of Sale,pos_line_items,return_reason_id,bigint,FK: return_reasons,
+Point of Sale,pos_line_items,return_disposition,string,,"return_to_stock, inspection_required, damaged, return_to_vendor, discard, non_inventory."
+Point of Sale,pos_line_items,reverses_pos_line_item_id,bigint,FK: pos_line_items,Exact line reversed by a post-void.
+Point of Sale,pos_line_items,removed_at,datetime,,
+Point of Sale,pos_line_items,removed_by_user_id,bigint,FK: users,
+Point of Sale,pos_line_items,removal_reason,text,,
+Point of Sale,pos_line_items,created_at,datetime,null: false,
+Point of Sale,pos_line_items,created_by_user_id,bigint,FK: users,
+Point of Sale,pos_line_items,completed_at,datetime,,
+Point of Sale,pos_line_items,completed_by_user_id,bigint,FK: users,
+Point of Sale,pos_line_items,updated_at,datetime,null: false,Rails timestamp.
+Point of Sale,pos_discounts,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_discounts,pos_transaction_id,bigint,"FK: pos_transactions, null: false",
+Point of Sale,pos_discounts,target_pos_line_item_id,bigint,FK: pos_line_items,Populated for a discount specifically targeted at one line.
+Point of Sale,pos_discounts,scope,string,null: false,"line, transaction."
+Point of Sale,pos_discounts,method,string,null: false,"percentage, fixed_amount, fixed_price."
+Point of Sale,pos_discounts,position,smallint,"null: false, default: 0",
+Point of Sale,pos_discounts,base_amount_cents,integer,,
+Point of Sale,pos_discounts,rate_bps,integer,,
+Point of Sale,pos_discounts,requested_amount_cents,integer,,
+Point of Sale,pos_discounts,applied_amount_cents,integer,null: false,
+Point of Sale,pos_discounts,discount_reason_id,bigint,FK: discount_reasons,
+Point of Sale,pos_discounts,promotion_id,bigint,FK: promotions,Nullable future reference; Promotion definitions and application rules are deferred.
+Point of Sale,pos_discounts,coupon_code,string,,
+Point of Sale,pos_discounts,reference,string,,
+Point of Sale,pos_discounts,created_by_user_id,bigint,FK: users,
+Point of Sale,pos_discounts,created_at,datetime,null: false,
+Point of Sale,pos_discount_allocations,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_discount_allocations,pos_discount_id,bigint,"FK: pos_discounts, null: false",
+Point of Sale,pos_discount_allocations,pos_line_item_id,bigint,"FK: pos_line_items, null: false",
+Point of Sale,pos_discount_allocations,eligible_amount_cents,integer,,
+Point of Sale,pos_discount_allocations,allocated_amount_cents,integer,null: false,
+Point of Sale,pos_discount_allocations,created_at,datetime,null: false,
+Point of Sale,pos_line_item_taxes,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_line_item_taxes,pos_line_item_id,bigint,"FK: pos_line_items, null: false",
+Point of Sale,pos_line_item_taxes,tax_category_id,bigint,FK: tax_categories,
+Point of Sale,pos_line_item_taxes,store_tax_rate_id,bigint,FK: store_tax_rates,
+Point of Sale,pos_line_item_taxes,position,smallint,"null: false, default: 0",
+Point of Sale,pos_line_item_taxes,taxable_amount_cents,integer,,
+Point of Sale,pos_line_item_taxes,rate,"decimal(10,8)",,Historical rate snapshot.
+Point of Sale,pos_line_item_taxes,amount_cents,integer,null: false,
+Point of Sale,pos_line_item_taxes,created_at,datetime,null: false,
+Point of Sale,pos_tax_exemptions,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_tax_exemptions,pos_transaction_id,bigint,"FK: pos_transactions, null: false",
+Point of Sale,pos_tax_exemptions,exemption_type,string,null: false,
+Point of Sale,pos_tax_exemptions,certificate_number,string,,
+Point of Sale,pos_tax_exemptions,jurisdiction,string,,
+Point of Sale,pos_tax_exemptions,holder_name,string,,
+Point of Sale,pos_tax_exemptions,effective_on,date,,
+Point of Sale,pos_tax_exemptions,expires_on,date,,
+Point of Sale,pos_tax_exemptions,notes,text,,
+Point of Sale,pos_tax_exemptions,verified_by_user_id,bigint,FK: users,
+Point of Sale,pos_tax_exemptions,verified_at,datetime,,
+Point of Sale,pos_tax_exemptions,pos_approval_id,bigint,FK: pos_approvals,"Approval used for missing, expired, or incomplete evidence."
+Point of Sale,pos_tax_exemptions,created_at,datetime,null: false,
+Point of Sale,pos_tax_exemptions,updated_at,datetime,null: false,
+Point of Sale,pos_tenders,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_tenders,pos_transaction_id,bigint,"FK: pos_transactions, null: false",
+Point of Sale,pos_tenders,tender_type_id,bigint,"FK: tender_types, null: false",
+Point of Sale,pos_tenders,tender_category_snapshot,string,null: false,"cash, card, check, stored_value, other."
+Point of Sale,pos_tenders,direction,string,null: false,"received, refunded."
+Point of Sale,pos_tenders,status,string,"null: false, default: pending","pending, authorized, completed, declined, voided, refunded, failed, removed."
+Point of Sale,pos_tenders,applied_amount_cents,integer,null: false,
+Point of Sale,pos_tenders,amount_presented_cents,integer,,Cash only.
+Point of Sale,pos_tenders,change_given_cents,integer,,Cash only; part of the received tender.
+Point of Sale,pos_tenders,stored_value_account_id,bigint,FK: stored_value_accounts,
+Point of Sale,pos_tenders,original_pos_tender_id,bigint,FK: pos_tenders,Original tender for a linked refund.
+Point of Sale,pos_tenders,reverses_pos_tender_id,bigint,FK: pos_tenders,
+Point of Sale,pos_tenders,reference_1,string,,Label and requirement supplied by tender type.
+Point of Sale,pos_tenders,reference_2,string,,
+Point of Sale,pos_tenders,card_brand_snapshot,string,,
+Point of Sale,pos_tenders,masked_last_four,string,limit: 4,
+Point of Sale,pos_tenders,authorization_code,string,,
+Point of Sale,pos_tenders,terminal_reference,string,,Standalone terminal reference.
+Point of Sale,pos_tenders,external_reference,string,,
+Point of Sale,pos_tenders,processed_at,datetime,,
+Point of Sale,pos_tenders,created_by_user_id,bigint,FK: users,
+Point of Sale,pos_tenders,created_at,datetime,null: false,
+Point of Sale,pos_cash_movements,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_cash_movements,pos_session_id,bigint,FK: pos_sessions,
+Point of Sale,pos_cash_movements,business_day_id,bigint,"FK: business_days, null: false",
+Point of Sale,pos_cash_movements,cash_drawer_id,bigint,FK: cash_drawers,
+Point of Sale,pos_cash_movements,cash_movement_type_id,bigint,"FK: cash_movement_types, null: false",
+Point of Sale,pos_cash_movements,amount_cents,integer,null: false,Direction is supplied by cash_movement_type.
+Point of Sale,pos_cash_movements,status,string,"null: false, default: pending","pending, completed, reconciled."
+Point of Sale,pos_cash_movements,reference,string,,
+Point of Sale,pos_cash_movements,created_by_user_id,bigint,FK: users,
+Point of Sale,pos_cash_movements,completed_at,datetime,,
+Point of Sale,pos_cash_movements,reconciled_at,datetime,,
+Point of Sale,pos_cash_movements,reconciled_by_user_id,bigint,FK: users,
+Point of Sale,pos_cash_movements,created_at,datetime,null: false,
+Point of Sale,pos_approvals,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_approvals,store_id,bigint,"FK: stores, null: false",
+Point of Sale,pos_approvals,pos_session_id,bigint,FK: pos_sessions,
+Point of Sale,pos_approvals,pos_transaction_id,bigint,FK: pos_transactions,
+Point of Sale,pos_approvals,pos_line_item_id,bigint,FK: pos_line_items,
+Point of Sale,pos_approvals,pos_cash_movement_id,bigint,FK: pos_cash_movements,
+Point of Sale,pos_approvals,pos_line_item_tax_id,bigint,FK: pos_line_item_taxes,
+Point of Sale,pos_approvals,pos_tender_id,bigint,FK: pos_tenders,
+Point of Sale,pos_approvals,action_type,string,null: false,"Stable code: discount_override, price_override, no_receipt_return, post_void, paid_out, etc."
+Point of Sale,pos_approvals,requested_by_user_id,bigint,"FK: users, null: false",
+Point of Sale,pos_approvals,approved_by_user_id,bigint,"FK: users, null: false",
+Point of Sale,pos_approvals,reason,text,null: false,
+Point of Sale,pos_approvals,requested_value,"decimal(18,8)",,"Monetary, percentage, or quantity value where applicable."
+Point of Sale,pos_approvals,approved_value,"decimal(18,8)",,
+Point of Sale,pos_approvals,authorization_limit_snapshot,"decimal(18,8)",,
+Point of Sale,pos_approvals,approved_at,datetime,null: false,
+Point of Sale,pos_approvals,created_at,datetime,null: false,
+Point of Sale,pos_receipt_print_events,id,bigint,"primary key, auto-increment",
+Point of Sale,pos_receipt_print_events,pos_transaction_id,bigint,"FK: pos_transactions, null: false",
+Point of Sale,pos_receipt_print_events,print_type,string,null: false,"original, reprint, gift_receipt, return_receipt, post_void."
+Point of Sale,pos_receipt_print_events,printed_by_user_id,bigint,"FK: users, null: false",
+Point of Sale,pos_receipt_print_events,printed_at,datetime,null: false,
+Point of Sale,pos_receipt_print_events,created_at,datetime,null: false,
+Stored Value,stored_value_accounts,id,bigint,"primary key, auto-increment",
+Stored Value,stored_value_accounts,organization_id,bigint,"FK: organizations, null: false",
+Stored Value,stored_value_accounts,account_type,string,null: false,"gift_card, store_credit, trade_credit."
+Stored Value,stored_value_accounts,account_number,string,null: false; unique,
+Stored Value,stored_value_accounts,status,string,"null: false, default: open","open, suspended, closed."
+Stored Value,stored_value_accounts,current_balance_cents,integer,"null: false, default: 0",Cached balance; entry ledger is authoritative.
+Stored Value,stored_value_accounts,opened_at,datetime,,
+Stored Value,stored_value_accounts,last_used_at,datetime,,
+Stored Value,stored_value_accounts,closed_at,datetime,,
+Stored Value,stored_value_accounts,created_at,datetime,null: false,Rails timestamp.
+Stored Value,stored_value_accounts,updated_at,datetime,null: false,Rails timestamp.
+Stored Value,stored_value_entries,id,bigint,"primary key, auto-increment",
+Stored Value,stored_value_entries,stored_value_account_id,bigint,"FK: stored_value_accounts, null: false",
+Stored Value,stored_value_entries,entry_type,string,null: false,"issued, reloaded, redeemed, refunded, issuance_reversed, redemption_reversed, manual_adjustment."
+Stored Value,stored_value_entries,pos_transaction_id,bigint,FK: pos_transactions,
+Stored Value,stored_value_entries,pos_line_item_id,bigint,FK: pos_line_items,
+Stored Value,stored_value_entries,pos_tender_id,bigint,FK: pos_tenders,
+Stored Value,stored_value_entries,amount_cents,integer,null: false,"Signed amount; positive adds value, negative consumes value."
+Stored Value,stored_value_entries,reverses_entry_id,bigint,FK: stored_value_entries,
+Stored Value,stored_value_entries,stored_value_adjustment_reason_id,bigint,FK: stored_value_adjustment_reasons,Required for manual_adjustment.
+Stored Value,stored_value_entries,description,string,,Required for manual entries; optional for system-generated entries.
+Stored Value,stored_value_entries,created_by_user_id,bigint,FK: users,
+Stored Value,stored_value_entries,created_at,datetime,null: false,
+Reporting and Reconciliation,reconciliation_adjustments,id,bigint,"primary key, auto-increment",
+Reporting and Reconciliation,reconciliation_adjustments,store_id,bigint,"FK: stores, null: false",
+Reporting and Reconciliation,reconciliation_adjustments,business_day_id,bigint,FK: business_days,
+Reporting and Reconciliation,reconciliation_adjustments,pos_session_id,bigint,FK: pos_sessions,
+Reporting and Reconciliation,reconciliation_adjustments,adjustment_type,string,null: false,"cash_over, cash_short, card_difference, tender_misclassification, timing_difference, other."
+Reporting and Reconciliation,reconciliation_adjustments,amount_cents,integer,null: false,
+Reporting and Reconciliation,reconciliation_adjustments,reason,text,null: false,
+Reporting and Reconciliation,reconciliation_adjustments,created_by_user_id,bigint,"FK: users, null: false",
+Reporting and Reconciliation,reconciliation_adjustments,approved_by_user_id,bigint,FK: users,
+Reporting and Reconciliation,reconciliation_adjustments,created_at,datetime,null: false,
+Reporting and Reconciliation,reconciliation_adjustments,updated_at,datetime,null: false,
