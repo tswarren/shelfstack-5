@@ -1,0 +1,16 @@
+---
+description: Hygiene for docs/implementation delivery documents
+globs: docs/implementation/**
+alwaysApply: false
+---
+
+# Implementation documentation
+
+When editing `docs/implementation/**`:
+
+- Keep `roadmap.md`, `current-phase.md`, `open-decisions.md`, and `phases/*` mutually consistent.
+- **Accepted** delivery choices belong in `architectural-locks.md` (or an ADR). Do not list them as Open in `open-decisions.md`.
+- Open decisions need: ID, status, needed-by phase, governing area, and a resolution link when accepted.
+- Do not move durable ADRs, permission catalogs, or identifier procedures into `implementation/` — link to `docs/adr/`, `docs/domains/`, `docs/reference/` instead.
+- Git conventions live in `git-workflow.md`; do not invent alternate branching models in phase docs.
+- Phase docs state goals, tables, services, exit criteria, and out-of-scope — not full schema dictionaries.

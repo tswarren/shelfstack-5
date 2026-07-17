@@ -1,0 +1,18 @@
+---
+description: Keep ShelfStack work aligned with delivery roadmap, open decisions, and git workflow
+alwaysApply: true
+---
+
+# ShelfStack planning alignment
+
+Before material implementation or planning changes:
+
+1. Read `docs/implementation/current-phase.md` and `docs/implementation/roadmap.md`.
+2. Check `docs/implementation/open-decisions.md` and `docs/implementation/architectural-locks.md`.
+3. Do not invent deferred capabilities (`docs/implementation/deferred-capabilities.md`).
+4. Follow POS-forward **delivery** order in the roadmap; system-overview §1.8 is conceptual, not branch/merge order.
+5. Git: trunk-based on `main` per `docs/implementation/git-workflow.md` — no permanent `develop` or `phase-*` branches; short-lived branches; PRs; prefer squash.
+6. Prefer existing GitHub issues for phase/OD work over inventing a parallel backlog.
+7. When a decision lands or a phase exits, update open-decisions / current-phase / phase docs in the same change when practical.
+
+Architecture invariants, stack, and CI remain governed by `AGENTS.md` — do not restate them here.

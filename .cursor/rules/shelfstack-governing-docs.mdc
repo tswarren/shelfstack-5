@@ -1,0 +1,19 @@
+---
+description: Authority and hygiene for ADRs, domains, and workflows
+globs: docs/adr/**,docs/domains/**,docs/workflows/**
+alwaysApply: false
+---
+
+# Governing documentation
+
+Document authority (highest first): accepted ADR → Domain Specification → schema → workflow → implementation plans.
+
+When editing these paths:
+
+- Do not contradict an accepted ADR without a superseding ADR.
+- Permission keys in domains must match or defer to `docs/domains/authorization-permissions.md`.
+- No separate display-category hierarchy (ADR-0003).
+- Workflows stay record-level (preconditions, records, locks, permissions, failure, idempotency) — not UI mockups.
+- Do not add speculative tables/statuses for deferred areas (transfers, RTV, buyback, offline POS, full CRM).
+- Cross-domain durable choices → ADR or `docs/implementation/open-decisions.md`, not only a prose tweak.
+- Identifier procedures → `docs/reference/identifiers.md` (ADR-0002 remains authoritative for the decision).

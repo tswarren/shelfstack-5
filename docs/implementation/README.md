@@ -31,6 +31,14 @@ Implementation plans sit below ADRs and Domain Specifications:
 
 When delivery order differs from the conceptual sequence in [system-overview §1.8](../architecture/system-overview.md), this roadmap is authoritative for **build order**. It does not change domain ownership or invariants.
 
+## Cursor rules
+
+Project Cursor rules under [`.cursor/rules/`](../../.cursor/rules/) reinforce this documentation:
+
+- `shelfstack-planning.mdc` — always on; roadmap, ODs, git workflow
+- `shelfstack-implementation-docs.mdc` — when editing `docs/implementation/**`
+- `shelfstack-governing-docs.mdc` — when editing ADRs, domains, workflows
+
 ## Git and pull requests
 
 Use a lightweight trunk-based model on `main`. See [git-workflow.md](git-workflow.md).
