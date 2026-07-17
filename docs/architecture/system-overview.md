@@ -73,7 +73,6 @@ The organization is the shared administrative and catalog boundary for:
 * products and product variants;  
 * generated identifiers;  
 * departments;  
-* display categories;  
 * merchandise classes;  
 * formats and conditions;  
 * tax categories;  
@@ -221,7 +220,7 @@ Certain attributes remain explicit on the product or variant and should not be i
 * exact-copy cost;  
 * vendor sourcing.
 
-This model avoids maintaining separate display-category and merchandise-class hierarchies that describe substantially the same merchandise organization.
+This model uses one hierarchical merchandise-class structure for merchandising, shelving, browsing, and reporting, rather than maintaining a separate display-category hierarchy that would describe substantially the same merchandise organization.
 
 ## 1.4.3 Vendors and purchasing
 
@@ -547,7 +546,6 @@ It does not own store inventory quantity or completed transaction history.
 This domain owns:
 
 * departments;  
-* display categories;  
 * merchandise classes;  
 * tax categories;  
 * store tax rates and rules;  
@@ -1184,7 +1182,7 @@ Completed POS lines retain the values required to reproduce the original result,
 * identifiers;  
 * description;  
 * department;  
-* display category;  
+* merchandise class;  
 * tax category;  
 * return policy;  
 * regular and selling price;  
@@ -1392,7 +1390,6 @@ This provides the store and user context required by every operational domain.
 Establish:
 
 * departments;  
-* display categories;  
 * merchandise classes;  
 * formats;  
 * conditions;  
@@ -1593,7 +1590,7 @@ Variants define what is sold, purchased, priced, taxed, and tracked.
 
 Inventory units define exact physical copies when individual identity matters.
 
-Departments, display categories, merchandise classes, tax categories, and formats remain separate because they answer different business questions.
+Departments, merchandise classes, tax categories, and formats remain separate because they answer different business questions.
 
 Purchasing records intent.
 

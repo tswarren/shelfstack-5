@@ -313,7 +313,6 @@ Catalog & Products,products,features,text,,
 Catalog & Products,products,internal_notes,text,,
 Catalog & Products,products,product_type,string,null: false,"book, recorded_music, video, periodical, game, stationery, gift, cafe, service, other."
 Catalog & Products,products,product_format_id,bigint,"FK: product_formats, null: false",
-Catalog & Products,products,default_display_category_id,bigint,FK: display_categories,
 Catalog & Products,products,default_department_id,bigint,FK: departments,
 Catalog & Products,products,default_tax_category_id,bigint,FK: tax_categories,
 Catalog & Products,products,merchandise_class_id,bigint,FK: merchandise_classes,
@@ -355,7 +354,6 @@ Catalog & Products,product_variants,inventory_tracking_mode,string,"null: false,
 Catalog & Products,product_variants,default_product_condition_id,bigint,FK: product_conditions,Default for quantity stock and newly created inventory units.
 Catalog & Products,product_variants,regular_price_cents,integer,,Current normal selling price; null blocks ordinary sale.
 Catalog & Products,product_variants,department_id,bigint,FK: departments,Optional override of product default.
-Catalog & Products,product_variants,display_category_id,bigint,FK: display_categories,Optional override of product default.
 Catalog & Products,product_variants,tax_category_id,bigint,FK: tax_categories,Optional override of product default.
 Catalog & Products,product_variants,merchandise_class_id,bigint,FK: merchandise_classes,Optional override of product default.
 Catalog & Products,product_variants,discountability_setting,string,"null: false, default: inherit","inherit, allowed, not_allowed, approval_required."
@@ -613,7 +611,9 @@ POS Transactions,pos_line_items,product_variant_id,bigint,FK: product_variants,
 POS Transactions,pos_line_items,inventory_unit_id,bigint,FK: inventory_units,Required for individually tracked product sales.
 POS Transactions,pos_line_items,stored_value_account_id,bigint,FK: stored_value_accounts,Used for stored-value issuance or reload lines.
 POS Transactions,pos_line_items,department_id,bigint,FK: departments,Historical posting snapshot.
-POS Transactions,pos_line_items,display_category_id,bigint,FK: display_categories,Historical merchandising snapshot.
+POS Transactions,pos_line_items,merchandise_class_id,bigint,FK: merchandise_classes,Historical merchandising snapshot.
+POS Transactions,pos_line_items,merchandise_class_code_snapshot,string,,Optional historical merchandise-class code snapshot.
+POS Transactions,pos_line_items,merchandise_class_name_snapshot,string,,Optional historical merchandise-class name snapshot.
 POS Transactions,pos_line_items,tax_category_id,bigint,FK: tax_categories,Historical tax classification snapshot.
 POS Transactions,pos_line_items,return_policy_id,bigint,FK: return_policies,Historical return-policy snapshot.
 POS Transactions,pos_line_items,description_snapshot,string,null: false,
