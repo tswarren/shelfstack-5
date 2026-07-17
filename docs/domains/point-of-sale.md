@@ -314,7 +314,7 @@ Within one database transaction:
 
 The `pos.*` permission set covers access, Transaction lifecycle, line removal, Discounts and Price Overrides, Returns, Tender exceptions, tax exemptions, Session and Business-Day control, cash movements, variance review, receipt reprint, Post-Void, Approval, and Reconciliation Adjustment.
 
-Exact codes should be maintained in Schema Documentation or seed data.
+Exact codes are maintained in [authorization-permissions.md](authorization-permissions.md).
 
 ## Audit requirements
 

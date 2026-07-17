@@ -35,6 +35,7 @@ Database migrations describe the schema currently implemented. They do not silen
 | Domain | Document | Principal responsibility |
 |---|---|---|
 | Organization and Authorization | [organization-and-authorization.md](organization-and-authorization.md) | Organization, Stores, Users, Store Memberships, Roles, Permissions, authority, Devices, Drawers, and Approvals |
+| Authorization permissions (catalog) | [authorization-permissions.md](authorization-permissions.md) | Canonical permission keys, scope, phase, authority, and approval behavior |
 | Classification and Configuration | [classification-and-configuration.md](classification-and-configuration.md) | Merchandise Classes, Departments, tax configuration, reasons, Tender Types, and Store policies |
 | Catalog and Products | [catalog-and-products.md](catalog-and-products.md) | Products, Product Variants, identifiers, Formats, Conditions, options, pricing inputs, and eligibility |
 | Product Requests | [product-requests.md](product-requests.md) | Customer demand, staff suggestions, buyer-review demand, and fulfilment state |

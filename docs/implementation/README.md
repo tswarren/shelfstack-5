@@ -10,7 +10,10 @@
 | [roadmap.md](roadmap.md) | Master sequence, status, and mapping to system-overview phases |
 | [current-phase.md](current-phase.md) | What is in progress right now |
 | [architectural-locks.md](architectural-locks.md) | Settled delivery decisions that must not be re-litigated mid-phase |
+| [open-decisions.md](open-decisions.md) | Living queue of unresolved choices (needed-by phase + disposition) |
 | [deferred-capabilities.md](deferred-capabilities.md) | Explicitly out of scope until designed |
+| [testing.md](testing.md) | Project test mechanics (fixtures, concurrency, idempotency patterns) |
+| [service-catalog.md](service-catalog.md) | Introduced application services as they land |
 | [phases/](phases/) | Per-phase goals, tables, services, exit criteria, and out-of-scope |
 | [schema-reconciliation-display-categories-and-demand-allocation.md](schema-reconciliation-display-categories-and-demand-allocation.md) | Pre-scaffolding schema decisions (merchandise classes, requests, allocations) |
 
@@ -48,4 +51,7 @@ Full purchasing does not block the first real, inventory-aware completed sale.
 - [Invariants](../architecture/invariants.md)
 - [ADRs](../adr/README.md)
 - [Domain Specifications](../domains/README.md)
+- [Permission catalog](../domains/authorization-permissions.md)
+- [Identifier guide](../reference/identifiers.md)
+- [Workflows](../workflows/README.md)
 - [Proforma Schema Exports](../exports/schema/README.md)

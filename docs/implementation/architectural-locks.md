@@ -61,7 +61,7 @@ Ledger entries retain at minimum:
 - user;
 - source record.
 
-**Moving average when on-hand is zero or negative:** choose a deterministic interim formula in Phase 3 documentation before Phase 4c; revisit when receipt-based costing lands in Phase 5.
+**Moving average when on-hand is zero or negative:** still open as [OD-003](open-decisions.md); must be settled by ADR / Inventory Domain update before Phase 4c. Adjustment **kinds** above are locked; formulas for edge cases are not.
 
 ## Tax before Phase 4b
 
@@ -138,5 +138,6 @@ Reports must not reinterpret completed history or modify source records.
 ## Related
 
 - [roadmap.md](roadmap.md)
+- [open-decisions.md](open-decisions.md)
 - [AGENTS.md](../../AGENTS.md)
 - [System Overview](../architecture/system-overview.md)

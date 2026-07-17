@@ -3,7 +3,8 @@
 **Status:** Active  
 **Approach:** POS-forward delivery  
 **Current phase:** [current-phase.md](current-phase.md)  
-**Locks:** [architectural-locks.md](architectural-locks.md)
+**Locks:** [architectural-locks.md](architectural-locks.md)  
+**Open decisions:** [open-decisions.md](open-decisions.md)
 
 ## Central decision
 

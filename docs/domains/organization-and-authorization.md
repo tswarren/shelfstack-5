@@ -219,23 +219,9 @@ POS operation additionally requires the applicable active POS Device, Business D
 
 ## Permissions
 
-Proposed administration Permissions:
+Canonical keys, scopes, phases, authority, and approval behavior are maintained in [authorization-permissions.md](authorization-permissions.md).
 
-```text
-administration.view_stores
-administration.manage_stores
-administration.view_users
-administration.manage_users
-administration.manage_memberships
-administration.manage_roles
-administration.manage_permissions
-administration.manage_devices
-administration.manage_drawers
-administration.view_audit
-administration.emergency_override
-```
-
-Operational Permissions are defined by their owning domains.
+Administration and operational permissions used in seeds and application checks must match that catalog. Older illustrative names in this section are superseded when they disagree.
 
 ## Audit requirements
 
