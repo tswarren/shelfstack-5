@@ -36,6 +36,7 @@ When delivery order differs from the conceptual sequence in [system-overview §1
 Project Cursor rules under [`.cursor/rules/`](../../.cursor/rules/) reinforce this documentation:
 
 - `shelfstack-planning.mdc` — always on; roadmap, ODs, git workflow
+- `shelfstack-docker.mdc` — always on; prefer `./dev/rails-docker` / Compose for Rails commands
 - `shelfstack-implementation-docs.mdc` — when editing `docs/implementation/**`
 - `shelfstack-governing-docs.mdc` — when editing ADRs, domains, workflows
 

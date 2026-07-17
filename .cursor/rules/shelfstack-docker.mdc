@@ -1,0 +1,36 @@
+---
+description: Prefer Docker Compose via ./dev/rails-docker for Rails and bin commands
+alwaysApply: true
+---
+
+# Docker development commands
+
+Preferred environment is Docker Compose. Defaults use `DATABASE_HOST=db`, so bare host `bin/rails` usually fails unless host Postgres env is configured.
+
+**Default wrapper** ([`dev/rails-docker`](dev/rails-docker)): `exec` if `web` is running, else `run --rm`.
+
+```bash
+./dev/rails-docker bin/rails db:migrate
+./dev/rails-docker bin/rails test
+./dev/rails-docker bin/ci
+./dev/rails-docker bin/setup --skip-server
+./dev/rails-docker bin/rubocop
+```
+
+When the command needs Compose env flags (e.g. `RAILS_ENV=test`), use Compose directly:
+
+```bash
+docker compose run --rm -e RAILS_ENV=test web bin/rails db:test:prepare test
+docker compose run --rm web bin/ci
+```
+
+**Do**
+
+- Start the app with `docker compose up` (not host `bin/dev` by default).
+- Prefer Docker for setup, migrate, test, RuboCop, Brakeman, and `bin/ci`.
+
+**Do not**
+
+- Assume native host Ruby/Postgres without explicit host env (`DATABASE_HOST=localhost`, etc.).
+- Use `docker compose down --volumes` as routine cleanup.
+- Reset or drop databases without explicit need.
