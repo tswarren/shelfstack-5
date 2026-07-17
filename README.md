@@ -241,6 +241,7 @@ ShelfStack is documented in layers so that architectural rationale, domain behav
 | [Architectural Decision Records](docs/adr/README.md)     | Records why foundational architectural choices were made                                |
 | [Domain Specifications](docs/domains/README.md)          | Defines domain responsibilities, entities, workflows, permissions, and invariants       |
 | [Schema Documentation](docs/schema/README.md)            | Defines how domain concepts are represented structurally                                |
+| [Implementation Docs](docs/implementation/README.md)     | Delivery index: roadmap, current phase, locks, and per-phase plans                        |
 | [Implementation Roadmap](docs/implementation/roadmap.md) | Tracks completed, current, upcoming, and deferred implementation work                   |
 | [Glossary](docs/glossary.md)                             | Defines shared ShelfStack terminology                                                   |
 

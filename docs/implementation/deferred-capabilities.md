@@ -1,0 +1,38 @@
+# Deferred Capabilities
+
+**Status:** Explicitly out of implementation scope until designed  
+**Delivery phase label:** Phase 8 in [roadmap.md](roadmap.md)
+
+Do not scaffold speculative tables, statuses, or services for these areas. When work approaches one of them, implement only what the current task requires, document assumptions, and open a design question.
+
+## Deferred list
+
+| Capability | Notes |
+| --- | --- |
+| Detailed buyback | Acquisition workflow; not an ordinary return |
+| Inventory counts | Dedicated count documents and posting |
+| Inter-store transfers | Changes authoritative store ownership |
+| Complete return-to-vendor (RTV) | Beyond disposition flags / deferred unit statuses |
+| Full customer CRM | Beyond Phase 5 minimal customer/contact shell |
+| Customer notifications platform | After customer domain design |
+| Customer holds / special-order product beyond requests | Extend Product Requests carefully |
+| Reusable tax exemptions | Transaction-specific exemptions may exist earlier |
+| Advanced promotions | `promotion_id` may remain nullable until designed |
+| Loyalty | Separate domain |
+| Stored-value replacement, transfer, expiration | Ledger baseline comes first (Phase 6) |
+| Accounting export batches | Department GL codes may remain provisional |
+| Integrated payment processing | Standalone card tender stub first |
+| Offline POS | Requires dedicated design |
+| Optional physical shelf-location tracking | Must not fragment store inventory |
+| Weighted / decimal quantities | Integer quantities for initial release |
+| Multi-tenant SaaS | Single-organization installation |
+
+## Unit status values reserved but not implemented early
+
+`inventory_units.status` may include deferred-capable values such as `rtv` and `in_transfer` without implementing those workflows. Do not build transfer or RTV documents until designed.
+
+## Related
+
+- [System Overview §1.9](../architecture/system-overview.md)
+- [AGENTS.md §3](../../AGENTS.md)
+- [roadmap.md](roadmap.md)
