@@ -1,0 +1,1 @@
+The files in `docs/exports/schemas` are proforma and not necessarily represent the actual database schema. See `db/schema.rb` for actual implementation.

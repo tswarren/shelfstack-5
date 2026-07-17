@@ -1,0 +1,349 @@
+# Point-of-Sale Domain
+
+**Status:** Consolidated specification  
+**Domain owner:** Store checkout, Business Days, Sessions, Transactions, pricing realization, tax, Tenders, cash, receipts, returns, and completed corrections
+
+## Governing ADRs
+
+- [ADR-0006: Use Explicit Inventory Quantities and Reservation Records](../adr/0006-inventory-quantities-and-reservation-records.md)
+- [ADR-0008: Keep Completed POS Transactions Immutable and Use Explicit Corrections](../adr/0008-immutable-pos-transactions.md)
+- [ADR-0009: Complete POS Transactions Atomically and Idempotently](../adr/0009-atomic-idempotent-pos-completion.md)
+- [ADR-0010: Distinguish Business Days, Sessions, Devices, Drawers, and Z Reports](../adr/0010-business-days-sessions-and-z-reports.md)
+- [ADR-0011: Separate Permissions, Numeric Authority, and Approval Events](../adr/0011-permissions-authority-and-approvals.md)
+- [ADR-0012: Govern Stored Value Through Independent Accounts and an Append-Only Ledger](../adr/0012-stored-value-ledger.md)
+
+## Purpose
+
+The POS domain coordinates completion of retail activity across Catalog, Classification, Authorization, Inventory, Stored Value, and Reporting.
+
+It records sales and Customer Returns, Open-Ring and Stored-Value lines, Price Overrides, Discounts, tax, Tenders and refunds, Business Days and POS Sessions, cash accountability, receipt identity, and completed corrections.
+
+## Ownership boundary
+
+### Owns
+
+- Business Day;
+- POS Session;
+- POS Transaction;
+- POS Line Item;
+- POS Discount and Discount Allocation;
+- completed tax component;
+- POS Tender;
+- cash movement and count;
+- Receipt Number and print event;
+- Customer Return records;
+- Post-Void links;
+- POS-specific workflow state.
+
+### Coordinates but does not own
+
+- User, Permission, authority, and Approval;
+- Product and Product Variant;
+- Merchandise Class, Department, Tax Category, and Tax Rules;
+- Inventory Reservation and Inventory Movement;
+- Stored-Value Account and Stored-Value Entry;
+- report definition and Reconciliation.
+
+## Core principles
+
+- A POS Transaction is a checkout container, not a rigid sale-or-return type.
+- Completed Transactions and Lines are immutable.
+- Price Override, Discount, tax, Tender, inventory, and Stored Value remain distinct layers.
+- Completion is atomic and idempotent.
+- Historical values are snapshotted.
+- Corrections create new linked records.
+
+## Business Day
+
+A Business Day is the Store-wide operating and reporting period.
+
+Suggested attributes:
+
+- Store;
+- explicit Business Date;
+- status;
+- opened and closed timestamps and Users;
+- reconciled timestamp and User;
+- sequential Store Z-Report Number.
+
+Statuses:
+
+```text
+open
+closed
+reconciled
+```
+
+Only one Business Day may be open per Store. The Business-Date assignment policy remains Open.
+
+## POS Session
+
+A POS Session is an accountability period within one Business Day.
+
+Suggested attributes:
+
+- Business Day;
+- Store;
+- POS Device;
+- optional Cash Drawer;
+- responsible User;
+- status;
+- open, close, and reconcile identity;
+- opening, expected, and counted cash;
+- Cash Variance;
+- Session Z number.
+
+A card-only Session may have no Drawer.
+
+## POS Transaction
+
+Suggested statuses:
+
+```text
+open
+suspended
+completed
+cancelled
+```
+
+Allowed transitions:
+
+```text
+open → suspended
+open → completed
+open → cancelled
+suspended → open
+suspended → cancelled
+```
+
+A Completed Transaction does not transition.
+
+Suggested attributes include public identifier, Store, origin/active/completion Session, Customer when applicable, cashier, salesperson, Receipt Number, timestamps, reversal references, monetary totals, and completion idempotency key.
+
+A Transaction may open in one Session and complete in another.
+
+## Suspended Transactions
+
+Suspension retains Inventory Reservations, does not automatically expire, is limited to the same Store, requires no unresolved Tender activity, and may be actively recalled by one register at a time.
+
+On recall, current prices, Promotions, tax, classification, and eligibility are refreshed. Material changes are shown to the cashier.
+
+## POS Line Item
+
+Directions:
+
+```text
+sale
+return
+```
+
+Line kinds:
+
+```text
+product
+open_ring
+stored_value
+```
+
+Statuses:
+
+```text
+pending
+completed
+removed
+```
+
+Amounts and quantities remain positive; direction determines effect.
+
+### Product Line
+
+Requires Product Variant, Department, Tax Category, and exact Inventory Unit where individual tracking applies.
+
+### Open-Ring Line
+
+Requires description, Department, Tax Category, and price.
+
+### Stored-Value Line
+
+Represents issuance or reload and does not create ordinary merchandise inventory or revenue.
+
+## Reservations
+
+Adding a Product Line creates an Inventory Reservation.
+
+- quantity tracking reserves quantity;
+- individual tracking reserves exact Unit;
+- removal or Cancellation releases;
+- suspension retains;
+- Completion converts to Inventory Movement.
+
+Quantity-tracked sale may create negative inventory after warning where policy permits.
+
+## Pricing and Discounts
+
+```text
+Regular Price
+→ Selling Price after Price Override
+→ Gross Amount
+→ Discount
+→ Net Amount
+→ Tax
+→ Total Amount
+```
+
+Price Override is distinct from Discount.
+
+Transaction Discounts must be allocated deterministically among eligible lines. Allocations are stored for tax, returns, and reporting.
+
+Advanced Promotion definitions remain Deferred.
+
+## Tax
+
+Tax is calculated after Discount allocation.
+
+Completed lines store tax components with Tax Category, rate or Rule reference, taxable amount, rate, amount, and calculation order.
+
+Tax components sum to the line Tax Amount.
+
+Tax Exemptions may be reusable or transaction-specific. Completed activity snapshots the evidence used.
+
+## Tenders
+
+Tender directions:
+
+```text
+received
+refunded
+```
+
+Only completed Tenders settle a Transaction.
+
+```text
+completed received Tenders
+- completed refunded Tenders
+= Transaction net total
+```
+
+### Cash
+
+Records amount presented, amount applied, and change.
+
+### Card
+
+MVP uses standalone terminals. ShelfStack stores no full card number. Approved external payment followed by failed internal Completion must be visible for Reconciliation.
+
+### Stored Value
+
+Redemption is a received Tender and posts through the Stored Value domain.
+
+## Customer Returns
+
+Return sources may include:
+
+```text
+linked_sale
+external_receipt
+gift_receipt
+no_receipt
+```
+
+Linked Return references the original completed sale line and uses historical price, Discount, tax, Department, cost, and eligibility.
+
+Unlinked Return requires explicit Product or Variant, source, Refund Basis, Return Reason, Return Disposition, tax treatment, and Approval where required.
+
+Return Reason and Disposition remain separate.
+
+## Cancellation
+
+Cancellation applies before Completion.
+
+It releases provisional Reservations and creates no completed sale, Return, Tender, inventory, tax, cost, or Stored-Value effect.
+
+## Post-Void
+
+Post-Void is a new Completed Transaction fully reversing an original Completed Transaction.
+
+It receives its own Receipt Number, uses original historical values, reverses lines, tax, cost, inventory, Tenders, and Stored Value, and may be blocked when full reversal is no longer possible.
+
+Partial correction uses Customer Return or another explicit correction.
+
+## Cash accountability
+
+Cash movements may include:
+
+```text
+additional_float
+safe_drop
+cash_pickup
+paid_in
+paid_out
+correction
+transfer_in
+transfer_out
+```
+
+No-sale Drawer openings require reason and audit.
+
+Closing counts and later recounts remain separate records.
+
+```text
+Cash Variance = counted cash - expected cash
+```
+
+## Completion workflow
+
+Before Completion validate Transaction, Business Day and Session, sale eligibility, exact Units, Reservations, prices and classifications, Discounts and tax, Return Approvals and Dispositions, exact Tender settlement, Stored-Value balance, card confirmation, and idempotency.
+
+Within one database transaction:
+
+1. lock Transaction;
+2. lock inventory and Stored-Value records;
+3. finalize Lines, Discounts, and tax;
+4. snapshot classification and cost;
+5. convert Reservations and post Inventory Movements;
+6. update Unit statuses;
+7. post Stored-Value Entries;
+8. finalize Tenders;
+9. obtain Receipt sequence;
+10. assign Receipt Number;
+11. mark Lines and Transaction completed;
+12. store final totals;
+13. commit.
+
+## Permissions
+
+The `pos.*` permission set covers access, Transaction lifecycle, line removal, Discounts and Price Overrides, Returns, Tender exceptions, tax exemptions, Session and Business-Day control, cash movements, variance review, receipt reprint, Post-Void, Approval, and Reconciliation Adjustment.
+
+Exact codes should be maintained in Schema Documentation or seed data.
+
+## Audit requirements
+
+Audit Transaction lifecycle, line removal, Price Override, Discount, tax exemption, Customer Return and Disposition, Tender activity, Session and Business-Day control, cash movements and counts, Post-Void, receipt reprint, and Approvals.
+
+## Invariants
+
+- Completed Transactions and Lines are immutable.
+- Receipt Number is assigned only at successful Completion.
+- A Completed Transaction has one Store-unique Receipt Number.
+- Product Lines resolve exact Variants.
+- Individually tracked Lines resolve exact Units.
+- Removed Lines create no completed effect.
+- Tender net equals Transaction net.
+- Discount Allocations reconcile.
+- Tax components reconcile.
+- Linked Returns do not exceed remaining quantity.
+- Customer Return does not alter original Line.
+- Post-Void is a new full reversing Transaction.
+- Completion is atomic and idempotent.
+- Business Day cannot close with an open Session.
+- Closing and Reconciliation remain separate.
+
+## Open and deferred questions
+
+- What policy assigns Business Date?
+- Which advanced Promotion strategies are required?
+- What is the final reusable Tax-Exemption model?
+- When will integrated payment processing be introduced?
+- What offline POS behavior is required?
+- Are café routing, tips, weighted merchandise, layaway, and installments needed?
+- When should Suspended Transactions expire, if ever?

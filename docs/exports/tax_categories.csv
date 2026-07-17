@@ -1,0 +1,21 @@
+sort order,name,code
+11,Physical: Gen Merchandise,physical_gen_merchandise
+12,Physical: Audio,physical_audio
+13,Physical: Book,physical_book
+14,Physical: Clothing,physical_clothing
+15,Physical: Newspaper,physical_newspaper
+16,Physical: Periodical,physical_periodical
+17,Physical: Video,physical_video
+21,Food Beverage: Bakery,food_beverage_bakery
+22,Food Beverage: Bottled Soft Drink,food_beverage_bottled_soft_drink
+23,Food Beverage: Bottled Water,food_beverage_bottled_water
+24,Food Beverage: Grocery,food_beverage_grocery
+25,Food Beverage: Packaged Food,food_beverage_packaged_food
+26,Food Beverage: Prepared Food,food_beverage_prepared_food
+71,Digital: Audio,digital_audio
+72,Digital: Book,digital_book
+73,Digital: Video,digital_video
+81,Intangible: Delivery,intangible_delivery
+82,Intangible: Membership Fees,intangible_membership_fees
+83,Intangible: Service Fees,intangible_service_fees
+94,Other: Admission,other_admission

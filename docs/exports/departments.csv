@@ -1,0 +1,47 @@
+Dept #,Parent Dept #,Parent Department,Name,Is Posting,Inventory asset,Sales revenue,Sales returns,Sales discounts,COGS,Returns to Vendor,Shrink,Write-downs,Inventory Adj.,Freight In,Tax Category
+100,,Books,Books,FALSE,,,,,,,,,,,
+110,100,Books,New General Trade,TRUE,141000,401000,401000,410XXX,501000,513100,514000,515100,519100,510100,Physical: Book
+120,100,Books,Professional / Academic / Short Discount,TRUE,142000,402000,402000,410XXX,502000,513200,514000,515200,519200,510200,Physical: Book
+130,100,Books,Used & Collectible,TRUE,143000,403000,403000,410XXX,503000,513300,514000,515300,519300,510300,Physical: Book
+140,100,Books,Remainder & Promotional Inventory,TRUE,141400,401400,401400,410XXX,501400,513100,514000,515100,519100,510100,Physical: Book
+150,100,Books,Course Materials,TRUE,149000,409000,409000,410XXX,509000,513900,514000,515900,519900,510900,Physical: Book
+200,,Newsstand & Periodicals,Newsstand & Periodicals,FALSE,,,,,,,,,,,
+210,200,Newsstand & Periodicals,Magazines & Periodicals,TRUE,,,,,,,,,,,
+220,200,Newsstand & Periodicals,Newspapers,TRUE,144100,404100,404100,410XXX,504100,513400,514000,515400,519400,510400,Physical: Periodical
+230,200,Newsstand & Periodicals,Periodical Comics,TRUE,144200,404200,404200,410XXX,504200,513400,514000,515400,519400,510400,Physical: Newspaper
+300,,Media,Media,FALSE,,,,,,,,,,,
+310,300,Media,Physical Audiobooks,TRUE,145200,405200,405200,410XXX,505200,513500,514000,513500,519500,510500,Physical: Audio
+320,300,Media,Recorded Music,TRUE,145100,405100,405100,410XXX,505100,513500,514000,513500,519500,510500,Physical: Audio
+330,300,Media,Video,TRUE,145400,405400,405400,410XXX,505400,513500,514000,513500,519500,510500,Physical: Video
+340,300,Media,Digital Books,TRUE,145300,405300,405300,410XXX,505300,513500,514000,513500,519500,510500,Digital: Book
+350,300,Media,Digital Audio,TRUE,145400,405400,405400,410XXX,505400,513500,514000,513500,519500,510500,Digital: Audio
+360,300,Media,Digital Video & Other Digital Media,TRUE,145400,405400,405400,410XXX,405000,513500,514000,513500,519500,510500,Digital: Video
+400,,"Gifts, Stationery & Bookish Merchandise","Gifts, Stationery & Bookish Merchandise",FALSE,,,,,,,,,,,
+410,400,"Gifts, Stationery & Bookish Merchandise",Greeting Cards & Postcards,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+420,400,"Gifts, Stationery & Bookish Merchandise","Stationery, Journals & Paper Goods",TRUE,143200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+430,400,"Gifts, Stationery & Bookish Merchandise",Calendars,TRUE,146100,406100,406100,410XXX,506100,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+440,400,"Gifts, Stationery & Bookish Merchandise","Gifts, Home & Novelty",TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+450,400,"Gifts, Stationery & Bookish Merchandise",Reading Accessories,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+460,400,"Gifts, Stationery & Bookish Merchandise",Maps & Globes,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+470,400,"Gifts, Stationery & Bookish Merchandise",Apparel & Bags,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Clothing
+500,,"Games, Toys & Activity","Games, Toys & Activity",FALSE,,,,,,,,,,,
+510,500,"Games, Toys & Activity",Tabletop Games,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+520,500,"Games, Toys & Activity",Puzzles,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+530,500,"Games, Toys & Activity",Toys & Children’s Novelty,TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+540,500,"Games, Toys & Activity","Hobby, Craft & Activity Merchandise",TRUE,146200,406200,406200,410XXX,506200,513600,514000,513600,519600,510600,Physical: Gen Merchandise
+600,,Café,Café,FALSE,,,,,,,,,,,
+610,600,Café,Prepared Beverages,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Prepared Food
+620,600,Café,Prepared Food,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Prepared Food
+630,600,Café,Bakery Case,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Bakery
+640,600,Café,Prepackaged Food,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Packaged Food
+650,600,Café,Candy & Confections,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Packaged Food
+660,600,Café,Soft Drinks,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Bottled Soft Drink
+670,600,Café,Bottled Water,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Food Beverage: Bottled Water
+680,600,Café,Café Merchandise,TRUE,153100,801100,801100,410XXX,801210,801210,801220,801230,801240,801250,Physical: Gen Merchandise
+700,,Services & Other Earned Revenue,Services & Other Earned Revenue,FALSE,,,,,,,,,,,
+710,700,Services & Other Earned Revenue,Event Admissions,TRUE,,,,,,,,,,,
+720,700,Services & Other Earned Revenue,Memberships & Book Clubs,TRUE,-,806000,806000,410XXX,-,,-,806000,-,-,Other: Admission
+730,700,Services & Other Earned Revenue,Special-Order & Search Fees,TRUE,-,804000,804000,410XXX,-,,-,804000,-,-,Intangible: Membership Fees
+740,700,Services & Other Earned Revenue,Shipping & Handling,TRUE,-,731200,731200,410XXX,-,,-,731200,-,-,Intangible: Delivery
+750,700,Services & Other Earned Revenue,Gift Wrapping & Other Services,TRUE,-,819000,819000,410XXX,-,,-,819000,-,-,Intangible: Service Fees
+760,700,Services & Other Earned Revenue,"Rentals, Commissions & Miscellaneous Revenue",TRUE,-,802000,802000,410XXX,-,,-,802000,-,-,Intangible: Service Fees
