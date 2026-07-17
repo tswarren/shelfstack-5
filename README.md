@@ -242,6 +242,7 @@ ShelfStack is documented in layers so that architectural rationale, domain behav
 | [Domain Specifications](docs/domains/README.md)          | Defines domain responsibilities, entities, workflows, permissions, and invariants       |
 | [Schema Documentation](docs/schema/README.md)            | Defines how domain concepts are represented structurally                                |
 | [Implementation Docs](docs/implementation/README.md)     | Delivery index: roadmap, current phase, locks, open decisions, and per-phase plans      |
+| [Git Workflow](docs/implementation/git-workflow.md)      | Trunk-based branching, PR size, merge, and `main` protection conventions                |
 | [Implementation Roadmap](docs/implementation/roadmap.md) | Tracks completed, current, upcoming, and deferred implementation work                   |
 | [Permission Catalog](docs/domains/authorization-permissions.md) | Canonical permission keys for seeds and authorization checks                      |
 | [Identifier Guide](docs/reference/identifiers.md)        | Normalization, generation, and lookup procedures for trade and ShelfStack IDs           |
@@ -322,6 +323,8 @@ The following areas remain intentionally deferred or require dedicated design:
 Deferred capabilities should extend the established architecture rather than bypass its domain boundaries.
 
 ## Contributing
+
+Use the trunk-based Git conventions in [`docs/implementation/git-workflow.md`](docs/implementation/git-workflow.md): short-lived branches from `main`, pull requests for every change, squash merges, and no permanent `develop` or phase branches.
 
 Changes affecting architecture, domain behavior, or schema should update the corresponding documentation.
 

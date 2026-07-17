@@ -8,6 +8,7 @@
 | Document | Role |
 | --- | --- |
 | [roadmap.md](roadmap.md) | Master sequence, status, and mapping to system-overview phases |
+| [git-workflow.md](git-workflow.md) | Trunk-based branching, PR, and merge conventions |
 | [current-phase.md](current-phase.md) | What is in progress right now |
 | [architectural-locks.md](architectural-locks.md) | Settled delivery decisions that must not be re-litigated mid-phase |
 | [open-decisions.md](open-decisions.md) | Living queue of unresolved choices (needed-by phase + disposition) |
@@ -29,6 +30,17 @@ Implementation plans sit below ADRs and Domain Specifications:
 6. archived material.
 
 When delivery order differs from the conceptual sequence in [system-overview §1.8](../architecture/system-overview.md), this roadmap is authoritative for **build order**. It does not change domain ownership or invariants.
+
+## Git and pull requests
+
+Use a lightweight trunk-based model on `main`. See [git-workflow.md](git-workflow.md).
+
+Summary:
+
+- roadmap phases plan work; issues track units of work; short-lived branches implement; PRs integrate;
+- no permanent `develop` or `phase-*` branches;
+- prefer squash merges to `main` with CI green;
+- put docs with the code they govern (or small `docs/` PRs for open decisions).
 
 ## Delivery approach
 

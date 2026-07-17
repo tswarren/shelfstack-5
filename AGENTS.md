@@ -721,6 +721,8 @@ Update the roadmap when scope, dependencies, phase status, or deferred work chan
 
 ## 11. Pull-request expectations
 
+Branching, PR size, merge strategy, and `main` protection follow [`docs/implementation/git-workflow.md`](docs/implementation/git-workflow.md): trunk-based development on `main`, short-lived branches, squash merges, and no permanent `develop` or phase branches.
+
 A pull request should explain:
 
 * which domain is affected;

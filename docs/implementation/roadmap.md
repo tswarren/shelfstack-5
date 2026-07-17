@@ -4,7 +4,8 @@
 **Approach:** POS-forward delivery  
 **Current phase:** [current-phase.md](current-phase.md)  
 **Locks:** [architectural-locks.md](architectural-locks.md)  
-**Open decisions:** [open-decisions.md](open-decisions.md)
+**Open decisions:** [open-decisions.md](open-decisions.md)  
+**Git workflow:** [git-workflow.md](git-workflow.md)
 
 ## Central decision
 

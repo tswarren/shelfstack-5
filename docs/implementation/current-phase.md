@@ -34,6 +34,7 @@
 ## Pointers
 
 - Master sequence: [roadmap.md](roadmap.md)
+- Git workflow: [git-workflow.md](git-workflow.md)
 - Index: [README.md](README.md)
 - Identifiers: [../reference/identifiers.md](../reference/identifiers.md)
 - Testing mechanics: [testing.md](testing.md)
