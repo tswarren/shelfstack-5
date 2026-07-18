@@ -13,16 +13,18 @@
 
 ### Pre-migration scrub checklist (Phase 0 / before Phase 2)
 
-- [ ] No separate display-category tables or `*_display_category_id` fields
-- [ ] Merchandise class is hierarchical; department defaults resolve correctly
-- [ ] Product / variant / unit ownership matches ADR-0001
-- [ ] Quantity vocabulary uses `reserved`, not `pending`
-- [ ] Store-level inventory boundary preserved
-- [ ] One canonical product identifier; `21` / `27` / `28` / `29` prefixes correct
-- [ ] No obsolete special-order / TBO substitutes on PO lines
-- [ ] Receipt-to-PO linkage at line level only
-- [ ] Money fields use integer cents
-- [ ] No premature customer CRM, transfer, RTV, or buyback structures
+- [x] No separate display-category tables or `*_display_category_id` fields
+- [x] Merchandise class is hierarchical; department defaults resolve correctly
+- [x] Product / variant / unit ownership matches ADR-0001
+- [x] Quantity vocabulary uses `reserved`, not `pending`
+- [x] Store-level inventory boundary preserved
+- [x] One canonical product identifier; `21` / `27` / `28` / `29` prefixes correct
+- [x] No obsolete special-order / TBO substitutes on PO lines
+- [x] Receipt-to-PO linkage at line level only
+- [x] Money fields use integer cents
+- [x] No premature customer CRM, transfer, RTV, or buyback structures
+
+Audit completed 2026-07-17. See [phases/phase-00-scaffold-and-locks.md](phases/phase-00-scaffold-and-locks.md) § Audit result.
 
 ## Do not start yet
 
