@@ -20,7 +20,7 @@ class User < ApplicationRecord
   end
 
   def can?(permission_key, store:)
-    Authorization::EvaluatePermission.call(user: self, store: store, permission_key: permission_key) == :allow
+    ::Authorization::EvaluatePermission.call(user: self, store: store, permission_key: permission_key) == :allow
   end
 
   private
