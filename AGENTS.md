@@ -977,11 +977,21 @@ Run pending migrations:
 bin/rails db:migrate
 ```
 
-Seed the current database:
+Seed canonical permission definitions:
 
 ```bash
 bin/rails db:seed
 ```
+
+Bootstrap an installation organization, store, and administrator (explicit; safe to re-run without reactivating disabled access):
+
+```bash
+bin/rails shelfstack:bootstrap
+```
+
+Outside development, set `SHELFSTACK_BOOTSTRAP_ORG_CODE`, `SHELFSTACK_BOOTSTRAP_ORG_NAME`, `SHELFSTACK_BOOTSTRAP_STORE_CODE`, `SHELFSTACK_BOOTSTRAP_STORE_NAME`, `SHELFSTACK_BOOTSTRAP_USERNAME`, and `SHELFSTACK_BOOTSTRAP_PASSWORD`. Optional: `SHELFSTACK_BOOTSTRAP_RESET_PASSWORD=1` in development/test to reset the bootstrap user password on re-run.
+
+`bin/setup` runs `db:seed` and `shelfstack:bootstrap` after preparing the database.
 
 Reset the development database:
 

@@ -6,7 +6,8 @@ class UsersController < ApplicationController
   before_action :set_user, only: %i[show edit update]
 
   def index
-    @users = organization_users.order(:username)
+    # Users are installation-global under INV-ORG-001 (one organization per install).
+    @users = User.order(:username)
   end
 
   def show
@@ -18,8 +19,12 @@ class UsersController < ApplicationController
 
   def create
     @user = User.new(user_params)
-    if @user.save
-      audit!("user.created", @user)
+    if Administration::CreateUser.call(
+      user: @user,
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to @user, notice: "User created. Assign a store membership to grant access."
     else
       render :new, status: :unprocessable_entity
@@ -32,8 +37,13 @@ class UsersController < ApplicationController
   def update
     attrs = user_params
     attrs = attrs.except(:password, :password_confirmation) if attrs[:password].blank?
-    if @user.update(attrs)
-      audit!("user.updated", @user)
+    if Administration::UpdateUser.call(
+      user: @user,
+      attributes: attrs.to_h,
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to @user, notice: "User updated."
     else
       render :edit, status: :unprocessable_entity
@@ -42,38 +52,14 @@ class UsersController < ApplicationController
 
   private
 
-  def organization_users
-    store_ids = Current.organization.stores.select(:id)
-    User.left_joins(:store_memberships).where(
-      "store_memberships.store_id IN (?) OR users.id = ?",
-      store_ids,
-      Current.user.id
-    ).distinct
-  end
-
   def set_user
-    @user = if action_name == "show" && !Current.user.can?("administration.user.manage", store: Current.store)
-      organization_users.find(params[:id])
-    else
-      User.find(params[:id])
-    end
+    @user = User.find(params[:id])
   end
 
   def user_params
     params.require(:user).permit(
       :username, :user_number, :first_name, :last_name, :email,
       :password, :password_confirmation, :default_store_id, :active
-    )
-  end
-
-  def audit!(action, user)
-    Administration::RecordAuditEvent.call(
-      actor: Current.user,
-      organization: Current.organization,
-      store: Current.store,
-      action: action,
-      subject: user,
-      metadata: { username: user.username }
     )
   end
 end

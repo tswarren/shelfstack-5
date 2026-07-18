@@ -14,8 +14,12 @@ class CashDrawersController < ApplicationController
 
   def create
     @drawer = Current.store.cash_drawers.new(drawer_params)
-    if @drawer.save
-      audit!("drawer.created", @drawer)
+    if Administration::CreateCashDrawer.call(
+      drawer: @drawer,
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to cash_drawers_path, notice: "Drawer created."
     else
       render :new, status: :unprocessable_entity
@@ -26,8 +30,13 @@ class CashDrawersController < ApplicationController
   end
 
   def update
-    if @drawer.update(drawer_params)
-      audit!("drawer.updated", @drawer)
+    if Administration::UpdateCashDrawer.call(
+      drawer: @drawer,
+      attributes: drawer_params.to_h,
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to cash_drawers_path, notice: "Drawer updated."
     else
       render :edit, status: :unprocessable_entity
@@ -42,16 +51,5 @@ class CashDrawersController < ApplicationController
 
   def drawer_params
     params.require(:cash_drawer).permit(:code, :name, :active)
-  end
-
-  def audit!(action, drawer)
-    Administration::RecordAuditEvent.call(
-      actor: Current.user,
-      organization: Current.organization,
-      store: Current.store,
-      action: action,
-      subject: drawer,
-      metadata: { code: drawer.code }
-    )
   end
 end

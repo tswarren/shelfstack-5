@@ -19,9 +19,13 @@ class RolesController < ApplicationController
 
   def create
     @role = Current.organization.roles.new(role_params)
-    if @role.save
-      sync_permissions!(@role)
-      audit!("role.created", @role)
+    if Administration::CreateRole.call(
+      role: @role,
+      permission_ids: params[:permission_ids],
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to @role, notice: "Role created."
     else
       @permissions = Permission.order(:code)
@@ -34,9 +38,14 @@ class RolesController < ApplicationController
   end
 
   def update
-    if @role.update(role_params)
-      sync_permissions!(@role)
-      audit!("role.updated", @role)
+    if Administration::UpdateRole.call(
+      role: @role,
+      attributes: role_params.to_h,
+      permission_ids: params[:permission_ids],
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to @role, notice: "Role updated."
     else
       @permissions = Permission.order(:code)
@@ -52,24 +61,5 @@ class RolesController < ApplicationController
 
   def role_params
     params.require(:role).permit(:code, :name, :description, :active)
-  end
-
-  def sync_permissions!(role)
-    selected_ids = Array(params[:permission_ids]).map(&:to_i)
-    role.role_permissions.where.not(permission_id: selected_ids).find_each(&:destroy!)
-    selected_ids.each do |permission_id|
-      role.role_permissions.find_or_create_by!(permission_id: permission_id)
-    end
-  end
-
-  def audit!(action, role)
-    Administration::RecordAuditEvent.call(
-      actor: Current.user,
-      organization: Current.organization,
-      store: Current.store,
-      action: action,
-      subject: role,
-      metadata: { code: role.code }
-    )
   end
 end

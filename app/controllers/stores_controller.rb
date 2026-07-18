@@ -21,8 +21,11 @@ class StoresController < ApplicationController
 
   def create
     @store = Current.organization.stores.new(store_params)
-    if @store.save
-      audit!("store.created", @store)
+    if Administration::CreateStore.call(
+      store: @store,
+      actor: Current.user,
+      organization: Current.organization
+    )
       redirect_to @store, notice: "Store created."
     else
       render :new, status: :unprocessable_entity
@@ -33,8 +36,12 @@ class StoresController < ApplicationController
   end
 
   def update
-    if @store.update(store_params)
-      audit!("store.updated", @store)
+    if Administration::UpdateStore.call(
+      store: @store,
+      attributes: store_params.to_h,
+      actor: Current.user,
+      organization: Current.organization
+    )
       redirect_to @store, notice: "Store updated."
     else
       render :edit, status: :unprocessable_entity
@@ -52,17 +59,6 @@ class StoresController < ApplicationController
       :code, :store_number, :name, :legal_name, :address_line_1, :address_line_2,
       :city, :region, :postal_code, :country_code, :phone, :email, :san_number,
       :timezone, :currency_code, :receipt_header, :receipt_footer, :active
-    )
-  end
-
-  def audit!(action, store)
-    Administration::RecordAuditEvent.call(
-      actor: Current.user,
-      organization: Current.organization,
-      store: store,
-      action: action,
-      subject: store,
-      metadata: { code: store.code }
     )
   end
 end

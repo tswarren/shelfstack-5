@@ -6,14 +6,19 @@ class StoreMembership < ApplicationRecord
   belongs_to :role
   belongs_to :assigned_by_user, class_name: "User", optional: true
 
+  # Identity of a grant is immutable; transfer access by deactivating and creating a new membership.
+  attr_readonly :user_id, :store_id
+
   validates :user_id, uniqueness: { scope: :store_id }
   validates :active, inclusion: { in: [ true, false ] }
   validate :role_belongs_to_store_organization
   validate :date_range_valid
   validate :authority_amounts_non_negative
   validate :authority_rates_in_range
+  validate :identity_unchanged, on: :update
 
-  def effective_on?(date = Date.current)
+  def effective_on?(date = nil)
+    date ||= store_local_today
     return false unless active?
     return false if starts_on.present? && date < starts_on
     return false if ends_on.present? && date > ends_on
@@ -21,7 +26,17 @@ class StoreMembership < ApplicationRecord
     true
   end
 
+  def store_local_today
+    zone_name = store&.timezone.presence || Time.zone.name
+    Time.find_zone(zone_name)&.today || Date.current
+  end
+
   private
+
+  def identity_unchanged
+    errors.add(:user_id, "cannot be changed after creation") if user_id_changed?
+    errors.add(:store_id, "cannot be changed after creation") if store_id_changed?
+  end
 
   def role_belongs_to_store_organization
     return if role.blank? || store.blank?

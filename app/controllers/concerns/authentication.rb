@@ -85,14 +85,33 @@ module Authentication
   end
 
   def request_authentication
-    session[:return_to_after_authenticating] = request.url unless request.path == new_session_path
+    path = internal_redirect_path(request.fullpath)
+    session[:return_to_after_authenticating] = path if path.present? && path != new_session_path
     redirect_to new_session_path
   end
 
   def start_new_session_for(user)
+    return_to = session[:return_to_after_authenticating]
     reset_session
     session[:user_id] = user.id
+    session[:return_to_after_authenticating] = return_to if return_to.present?
     assign_initial_store!(user)
+  end
+
+  # Only relative internal paths are restored after authentication.
+  def internal_redirect_path(candidate)
+    return nil if candidate.blank?
+
+    uri = URI.parse(candidate.to_s)
+    return nil if uri.host.present? && uri.host != request.host
+    return nil unless uri.path&.start_with?("/")
+    return nil if uri.path.start_with?("//")
+
+    path = uri.path
+    path += "?#{uri.query}" if uri.query.present?
+    path
+  rescue URI::InvalidURIError
+    nil
   end
 
   def assign_initial_store!(user)

@@ -71,6 +71,8 @@ Application logic must not hard-code role names.
 | `administration.drawer.manage` | Manage cash drawers | store | 1 | — | no | yes |
 | `administration.audit.view` | View administrative audit records | organization | 1 | — | no | no |
 
+For `administration.user.view` and `administration.user.manage`, Scope `organization` means an organization-admin capability evaluated in store context (via membership → role), not a multi-tenant user foreign key. Users are installation-global under INV-ORG-001; see [organization-and-authorization.md](organization-and-authorization.md).
+
 Legacy names in [organization-and-authorization.md](organization-and-authorization.md) (`administration.view_stores`, etc.) should be treated as superseded by this table when seeding.
 
 ## Classification
@@ -162,6 +164,6 @@ Until normalized, prefer adding explicit rows here before seeding those phases.
 
 ## Seeding rules
 
-- Permission rows are organization-scoped definitions; grant occurs through roles and store memberships.
+- Permission catalog rows are installation-wide definitions; grant occurs through organization-owned roles and store memberships.
 - Deactivate rather than delete permissions once used in history.
 - Never grant access solely by role name in application code.

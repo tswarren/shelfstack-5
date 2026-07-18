@@ -88,6 +88,8 @@ An inactive Store cannot begin ordinary new operational activity but remains ava
 
 A User is one authenticated person. Shared cashier identities are prohibited for accountable activity.
 
+Under INV-ORG-001, one installation represents one operating Organization. Users are therefore **installation-global**: they are not owned by a Store and do not require an `organization_id` foreign key. Administrative user listing and lookup operate on the installation user set. Store access is granted only through Store Membership.
+
 Suggested attributes:
 
 - name;
@@ -97,6 +99,8 @@ Suggested attributes:
 - authentication fields;
 - optional PIN credential;
 - last login.
+
+A newly created User may exist without any Store Membership. Such users appear in installation user administration but cannot act in a Store until a membership is granted.
 
 ### Store Membership
 
@@ -112,6 +116,8 @@ Suggested attributes:
 - optional authority-limit overrides.
 
 A User may have different Roles and limits at different Stores.
+
+`user_id` and `store_id` are immutable after creation. To transfer access to a different User, deactivate the existing membership and create a new membership. Do not rewrite the identity of an existing grant.
 
 ### Role
 

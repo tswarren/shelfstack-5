@@ -55,4 +55,12 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     post session_path, params: { username: "admin", password: "password123" }
     assert_not_equal fixed, cookies["_shelf_stack_session"]
   end
+
+  test "restores relative return path after authentication across reset_session" do
+    get stores_path
+    assert_redirected_to new_session_path
+
+    post session_path, params: { username: "admin", password: "password123" }
+    assert_redirected_to stores_path
+  end
 end

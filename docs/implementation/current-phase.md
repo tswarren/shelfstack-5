@@ -10,6 +10,8 @@
 2. Resolve or respect [OD-011](https://github.com/tswarren/shelfstack-5/issues/14) (identifier generation) and [OD-012](open-decisions.md) as needed for catalog scaffolding.
 3. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
+Phase 1 hardening follow-up (transactional audited mutations, installation-global users, safe bootstrap, immutable memberships, fail-closed authority, return path, store-local dates) is complete. See [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) § Hardening follow-up.
+
 ### Pre-migration scrub checklist (completed in Phase 0)
 
 - [x] No separate display-category tables or `*_display_category_id` fields

@@ -2,7 +2,14 @@
   <% if membership.errors.any? %>
     <ul><% membership.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
   <% end %>
-  <div><%= form.label :user_id %> <%= form.collection_select :user_id, users, :id, :username %></div>
+  <% if membership.persisted? %>
+    <div>
+      <%= form.label :user_id, "User" %>
+      <%= membership.user.username %>
+    </div>
+  <% else %>
+    <div><%= form.label :user_id %> <%= form.collection_select :user_id, users, :id, :username %></div>
+  <% end %>
   <div><%= form.label :role_id %> <%= form.collection_select :role_id, roles, :id, :name %></div>
   <div><%= form.label :active %> <%= form.check_box :active %></div>
   <div><%= form.label :starts_on %> <%= form.date_field :starts_on %></div>

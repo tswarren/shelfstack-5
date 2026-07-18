@@ -50,5 +50,61 @@ module Authorization
       assert result.deny?
       assert_equal :unknown_limit_key, result.source
     end
+
+    test "nil limit key fails closed" do
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: nil,
+        requested_value: 1
+      )
+      assert result.deny?
+      assert_equal :unknown_limit_key, result.source
+    end
+
+    test "inactive role fails closed" do
+      roles(:administrator).update!(active: false)
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: :maximum_discount_rate,
+        requested_value: 0.01
+      )
+      assert result.deny?
+      assert_equal :inactive_role, result.source
+    end
+
+    test "negative requested value fails closed" do
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: :maximum_discount_rate,
+        requested_value: -0.01
+      )
+      assert result.deny?
+      assert_equal :invalid_requested_value, result.source
+    end
+
+    test "nonnumeric requested value fails closed" do
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: :maximum_discount_rate,
+        requested_value: "abc"
+      )
+      assert result.deny?
+      assert_equal :invalid_requested_value, result.source
+    end
+
+    test "blank requested value fails closed" do
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: :maximum_discount_rate,
+        requested_value: "  "
+      )
+      assert result.deny?
+      assert_equal :invalid_requested_value, result.source
+    end
   end
 end

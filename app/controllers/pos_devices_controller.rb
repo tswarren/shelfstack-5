@@ -14,8 +14,12 @@ class PosDevicesController < ApplicationController
 
   def create
     @device = Current.store.pos_devices.new(device_params)
-    if @device.save
-      audit!("device.created", @device)
+    if Administration::CreatePosDevice.call(
+      device: @device,
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to pos_devices_path, notice: "Device created."
     else
       render :new, status: :unprocessable_entity
@@ -26,8 +30,13 @@ class PosDevicesController < ApplicationController
   end
 
   def update
-    if @device.update(device_params)
-      audit!("device.updated", @device)
+    if Administration::UpdatePosDevice.call(
+      device: @device,
+      attributes: device_params.to_h,
+      actor: Current.user,
+      organization: Current.organization,
+      store: Current.store
+    )
       redirect_to pos_devices_path, notice: "Device updated."
     else
       render :edit, status: :unprocessable_entity
@@ -42,16 +51,5 @@ class PosDevicesController < ApplicationController
 
   def device_params
     params.require(:pos_device).permit(:code, :name, :device_type, :active)
-  end
-
-  def audit!(action, device)
-    Administration::RecordAuditEvent.call(
-      actor: Current.user,
-      organization: Current.organization,
-      store: Current.store,
-      action: action,
-      subject: device,
-      metadata: { code: device.code }
-    )
   end
 end
