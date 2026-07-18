@@ -146,6 +146,62 @@ admin_inventory_reservation_release:
   role: administrator
   permission: inventory_reservation_release
 
+admin_pos_access:
+  role: administrator
+  permission: pos_access
+
+admin_pos_business_day_open:
+  role: administrator
+  permission: pos_business_day_open
+
+admin_pos_business_day_close:
+  role: administrator
+  permission: pos_business_day_close
+
+admin_pos_session_open:
+  role: administrator
+  permission: pos_session_open
+
+admin_pos_session_close:
+  role: administrator
+  permission: pos_session_close
+
+admin_pos_transaction_open:
+  role: administrator
+  permission: pos_transaction_open
+
+admin_pos_transaction_suspend:
+  role: administrator
+  permission: pos_transaction_suspend
+
+admin_pos_transaction_recall:
+  role: administrator
+  permission: pos_transaction_recall
+
+admin_pos_transaction_cancel:
+  role: administrator
+  permission: pos_transaction_cancel
+
+admin_pos_line_remove:
+  role: administrator
+  permission: pos_line_remove
+
+clerk_pos_access:
+  role: associate
+  permission: pos_access
+
+clerk_pos_transaction_open:
+  role: associate
+  permission: pos_transaction_open
+
+clerk_pos_transaction_suspend:
+  role: associate
+  permission: pos_transaction_suspend
+
+clerk_pos_transaction_recall:
+  role: associate
+  permission: pos_transaction_recall
+
 catalog_editor_product_view:
   role: catalog_editor
   permission: product_view

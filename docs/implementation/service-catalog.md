@@ -83,13 +83,37 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - failed post rolls back ledger and balance together
 - idempotent retry does not duplicate value deltas
 
+## Phase 4a — Editable POS
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::OpenBusinessDay` | Point of Sale | 4a | Yes | No | `business_days` (lock query) | Store, actor, optional reporting date | Open Business Day; rejects a second open day per store |
+| `Pos::CloseBusinessDay` | Point of Sale | 4a | Yes | Yes | Business Day (`lock`) | Business Day, actor | Closed Business Day; blocks while a Session is open |
+| `Pos::OpenSession` | Point of Sale | 4a | Yes | No | Device/drawer open-session existence checks | Business Day, store, device, cashier, optional drawer | Open Session; device and cash-drawer exclusivity |
+| `Pos::CloseSession` | Point of Sale | 4a | Yes | Yes | Session (`lock`) | Session, actor | Closed Session; blocks while it controls an open Transaction; leaves Suspended Transactions untouched |
+| `Pos::OpenTransaction` | Point of Sale | 4a | Caller | No | None | Session, actor | Open Transaction with generated `public_id`; origin/active session set |
+| `Pos::ResolveScan` | Point of Sale | 4a | No | Yes | None | Organization, scan/search query, store | `Pos::ResolveScanResult` (variant, ambiguity, blockers/warnings via `Catalog::SaleEligibility`) |
+| `Pos::AddLine` | Point of Sale | 4a | Yes | No | Reservation via `Inventory::Reserve` | Transaction, variant, quantity, actor | Pending product line; reserves only `quantity`-tracked variants |
+| `Pos::AddOpenRingLine` | Point of Sale | 4a | Caller | No | None | Transaction, department, price, optional description, actor | Pending open-ring line; no Variant/Reservation; blank description snapshots to Department name |
+| `Pos::UpdateLineQty` | Point of Sale | 4a | Yes | No | Line (`lock`); reservation via `Inventory::Reserve` | Line, quantity, actor | Updated quantity; re-reserves in place for quantity-tracked lines |
+| `Pos::RemoveLine` | Point of Sale | 4a | Yes | No | Line (`lock`); reservation via `Inventory::ReleaseReservation` | Line, actor, optional reason | Soft-removed line (`status: removed`); releases any active reservation; row retained |
+| `Pos::SuspendTransaction` | Point of Sale | 4a | Yes | No | Transaction (`lock`) | Transaction, actor | Suspended Transaction; retains Reservations; clears active-session control |
+| `Pos::RecallTransaction` | Point of Sale | 4a | Yes | No | Transaction (`lock`) | Transaction, session, actor | Reopened Transaction bound to the recalling Session; concurrent recall has exactly one winner |
+| `Pos::CancelTransaction` | Point of Sale | 4a | Yes | No | Transaction (`lock`); reservations via `Inventory::ReleaseReservation` | Transaction, actor, optional reason | Cancelled Transaction; releases all pending-line Reservations; no ledger/receipt effect |
+
+### Phase 4a notes
+
+- `Pos::AddLine` / `Pos::AddOpenRingLine` resolve Department and Tax Category using the same variant-override → product-default → merchandise-class-default (→ department-default for tax) order as `Catalog::SaleEligibility`.
+- Individually tracked variants (`inventory_tracking_mode: individual`) are rejected by `Pos::AddLine` until Phase 4d.
+- No service in this list sets `pos_transactions.status` or `pos_line_items.status` to `completed`; that is reserved for `Pos::CompleteTransaction` (Phase 4c).
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 4a–4c: session/day services, `Pos::CompleteTransaction`, discount/tax helpers  
-- Phase 5: receipt posting, PO placement, allocation services  
-- Phase 6: stored-value posting, post-void  
+- Phase 4b–4c: `Pos::RecalculateTransaction`, `Tax::CalculateTransaction`, `Pos::CompleteTransaction`, discount/tender helpers
+- Phase 5: receipt posting, PO placement, allocation services
+- Phase 6: stored-value posting, post-void
 
 ## Related
 

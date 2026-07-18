@@ -71,21 +71,21 @@ Individual tracking is added in 4d. Stored-value line kind is reserved for Phase
 
 ### Exit
 
-- [ ] Suspended transaction retains reservations
-- [ ] Cancel releases reservations without inventory movement
-- [ ] No receipt number assigned
-- [ ] One open session per device enforced
-- [ ] Concurrent recall of the same suspended transaction has one winner
+- [x] Suspended transaction retains reservations
+- [x] Cancel releases reservations without inventory movement
+- [x] No receipt number assigned
+- [x] One open session per device enforced
+- [x] Concurrent recall of the same suspended transaction has one winner
 
 ### UX acceptance (4a)
 
-- [ ] Register workspace follows [pos-register-ui](../../design/pos-register-ui.md) two-panel / session-context principles (coherent, not pixel-perfect)
-- [ ] Dedicated scan/search field with Enter handling and focus restore per [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
-- [ ] Variant resolution UI distinguishes product vs variant; no sale without an exact variant
-- [ ] Warning vs blocker presentation for reservation / availability cases
-- [ ] Suspend / recall / cancel affordances match draft transaction states
-- [ ] Store, session, device/drawer, and cashier context remain visible
-- [ ] Open-Ring entry path resolves effective description from Department when blank
+- [x] Register workspace follows [pos-register-ui](../../design/pos-register-ui.md) two-panel / session-context principles (coherent, not pixel-perfect)
+- [x] Dedicated scan/search field with Enter handling and focus restore per [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md) (plain form submit; `autofocus` restores focus after redirect)
+- [x] Variant resolution UI distinguishes product vs variant; no sale without an exact variant
+- [x] Warning vs blocker presentation for reservation / availability cases
+- [x] Suspend / recall / cancel affordances match draft transaction states
+- [x] Store, session, device/drawer, and cashier context remain visible
+- [x] Open-Ring entry path resolves effective description from Department when blank
 
 ### Must not
 

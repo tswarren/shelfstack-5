@@ -5,6 +5,12 @@
 
 <nav aria-label="Primary">
   <ul>
+    <% if Current.user.can?("pos.access", store: Current.store) %>
+      <li><%= link_to "Register", register_path %></li>
+    <% end %>
+    <% if Current.user.can?("pos.access", store: Current.store) %>
+      <li><%= link_to "Business days", business_days_path %></li>
+    <% end %>
     <% if Current.user.can?("catalog.product.view", store: Current.store) %>
       <li><%= link_to "Products", products_path %></li>
     <% end %>

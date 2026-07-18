@@ -13,6 +13,9 @@ class Store < ApplicationRecord
   has_many :inventory_ledger_entries, dependent: :restrict_with_exception
   has_many :inventory_reservations, dependent: :restrict_with_exception
   has_many :inventory_adjustments, dependent: :restrict_with_exception
+  has_many :business_days, dependent: :restrict_with_exception
+  has_many :pos_sessions, dependent: :restrict_with_exception
+  has_many :pos_transactions, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true

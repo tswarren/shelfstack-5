@@ -17,3 +17,13 @@ upc_product_standard:
   status: active
   sellable: true
   purchasable: true
+
+gift_wrap_service_standard:
+  product: gift_wrap_service
+  sku: "2800000000035"
+  name: Standard
+  inventory_tracking_mode: none
+  regular_price_cents: 300
+  status: active
+  sellable: true
+  purchasable: false

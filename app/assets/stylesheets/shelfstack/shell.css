@@ -70,3 +70,25 @@
 .app-main nav a:hover {
   text-decoration: underline;
 }
+
+/* Register workspace — see docs/design/pos-register-ui.md */
+.pos-panel {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+}
+
+.pos-panel form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pos-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}

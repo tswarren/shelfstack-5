@@ -1,0 +1,22 @@
+<% content_for :title, "Open session" %>
+
+<h1>Open session</h1>
+
+<% if flash[:alert].present? %>
+  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
+<% end %>
+
+<%= form_with url: pos_sessions_path, scope: :pos_session do |form| %>
+  <%= form.hidden_field :business_day_id, value: @business_day.id %>
+  <div>
+    <%= form.label :pos_device_id, "Device" %>
+    <%= form.collection_select :pos_device_id, @devices, :id, :name %>
+  </div>
+  <div>
+    <%= form.label :cash_drawer_id, "Drawer (optional)" %>
+    <%= form.collection_select :cash_drawer_id, @drawers, :id, :name, include_blank: "Card-only (no drawer)" %>
+  </div>
+  <div><%= form.submit "Open session", class: "button button-primary" %></div>
+<% end %>
+
+<p><%= link_to "Back to register", register_path %></p>

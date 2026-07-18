@@ -1,0 +1,104 @@
+<% content_for :title, "Transaction #{@pos_transaction.public_id}" %>
+
+<h1>Transaction</h1>
+<p class="muted">
+  Public ID <strong><%= @pos_transaction.public_id %></strong> ·
+  Status <strong><%= @pos_transaction.status %></strong> ·
+  Store <strong><%= Current.store.name %></strong> ·
+  Cashier <strong><%= @pos_transaction.cashier_user.username %></strong>
+</p>
+
+<% if flash[:alert].present? %>
+  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
+<% end %>
+<% if flash[:notice].present? %>
+  <div class="ss-alert ss-alert-info"><p><%= flash[:notice] %></p></div>
+<% end %>
+
+<% if @pos_transaction.editable? %>
+  <div class="pos-panel">
+    <h2>Scan / search</h2>
+    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post do |form| %>
+      <%= form.text_field :query, placeholder: "Scan or search ISBN/SKU", autofocus: true, autocomplete: "off" %>
+      <%= form.number_field :quantity, value: 1, min: 1, style: "width:5em" %>
+      <%= form.submit "Add line", class: "button button-primary" %>
+    <% end %>
+  </div>
+
+  <div class="pos-panel">
+    <h2>Open-ring</h2>
+    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post do |form| %>
+      <%= hidden_field_tag :kind, "open_ring" %>
+      <%= form.label :department_id, "Department" %>
+      <%= form.collection_select :department_id, @departments, :id, :name %>
+      <%= form.label :description, "Description (optional)" %>
+      <%= form.text_field :description, placeholder: "Blank uses department name" %>
+      <%= form.label :unit_price_cents, "Price (cents)" %>
+      <%= form.number_field :unit_price_cents, min: 0 %>
+      <%= form.label :quantity %>
+      <%= form.number_field :quantity, value: 1, min: 1, style: "width:5em" %>
+      <%= form.submit "Add open-ring line", class: "button button-outline" %>
+    <% end %>
+  </div>
+<% end %>
+
+<h2>Lines</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Kind</th><th>Description</th><th>Qty</th><th>Price</th><th>Extended</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @pos_line_items.each do |line| %>
+      <tr>
+        <td><%= line.line_kind %></td>
+        <td><%= line.effective_description %></td>
+        <td>
+          <% if @pos_transaction.editable? %>
+            <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch do |form| %>
+              <%= form.number_field :quantity, value: line.quantity, min: 1, style: "width:4em" %>
+              <%= form.submit "Update", class: "button button-small button-outline" %>
+            <% end %>
+          <% else %>
+            <%= line.quantity %>
+          <% end %>
+        </td>
+        <td><%= pos_money(line.unit_price_cents) %></td>
+        <td><%= pos_money(line.extended_price_cents) %></td>
+        <td>
+          <% if @pos_transaction.editable? && Current.user.can?("pos.line.remove", store: Current.store) %>
+            <%= button_to "Remove", pos_transaction_pos_line_item_path(@pos_transaction, line), method: :delete, class: "button button-small button-danger" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p><strong>Subtotal:</strong> <%= pos_money(@pos_line_items.sum(&:extended_price_cents)) %></p>
+
+<% if @removed_line_items.any? %>
+  <h2>Removed lines</h2>
+  <ul>
+    <% @removed_line_items.each do |line| %>
+      <li><%= line.effective_description %> — removed <%= line.removed_at&.strftime("%Y-%m-%d %H:%M") %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @pos_transaction.open? %>
+  <div class="pos-actions">
+    <% if Current.user.can?("pos.transaction.suspend", store: Current.store) %>
+      <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction), class: "button button-outline" %>
+    <% end %>
+    <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>
+      <%= button_to "Cancel", cancel_pos_transaction_path(@pos_transaction), class: "button button-danger",
+            form: { data: { turbo_confirm: "Cancel this transaction?" } } %>
+    <% end %>
+  </div>
+<% elsif @pos_transaction.suspended? && Current.user.can?("pos.transaction.recall", store: Current.store) %>
+  <%= button_to "Recall", recall_pos_transaction_path(@pos_transaction), class: "button button-primary" %>
+<% end %>
+
+<p><%= link_to "Back to register", register_path %></p>

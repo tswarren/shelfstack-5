@@ -1,16 +1,17 @@
 # Current Phase
 
 **Active delivery phase:** Phase 4a — Editable POS  
-**Status:** UX readiness gate complete; 4a not started  
+**Status:** 4a implemented on `phase/p4-point-of-sale` (business days, sessions, transactions, product/open-ring lines, suspend/recall/cancel, permissions, minimal register UI); not merged to `main` pending manual testing per the Phase 4 delivery plan's merge gate  
 **Design docs:** [../design/README.md](../design/README.md)  
 **Plan document:** [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)
 
 ## Immediate next work
 
-1. Begin Phase 4a (editable POS: business days, sessions, open transactions) per [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), using [../design/pos-register-ui.md](../design/pos-register-ui.md).
+1. Manually test Phase 4a on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
 2. Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b (hard prerequisite; may proceed in parallel with 4a). See [phase-04-tax-schema.md](phase-04-tax-schema.md) and [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
-3. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
-4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+3. Begin Phase 4b (price, tax, discounts, approvals) once store tax rates/rules land.
+4. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
+5. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
 ### UX readiness gate (complete)
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -28,6 +28,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_010000) do
     t.index ["organization_id"], name: "index_administrative_audit_events_on_organization_id"
     t.index ["store_id"], name: "index_administrative_audit_events_on_store_id"
     t.index ["subject_type", "subject_id"], name: "idx_on_subject_type_subject_id_1fe0fde46f"
+  end
+
+  create_table "business_days", force: :cascade do |t|
+    t.datetime "closed_at"
+    t.bigint "closed_by_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "opened_at", null: false
+    t.bigint "opened_by_user_id", null: false
+    t.date "reporting_date", null: false
+    t.string "status", default: "open", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["closed_by_user_id"], name: "index_business_days_on_closed_by_user_id"
+    t.index ["opened_by_user_id"], name: "index_business_days_on_opened_by_user_id"
+    t.index ["store_id"], name: "index_business_days_on_store_id"
+    t.index ["store_id"], name: "index_business_days_one_open_per_store", unique: true, where: "((status)::text = 'open'::text)"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'closed'::character varying]::text[])", name: "business_days_status_check"
   end
 
   create_table "cash_drawers", force: :cascade do |t|
@@ -318,6 +335,85 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_010000) do
     t.datetime "updated_at", null: false
     t.index ["store_id", "code"], name: "index_pos_devices_on_store_id_and_code", unique: true
     t.index ["store_id"], name: "index_pos_devices_on_store_id"
+  end
+
+  create_table "pos_line_items", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.bigint "department_id", null: false
+    t.string "description_snapshot"
+    t.string "line_kind", null: false
+    t.bigint "pos_transaction_id", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "product_variant_id"
+    t.integer "quantity", default: 1, null: false
+    t.text "remove_reason"
+    t.datetime "removed_at"
+    t.bigint "removed_by_user_id"
+    t.string "status", default: "pending", null: false
+    t.bigint "tax_category_id"
+    t.integer "unit_price_cents", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_user_id"], name: "index_pos_line_items_on_created_by_user_id"
+    t.index ["department_id"], name: "index_pos_line_items_on_department_id"
+    t.index ["pos_transaction_id"], name: "index_pos_line_items_on_pos_transaction_id"
+    t.index ["product_variant_id"], name: "index_pos_line_items_on_product_variant_id"
+    t.index ["removed_by_user_id"], name: "index_pos_line_items_on_removed_by_user_id"
+    t.index ["tax_category_id"], name: "index_pos_line_items_on_tax_category_id"
+    t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL", name: "pos_line_items_product_variant_matches_kind"
+    t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying, 'open_ring'::character varying]::text[])", name: "pos_line_items_line_kind_check"
+    t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'completed'::character varying, 'removed'::character varying]::text[])", name: "pos_line_items_status_check"
+    t.check_constraint "unit_price_cents >= 0", name: "pos_line_items_unit_price_non_negative"
+  end
+
+  create_table "pos_sessions", force: :cascade do |t|
+    t.bigint "business_day_id", null: false
+    t.bigint "cash_drawer_id"
+    t.bigint "cashier_user_id", null: false
+    t.datetime "closed_at"
+    t.bigint "closed_by_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "opened_at", null: false
+    t.bigint "opened_by_user_id", null: false
+    t.bigint "pos_device_id", null: false
+    t.string "status", default: "open", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_day_id"], name: "index_pos_sessions_on_business_day_id"
+    t.index ["cash_drawer_id"], name: "index_pos_sessions_on_cash_drawer_id"
+    t.index ["cash_drawer_id"], name: "index_pos_sessions_one_active_per_drawer", unique: true, where: "(((status)::text = 'open'::text) AND (cash_drawer_id IS NOT NULL))"
+    t.index ["cashier_user_id"], name: "index_pos_sessions_on_cashier_user_id"
+    t.index ["closed_by_user_id"], name: "index_pos_sessions_on_closed_by_user_id"
+    t.index ["opened_by_user_id"], name: "index_pos_sessions_on_opened_by_user_id"
+    t.index ["pos_device_id"], name: "index_pos_sessions_on_pos_device_id"
+    t.index ["pos_device_id"], name: "index_pos_sessions_one_open_per_device", unique: true, where: "((status)::text = 'open'::text)"
+    t.index ["store_id"], name: "index_pos_sessions_on_store_id"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'closed'::character varying]::text[])", name: "pos_sessions_status_check"
+  end
+
+  create_table "pos_transactions", force: :cascade do |t|
+    t.bigint "active_pos_session_id"
+    t.text "cancel_reason"
+    t.datetime "cancelled_at"
+    t.bigint "cancelled_by_user_id"
+    t.bigint "cashier_user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "opened_at", null: false
+    t.bigint "origin_pos_session_id", null: false
+    t.string "public_id", null: false
+    t.datetime "recalled_at"
+    t.string "status", default: "open", null: false
+    t.bigint "store_id", null: false
+    t.datetime "suspended_at"
+    t.datetime "updated_at", null: false
+    t.index ["active_pos_session_id"], name: "index_pos_transactions_on_active_pos_session_id"
+    t.index ["cancelled_by_user_id"], name: "index_pos_transactions_on_cancelled_by_user_id"
+    t.index ["cashier_user_id"], name: "index_pos_transactions_on_cashier_user_id"
+    t.index ["origin_pos_session_id"], name: "index_pos_transactions_on_origin_pos_session_id"
+    t.index ["public_id"], name: "index_pos_transactions_on_public_id", unique: true
+    t.index ["store_id"], name: "index_pos_transactions_on_store_id"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'suspended'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "pos_transactions_status_check"
   end
 
   create_table "product_conditions", force: :cascade do |t|
@@ -619,6 +715,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_010000) do
   add_foreign_key "administrative_audit_events", "organizations", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "stores", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "users", column: "actor_user_id", on_delete: :restrict
+  add_foreign_key "business_days", "stores", on_delete: :restrict
+  add_foreign_key "business_days", "users", column: "closed_by_user_id", on_delete: :restrict
+  add_foreign_key "business_days", "users", column: "opened_by_user_id", on_delete: :restrict
   add_foreign_key "cash_drawers", "stores", on_delete: :restrict
   add_foreign_key "cash_movement_types", "organizations", on_delete: :restrict
   add_foreign_key "departments", "departments", column: "parent_department_id"
@@ -650,6 +749,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_010000) do
   add_foreign_key "merchandise_classes", "organizations"
   add_foreign_key "merchandise_classes", "tax_categories", column: "default_tax_category_id"
   add_foreign_key "pos_devices", "stores", on_delete: :restrict
+  add_foreign_key "pos_line_items", "departments", on_delete: :restrict
+  add_foreign_key "pos_line_items", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_line_items", "product_variants", on_delete: :restrict
+  add_foreign_key "pos_line_items", "tax_categories", on_delete: :restrict
+  add_foreign_key "pos_line_items", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_line_items", "users", column: "removed_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_sessions", "business_days", on_delete: :restrict
+  add_foreign_key "pos_sessions", "cash_drawers", on_delete: :restrict
+  add_foreign_key "pos_sessions", "pos_devices", on_delete: :restrict
+  add_foreign_key "pos_sessions", "stores", on_delete: :restrict
+  add_foreign_key "pos_sessions", "users", column: "cashier_user_id", on_delete: :restrict
+  add_foreign_key "pos_sessions", "users", column: "closed_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_sessions", "users", column: "opened_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "pos_sessions", column: "active_pos_session_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "pos_sessions", column: "origin_pos_session_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "stores", on_delete: :restrict
+  add_foreign_key "pos_transactions", "users", column: "cancelled_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "users", column: "cashier_user_id", on_delete: :restrict
   add_foreign_key "product_conditions", "organizations"
   add_foreign_key "product_formats", "organizations"
   add_foreign_key "product_variants", "departments"

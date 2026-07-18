@@ -11,6 +11,7 @@ class Department < ApplicationRecord
   belongs_to :default_return_policy, class_name: "ReturnPolicy", optional: true
   has_many :child_departments, class_name: "Department", foreign_key: :parent_department_id,
            inverse_of: :parent_department, dependent: :restrict_with_exception
+  has_many :pos_line_items, dependent: :restrict_with_exception
 
   attr_readonly :code, :department_number
 

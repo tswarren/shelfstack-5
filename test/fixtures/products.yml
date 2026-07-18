@@ -27,3 +27,18 @@ upc_product:
   variant_structure: single
   status: active
   sellable: true
+
+gift_wrap_service:
+  organization: acme
+  identifier: "9912345678903"
+  identifier_generated: false
+  identifier_validation_status: valid
+  name: Gift Wrap Service
+  product_type: service
+  product_format: other
+  merchandise_class: fiction_primary
+  default_department: books_new
+  default_tax_category: physical_book
+  variant_structure: single
+  status: active
+  sellable: true

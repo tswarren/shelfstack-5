@@ -6,6 +6,7 @@ class TaxCategory < ApplicationRecord
                          inverse_of: :default_tax_category
   has_many :merchandise_classes, foreign_key: :default_tax_category_id, dependent: :restrict_with_exception,
                                  inverse_of: :default_tax_category
+  has_many :pos_line_items, dependent: :restrict_with_exception
 
   attr_readonly :code
 

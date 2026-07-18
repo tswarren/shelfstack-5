@@ -1,0 +1,75 @@
+<% content_for :title, "Register" %>
+
+<h1>Register</h1>
+<p class="muted">
+  <strong><%= Current.store.name %></strong> ·
+  Signed in as <strong><%= Current.user.username %></strong>
+</p>
+
+<% if @business_day.blank? %>
+  <div class="ss-alert ss-alert-info">
+    <p>No business day is open for this store.</p>
+  </div>
+  <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
+    <%= link_to "Open business day", new_business_day_path, class: "button button-primary" %>
+  <% end %>
+<% else %>
+  <p>
+    Business day open since <%= @business_day.opened_at.strftime("%Y-%m-%d %H:%M") %>
+    (reporting date <%= @business_day.reporting_date %>).
+    <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
+      <%= button_to "Close business day", close_business_day_path(@business_day), class: "button button-small button-outline" %>
+    <% end %>
+  </p>
+
+  <% if @open_session.blank? %>
+    <div class="ss-alert ss-alert-info">
+      <p>You have no open POS session.</p>
+    </div>
+    <% if Current.user.can?("pos.session.open", store: Current.store) %>
+      <%= link_to "Open session", new_pos_session_path(business_day_id: @business_day.id), class: "button button-primary" %>
+    <% end %>
+  <% else %>
+    <p>
+      Session open on device <strong><%= @open_session.pos_device.name %></strong>
+      <% if @open_session.cash_drawer.present? %>
+        / drawer <strong><%= @open_session.cash_drawer.name %></strong>
+      <% end %>.
+      <% if Current.user.can?("pos.session.close", store: Current.store) %>
+        <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
+      <% end %>
+    </p>
+
+    <% if @open_transaction.present? %>
+      <p><%= link_to "Continue current transaction", pos_transaction_path(@open_transaction), class: "button button-primary" %></p>
+    <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
+      <%= button_to "New sale", pos_transactions_path, class: "button button-primary" %>
+    <% end %>
+
+    <h2>Suspended transactions</h2>
+    <% if @suspended_transactions.empty? %>
+      <p class="muted">None.</p>
+    <% else %>
+      <table>
+        <thead>
+          <tr><th>Public ID</th><th>Suspended at</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% @suspended_transactions.each do |transaction| %>
+            <tr>
+              <td><%= transaction.public_id %></td>
+              <td><%= transaction.suspended_at&.strftime("%Y-%m-%d %H:%M") %></td>
+              <td>
+                <% if Current.user.can?("pos.transaction.recall", store: Current.store) %>
+                  <%= button_to "Recall", recall_pos_transaction_path(transaction), class: "button button-small button-outline" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  <% end %>
+<% end %>
+
+<p><%= link_to "Home", root_path %></p>

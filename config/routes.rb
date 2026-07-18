@@ -38,5 +38,26 @@ Rails.application.routes.draw do
     end
   end
 
+  get "register", to: "register#show", as: :register
+
+  resources :business_days, only: %i[index new create] do
+    member do
+      post :close
+    end
+  end
+  resources :pos_sessions, only: %i[new create] do
+    member do
+      post :close
+    end
+  end
+  resources :pos_transactions, only: %i[index show create] do
+    member do
+      post :suspend
+      post :recall
+      post :cancel
+    end
+    resources :pos_line_items, only: %i[create update destroy]
+  end
+
   root "homes#show"
 end
