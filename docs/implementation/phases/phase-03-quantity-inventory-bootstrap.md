@@ -1,12 +1,11 @@
 # Phase 3 — Quantity Inventory Bootstrap
 
-**Status:** In review (second hardening pass)  
-
-
+**Status:** Complete (2026-07-18); hardening follow-up complete  
 
 **Depends on:** Phase 2  
 **Unlocks:** Phase 4a  
 **Governing docs:** ADR-0004, ADR-0006, ADR-0013; [receiving-and-inventory](../../domains/receiving-and-inventory.md); [architectural-locks](../architectural-locks.md); [phase-03-inventory-cost-schema.md](../phase-03-inventory-cost-schema.md)
+
 
 ## Goal
 
@@ -106,11 +105,18 @@ Phase 3 remains intentionally narrow: balances, ledger posting, reservations, ad
 - [x] Negative available with warning behaves per lock
 - [x] No receipt tables in schema
 
-Hardening follow-up (reopened review gate): first-balance `create_or_find_by!`, financial idempotency compare, aggregate inbound rounding, posting ArgumentError rescue, draft cost permission, remove routine `sync_admin_permissions` from `bin/setup`, unknown-delta/null semantics, `last_known` from resulting average, reservation lock order, ledger immutability, Department estimate precedence, store-mismatch guards.
+## Hardening follow-up
 
-Second hardening pass: `UpdateAdjustment` locks and rechecks draft status; finalized Adjustment/Line mutation blocked; posted cost history requires `inventory.cost.view`; monetary and cost-state combination validations; `last_known_*` synced after every known positive carrying rate; `StatementInvalid` rescued on post.
+Post-exit review corrections before Phase 4a POS work:
+
+- First-balance `create_or_find_by!`, financial idempotency compare, aggregate inbound rounding, posting ArgumentError / `StatementInvalid` rescue.
+- Draft cost visibility vs posted cost history (`inventory.cost.view`); remove routine `sync_admin_permissions` from `bin/setup`.
+- Unknown-delta/null semantics; `last_known_*` synced after every known positive carrying rate; reservation lock order; ledger immutability.
+- Department estimate precedence; store-mismatch guards; kind-specific form/validation.
+- `UpdateAdjustment` / `PostAdjustment` / `CancelAdjustment` `reload.lock!` with draft recheck; finalized Adjustment/Line mutation blocked; monetary and cost-state combination validations.
 
 ## Out of scope
+
 
 - Receiving, purchasing, product requests
 - Individual tracking

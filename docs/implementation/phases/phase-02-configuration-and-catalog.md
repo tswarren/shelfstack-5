@@ -1,6 +1,7 @@
 # Phase 2 — Configuration and Catalog
 
-**Status:** Complete  
+**Status:** Complete (delivered before Phase 3)  
+
  
 **Depends on:** Phase 1; classification-field audit from Phase 0  
 **Unlocks:** Phase 3  

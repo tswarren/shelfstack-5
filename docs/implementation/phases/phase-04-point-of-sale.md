@@ -1,7 +1,8 @@
 # Phase 4 — Point of Sale
 
-**Status:** Not started  
-**Depends on:** Phase 3; store tax rates/rules before 4b  
+**Status:** Not started (Phase 3 complete; next delivery focus is 4a)  
+**Depends on:** Phase 3 (complete); store tax rates/rules before 4b  
+
 **Unlocks:** Phase 5 (after 4c minimum; 4d/4e recommended before broad supply fulfilment)  
 **Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011; [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md)
 

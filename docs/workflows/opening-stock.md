@@ -1,6 +1,7 @@
 # Workflow: Opening Stock via Inventory Adjustment
 
-**Status:** Delivery Phase 3  
+**Status:** Delivered in Phase 3  
+
 **Type:** Record-level workflow  
 **Governing:** ADR-0004, ADR-0006, ADR-0013; [architectural-locks](../implementation/architectural-locks.md); [receiving-and-inventory](../domains/receiving-and-inventory.md)  
 **Open:** [OD-014](../implementation/open-decisions.md) for deficit allocation only (not required for ordinary opening from zero)

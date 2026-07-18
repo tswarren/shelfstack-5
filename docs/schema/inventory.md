@@ -1,6 +1,7 @@
 # Inventory schema (Phase 3)
 
-**Status:** Implemented subset for Phase 3  
+**Status:** Implemented (Phase 3 complete)  
+
 **Authoritative field notes:** [phase-03-inventory-cost-schema.md](../implementation/phase-03-inventory-cost-schema.md)  
 **Domain:** [receiving-and-inventory.md](../domains/receiving-and-inventory.md)
 

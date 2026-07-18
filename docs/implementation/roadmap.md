@@ -48,9 +48,10 @@ flowchart TD
 | --- | --- | --- | --- |
 | 0 | Scaffold and architectural locks | Complete | [phases/phase-00-scaffold-and-locks.md](phases/phase-00-scaffold-and-locks.md) |
 | 1 | Organization and authorization | Complete | [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) |
-| 2 | Configuration and catalog | Not started | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
-| 3 | Quantity inventory bootstrap | In review (hardening) | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
+| 2 | Configuration and catalog | Complete | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
+| 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
 | 4 | Point of sale (4a–4e) | Not started | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
+
 | 5 | Supply and demand | Not started | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
@@ -83,14 +84,13 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-1. Phase 0 — scaffold, locks, classification-field audit  
-2. Phase 1 — auth and store context  
-3. Phase 2 — catalog and identifiers  
-4. Phase 3 — quantity bootstrap, opening cost, negative-stock tests  
-5. Store tax rates/rules → Phase 4a → 4b → 4c (first completed sale)  
-6. Phase 4d individual units; Phase 4e linked returns  
-7. Phase 5 purchasing, receiving, minimal customer, requests  
-8. Phases 6–7 as separate epics  
+Completed: Phases 0–3 (scaffold, org/auth, config/catalog, quantity inventory bootstrap).
+
+1. Store tax rates/rules → Phase 4a → 4b → 4c (first completed sale)  
+2. Phase 4d individual units; Phase 4e linked returns  
+3. Phase 5 purchasing, receiving, minimal customer, requests  
+4. Phases 6–7 as separate epics  
+
 
 ## Schema and seed inputs
 

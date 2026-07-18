@@ -58,7 +58,8 @@ Pattern:
 - Use separate database connections (or threads with checked-out connections) against PostgreSQL.
 - Contended resources: stock balances, unit reservations, receipt sequence, completion idempotency, stored-value balance (later phases).
 - Assert one winner / one failure or serialized success per invariant — never silent double-spend.
-- Document helper: e.g. `ConcurrencyHelper.with_connection` (to be added when Phase 3 lands).
+- Phase 3 inventory concurrency tests use `ActiveRecord::Base.connection_pool.with_connection` inside threads (see `test/services/inventory/concurrency*_test.rb`).
+
 
 ## Transactional tests
 

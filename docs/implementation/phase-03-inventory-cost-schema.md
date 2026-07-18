@@ -1,6 +1,7 @@
 # Phase 3 — Inventory Cost Schema (Authoritative Subset)
 
-**Status:** Authoritative for Phase 3 delivery  
+**Status:** Implemented (Phase 3 complete); authoritative field notes for quantity-tracked costing  
+
 **Governing:** [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md), [receiving-and-inventory](../domains/receiving-and-inventory.md)  
 **Related:** Full exploratory design note in [design-notes/inventory-costing/inventory_cost_schema_design_note.md](design-notes/inventory-costing/inventory_cost_schema_design_note.md) (non-authoritative beyond this subset)
 
