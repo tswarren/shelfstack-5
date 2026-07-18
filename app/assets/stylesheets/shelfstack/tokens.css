@@ -1,0 +1,67 @@
+/* ShelfStack design tokens — see docs/design/visual-style-guide.md */
+:root {
+  color-scheme: light;
+
+  --brand-primary: #09595f;
+  --brand-primary-hover: #07474c;
+  --brand-primary-active: #05383c;
+  --brand-primary-soft: #e4f1f2;
+
+  --brand-secondary: #66153e;
+  --brand-secondary-hover: #50102f;
+  --brand-secondary-active: #3f0c25;
+  --brand-secondary-soft: #f5e8ee;
+
+  --brand-accent: #c77c00;
+  --brand-accent-hover: #a96800;
+  --brand-accent-soft: #fff2d6;
+
+  --bg-100: #f8fafa;
+  --bg-200: #eef3f3;
+  --bg-300: #dce7e7;
+
+  --surface-primary: #ffffff;
+  --surface-secondary: #eef3f3;
+  --surface-selected: #e4f1f2;
+  --surface-disabled: #e7ecec;
+
+  --text-primary: #0b1c2e;
+  --text-secondary: #465663;
+  --text-muted: #5f6f79;
+  --text-disabled: #7b898f;
+  --text-inverse: #ffffff;
+
+  --border-subtle: #dce7e7;
+  --border-default: #cbd8d8;
+  --border-strong: #aebfc0;
+
+  --info: #245b7a;
+  --info-bg: #e8f2f7;
+  --info-border: #a7c6d8;
+  --info-text: #17445e;
+
+  --success: #2f6f4e;
+  --success-bg: #e8f3ed;
+  --success-border: #afd0bc;
+  --success-text: #24543d;
+
+  --warning: #9a5d00;
+  --warning-bg: #fff4d6;
+  --warning-border: #e3b45b;
+  --warning-text: #684000;
+
+  --danger: #9a3040;
+  --danger-bg: #fbeaec;
+  --danger-border: #dfaab2;
+  --danger-text: #742331;
+
+  --focus-ring: #7db4b8;
+
+  --header-height: 68px;
+  --sidebar-width: 248px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 2px rgb(11 28 46 / 7%), 0 1px 6px rgb(11 28 46 / 4%);
+  --shadow-md: 0 8px 24px rgb(11 28 46 / 10%);
+}

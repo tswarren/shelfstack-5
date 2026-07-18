@@ -8,8 +8,10 @@
 | Document | Role |
 | --- | --- |
 | [roadmap.md](roadmap.md) | Master sequence, status, and mapping to system-overview phases |
+| [../design/README.md](../design/README.md) | Cross-cutting UI direction, POS interaction, accessibility; prototypes |
 | [git-workflow.md](git-workflow.md) | Trunk-based branching, PR, and merge conventions |
 | [current-phase.md](current-phase.md) | What is in progress right now |
+
 | [architectural-locks.md](architectural-locks.md) | Settled delivery decisions that must not be re-litigated mid-phase |
 | [open-decisions.md](open-decisions.md) | Living queue of unresolved choices (needed-by phase + disposition) |
 | [deferred-capabilities.md](deferred-capabilities.md) | Explicitly out of scope until designed |
@@ -29,8 +31,10 @@ Implementation plans sit below ADRs and Domain Specifications:
 2. Domain Specification;
 3. schema documentation / reconciled proforma;
 4. workflow documentation;
-5. **these implementation documents**;
-6. archived material.
+5. design documentation ([../design/](../design/README.md));
+6. **these implementation documents**;
+7. archived material.
+
 
 When delivery order differs from the conceptual sequence in [system-overview §1.8](../architecture/system-overview.md), this roadmap is authoritative for **build order**. It does not change domain ownership or invariants.
 

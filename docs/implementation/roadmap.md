@@ -5,7 +5,9 @@
 **Current phase:** [current-phase.md](current-phase.md)  
 **Locks:** [architectural-locks.md](architectural-locks.md)  
 **Open decisions:** [open-decisions.md](open-decisions.md)  
+**Design (cross-cutting):** [../design/README.md](../design/README.md)  
 **Git workflow:** [git-workflow.md](git-workflow.md)
+
 
 ## Central decision
 
@@ -81,15 +83,18 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 - Only inventory movements posted through ledger services change `on_hand`.
 - Do not invent deferred workflows (see [deferred-capabilities.md](deferred-capabilities.md)).
 - Tests scale with risk: concurrency and idempotency required for inventory, money, and completion.
+- UI/UX is a cross-cutting responsibility ([../design/](../design/README.md)): a short readiness gate precedes Phase 4a; POS UI and transaction semantics develop together; broader consolidation is planned for Phase 5. Mockups are a north star, not business-logic contracts.
 
 ## Near-term cadence
 
 Completed: Phases 0–3 (scaffold, org/auth, config/catalog, quantity inventory bootstrap).
 
-1. Store tax rates/rules → Phase 4a → 4b → 4c (first completed sale)  
-2. Phase 4d individual units; Phase 4e linked returns  
-3. Phase 5 purchasing, receiving, minimal customer, requests  
-4. Phases 6–7 as separate epics  
+1. UX readiness gate ([../design/](../design/README.md); tokens/shell in Rails)  
+2. Store tax rates/rules (∥ with 4a) → Phase 4a → 4b → 4c (first completed sale)  
+3. Phase 4d individual units; Phase 4e linked returns  
+4. Phase 5 purchasing, receiving, minimal customer, requests — then first app-wide UX consolidation  
+5. Phases 6–7 as separate epics  
+
 
 
 ## Schema and seed inputs

@@ -11,19 +11,39 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+
     <%= javascript_importmap_tags %>
   </head>
 
   <body>
-    <%= yield %>
+    <% if Current.user && Current.store %>
+      <header class="app-header">
+        <div class="app-header-inner">
+          <%= link_to root_path, class: "app-brand" do %>
+            ShelfStack
+          <% end %>
+          <div class="app-context">
+            <span>
+              <strong><%= Current.store.name %></strong>
+              <span class="muted">(<%= Current.organization.name %>)</span>
+            </span>
+            <span>Signed in as <strong><%= Current.user.username %></strong></span>
+            <% if effective_memberships_for(Current.user).many? %>
+              <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-outline" %>
+            <% end %>
+            <%= button_to "Sign out", session_path, method: :delete, class: "button button-small button-ghost" %>
+          </div>
+        </div>
+      </header>
+    <% end %>
+
+    <div class="app-main">
+      <%= yield %>
+    </div>
   </body>
 </html>

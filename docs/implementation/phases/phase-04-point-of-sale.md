@@ -1,16 +1,23 @@
 # Phase 4 — Point of Sale
 
-**Status:** Not started (Phase 3 complete; next delivery focus is 4a)  
-**Depends on:** Phase 3 (complete); store tax rates/rules before 4b  
+**Status:** Not started (Phase 3 complete; UX readiness gate before 4a)  
+**Depends on:** Phase 3 (complete); [UX readiness gate](../../design/README.md) before 4a coding; store tax rates/rules before 4b  
 
 **Unlocks:** Phase 5 (after 4c minimum; 4d/4e recommended before broad supply fulfilment)  
-**Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011; [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md)
+**Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011; [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md); [pos-register-ui](../../design/pos-register-ui.md); [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
 
 ## Goal
 
 Deliver an inventory-aware POS path ending in atomic, idempotent completion for quantity-tracked and non-inventory lines, then extend to individual units and linked returns.
 
+## UX readiness gate (prerequisite for 4a)
+
+Phase 4a implementation may begin when POS workflow states, scan/focus rules, warning and blocker patterns, principal layout, and accessibility baseline are documented ([../../design/](../../design/README.md)), living prototypes are in place, and shared visual tokens/shell CSS exist in Rails. Visual polish is not a gate; inventing POS interaction ad hoc during 4a is.
+
+Prototype JS and mockup calculations are non-authoritative. Server services own pricing, tax, reservation, tender, completion, and receipt numbering.
+
 ## Gates
+
 
 | Gate | Name | First-sale path? |
 | --- | --- | --- |
@@ -47,6 +54,15 @@ Deliver an inventory-aware POS path ending in atomic, idempotent completion for 
 - [ ] Cancel releases reservations without inventory movement
 - [ ] No receipt number assigned
 
+### UX acceptance (4a)
+
+- [ ] Register workspace follows [pos-register-ui](../../design/pos-register-ui.md) two-panel / session-context principles (coherent, not pixel-perfect)
+- [ ] Dedicated scan/search field with Enter handling and focus restore per [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
+- [ ] Variant resolution UI distinguishes product vs variant; no sale without an exact variant
+- [ ] Warning vs blocker presentation for reservation / availability cases
+- [ ] Suspend / recall / cancel affordances match draft transaction states
+- [ ] Store, session, device/drawer, and cashier context remain visible
+
 ### Must not
 
 - Complete transactions or assign receipt numbers
@@ -54,6 +70,7 @@ Deliver an inventory-aware POS path ending in atomic, idempotent completion for 
 ---
 
 ## Phase 4b — Price, tax, discounts, approvals
+
 
 ### Prerequisite
 
@@ -80,9 +97,16 @@ Store tax rates and store tax rules with effective dates, taxable fraction, calc
 - [ ] Discount allocation totals match line caches
 - [ ] Insufficient authority requires independent approver credentials
 
+### UX acceptance (4b)
+
+- [ ] Price, discount, and tax components displayed from server-resolved values (not title-based tax)
+- [ ] Approval UI supports independent approver credentials and retains requester/approver context
+- [ ] Snapshot-facing labels use merchandise class and tax category terminology
+
 ---
 
 ## Phase 4c — Tender and atomic completion
+
 
 ### Tables
 
@@ -118,11 +142,19 @@ Double-submit of the same completion request must not duplicate postings.
 - [ ] Idempotency key prevents duplicate completion
 - [ ] Quantity negative-sale warning path tested
 
+### UX acceptance (4c)
+
+- [ ] Tender panel and balance-due presentation; shortcuts request completion only
+- [ ] Completion in-progress / failed / retry UI aligned with idempotency (no duplicate-submit ambiguity)
+- [ ] Receipt presentation after successful completion
+- [ ] Critical browser paths covered by system tests (not pixel snapshots)
+
 ### Must not
 
 - Post-void sophistication (Phase 6)
 - Full stored-value issuance/redemption (Phase 6)
 - Individual unit sales (Phase 4d)
+
 
 ---
 
@@ -172,3 +204,6 @@ Double-submit of the same completion request must not duplicate postings.
 
 - [phase-03-quantity-inventory-bootstrap.md](phase-03-quantity-inventory-bootstrap.md)
 - [../architectural-locks.md](../architectural-locks.md)
+- [../../design/README.md](../../design/README.md)
+- [../../design/prototypes/ui_mockup/](../../design/prototypes/ui_mockup/)
+

@@ -14,7 +14,9 @@ Before making a material change, read:
 4. the applicable file under [`docs/domains/`](docs/domains/)
 5. the applicable schema documentation under [`docs/schema/`](docs/schema/)
 6. the applicable workflow under [`docs/workflows/`](docs/workflows/)
-7. [`docs/implementation/roadmap.md`](docs/implementation/roadmap.md)
+7. applicable design guidance under [`docs/design/`](docs/design/) for UI work
+8. [`docs/implementation/roadmap.md`](docs/implementation/roadmap.md)
+
 
 Do not infer current architecture from archived documents, superseded specifications, old branches, or obsolete migrations when newer governing documentation applies.
 
@@ -26,8 +28,9 @@ When documents conflict, use this order:
 2. the applicable Domain Specification;
 3. Schema Documentation;
 4. workflow documentation;
-5. implementation and phase plans;
-6. archived or superseded material.
+5. design documentation ([`docs/design/`](docs/design/));
+6. implementation and phase plans;
+7. archived or superseded material.
 
 Database migrations describe what is currently implemented. They do not silently redefine intended architecture.
 

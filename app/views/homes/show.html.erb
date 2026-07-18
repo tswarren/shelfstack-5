@@ -1,13 +1,9 @@
 <% content_for :title, "Home" %>
 
-<h1>ShelfStack</h1>
-<p>
-  Signed in as <%= Current.user.username %>
-  at <%= Current.store.name %>
-  (<%= Current.organization.name %>).
-</p>
+<h1>Home</h1>
+<p class="muted">Workspace for <%= Current.store.name %>.</p>
 
-<nav>
+<nav aria-label="Primary">
   <ul>
     <% if Current.user.can?("catalog.product.view", store: Current.store) %>
       <li><%= link_to "Products", products_path %></li>
@@ -58,8 +54,3 @@
     <% end %>
   </ul>
 </nav>
-
-<%= button_to "Sign out", session_path, method: :delete %>
-<% if effective_memberships_for(Current.user).many? %>
-  <p><%= link_to "Switch store", new_store_selection_path %></p>
-<% end %>
