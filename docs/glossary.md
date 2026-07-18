@@ -59,9 +59,23 @@ Only accepted quantity increases on-hand inventory.
 
 The cost assigned to merchandise when the store acquires it.
 
-For quantity-tracked merchandise, acquisition cost contributes to the store-and-variant moving weighted-average cost.
+For quantity-tracked merchandise, acquisition cost contributes to aggregate Inventory Value and the Store-and-Variant Moving Weighted-Average Cost.
 
 For individually tracked merchandise, acquisition cost belongs to the exact Inventory Unit.
+
+Acquisition Cost should normally describe actual or directly supported cost. A Department-based configured estimate is an estimated cost basis, not actual acquisition cost.
+
+## Administrative audit event
+
+An append-only record of an administrative change to master data, identity, access, or configuration.
+
+An Administrative Audit Event identifies the acting User, applicable Organization or Store context, action, affected record, timestamp, and relevant change details.
+
+It is distinct from:
+
+* an Approval, which authorizes a restricted operational action;
+* an Inventory Ledger Entry or Stored-Value Entry;
+* ordinary application request logging.
 
 ## Activation
 
@@ -137,7 +151,7 @@ An Approval is not merely a Boolean flag.
 
 ## Authority limit
 
-A numeric threshold defining the maximum value a user may approve or perform for a particular action.
+A numeric threshold defining the maximum value a User may approve or perform for a particular action.
 
 Examples include:
 
@@ -149,7 +163,9 @@ Examples include:
 * maximum paid-out;
 * cash-variance review threshold.
 
-A user may possess a Permission but lack sufficient Authority Limit for a particular action.
+A User may possess a Permission but lack sufficient Authority Limit for a particular action.
+
+Until Role and Store authority defaults are implemented, Phase 1 evaluates Store-Membership overrides only. A missing, malformed, or negative configured value fails closed rather than granting unlimited authority.
 
 ## Available
 
@@ -202,6 +218,30 @@ Current namespaces are:
 28 — Product Variant
 29 — locally identified Product
 ```
+
+## Basis point
+
+One ten-thousandth of a rate.
+
+```text
+10,000 basis points = 100%
+```
+
+ShelfStack uses basis points for fixed-precision percentage configuration such as the Department gross-margin assumption used by configured inventory-cost estimates.
+
+## Bootstrap
+
+The idempotent installation operation that creates the sole Organization, initial Store, administrator Role, User, and Store Membership, plus development POS Device and Cash Drawer records where applicable.
+
+Bootstrap must not silently:
+
+* create a second operating Organization;
+* reactivate disabled access;
+* clear authentication lockout state;
+* restore deliberately removed Role-Permission assignments;
+* reset Identifier Sequences.
+
+Bootstrap is distinct from `db:seed` and Reference-Data loading.
 
 ## Business date
 
@@ -350,7 +390,15 @@ The shared organizational collection of Products, Product Variants, identifiers,
 
 The Catalog defines what an item is.
 
-It does not own store inventory quantity or completed transaction history.
+It does not own Store inventory quantity, posted inventory valuation, or completed transaction history.
+
+## Catalog readiness
+
+The Phase 2 evaluation confirming that a Product Variant has the minimum Catalog configuration needed for later sale workflows.
+
+Catalog Readiness may validate Product and Variant activation, sellability, price, Department, Tax Category, and Inventory-Tracking Mode. It does not validate an open Business Day, POS Session, transaction tax calculation, Tender settlement, inventory reservation, or operational Approval.
+
+`Catalog::SaleEligibility` is therefore a Catalog-readiness service, not the complete POS Sale-Eligibility decision.
 
 ## Checksum
 
@@ -422,6 +470,14 @@ Examples may include:
 
 A Product Variant may identify a shared condition category, while an individually tracked Inventory Unit may retain the exact condition of one physical copy.
 
+## Confirmed zero cost
+
+A known cost whose value is exactly zero.
+
+Confirmed Zero Cost is valid cost information. It is distinct from Unknown Cost and must retain a non-unknown Cost Quality.
+
+Examples may include donated merchandise, promotional inventory supplied at no charge, or another acquisition whose actual or confirmed estimated cost is zero.
+
 ## Correction
 
 An explicit later record that reverses or adjusts a completed or posted event.
@@ -436,6 +492,21 @@ Examples include:
 * Stored-Value reversal;
 * Reconciliation Adjustment.
 
+## Cost correction
+
+An Inventory Adjustment kind that changes aggregate inventory valuation without changing physical quantity.
+
+For the Phase 3 baseline:
+
+```text
+on_hand > 0
+quantity_delta = 0
+```
+
+A Cost Correction may establish complete valuation for previously unknown-cost stock, replace estimated cost with actual cost, or correct an erroneous Inventory Value. It requires the dedicated Permission, cost visibility, a controlled reason, and full audit.
+
+A Cost Correction does not rewrite earlier Ledger Entries or completed POS cost snapshots. Independent Approval is not mandatory in Phase 3.
+
 ## Cost of goods sold
 
 The inventory cost recognized when merchandise is sold.
@@ -446,9 +517,41 @@ Common abbreviation:
 COGS
 ```
 
-For quantity-tracked merchandise, COGS uses the applicable store-and-variant cost.
+For quantity-tracked merchandise, COGS uses the applicable Store-and-Variant cost.
 
 For individually tracked merchandise, COGS uses the exact Inventory Unit’s cost.
+
+## Cost method
+
+The calculation or sourcing approach used to establish inventory cost.
+
+Current values are:
+
+```text
+explicit
+configured_estimate
+moving_average
+unknown
+```
+
+`retained_rate` is reserved for a later negative-inventory policy and is not part of the Phase 3 implemented baseline.
+
+Cost Method is distinct from Cost Quality.
+
+## Cost quality
+
+The evidentiary quality of inventory cost, independent of the Cost Method used to calculate it.
+
+Current values are:
+
+```text
+actual
+estimated
+mixed
+unknown
+```
+
+Unknown Cost must never be treated as Confirmed Zero Cost.
 
 ## Customer request
 
@@ -509,13 +612,21 @@ The detailed treatment remains partly open.
 
 The broad financial and managerial classification used for merchandise and service reporting.
 
+Departments are hierarchical. A Department may be:
+
+* postable, meaning it may be assigned to operational merchandise and completed lines; or
+* reporting-only, meaning it acts as a hierarchy or reporting parent.
+
 A Department may provide defaults such as:
 
 * general-ledger mappings;
 * Tax Category;
 * Return Policy;
 * maximum merchandise Discount;
+* optional gross-margin basis points for configured inventory-cost estimation;
 * other selling-policy defaults.
+
+A Department used as an active Merchandise-Class default must be postable.
 
 A Department does not determine:
 
@@ -524,6 +635,8 @@ A Department does not determine:
 * exact-copy cost;
 * current Store quantity;
 * Tender behavior.
+
+A Department cost-estimation margin is policy for producing an explicitly confirmed estimate. It is not actual Acquisition Cost and does not make the Department the owner of inventory valuation.
 
 ## Discount
 
@@ -606,6 +719,12 @@ A Domain Specification normally defines:
 A 13-digit barcode format used for external trade identifiers and ShelfStack-generated restricted-circulation identifiers.
 
 ShelfStack-generated EAN-13 values use prefixes `21`, `27`, `28`, and `29`.
+
+## Effective store membership
+
+A Store Membership that is active and whose effective-date range includes the applicable Store-local date.
+
+An Effective Store Membership grants no capability by itself; the User must also hold the required Permission and sufficient Authority Limit for the requested Store-scoped action.
 
 ## Effective value
 
@@ -742,15 +861,15 @@ A Product Request without physically confirmed merchandise is not a Hold.
 
 ## Idempotency
 
-The property that allows the same operation request to be submitted repeatedly without creating duplicate completed effects.
+The property that allows the same operation request to be submitted repeatedly without creating duplicate posted or completed effects.
 
-POS Completion uses an Idempotency Key to prevent duplicate:
+Idempotency applies to multi-record workflows involving money, inventory, identifiers, or completion. Examples include:
 
-* transactions;
-* Receipt Numbers;
-* inventory movements;
-* Tenders;
-* Stored-Value Entries.
+* POS Completion through an Idempotency Key;
+* Inventory Adjustment posting through a Posting Key;
+* Bootstrap and Reference-Data synchronization through stable natural keys.
+
+A retry must return or recognize the previously posted result rather than create duplicate Transactions, Receipt Numbers, Ledger Entries, Tenders, Stored-Value Entries, or balance changes.
 
 ## Identifier
 
@@ -764,6 +883,17 @@ ShelfStack distinguishes:
 * Inventory Unit Identifier;
 * Stored-Value Account Number;
 * internal database identifier.
+
+## Identifier sequence
+
+Installation-singleton sequence state used to generate ShelfStack EAN-13 identifiers in the assigned restricted-circulation namespace.
+
+Identifier Sequences:
+
+* remain unique across the Organization;
+* are concurrency-safe;
+* are never reset during ordinary seed or Reference-Data reruns;
+* do not reuse previously assigned values.
 
 ## Immutable
 
@@ -816,19 +946,57 @@ Inventory does not include merchandise that is merely:
 
 ## Inventory adjustment
 
-A controlled document or operation used to correct inventory quantity, status, or related information.
+A controlled, Store-scoped document used to post an authorized change to inventory quantity or valuation.
 
-Posting an Inventory Adjustment creates Inventory Ledger Entries.
+Phase 3 supports three distinct kinds:
 
-Direct unexplained edits to On Hand are not permitted.
+```text
+opening_inventory
+quantity_only
+cost_correction
+```
+
+An Inventory Adjustment has a lifecycle of:
+
+```text
+draft
+posted
+cancelled
+```
+
+Posting creates Inventory Ledger Entries. Posted or cancelled Adjustments and their lines are immutable. Direct unexplained edits to On Hand, Inventory Value, Moving Weighted-Average Cost, or Cost Quality are prohibited.
+
+## Inventory adjustment reason
+
+An Organization-owned controlled reason scoped to one Inventory-Adjustment kind.
+
+An Inventory Adjustment Reason has an immutable code, may require a note, and may be deactivated for future use. When an Adjustment posts, the reason code and name are snapshotted so later reason changes do not rewrite posted history.
+
+The qualified form combines kind and code, for example:
+
+```text
+quantity_only.physical_count_shortage
+```
 
 ## Inventory ledger
 
-The append-only history explaining changes to inventory quantity or availability status.
+The append-only history explaining posted changes to inventory quantity, aggregate Inventory Value, cost state, or an Inventory Unit’s inventory state.
 
 ## Inventory ledger entry
 
-One posted movement or status transition in the Inventory Ledger.
+One posted movement, valuation correction, or status transition in the Inventory Ledger.
+
+An Inventory Ledger Entry may retain:
+
+* quantity delta;
+* inventory-value delta, where known;
+* movement and unit cost;
+* Cost Method and Cost Quality;
+* resulting On Hand and valuation snapshots;
+* reason code and note;
+* Source Record and reversal relationship;
+* Posting Key;
+* posting User and timestamp.
 
 An Inventory Ledger Entry may reference its source, such as:
 
@@ -840,6 +1008,8 @@ An Inventory Ledger Entry may reference its source, such as:
 * Post-Void;
 * discard;
 * Return to Vendor.
+
+A Cost Correction may create a Ledger Entry with `quantity_delta = 0`. When a positive-balance inventory-value delta cannot be known, the delta is `null`, not zero.
 
 ## Inventory movement
 
@@ -905,6 +1075,19 @@ An Inventory Unit may retain:
 
 Inventory Units are not created for every copy of Quantity-Tracked merchandise.
 
+## Inventory value
+
+The aggregate positive inventory asset value associated with one Store-and-Product-Variant Stock Balance.
+
+Inventory Value is the governing basis for quantity-tracked valuation calculations. It is not calculated by blindly multiplying On Hand by a rounded display average.
+
+Rules include:
+
+* positive On Hand with known complete valuation has a non-null Inventory Value;
+* positive On Hand with unknown complete valuation has unknown, not zero, Inventory Value;
+* zero or negative On Hand carries zero positive inventory asset value;
+* Inventory Value changes only through Inventory posting services and remains reconcilable to Ledger history.
+
 ## ISBN-10
 
 A 10-character book identifier accepted by ShelfStack as an input and lookup representation.
@@ -928,6 +1111,12 @@ Gift-card Issuance creates a liability.
 ---
 
 # L
+
+## Last-known unit cost
+
+The most recent known carrying unit rate from a positive valued quantity-tracked Stock Balance.
+
+Last-Known Unit Cost and its quality are retained separately when On Hand reaches zero or becomes negative. They are historical reference state, not the current Moving Weighted-Average Cost and not automatic authority for valuing later positive stock.
 
 ## Liability
 
@@ -1012,7 +1201,9 @@ secondary
 minor
 ```
 
-A Merchandise Class may point to a default Department.
+The parent-child hierarchy is authoritative. Implemented codes are path-qualified so similarly named nodes under different parents remain unambiguous.
+
+A Merchandise Class may point to a default postable Department. Merchandise-Class defaults are setup aids and precedence inputs; they do not determine runtime Inventory-Tracking Mode solely from the class.
 
 It does not replace explicit Product or Product Variant settings such as:
 
@@ -1021,6 +1212,12 @@ It does not replace explicit Product or Product Variant settings such as:
 * Format;
 * exact Condition;
 * vendor source.
+
+## Mixed cost quality
+
+A Cost Quality indicating that a positive quantity-tracked balance contains both actual and estimated cost provenance.
+
+Mixed Cost Quality persists until the Stock Balance reaches zero or an explicit complete Cost Correction establishes another complete valuation basis.
 
 ## Money
 
@@ -1037,9 +1234,21 @@ Floating-point types should not be used for monetary amounts.
 
 ## Moving weighted-average cost
 
-The current average acquisition cost of quantity-tracked merchandise for one Store and Product Variant, adjusted as new inventory is received.
+The current carrying unit cost of positive quantity-tracked inventory for one Store and Product Variant.
 
-The precise behavior under negative inventory requires implementation detail, but completed sales snapshot the cost used.
+```text
+moving weighted-average cost
+=
+aggregate positive Inventory Value
+÷
+positive On Hand
+```
+
+The aggregate Inventory Value governs calculations; the cached unit average is a display and convenience value. It may change through Opening Inventory, cost-bearing inbound movements, proportional outbound allocation, deterministic rounding, and explicit Cost Corrections—not only through Receipts.
+
+When On Hand is zero or negative, current Moving Weighted-Average Cost is `null` and positive Inventory Value is zero. Any retained prior rate belongs in Last-Known Unit Cost fields.
+
+Completed sales snapshot the cost used. The final allocation and settlement treatment for negative-inventory deficits remains open.
 
 ---
 
@@ -1124,6 +1333,18 @@ On Order is not:
 
 A POS Transaction that remains editable and has not been completed or cancelled.
 
+## Opening inventory
+
+An Inventory Adjustment kind used to establish opening On Hand without creating a Receipt.
+
+Opening Inventory may use:
+
+* explicit actual cost;
+* an explicitly confirmed configured estimate;
+* Unknown Cost.
+
+When the existing balance is zero and incoming cost is known, the posted quantity initializes aggregate Inventory Value and Moving Weighted-Average Cost. Opening Inventory is a controlled bootstrap mechanism, not a substitute for future ordinary Receiving.
+
 ## Open-ring line
 
 An authorized POS Line Item not linked to a normal Product Variant.
@@ -1177,16 +1398,25 @@ For inventory, use **Reserved**.
 
 A stable machine-readable capability authorizing a class of action.
 
-Examples may include:
+Canonical keys normally use:
 
 ```text
-pos.complete_transaction
-inventory.adjust_stock
-purchasing.place_purchase_order
-stored_value.adjust
+<domain>.<resource>.<action>
 ```
 
-Permissions are evaluated in Store context through Store Membership.
+Examples include:
+
+```text
+catalog.product.create
+inventory.adjustment.post
+inventory.cost_correction.post
+pos.transaction.complete
+pos.discount.apply
+```
+
+Broad capabilities such as `pos.access` are allowed when the resource is the whole surface.
+
+Permissions are evaluated in Store context through an Effective Store Membership. Permission, Authority Limit, and Approval remain separate checks.
 
 Role names must not be used directly as application authorization logic.
 
@@ -1286,6 +1516,12 @@ A Post-Void:
 
 A Post-Void is distinct from Cancellation and Customer Return.
 
+## Postable department
+
+A Department that may be assigned to operational merchandise and completed transaction lines.
+
+A Department used as an active Merchandise-Class default must remain postable. To make it reporting-only, first clear or reassign those defaults.
+
 ## Posted
 
 A state indicating that an operational record’s authoritative effects have been committed.
@@ -1293,6 +1529,12 @@ A state indicating that an operational record’s authoritative effects have bee
 Posted records are normally immutable.
 
 Corrections use new reversing or adjusting records.
+
+## Posting key
+
+A unique idempotency identifier assigned to an inventory posting operation and reused on retry.
+
+A Posting Key prevents the same Inventory Adjustment or other source operation from creating duplicate Inventory Ledger Entries or Stock-Balance changes.
 
 ## Price override
 
@@ -1442,6 +1684,14 @@ Purchasing does not create inventory.
 
 # Q
 
+## Quantity-only adjustment
+
+An Inventory Adjustment kind that changes physical quantity without supplying an arbitrary replacement cost.
+
+For a positive valued balance, added or removed quantity uses the current aggregate valuation rules. Quantity added from negative toward zero creates no positive inventory asset value. Positive surplus created after crossing from negative or zero remains Unknown Cost unless an implemented retained-cost policy supplies a defensible rate.
+
+A Quantity-Only Adjustment must not silently replace Moving Weighted-Average Cost.
+
 ## Quantity-tracked
 
 An Inventory-Tracking Mode used when copies are operationally interchangeable.
@@ -1551,6 +1801,21 @@ Redemption:
 * is a Tender;
 * is not a Discount.
 
+## Reference data
+
+Organization-owned canonical master data loaded after Bootstrap.
+
+Reference Data includes records such as:
+
+* Departments;
+* Merchandise Classes;
+* Product Formats and Conditions;
+* Tax Categories;
+* Return, Discount, and Inventory-Adjustment Reasons;
+* Identifier Sequences.
+
+Reference-Data reruns create missing canonical rows and may update source-owned descriptive fields, but they preserve administrator-owned operational settings, never reset Identifier Sequences, and do not silently reactivate deactivated records.
+
 ## Refund basis
 
 The rule used to establish the refund value for an Unlinked Return.
@@ -1594,6 +1859,12 @@ A Removed Line:
 ## Reporting date
 
 See **Business Date**.
+
+## Reporting-only department
+
+A non-postable Department used as a hierarchy or reporting parent.
+
+A Reporting-Only Department cannot be assigned as the effective posting Department for ordinary merchandise or remain the active default of a Merchandise Class.
 
 ## Request
 
@@ -1666,9 +1937,9 @@ The original record remains unchanged.
 
 ## Role
 
-An organization-owned administrative template that groups Permissions and default Authority Limits.
+An Organization-owned administrative template that groups Permissions and may later provide default Authority Limits.
 
-Role names are not application authorization logic.
+In the Phase 1 implementation, numeric authority is evaluated from Store-Membership overrides only until Role and Store defaults are explicitly implemented. Role names are never application authorization logic.
 
 ## RTV
 
@@ -1680,7 +1951,7 @@ See **Return to Vendor**.
 
 ## Sale eligibility
 
-The result of evaluating whether a Product Variant or Inventory Unit may be sold under the current conditions.
+The full operational result of evaluating whether a Product Variant or Inventory Unit may be sold under current Store and transaction conditions.
 
 The evaluation may return:
 
@@ -1688,6 +1959,10 @@ The evaluation may return:
 * warnings;
 * blockers;
 * Approval requirements.
+
+Full Sale Eligibility may include Catalog Readiness, Store context, inventory requirements, tax configuration, Business Day and POS Session state, Reservations, restrictions, and Approval requirements.
+
+Do not use the term for Phase 2 Catalog readiness alone. `Catalog::SaleEligibility` is currently a narrower Catalog-readiness service despite its implementation name.
 
 ## Sale line
 
@@ -1704,6 +1979,20 @@ The normal lookup hierarchy is:
 3. canonical Product Identifier;
 4. Alternate Identifier;
 5. descriptive search.
+
+Equivalent UPC-A and leading-zero EAN-13 representations resolve to the same Product and participate in duplicate prevention during Product creation.
+
+## Seed layer
+
+One of the explicit installation-data stages used to create stable system and Organization data.
+
+ShelfStack currently uses three layers:
+
+1. Permission definitions through `db:seed`;
+2. installation identity through Bootstrap;
+3. Organization-owned Reference Data through `shelfstack:seed_reference_data`.
+
+A Seed Layer must be safe to rerun according to its documented ownership and idempotency rules.
 
 ## Sellable
 
@@ -1791,19 +2080,24 @@ A Staff Suggestion:
 
 ## Stock balance
 
-The current Store-and-Product-Variant summary for quantity-tracked inventory.
+The authoritative current operational state for one Store and quantity-tracked Product Variant.
 
 A Stock Balance may include:
 
 * On Hand;
 * Reserved;
 * Unavailable;
-* Available;
-* On Order;
-* moving weighted-average cost;
-* last received information.
+* calculated Available;
+* aggregate Inventory Value;
+* cached Moving Weighted-Average Cost;
+* Cost Quality;
+* Last-Known Unit Cost and quality;
+* concurrency lock version;
+* later On Order and last-received information.
 
-Inventory Ledger Entries and Reservations explain the balance.
+Posted Inventory Ledger Entries are the authoritative history. The Stock Balance is the authoritative current state and must remain reconcilable to that history. Reservations explain Reserved without changing On Hand.
+
+At zero On Hand, current Inventory Value is zero, current Moving Weighted-Average Cost is `null`, and current Cost Quality is `unknown`. Zero or negative On Hand does not carry a positive inventory asset value.
 
 ## Store
 
@@ -1823,17 +2117,28 @@ The primary operational boundary for:
 
 Physical inventory belongs to a Store.
 
+## Store context
+
+The Store against which access, Permissions, Authority Limits, operating rules, and Store-scoped records are evaluated.
+
+Selecting a default or active Store establishes navigation or execution context; it does not grant access. Access requires an Effective Store Membership.
+
 ## Store credit
 
 A Stored-Value Account type representing value issued by the Store, commonly as a Customer Return refund.
 
 ## Store membership
 
-The record granting one User access to one Store through one Role and effective period.
+The record granting one installation-global User access to one Store through one Role and effective period.
 
-A Store Membership may also contain store-specific Authority Limit overrides.
+A Store Membership may also contain Store-specific Authority-Limit overrides.
 
-A User’s default Store is not a Store Membership and does not grant access.
+Rules include:
+
+* `user_id` and `store_id` are immutable after creation;
+* effective dates are evaluated using the Store-local date unless a workflow specifies another date;
+* a deactivated or out-of-range membership grants no Store access;
+* a User’s default Store is not a Store Membership and does not grant access.
 
 ## Store-level inventory
 
@@ -2049,6 +2354,14 @@ requested quantity
 - active purchase-order allocations
 ```
 
+## Unknown cost
+
+A cost state in which ShelfStack lacks a defensible complete valuation basis.
+
+Unknown Cost is represented explicitly through `null` monetary values where the amount cannot be known and through `cost_quality = unknown`. It must never be treated as zero.
+
+Positive On Hand with Unknown Cost has unknown complete Inventory Value. Confirmed Zero Cost is a separate known state.
+
 ## Unit identifier
 
 The canonical generated `27` EAN-13 identifier for one Inventory Unit.
@@ -2089,7 +2402,9 @@ ShelfStack recognizes equivalence between a UPC-A and its corresponding leading-
 
 An authenticated person whose identity is retained on operational activity.
 
-Shared cashier accounts are not permitted for accountable actions.
+Under the one-Organization-per-installation invariant, Users are installation-global. A User does not belong to a Store and does not require an `organization_id` foreign key. Store access exists only through Store Memberships.
+
+A User may exist without any Store Membership but cannot perform Store-scoped actions until access is granted. Shared cashier accounts are not permitted for accountable actions.
 
 ---
 
@@ -2098,6 +2413,20 @@ Shared cashier accounts are not permitted for accountable actions.
 ## Variant
 
 See **Product Variant**.
+
+## Variant structure
+
+The way a Product’s Product Variants are organized.
+
+Architectural values are:
+
+```text
+single
+options
+matrix
+```
+
+Phase 2 implements only `single`. `options` and `matrix` remain deferred and must not be treated as currently supported merely because the architectural values are documented.
 
 ## Vendor
 
