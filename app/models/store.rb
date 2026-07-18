@@ -16,6 +16,8 @@ class Store < ApplicationRecord
   has_many :business_days, dependent: :restrict_with_exception
   has_many :pos_sessions, dependent: :restrict_with_exception
   has_many :pos_transactions, dependent: :restrict_with_exception
+  has_many :store_tax_rates, dependent: :restrict_with_exception
+  has_many :store_tax_rules, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true

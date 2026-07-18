@@ -1,0 +1,23 @@
+gst_13:
+  store: main_street
+  code: GST13
+  name: GST 13%
+  receipt_code: G
+  rate: 0.13000000
+  active: true
+
+gst_zero:
+  store: main_street
+  code: GST0
+  name: GST Zero-Rated
+  receipt_code: GZ
+  rate: 0.00000000
+  active: true
+
+pst_7:
+  store: main_street
+  code: PST7
+  name: PST 7% (compounding demo)
+  receipt_code: P
+  rate: 0.07000000
+  active: true

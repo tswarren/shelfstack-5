@@ -1,0 +1,64 @@
+physical_book_gst:
+  store: main_street
+  tax_category: physical_book
+  store_tax_rate: gst_13
+  component_code: GST13
+  treatment: taxable
+  taxable_fraction: 1.00000000
+  calculation_order: 0
+  compounds_on_prior_tax: false
+  active: true
+
+stationery_gst_zero:
+  store: main_street
+  tax_category: stationery
+  store_tax_rate: gst_zero
+  component_code: GST0
+  treatment: zero_rated
+  taxable_fraction: 1.00000000
+  calculation_order: 0
+  compounds_on_prior_tax: false
+  active: true
+
+digital_service_exempt:
+  store: main_street
+  tax_category: digital_service
+  component_code: EXEMPT
+  treatment: exempt
+  taxable_fraction: 1.00000000
+  calculation_order: 0
+  compounds_on_prior_tax: false
+  active: true
+
+mixed_use_item_gst_half:
+  store: main_street
+  tax_category: mixed_use_item
+  store_tax_rate: gst_13
+  component_code: GST13
+  treatment: taxable
+  taxable_fraction: 0.50000000
+  calculation_order: 0
+  compounds_on_prior_tax: false
+  active: true
+
+imported_gift_gst:
+  store: main_street
+  tax_category: imported_gift
+  store_tax_rate: gst_13
+  component_code: GST13
+  treatment: taxable
+  taxable_fraction: 1.00000000
+  calculation_order: 0
+  compounds_on_prior_tax: false
+  active: true
+
+imported_gift_pst_compound:
+  store: main_street
+  tax_category: imported_gift
+  store_tax_rate: pst_7
+  component_code: PST7
+  treatment: taxable
+  taxable_fraction: 1.00000000
+  calculation_order: 1
+  compounds_on_prior_tax: true
+  active: true

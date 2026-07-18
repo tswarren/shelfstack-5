@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -627,6 +627,49 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_020000) do
     t.check_constraint "starts_on IS NULL OR ends_on IS NULL OR starts_on <= ends_on", name: "store_memberships_starts_on_before_ends_on"
   end
 
+  create_table "store_tax_rates", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.date "effective_from"
+    t.date "effective_to"
+    t.string "jurisdiction_name"
+    t.string "name", null: false
+    t.decimal "rate", precision: 10, scale: 8, null: false
+    t.string "receipt_code", limit: 3
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["store_id", "code"], name: "index_store_tax_rates_on_store_id_and_code", unique: true
+    t.index ["store_id"], name: "index_store_tax_rates_on_store_id"
+    t.check_constraint "effective_from IS NULL OR effective_to IS NULL OR effective_from <= effective_to", name: "store_tax_rates_effective_period_order"
+    t.check_constraint "rate >= 0::numeric", name: "store_tax_rates_rate_non_negative"
+  end
+
+  create_table "store_tax_rules", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.integer "calculation_order", limit: 2, default: 0, null: false
+    t.string "component_code", null: false
+    t.boolean "compounds_on_prior_tax", default: false, null: false
+    t.datetime "created_at", null: false
+    t.date "effective_from"
+    t.date "effective_to"
+    t.bigint "store_id", null: false
+    t.bigint "store_tax_rate_id"
+    t.bigint "tax_category_id", null: false
+    t.decimal "taxable_fraction", precision: 10, scale: 8, default: "1.0", null: false
+    t.string "treatment", null: false
+    t.datetime "updated_at", null: false
+    t.index ["store_id", "tax_category_id", "component_code"], name: "index_store_tax_rules_on_store_category_component"
+    t.index ["store_id"], name: "index_store_tax_rules_on_store_id"
+    t.index ["store_tax_rate_id"], name: "index_store_tax_rules_on_store_tax_rate_id"
+    t.index ["tax_category_id"], name: "index_store_tax_rules_on_tax_category_id"
+    t.check_constraint "(treatment::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying]::text[])) AND store_tax_rate_id IS NOT NULL OR treatment::text = 'exempt'::text", name: "store_tax_rules_rate_required_unless_exempt"
+    t.check_constraint "calculation_order >= 0", name: "store_tax_rules_calculation_order_non_negative"
+    t.check_constraint "effective_from IS NULL OR effective_to IS NULL OR effective_from <= effective_to", name: "store_tax_rules_effective_period_order"
+    t.check_constraint "taxable_fraction >= 0::numeric AND taxable_fraction <= 1::numeric", name: "store_tax_rules_taxable_fraction_range"
+    t.check_constraint "treatment::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying]::text[])", name: "store_tax_rules_treatment_check"
+  end
+
   create_table "stores", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "address_line_1"
@@ -791,6 +834,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_020000) do
   add_foreign_key "store_memberships", "stores", on_delete: :restrict
   add_foreign_key "store_memberships", "users", column: "assigned_by_user_id", on_delete: :nullify
   add_foreign_key "store_memberships", "users", on_delete: :restrict
+  add_foreign_key "store_tax_rates", "stores", on_delete: :restrict
+  add_foreign_key "store_tax_rules", "store_tax_rates", on_delete: :restrict
+  add_foreign_key "store_tax_rules", "stores", on_delete: :restrict
+  add_foreign_key "store_tax_rules", "tax_categories", on_delete: :restrict
   add_foreign_key "stores", "organizations", on_delete: :restrict
   add_foreign_key "tax_categories", "organizations"
   add_foreign_key "tender_types", "organizations", on_delete: :restrict
