@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    image: my_rails_app-web:dev
+    image: shelfstack-web:dev
     command: bash -lc "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0"
     volumes:
       - .:/app
@@ -16,8 +16,8 @@ services:
       DATABASE_PORT: 5432
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: postgres
-      DATABASE_NAME: my_rails_app_development
-      TEST_DATABASE_NAME: my_rails_app_test
+      DATABASE_NAME: shelfstack_development
+      TEST_DATABASE_NAME: shelfstack_test
     depends_on:
       - db
     stdin_open: true
@@ -30,7 +30,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: my_rails_app_development
+      POSTGRES_DB: shelfstack_development
     ports:
       - "5432:5432"
 
