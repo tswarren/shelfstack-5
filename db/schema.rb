@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,7 +48,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
     t.datetime "created_at", null: false
     t.bigint "default_return_policy_id"
     t.bigint "default_tax_category_id"
-    t.integer "department_number", null: false
+    t.string "department_number", null: false
     t.string "freight_in_gl_account_code", limit: 20
     t.string "inventory_adjustment_gl_account_code", limit: 20
     t.string "inventory_asset_gl_account_code", limit: 20
@@ -89,11 +89,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
     t.index ["organization_id", "code"], name: "index_discount_reasons_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_discount_reasons_on_organization_id"
     t.index ["resulting_return_policy_id"], name: "index_discount_reasons_on_resulting_return_policy_id"
+    t.check_constraint "default_amount_cents IS NULL OR default_amount_cents >= 0", name: "discount_reasons_default_amount_cents_non_negative"
+    t.check_constraint "default_calculation_method::text = ANY (ARRAY['percentage'::character varying, 'fixed_amount'::character varying, 'fixed_price'::character varying]::text[])", name: "discount_reasons_calculation_method_check"
+    t.check_constraint "default_rate_bps IS NULL OR default_rate_bps >= 0", name: "discount_reasons_default_rate_bps_non_negative"
+    t.check_constraint "maximum_rate_bps IS NULL OR maximum_rate_bps >= 0", name: "discount_reasons_maximum_rate_bps_non_negative"
   end
 
-  create_table "identifier_sequences", id: false, force: :cascade do |t|
+  create_table "identifier_sequences", primary_key: "namespace", id: { type: :string, limit: 2 }, force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.string "namespace", limit: 2, null: false
     t.bigint "next_value", default: 1, null: false
     t.datetime "updated_at", null: false
     t.check_constraint "namespace::text = ANY (ARRAY['21'::character varying, '27'::character varying, '28'::character varying, '29'::character varying]::text[])", name: "identifier_sequences_namespace_check"
@@ -219,8 +222,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
     t.index ["department_id"], name: "index_product_variants_on_department_id"
     t.index ["merchandise_class_id"], name: "index_product_variants_on_merchandise_class_id"
     t.index ["product_id"], name: "index_product_variants_on_product_id"
+    t.index ["return_policy_id"], name: "index_product_variants_on_return_policy_id"
     t.index ["sku"], name: "index_product_variants_on_sku", unique: true
     t.index ["tax_category_id"], name: "index_product_variants_on_tax_category_id"
+    t.check_constraint "available_from IS NULL OR available_until IS NULL OR available_from <= available_until", name: "product_variants_availability_window_order"
     t.check_constraint "inventory_tracking_mode::text = ANY (ARRAY['quantity'::character varying, 'individual'::character varying, 'none'::character varying]::text[])", name: "product_variants_inventory_tracking_mode_check"
     t.check_constraint "regular_price_cents IS NULL OR regular_price_cents >= 0", name: "product_variants_regular_price_cents_non_negative"
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'discontinued'::character varying]::text[])", name: "product_variants_status_check"
@@ -243,10 +248,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
     t.bigint "merchandise_class_id"
     t.string "name", null: false
     t.bigint "organization_id", null: false
-    t.bigint "product_format_id"
-    t.string "product_type"
+    t.bigint "product_format_id", null: false
+    t.string "product_type", null: false
     t.string "publisher_or_manufacturer_name"
-    t.boolean "sellable", default: true, null: false
+    t.boolean "sellable", default: false, null: false
     t.string "status", default: "active", null: false
     t.string "subtitle"
     t.datetime "updated_at", null: false
@@ -258,8 +263,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
     t.index ["organization_id", "identifier"], name: "index_products_on_organization_id_and_identifier", unique: true
     t.index ["organization_id"], name: "index_products_on_organization_id"
     t.index ["product_format_id"], name: "index_products_on_product_format_id"
+    t.check_constraint "available_from IS NULL OR available_until IS NULL OR available_from <= available_until", name: "products_availability_window_order"
     t.check_constraint "identifier_validation_status::text = ANY (ARRAY['valid'::character varying, 'warning'::character varying, 'invalid'::character varying, 'not_applicable'::character varying]::text[])", name: "products_identifier_validation_status_check"
     t.check_constraint "list_price_cents IS NULL OR list_price_cents >= 0", name: "products_list_price_cents_non_negative"
+    t.check_constraint "product_type::text = ANY (ARRAY['book'::character varying, 'recorded_music'::character varying, 'video'::character varying, 'periodical'::character varying, 'game'::character varying, 'stationery'::character varying, 'gift'::character varying, 'cafe'::character varying, 'service'::character varying, 'other'::character varying]::text[])", name: "products_product_type_check"
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'inactive'::character varying, 'discontinued'::character varying]::text[])", name: "products_status_check"
     t.check_constraint "variant_structure::text = 'single'::text", name: "products_variant_structure_single"
   end
@@ -275,6 +282,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
     t.datetime "updated_at", null: false
     t.index ["organization_id", "code"], name: "index_return_policies_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_return_policies_on_organization_id"
+    t.check_constraint "return_window_days IS NULL OR return_window_days >= 0", name: "return_policies_return_window_days_non_negative"
   end
 
   create_table "return_reasons", force: :cascade do |t|
@@ -428,6 +436,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_160000) do
   add_foreign_key "product_variants", "merchandise_classes"
   add_foreign_key "product_variants", "product_conditions", column: "default_product_condition_id"
   add_foreign_key "product_variants", "products"
+  add_foreign_key "product_variants", "return_policies", on_delete: :nullify
   add_foreign_key "product_variants", "tax_categories"
   add_foreign_key "products", "departments", column: "default_department_id"
   add_foreign_key "products", "merchandise_classes"

@@ -3,15 +3,26 @@
 module Catalog
   SaleEligibilityResult = Data.define(:blockers, :warnings)
 
+  # Catalog readiness only — not full POS authorization.
   class SaleEligibility < ApplicationService
     BLOCKERS = %w[
       product_inactive
+      product_not_sellable
+      product_outside_availability_window
       variant_inactive
+      variant_not_sellable
+      variant_outside_availability_window
       missing_price
+      missing_tracking_mode
       missing_merchandise_class
+      merchandise_class_inactive
       missing_department
+      department_inactive
       department_not_postable
       missing_tax_category
+      tax_category_inactive
+      missing_product_type
+      missing_product_format
       unsupported_variant_structure
     ].freeze
 
@@ -26,41 +37,58 @@ module Catalog
       blockers = []
       warnings = []
 
-      blockers << "product_inactive" unless product_active?
-      blockers << "variant_inactive" unless variant_active?
+      blockers << "product_inactive" unless @product.status == "active"
+      blockers << "product_not_sellable" unless @product.sellable?
+      blockers << "product_outside_availability_window" unless available_on?(@product, @as_of)
+
+      blockers << "variant_inactive" unless @variant.status == "active"
+      blockers << "variant_not_sellable" unless @variant.sellable?
+      blockers << "variant_outside_availability_window" unless available_on?(@variant, @as_of)
+
       blockers << "unsupported_variant_structure" unless @product.variant_structure == "single"
+      blockers << "missing_product_type" if @product.product_type.blank?
+      blockers << "missing_product_format" if @product.product_format_id.blank?
+      blockers << "missing_tracking_mode" if @variant.inventory_tracking_mode.blank?
       blockers << "missing_price" if @variant.sellable? && @variant.regular_price_cents.nil?
 
       merchandise_class = resolved_merchandise_class
-      blockers << "missing_merchandise_class" if merchandise_class.nil?
+      if merchandise_class.nil?
+        blockers << "missing_merchandise_class"
+      elsif !merchandise_class.active?
+        blockers << "merchandise_class_inactive"
+      end
 
       department = resolved_department(merchandise_class)
       if department.nil?
         blockers << "missing_department"
-      elsif !department.active? || !department.postable?
-        blockers << "department_not_postable"
+      else
+        blockers << "department_inactive" unless department.active?
+        blockers << "department_not_postable" unless department.postable?
       end
 
       tax_category = resolved_tax_category(merchandise_class, department)
-      blockers << "missing_tax_category" if tax_category.nil? || !tax_category.active?
+      if tax_category.nil?
+        blockers << "missing_tax_category"
+      elsif !tax_category.active?
+        blockers << "tax_category_inactive"
+      end
 
-      warnings << "product_outside_availability_window" unless available_on?(@product, @as_of)
-      warnings << "variant_outside_availability_window" unless available_on?(@variant, @as_of)
+      # Store context is reserved for later POS/store-policy checks.
+      _ = @store
 
       SaleEligibilityResult.new(blockers: blockers.uniq, warnings: warnings.uniq)
     end
 
     private
 
-    # Department resolution: variant override → product default → merchandise class default.
+    # Department: variant override → product default → merchandise class default.
     def resolved_department(merchandise_class)
       @variant.department ||
         @product.default_department ||
         merchandise_class&.default_department
     end
 
-    # Tax category resolution: variant override → product default → merchandise class default
-    # → department default tax category.
+    # Tax: variant override → product default → merchandise class default → department default.
     def resolved_tax_category(merchandise_class, department)
       @variant.tax_category ||
         @product.default_tax_category ||
@@ -70,14 +98,6 @@ module Catalog
 
     def resolved_merchandise_class
       @variant.merchandise_class || @product.merchandise_class
-    end
-
-    def product_active?
-      @product.status == "active" && @product.sellable? && available_on?(@product, @as_of)
-    end
-
-    def variant_active?
-      @variant.status == "active" && @variant.sellable? && available_on?(@variant, @as_of)
     end
 
     def available_on?(record, date)

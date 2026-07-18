@@ -20,7 +20,7 @@ class CreateProductsAndVariants < ActiveRecord::Migration[8.1]
       t.string :variant_structure, null: false, default: "single"
       t.integer :list_price_cents
       t.string :status, null: false, default: "active"
-      t.boolean :sellable, null: false, default: true
+      t.boolean :sellable, null: false, default: false
       t.date :available_from
       t.date :available_until
       t.string :publisher_or_manufacturer_name

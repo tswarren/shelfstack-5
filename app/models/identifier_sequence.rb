@@ -15,6 +15,9 @@ class IdentifierSequence < ApplicationRecord
       find_or_create_by!(namespace: namespace) do |row|
         row.next_value = 1
       end
+    rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+      # Concurrent ensure_defaults! — row already exists.
+      find(namespace)
     end
   end
 end

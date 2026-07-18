@@ -1,6 +1,6 @@
 books_parent:
   organization: acme
-  department_number: 100
+  department_number: "100"
   code: books
   name: Books
   postable: false
@@ -9,7 +9,7 @@ books_parent:
 books_new:
   organization: acme
   parent_department: books_parent
-  department_number: 110
+  department_number: "110"
   code: books_new_general_trade
   name: New General Trade
   postable: true
@@ -18,7 +18,7 @@ books_new:
 
 non_postable:
   organization: acme
-  department_number: 900
+  department_number: "900"
   code: non_postable
   name: Non Postable
   postable: false

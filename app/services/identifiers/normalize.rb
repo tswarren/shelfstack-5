@@ -43,6 +43,17 @@ module Identifiers
         return normalize_thirteen_digit(original, stripped)
       end
 
+      if other_trade_identifier?(stripped)
+        return NormalizedIdentifier.new(
+          original: original,
+          normalized: stripped,
+          canonical: stripped,
+          type: :other,
+          validation_status: :valid,
+          warnings: []
+        )
+      end
+
       NormalizedIdentifier.new(
         original: original,
         normalized: stripped,
@@ -92,18 +103,18 @@ module Identifiers
     end
 
     def normalize_upc_a(original, stripped)
+      canonical = "0#{stripped}"
+
       unless valid_upc_check?(stripped)
         return NormalizedIdentifier.new(
           original: original,
           normalized: stripped,
-          canonical: stripped,
+          canonical: canonical,
           type: :upc_a,
           validation_status: :warning,
           warnings: [ "invalid UPC-A check digit" ]
         )
       end
-
-      canonical = "0#{stripped}"
 
       NormalizedIdentifier.new(
         original: original,
@@ -113,6 +124,10 @@ module Identifiers
         validation_status: :valid,
         warnings: []
       )
+    end
+
+    def other_trade_identifier?(stripped)
+      stripped.match?(/\A[A-Za-z0-9][A-Za-z0-9._-]{2,31}\z/) && !stripped.match?(DIGITS_ONLY)
     end
 
     def normalize_thirteen_digit(original, stripped)

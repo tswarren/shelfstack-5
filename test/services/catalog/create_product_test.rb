@@ -20,6 +20,8 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
       store: @store,
       product_attrs: {
         name: "Local Title",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id,
         merchandise_class_id: @merchandise_class.id,
         default_department_id: @department.id,
         default_tax_category_id: @tax_category.id,
@@ -47,7 +49,11 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
       organization: @organization,
       actor: @actor,
       store: @store,
-      product_attrs: { name: "Broken Product" },
+      product_attrs: {
+        name: "Broken Product",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
       variant_attrs: {
         inventory_tracking_mode: "quantity",
         sellable: true
@@ -64,9 +70,13 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
       organization: @organization,
       actor: @actor,
       store: @store,
-      identifier: "9780306406158",
+      identifier: "9781786798986",
       accept_identifier_warning: false,
-      product_attrs: { name: "Warned Product" },
+      product_attrs: {
+        name: "Warned Product",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
       variant_attrs: {
         inventory_tracking_mode: "quantity",
         regular_price_cents: 1000,
@@ -77,6 +87,33 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
     assert_no_difference "Product.count" do
       assert_not service.call
     end
+
+    assert_includes service.product.errors[:identifier].join,
+                    "invalid EAN-13 check digit"
+    assert_includes service.product.errors[:identifier].join,
+                    "Accept identifier warning"
+  end
+
+  test "reports invalid identifier format explicitly" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      identifier: "!!",
+      product_attrs: {
+        name: "Bad Identifier",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: true
+      }
+    )
+
+    assert_not service.call
+    assert_includes service.product.errors[:identifier].join, "unrecognized identifier format"
   end
 
   test "prevents duplicate UPC and EAN equivalent identifiers" do
@@ -87,7 +124,11 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
       actor: @actor,
       store: @store,
       identifier: "012345678905",
-      product_attrs: { name: "Duplicate UPC" },
+      product_attrs: {
+        name: "Duplicate UPC",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
       variant_attrs: {
         inventory_tracking_mode: "quantity",
         regular_price_cents: 1000,

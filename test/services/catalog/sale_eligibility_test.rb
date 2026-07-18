@@ -13,20 +13,29 @@ class CatalogSaleEligibilityTest < ActiveSupport::TestCase
     assert_empty result.blockers
   end
 
-  test "product_inactive when product not sellable" do
+  test "product_not_sellable when product not sellable" do
     @variant.product.update!(sellable: false)
+
+    result = Catalog::SaleEligibility.call(variant: @variant)
+
+    assert_includes result.blockers, "product_not_sellable"
+    assert_not_includes result.blockers, "product_inactive"
+  end
+
+  test "product_inactive when product status inactive" do
+    @variant.product.update!(status: "inactive", sellable: true)
 
     result = Catalog::SaleEligibility.call(variant: @variant)
 
     assert_includes result.blockers, "product_inactive"
   end
 
-  test "variant_inactive when variant not sellable" do
+  test "variant_not_sellable when variant not sellable" do
     @variant.update!(sellable: false)
 
     result = Catalog::SaleEligibility.call(variant: @variant)
 
-    assert_includes result.blockers, "variant_inactive"
+    assert_includes result.blockers, "variant_not_sellable"
   end
 
   test "missing_price when sellable without price" do
@@ -64,33 +73,24 @@ class CatalogSaleEligibilityTest < ActiveSupport::TestCase
   end
 
   test "department_not_postable when department is not postable" do
-    @variant.update!(department: departments(:non_postable))
+    @variant.department = departments(:non_postable)
+    @variant.product.default_department = departments(:non_postable)
 
     result = Catalog::SaleEligibility.call(variant: @variant)
 
     assert_includes result.blockers, "department_not_postable"
   end
 
-  test "missing_tax_category when unresolved" do
-    department = Department.new(active: true, postable: true)
-    merchandise_class = MerchandiseClass.new(default_department: department)
-    product = Product.new(
-      status: "active",
-      sellable: true,
-      variant_structure: "single",
-      merchandise_class: merchandise_class
-    )
-    variant = ProductVariant.new(
-      product: product,
-      sellable: true,
-      regular_price_cents: 1000,
-      status: "active",
-      inventory_tracking_mode: "quantity"
-    )
+  test "tax_category_inactive distinct from missing" do
+    tax = tax_categories(:physical_book)
+    tax.update!(active: false)
+    @variant.product.update!(default_tax_category: tax)
+    @variant.update!(tax_category: tax)
 
-    result = Catalog::SaleEligibility.call(variant: variant)
+    result = Catalog::SaleEligibility.call(variant: @variant)
 
-    assert_includes result.blockers, "missing_tax_category"
+    assert_includes result.blockers, "tax_category_inactive"
+    assert_not_includes result.blockers, "missing_tax_category"
   end
 
   test "unsupported_variant_structure when not single" do

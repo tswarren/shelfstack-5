@@ -14,14 +14,22 @@ module Classification
       end
 
       def call
-        import_tax_categories!
-        import_return_policies!
-        import_return_reasons!
-        import_discount_reasons!
-        import_departments!
-        import_merchandise_classes!
-        import_product_formats!
-        import_product_conditions!
+        # Preflight: ensure every export parses before mutating.
+        %w[
+          tax_categories.csv return_policies.csv return_reasons.csv discount_reasons.csv
+          departments.csv merchandise_classes.csv product_formats.csv product_conditions.csv
+        ].each { |filename| load_csv(filename) }
+
+        ActiveRecord::Base.transaction do
+          import_tax_categories!
+          import_return_policies!
+          import_return_reasons!
+          import_discount_reasons!
+          import_departments!
+          import_merchandise_classes!
+          import_product_formats!
+          import_product_conditions!
+        end
         true
       end
 
@@ -78,7 +86,7 @@ module Classification
 
         rows.each do |row|
           record = @organization.departments.find_or_initialize_by(code: row["code"])
-          record.department_number = row["department_number"].to_i if record.new_record?
+          record.department_number = row["department_number"].to_s if record.new_record?
           record.name = row["name"]
           record.postable = truthy?(row["postable"])
           assign_gl_account_codes(record, row)
@@ -182,7 +190,7 @@ module Classification
       end
 
       def find_department_by_number!(number)
-        @organization.departments.find_by!(department_number: number.to_i)
+        @organization.departments.find_by!(department_number: number.to_s)
       end
 
       def resolve_postable_department!(number, context:)

@@ -22,4 +22,15 @@ class IdentifierSequenceTest < ActiveSupport::TestCase
     assert_not row.valid?
     assert_includes row.errors[:namespace], "is not included in the list"
   end
+
+  test "namespace is unique at the database level" do
+    IdentifierSequence.ensure_defaults!
+
+    assert_raises(ActiveRecord::RecordNotUnique) do
+      IdentifierSequence.connection.execute(
+        "INSERT INTO identifier_sequences (namespace, next_value, created_at, updated_at)
+         VALUES ('28', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+      )
+    end
+  end
 end

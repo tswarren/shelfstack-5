@@ -13,6 +13,9 @@ class DiscountReason < ApplicationRecord
   validates :default_calculation_method, presence: true, inclusion: { in: CALCULATION_METHODS }
   validates :requires_approval, inclusion: { in: [ true, false ] }
   validates :active, inclusion: { in: [ true, false ] }
+  validates :default_rate_bps, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :default_amount_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :maximum_rate_bps, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validate :resulting_return_policy_belongs_to_same_organization
 
   private

@@ -86,17 +86,8 @@ class AddClassificationPolicyMasters < ActiveRecord::Migration[8.1]
   end
 
   def down
-    remove_check_constraint :product_formats, name: "product_formats_tracking_mode_check", if_exists: true
-    remove_check_constraint :merchandise_classes, name: "merchandise_classes_level_check", if_exists: true
-    remove_check_constraint :departments, name: "departments_postable_boolean", if_exists: true
-
-    remove_index :merchandise_classes, [ :organization_id, :parent_id ], if_exists: true
-
-    remove_column :merchandise_classes, :position, if_exists: true
-    remove_reference :departments, :default_return_policy, if_exists: true
-
-    drop_table :discount_reasons, if_exists: true
-    drop_table :return_reasons, if_exists: true
-    drop_table :return_policies, if_exists: true
+    # Conditional creates in #up mean this migration may not own the policy tables.
+    # Dropping them here would destroy objects from 20260718150000.
+    raise ActiveRecord::IrreversibleMigration
   end
 end

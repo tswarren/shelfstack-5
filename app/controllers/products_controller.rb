@@ -3,13 +3,21 @@
 class ProductsController < ApplicationController
   before_action -> { require_permission!("catalog.product.view") }, only: %i[index show]
   before_action -> { require_permission!("catalog.product.create") }, only: %i[new create]
-  before_action -> { require_permission!("catalog.product.edit") }, only: %i[edit update]
   before_action :set_product, only: %i[show edit update]
+  before_action :require_update_permissions!, only: %i[edit update]
 
   def index
     @query = params[:q].to_s.strip
     @products = Current.organization.products.includes(:product_variants).order(:name)
-    @products = filter_products(@products, @query) if @query.present?
+    if @query.present?
+      result = Catalog::Lookup.call(organization: Current.organization, query: @query)
+      @products = if result.empty?
+        filter_products_by_name(@products, @query)
+      else
+        @products.where(id: result.products.map(&:id))
+      end
+      @lookup_ambiguous = result.ambiguous?
+    end
   end
 
   def show
@@ -17,13 +25,22 @@ class ProductsController < ApplicationController
   end
 
   def new
-    @product = Current.organization.products.new(status: "active", sellable: true, variant_structure: "single")
-    @variant = @product.product_variants.build(name: "Standard", inventory_tracking_mode: "quantity", sellable: true)
+    @product = Current.organization.products.new(
+      status: "active",
+      sellable: false,
+      variant_structure: "single",
+      product_type: "book"
+    )
+    @variant = @product.product_variants.build(
+      name: "Standard",
+      inventory_tracking_mode: "quantity",
+      sellable: true
+    )
   end
 
   def create
     @product = Current.organization.products.new
-    @variant = @product.product_variants.build
+    @variant = ProductVariant.new
 
     service = Catalog::CreateProduct.new(
       organization: Current.organization,
@@ -39,8 +56,10 @@ class ProductsController < ApplicationController
       redirect_to service.product, notice: "Product created."
     else
       @product = service.product || Current.organization.products.new(product_params)
-      @variant = service.variant || @product.product_variants.build(variant_params)
-      @product.errors.add(:base, "Could not create product.") if @product.errors.empty?
+      @variant = service.variant || ProductVariant.new(variant_params)
+      if @product.errors.empty? && @variant.errors.empty?
+        @product.errors.add(:base, "Could not create product.")
+      end
       render :new, status: :unprocessable_entity
     end
   end
@@ -50,25 +69,19 @@ class ProductsController < ApplicationController
   end
 
   def update
-    product_updated = Catalog::UpdateProduct.call(
+    @variant = @product.product_variants.first
+
+    if Catalog::UpdateProductWithStandardVariant.call(
       product: @product,
-      attributes: product_params,
+      variant: @variant,
+      product_attrs: product_params,
+      variant_attrs: variant_params,
       actor: Current.user,
       store: Current.store
     )
-
-    variant = @product.product_variants.first
-    variant_updated = variant.nil? || Catalog::UpdateVariant.call(
-      variant: variant,
-      attributes: variant_params,
-      actor: Current.user,
-      store: Current.store
-    )
-
-    if product_updated && variant_updated
       redirect_to @product, notice: "Product updated."
     else
-      @variant = variant || @product.product_variants.build
+      @variant ||= @product.product_variants.build
       render :edit, status: :unprocessable_entity
     end
   end
@@ -79,18 +92,52 @@ class ProductsController < ApplicationController
     @product = Current.organization.products.find(params[:id])
   end
 
-  def filter_products(scope, query)
-    normalized = Identifiers::Normalize.call(query)
-    canonical = normalized.canonical.presence
+  def require_update_permissions!
+    require_permission!("catalog.product.edit")
+    return if performed?
 
-    if canonical.present?
-      by_identifier = scope.where(identifier: canonical)
-      return by_identifier if by_identifier.exists?
-
-      by_sku = scope.joins(:product_variants).where(product_variants: { sku: canonical })
-      return by_sku if by_sku.exists?
+    if deactivating_product?
+      require_permission!("catalog.product.deactivate")
+      return if performed?
     end
 
+    if variant_params_present?
+      require_permission!("catalog.variant.edit")
+      return if performed?
+    end
+
+    if deactivating_variant?
+      require_permission!("catalog.variant.deactivate")
+    end
+  end
+
+  def deactivating_product?
+    return false unless params[:product]
+
+    attrs = product_params
+    status = attrs[:status].presence || attrs["status"]
+    sellable = attrs.key?(:sellable) || attrs.key?("sellable") ?
+      ActiveModel::Type::Boolean.new.cast(attrs[:sellable] || attrs["sellable"]) : nil
+
+    (status.present? && status != "active") || sellable == false
+  end
+
+  def deactivating_variant?
+    return false unless params[:product_variant]
+
+    attrs = variant_params
+    status = attrs[:status].presence || attrs["status"]
+    sellable = attrs.key?(:sellable) || attrs.key?("sellable") ?
+      ActiveModel::Type::Boolean.new.cast(attrs[:sellable] || attrs["sellable"]) : nil
+
+    (status.present? && status != "active") || sellable == false
+  end
+
+  def variant_params_present?
+    params[:product_variant].present?
+  end
+
+  def filter_products_by_name(scope, query)
     scope.where("products.name ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(query)}%")
   end
 

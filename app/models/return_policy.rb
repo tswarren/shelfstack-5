@@ -13,4 +13,6 @@ class ReturnPolicy < ApplicationRecord
   validates :name, presence: true
   validates :final_sale, inclusion: { in: [ true, false ] }
   validates :active, inclusion: { in: [ true, false ] }
+  validates :return_window_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 },
+            allow_nil: true
 end

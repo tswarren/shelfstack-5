@@ -4,6 +4,8 @@ sample_book:
   identifier_generated: false
   identifier_validation_status: valid
   name: The Illustrated Man
+  product_type: book
+  product_format: hardcover
   merchandise_class: fiction_primary
   default_department: books_new
   default_tax_category: physical_book
@@ -17,6 +19,8 @@ upc_product:
   identifier_generated: false
   identifier_validation_status: valid
   name: UPC Sample
+  product_type: book
+  product_format: hardcover
   merchandise_class: fiction_primary
   default_department: books_new
   default_tax_category: physical_book

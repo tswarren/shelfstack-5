@@ -27,6 +27,10 @@
     <div><%= product_form.label :name %> <%= product_form.text_field :name %></div>
     <div><%= product_form.label :subtitle %> <%= product_form.text_field :subtitle %></div>
     <div><%= product_form.label :description %> <%= product_form.text_area :description %></div>
+    <div><%= product_form.label :product_type %>
+      <%= product_form.select :product_type, Product::PRODUCT_TYPES %></div>
+    <div><%= product_form.label :product_format_id, "Format" %>
+      <%= product_form.collection_select :product_format_id, Current.organization.product_formats.order(:name), :id, :name %></div>
     <div><%= product_form.label :merchandise_class_id, "Merchandise class" %>
       <%= product_form.collection_select :merchandise_class_id, Current.organization.merchandise_classes.order(:code), :id, :name, include_blank: true %></div>
     <div><%= product_form.label :default_department_id, "Default department" %>
@@ -34,6 +38,7 @@
     <div><%= product_form.label :default_tax_category_id, "Default tax category" %>
       <%= product_form.collection_select :default_tax_category_id, Current.organization.tax_categories.order(:code), :id, :name, include_blank: true %></div>
     <div><%= product_form.label :list_price_cents, "List price (cents)" %> <%= product_form.number_field :list_price_cents %></div>
+    <div><%= product_form.label :alternate_identifier %> <%= product_form.text_field :alternate_identifier %></div>
     <div><%= product_form.label :status %> <%= product_form.select :status, Product::STATUSES %></div>
     <div><%= product_form.label :sellable %> <%= product_form.check_box :sellable %></div>
   <% end %>

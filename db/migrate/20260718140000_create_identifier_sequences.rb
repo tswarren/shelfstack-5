@@ -2,8 +2,9 @@
 
 class CreateIdentifierSequences < ActiveRecord::Migration[8.1]
   def change
-    create_table :identifier_sequences, id: false, primary_key: :namespace do |t|
-      t.string :namespace, null: false, limit: 2
+    # namespace is the installation-singleton primary key (OD-011).
+    create_table :identifier_sequences, id: false do |t|
+      t.string :namespace, null: false, limit: 2, primary_key: true
       t.bigint :next_value, null: false, default: 1
       t.timestamps
     end

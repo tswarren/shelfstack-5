@@ -1,6 +1,20 @@
 # frozen_string_literal: true
 
 module Catalog
+  LookupResult = Data.define(:products, :match_kind) do
+    def product
+      products.first if products.size == 1
+    end
+
+    def ambiguous?
+      products.size > 1
+    end
+
+    def empty?
+      products.empty?
+    end
+  end
+
   class Lookup < ApplicationService
     def initialize(organization:, query:)
       @organization = organization
@@ -9,10 +23,18 @@ module Catalog
 
     def call
       normalized = Identifiers::Normalize.call(@query)
-      return nil if normalized.canonical.blank? && normalized.normalized.blank?
+      return LookupResult.new(products: [], match_kind: :none) if normalized.canonical.blank? && normalized.normalized.blank?
 
       canonical = normalized.canonical.presence
-      find_by_identifier(canonical) || find_by_sku(canonical) || find_by_alternate(normalized)
+      by_identifier = find_by_identifier(canonical)
+      return LookupResult.new(products: [ by_identifier ], match_kind: :identifier) if by_identifier
+
+      by_sku = find_by_sku(canonical)
+      return LookupResult.new(products: [ by_sku ], match_kind: :sku) if by_sku
+
+      alternates = find_by_alternate(normalized)
+      kind = alternates.size > 1 ? :alternate_ambiguous : :alternate
+      LookupResult.new(products: alternates, match_kind: kind)
     end
 
     private
@@ -33,9 +55,10 @@ module Catalog
     end
 
     def find_by_alternate(normalized)
-      return nil if normalized.normalized.blank?
+      value = normalized.normalized.presence || normalized.canonical.presence
+      return [] if value.blank?
 
-      @organization.products.find_by(alternate_identifier: normalized.normalized)
+      @organization.products.where(alternate_identifier: value).order(:id).to_a
     end
   end
 end

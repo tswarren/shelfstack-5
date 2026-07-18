@@ -42,11 +42,12 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `Identifiers::Normalize` | Catalog and Products | 2 | No | Yes | None | Raw identifier string | `Identifiers::NormalizedIdentifier` (canonical value, type, validation status, warnings) |
 | `Identifiers::Generate` | Catalog and Products | 2 | Yes | No* | `identifier_sequences` row (`lock`) | Namespace (`21`/`27`/`28`/`29`) | Generated EAN-13; raises on ten-digit overflow |
-| `Catalog::CreateProduct` | Catalog and Products | 2 | Yes | No | Sequence + product uniqueness | Org, actor, store, product/variant attrs, optional identifier | Product + Standard variant (`28` SKU); rolls back on variant failure |
+| `Catalog::CreateProduct` | Catalog and Products | 2 | Yes | No* | Sequence + product uniqueness | Org, actor, store, product/variant attrs, optional identifier | Product + Standard variant (`28` SKU); allocation inside txn; collision retry for generated ids |
 | `Catalog::UpdateProduct` | Catalog and Products | 2 | Yes | No | Product row | Product, attrs (no identifier) | Updated product + audit |
 | `Catalog::UpdateVariant` | Catalog and Products | 2 | Yes | No | Variant row | Variant, attrs (no sku) | Updated variant + audit |
-| `Catalog::Lookup` | Catalog and Products | 2 | No | Yes | None | Organization, query | Product or nil |
-| `Catalog::SaleEligibility` | Catalog and Products | 2 | No | Yes | None | Variant, store, as-of date | `Catalog::SaleEligibilityResult` blockers / warnings (catalog readiness) |
+| `Catalog::UpdateProductWithStandardVariant` | Catalog and Products | 2 | Yes | No | Product + variant | Product, standard variant, attrs | Atomic product+variant update + audits |
+| `Catalog::Lookup` | Catalog and Products | 2 | No | Yes | None | Organization, query | `Catalog::LookupResult` (products, match_kind; ambiguous alternates) |
+| `Catalog::SaleEligibility` | Catalog and Products | 2 | No | Yes | None | Variant, store, as-of date | `Catalog::SaleEligibilityResult` distinct readiness blockers |
 
 \*Generation is not replay-idempotent; callers must not retry blindly without checking uniqueness errors.
 

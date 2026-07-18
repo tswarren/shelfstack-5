@@ -57,4 +57,20 @@ class IdentifiersNormalizeTest < ActiveSupport::TestCase
     assert_equal :generated_28, result.type
     assert_equal :valid, result.validation_status
   end
+
+  test "invalid UPC still canonicalizes to zero-padded EAN form" do
+    result = Identifiers::Normalize.call("012345678900")
+
+    assert_equal :upc_a, result.type
+    assert_equal :warning, result.validation_status
+    assert_equal "0012345678900", result.canonical
+  end
+
+  test "approved nonstandard trade identifier is other/valid" do
+    result = Identifiers::Normalize.call("SKU-ABC.12")
+
+    assert_equal :other, result.type
+    assert_equal :valid, result.validation_status
+    assert_equal "SKUABC.12", result.canonical
+  end
 end
