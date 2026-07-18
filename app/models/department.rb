@@ -20,6 +20,7 @@ class Department < ApplicationRecord
   validates :postable, inclusion: { in: [ true, false ] }
   validates :active, inclusion: { in: [ true, false ] }
   validate :default_tax_category_belongs_to_organization
+  validate :postable_when_referenced_as_merchandise_class_default
 
   private
 
@@ -29,5 +30,22 @@ class Department < ApplicationRecord
     if default_tax_category.organization_id != organization_id
       errors.add(:default_tax_category, "must belong to the same organization")
     end
+  end
+
+  def postable_when_referenced_as_merchandise_class_default
+    return if postable?
+    return if id.blank?
+
+    referenced = MerchandiseClass.where(organization_id: organization_id, active: true).where(
+      "default_department_id = :id OR default_used_department_id = :id",
+      id: id
+    ).exists?
+
+    return unless referenced
+
+    errors.add(
+      :postable,
+      "cannot be false while active merchandise classes use this department as a default"
+    )
   end
 end

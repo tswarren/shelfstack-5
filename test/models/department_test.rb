@@ -43,4 +43,27 @@ class DepartmentTest < ActiveSupport::TestCase
     assert_not department.valid?
     assert_includes department.errors[:default_tax_category], "must belong to the same organization"
   end
+
+  test "rejects non-postable when active merchandise class uses department as default" do
+    department = departments(:books_new)
+    department.postable = false
+
+    assert_not department.valid?
+    assert_includes department.errors[:postable],
+      "cannot be false while active merchandise classes use this department as a default"
+  end
+
+  test "rejects non-postable when active merchandise class uses department as used default" do
+    department = departments(:books_new)
+    merchandise_classes(:fiction_primary).update!(
+      default_department: nil,
+      default_used_department: department
+    )
+    department.postable = false
+
+    assert_not department.valid?
+    assert_includes department.errors[:postable],
+      "cannot be false while active merchandise classes use this department as a default"
+  end
 end
+

@@ -232,6 +232,7 @@ Audit Merchandise-Class changes, Department changes, default changes, Tax Catego
 - Merchandise Class and Department remain distinct.
 - A separate Display Category hierarchy is not accepted.
 - Department does not determine Inventory-Tracking Mode.
+- A department used as an active merchandise-class default (`default_department` or `default_used_department`) must remain postable; clear or reassign those defaults before making the department reporting-only (`postable = false`).
 - Temporary placement does not change inventory ownership.
 - Product Type remains descriptive.
 - Tax Category is distinct from Tax Rate.
