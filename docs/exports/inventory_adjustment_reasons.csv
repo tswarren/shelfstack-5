@@ -1,0 +1,18 @@
+adjustment_kind,name,code,description,requires_note,position
+opening_inventory,Initial Opening Balance,initial_opening_balance,Establishes the Store’s initial recorded quantity and valuation when beginning inventory tracking in ShelfStack.,FALSE,0
+opening_inventory,Migration Import,migration_import,"Records inventory quantity and cost imported from a prior system, spreadsheet, or other historical source.",TRUE,0
+opening_inventory,Previously Unrecorded Stock,previously_unrecorded_stock,Adds merchandise that was already physically present but had not previously been recorded in inventory.,TRUE,0
+opening_inventory,Demonstration or Setup Stock,demonstration_or_setup_stock,"Establishes initial inventory used for demonstrations, testing, training, store setup, or similar non-receipt activity.",TRUE,0
+opening_inventory,Other,other,Establishes opening inventory for a reason not covered by the standard opening-inventory reasons.,TRUE,9
+quantity_only,Physical Count Overage,physical_count_overage,Increases recorded quantity because a physical count found more units than the current system balance.,FALSE,0
+quantity_only,Physical Count Shortage,physical_count_shortage,Decreases recorded quantity because a physical count found fewer units than the current system balance.,FALSE,0
+quantity_only,Found Stock,found_stock,"Adds units that were located after previously being missing, misplaced, or excluded from the recorded balance.",TRUE,0
+quantity_only,Loss or Theft,loss_or_theft,"Removes units believed to have been lost, stolen, or otherwise no longer physically present.",TRUE,0
+quantity_only,Discard,discard,"Removes units that were physically discarded, destroyed, or otherwise permanently removed from inventory.",TRUE,0
+quantity_only,Data Correction,data_correction,Corrects an identified quantity-entry or system-data error without representing a physical receipt or sale.,TRUE,0
+quantity_only,Other,other,Changes inventory quantity for a reason not covered by the standard quantity-adjustment reasons.,TRUE,9
+cost_correction,Replace Estimate with Actual,replace_estimate_with_actual,Replaces a previously estimated inventory valuation with documented actual acquisition cost.,TRUE,0
+cost_correction,Documented Cost Correction,documented_cost_correction,"Corrects inventory valuation using authoritative documentation such as an invoice, cost statement, or verified source record.",TRUE,0
+cost_correction,Migration Correction,migration_correction,Corrects inventory valuation that was imported incorrectly or incompletely during data migration.,TRUE,0
+cost_correction,Valuation Error,valuation_error,"Corrects an inventory value caused by an identified calculation, entry, configuration, or posting error.",TRUE,0
+cost_correction,Other,other,Corrects inventory valuation for a reason not covered by the standard cost-correction reasons.,TRUE,9
