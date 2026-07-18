@@ -9,11 +9,11 @@ default: &default
 
 development:
   <<: *default
-  database: <%= ENV.fetch("DATABASE_NAME", "my_rails_app_development") %>
+  database: <%= ENV.fetch("DATABASE_NAME", "shelfstack_development") %>
 
 test:
   <<: *default
-  database: <%= ENV.fetch("TEST_DATABASE_NAME", "my_rails_app_test") %>
+  database: <%= ENV.fetch("TEST_DATABASE_NAME", "shelfstack_test") %>
 
 production:
   <<: *default

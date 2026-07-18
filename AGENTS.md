@@ -846,6 +846,21 @@ The Compose configuration provides:
 * a persistent PostgreSQL data volume;
 * application access on port `3000`.
 
+For one-off Rails and `bin/*` commands, prefer the repository wrapper [`dev/rails-docker`](dev/rails-docker). It runs `docker compose exec web …` when the `web` service is already up, otherwise `docker compose run --rm web …`:
+
+```bash
+./dev/rails-docker bin/rails db:migrate
+./dev/rails-docker bin/rails test
+./dev/rails-docker bin/setup --skip-server
+./dev/rails-docker bin/ci
+```
+
+When Compose environment flags are required (for example `RAILS_ENV=test`), call `docker compose run` directly:
+
+```bash
+docker compose run --rm -e RAILS_ENV=test web bin/rails db:test:prepare test
+```
+
 Build the development image:
 
 ```bash
@@ -855,7 +870,7 @@ docker compose build
 Prepare the application and database:
 
 ```bash
-docker compose run --rm web bin/setup --skip-server
+./dev/rails-docker bin/setup --skip-server
 ```
 
 Start the application:
@@ -1235,10 +1250,11 @@ Do not commit developer-specific credentials or environment overrides.
 Agents should:
 
 * use repository-provided `bin/*` commands rather than global executables;
-* prefer `bin/setup` for initial preparation;
-* prefer `bin/ci` for the consolidated local validation suite;
-* use Docker Compose when the host environment is not already configured;
-* prepare the test database before running tests in a fresh environment;
+* **default to Docker** via `./dev/rails-docker …` (or `docker compose exec` / `run --rm web`) for Rails, tests, setup, RuboCop, and `bin/ci`;
+* use bare host `bin/rails` only when host Postgres env vars are explicitly configured (see §14.12);
+* prefer `./dev/rails-docker bin/setup --skip-server` for initial preparation;
+* prefer `./dev/rails-docker bin/ci` (or `docker compose run --rm web bin/ci`) for the consolidated local validation suite;
+* prepare the test database in Docker before running tests in a fresh environment;
 * run focused tests during development;
 * run the broadest relevant checks before completing work;
 * report which commands were run and whether they passed.
