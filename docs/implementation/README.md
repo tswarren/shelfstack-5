@@ -14,6 +14,7 @@
 | [open-decisions.md](open-decisions.md) | Living queue of unresolved choices (needed-by phase + disposition) |
 | [deferred-capabilities.md](deferred-capabilities.md) | Explicitly out of scope until designed |
 | [testing.md](testing.md) | Project test mechanics (fixtures, concurrency, idempotency patterns) |
+| [bootstrap-and-seed.md](bootstrap-and-seed.md) | Seed layers, bootstrap env vars, INV-ORG-001, admin permission sync |
 | [service-catalog.md](service-catalog.md) | Introduced application services as they land |
 | [phases/](phases/) | Per-phase goals, tables, services, exit criteria, and out-of-scope |
 | [schema-reconciliation-display-categories-and-demand-allocation.md](schema-reconciliation-display-categories-and-demand-allocation.md) | Pre-scaffolding schema decisions (merchandise classes, requests, allocations) |

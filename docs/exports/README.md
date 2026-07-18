@@ -14,6 +14,8 @@ bin/rails shelfstack:seed_reference_data  # these files (Phase 2+)
 
 Do not load organization-owned CSVs from bare `db:seed`.
 
+Full bootstrap env vars, INV-ORG-001 behavior, and admin permission sync: [`docs/implementation/bootstrap-and-seed.md`](../implementation/bootstrap-and-seed.md).
+
 ## Import-ready files
 
 One row ≈ one database record. Stable `code` values; suitable for idempotent import.
