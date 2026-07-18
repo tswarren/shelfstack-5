@@ -10,6 +10,12 @@ store_manage:
   permission_group: administration
   active: true
 
+user_view:
+  code: administration.user.view
+  name: View users
+  permission_group: administration
+  active: true
+
 user_manage:
   code: administration.user.manage
   name: Manage users
@@ -22,8 +28,26 @@ membership_manage:
   permission_group: administration
   active: true
 
+role_manage:
+  code: administration.role.manage
+  name: Manage roles
+  permission_group: administration
+  active: true
+
 device_manage:
   code: administration.device.manage
   name: Manage devices
+  permission_group: administration
+  active: true
+
+drawer_manage:
+  code: administration.drawer.manage
+  name: Manage drawers
+  permission_group: administration
+  active: true
+
+audit_view:
+  code: administration.audit.view
+  name: View audit
   permission_group: administration
   active: true

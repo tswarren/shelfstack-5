@@ -6,6 +6,10 @@ admin_store_manage:
   role: administrator
   permission: store_manage
 
+admin_user_view:
+  role: administrator
+  permission: user_view
+
 admin_user_manage:
   role: administrator
   permission: user_manage
@@ -14,6 +18,18 @@ admin_membership_manage:
   role: administrator
   permission: membership_manage
 
+admin_role_manage:
+  role: administrator
+  permission: role_manage
+
 admin_device_manage:
   role: administrator
   permission: device_manage
+
+admin_drawer_manage:
+  role: administrator
+  permission: drawer_manage
+
+admin_audit_view:
+  role: administrator
+  permission: audit_view

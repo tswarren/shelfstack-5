@@ -1,0 +1,23 @@
+<%= form_with model: role do |form| %>
+  <% if role.errors.any? %>
+    <ul>
+      <% role.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <div><%= form.label :code %> <%= form.text_field :code %></div>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :description %> <%= form.text_area :description %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <fieldset>
+    <legend>Permissions</legend>
+    <% permissions.each do |permission| %>
+      <label>
+        <%= check_box_tag "permission_ids[]", permission.id, role.permission_ids.include?(permission.id) %>
+        <%= permission.code %>
+      </label><br>
+    <% end %>
+  </fieldset>
+  <div><%= form.submit %></div>
+<% end %>

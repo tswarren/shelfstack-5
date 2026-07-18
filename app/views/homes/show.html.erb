@@ -7,6 +7,16 @@
   (<%= Current.organization.name %>).
 </p>
 
+<nav>
+  <ul>
+    <li><%= link_to "Stores", stores_path if Current.user.can?("administration.store.view", store: Current.store) %></li>
+    <li><%= link_to "Users", users_path if Current.user.can?("administration.user.view", store: Current.store) %></li>
+    <li><%= link_to "Roles", roles_path if Current.user.can?("administration.role.manage", store: Current.store) %></li>
+    <li><%= link_to "Permissions", permissions_path if Current.user.can?("administration.store.view", store: Current.store) %></li>
+    <li><%= link_to "Audit", administrative_audit_events_path if Current.user.can?("administration.audit.view", store: Current.store) %></li>
+  </ul>
+</nav>
+
 <%= button_to "Sign out", session_path, method: :delete %>
 <% if effective_memberships_for(Current.user).many? %>
   <p><%= link_to "Switch store", new_store_selection_path %></p>
