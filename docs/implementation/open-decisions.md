@@ -37,6 +37,24 @@ superseded
 | OD-010 | Unavailable quantity by status (aggregate only vs status balances) | open | Phase 3–5 | Inventory | `stock_balances.unavailable` total vs optional status buckets |
 | OD-011 | Identifier generation sequence ownership | open | Phase 2 | Catalog | Organization-wide sequences or equivalent collision-safe generation for `21`/`27`/`28`/`29` |
 | OD-012 | Parent/reporting-only departments (`postable = false`) in first release | proposed | Phase 2 | Classification | Proforma includes hierarchy; treat as in-scope unless overturned |
+| OD-013 | Storage and precedence of role and store authority defaults | deferred | Phase 4b | Organization / Authorization | See [OD-013 notes](#od-013-role-and-store-authority-defaults) |
+
+## OD-013 role and store authority defaults
+
+ADR-0011 and the domain specification describe precedence:
+
+```text
+membership override → role default → store default
+```
+
+The reconciled schema currently has authority columns only on `store_memberships`. Role default-limit columns and the store-configuration home for store defaults (related to OD-009) are not yet decided.
+
+**Phase 1 interim rule** (fail closed):
+
+- membership override present → evaluate against that value;
+- membership override null → deny as **unconfigured** (complete precedence chain not implemented).
+
+Do not interpret null as “zero authority.” Do not invent role or store authority columns until this OD is accepted.
 
 ## OD-003 costing edge cases (must settle in ADR)
 

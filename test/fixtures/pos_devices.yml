@@ -1,0 +1,6 @@
+register_1:
+  store: main_street
+  code: REG1
+  name: Register 1
+  device_type: register
+  active: true

@@ -1,0 +1,13 @@
+administrator:
+  organization: acme
+  code: administrator
+  name: Administrator
+  system_template: true
+  active: true
+
+associate:
+  organization: acme
+  code: associate
+  name: Associate
+  system_template: true
+  active: true

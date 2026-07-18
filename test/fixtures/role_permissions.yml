@@ -1,0 +1,19 @@
+admin_store_view:
+  role: administrator
+  permission: store_view
+
+admin_store_manage:
+  role: administrator
+  permission: store_manage
+
+admin_user_manage:
+  role: administrator
+  permission: user_manage
+
+admin_membership_manage:
+  role: administrator
+  permission: membership_manage
+
+admin_device_manage:
+  role: administrator
+  permission: device_manage

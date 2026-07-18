@@ -1,0 +1,29 @@
+store_view:
+  code: administration.store.view
+  name: View stores
+  permission_group: administration
+  active: true
+
+store_manage:
+  code: administration.store.manage
+  name: Manage stores
+  permission_group: administration
+  active: true
+
+user_manage:
+  code: administration.user.manage
+  name: Manage users
+  permission_group: administration
+  active: true
+
+membership_manage:
+  code: administration.membership.manage
+  name: Manage memberships
+  permission_group: administration
+  active: true
+
+device_manage:
+  code: administration.device.manage
+  name: Manage devices
+  permission_group: administration
+  active: true
