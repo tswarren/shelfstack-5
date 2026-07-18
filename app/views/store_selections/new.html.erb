@@ -1,0 +1,17 @@
+<% content_for :title, "Select store" %>
+
+<h1>Select a store</h1>
+
+<% if flash[:alert] %>
+  <p><%= flash[:alert] %></p>
+<% end %>
+
+<%= form_with url: store_selection_path, method: :post do |form| %>
+  <div>
+    <%= form.label :store_id, "Store" %>
+    <%= form.collection_select :store_id, @memberships.map(&:store), :id, :name, prompt: "Choose a store" %>
+  </div>
+  <div>
+    <%= form.submit "Continue" %>
+  </div>
+<% end %>

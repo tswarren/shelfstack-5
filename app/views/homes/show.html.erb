@@ -1,0 +1,13 @@
+<% content_for :title, "Home" %>
+
+<h1>ShelfStack</h1>
+<p>
+  Signed in as <%= Current.user.username %>
+  at <%= Current.store.name %>
+  (<%= Current.organization.name %>).
+</p>
+
+<%= button_to "Sign out", session_path, method: :delete %>
+<% if effective_memberships_for(Current.user).many? %>
+  <p><%= link_to "Switch store", new_store_selection_path %></p>
+<% end %>
