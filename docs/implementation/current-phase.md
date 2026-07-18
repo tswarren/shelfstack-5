@@ -1,17 +1,17 @@
 # Current Phase
 
-**Active delivery phase:** Phase 0 — Scaffold and architectural locks  
+**Active delivery phase:** Phase 1 — Organization and authorization  
 **Status:** Not started  
-**Plan document:** [phases/phase-00-scaffold-and-locks.md](phases/phase-00-scaffold-and-locks.md)
+**Plan document:** [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md)  
+**Tracking:** [#16](https://github.com/tswarren/shelfstack-5/issues/16)
 
 ## Immediate next work
 
-1. Complete Phase 0 scaffold hygiene (Compose/DB naming, `bin/ci` green, service layout).
-2. Treat [architectural-locks.md](architectural-locks.md) as binding; track unresolved items in [open-decisions.md](open-decisions.md).
-3. Finish pre-migration classification scrub (checklist below).
-4. Begin Phase 1 using [authorization-permissions.md](../domains/authorization-permissions.md) for seeds.
+1. Implement Phase 1 from [#16](https://github.com/tswarren/shelfstack-5/issues/16) and [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md).
+2. Seed permissions from [authorization-permissions.md](../domains/authorization-permissions.md).
+3. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
-### Pre-migration scrub checklist (Phase 0 / before Phase 2)
+### Pre-migration scrub checklist (completed in Phase 0)
 
 - [x] No separate display-category tables or `*_display_category_id` fields
 - [x] Merchandise class is hierarchical; department defaults resolve correctly
@@ -28,7 +28,7 @@ Audit completed 2026-07-17. See [phases/phase-00-scaffold-and-locks.md](phases/p
 
 ## Do not start yet
 
-- Catalog migrations before the classification-field audit completes.
+- Catalog migrations remain Phase 2 (scrub is complete; follow Phase 1 exit first).
 - POS, purchasing, or receiving tables before their phase prerequisites.
 - Closing [OD-003](open-decisions.md) / [OD-004](open-decisions.md) by inventing ad hoc formulas in code.
 - Deferred capabilities listed in [deferred-capabilities.md](deferred-capabilities.md).

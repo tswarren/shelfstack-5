@@ -1,6 +1,6 @@
 # Phase 0 — Scaffold and Architectural Locks
 
-**Status:** Not started  
+**Status:** Complete (2026-07-17)  
 **Depends on:** none  
 **Unlocks:** Phase 1
 
@@ -18,11 +18,11 @@ Make the Rails application a trustworthy empty shell and record delivery locks b
 
 ## Exit criteria
 
-- [ ] `bin/ci` green on empty schema
-- [ ] Compose/DB naming uses ShelfStack identifiers
-- [ ] Architectural locks documented
+- [x] `bin/ci` green on empty schema
+- [x] Compose/DB naming uses ShelfStack identifiers
+- [x] Architectural locks documented
 - [x] Classification-field audit complete or checklist filed with owners
-- [ ] [../current-phase.md](../current-phase.md) points here until Phase 0 exits
+- [x] [../current-phase.md](../current-phase.md) advanced to Phase 1 after this phase exited
 
 ## Audit result
 
