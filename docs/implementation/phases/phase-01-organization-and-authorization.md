@@ -1,6 +1,6 @@
 # Phase 1 — Organization and Authorization
 
-**Status:** Not started  
+**Status:** Complete (2026-07-18)  
 **Depends on:** Phase 0  
 **Unlocks:** Phase 2  
 **Governing docs:** [organization-and-authorization domain](../../domains/organization-and-authorization.md), ADR-0011
@@ -20,6 +20,7 @@ Establish who may act, at which store, under which permissions and numeric autho
 - `store_memberships`
 - `pos_devices`
 - `cash_drawers`
+- `administrative_audit_events` (append-only; domain-required addition beyond 260717 proforma)
 
 ## Services and behavior
 
@@ -28,14 +29,14 @@ Establish who may act, at which store, under which permissions and numeric autho
 - Permission evaluation: `user.can?(permission_key, store:)` — never hard-code role names.
 - Numeric authority fields on memberships; approval **records** wait until POS Phase 4b.
 - Authority evaluation uses **membership overrides only** until [OD-013](../open-decisions.md#od-013-role-and-store-authority-defaults) lands (null override = unconfigured deny).
-- Minimal admin UI: sign-in, store switcher, CRUD for stores/users/roles/permissions.
-- Seeds: one organization, at least one store, roles, core permission catalog.
+- Minimal admin UI: sign-in, store switcher, org- and store-scoped administration.
+- Seeds: one organization, at least one store, administrator role, Phase 1 permission catalog.
 
 ## Exit criteria
 
-- [ ] Authenticated user with store membership authorized by permission key in tests
-- [ ] Devices and drawers exist as master data (no sessions yet)
-- [ ] Role names do not appear in authorization conditionals
+- [x] Authenticated user with store membership authorized by permission key in tests
+- [x] Devices and drawers exist as master data (no sessions yet)
+- [x] Role names do not appear in authorization conditionals
 
 ## Out of scope
 
@@ -46,3 +47,4 @@ Establish who may act, at which store, under which permissions and numeric autho
 
 - [../roadmap.md](../roadmap.md)
 - [../architectural-locks.md](../architectural-locks.md)
+- Issue [#16](https://github.com/tswarren/shelfstack-5/issues/16)

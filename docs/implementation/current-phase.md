@@ -1,14 +1,13 @@
 # Current Phase
 
-**Active delivery phase:** Phase 1 — Organization and authorization  
+**Active delivery phase:** Phase 2 — Configuration and catalog  
 **Status:** Not started  
-**Plan document:** [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md)  
-**Tracking:** [#16](https://github.com/tswarren/shelfstack-5/issues/16)
+**Plan document:** [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md)
 
 ## Immediate next work
 
-1. Implement Phase 1 from [#16](https://github.com/tswarren/shelfstack-5/issues/16) and [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md).
-2. Seed permissions from [authorization-permissions.md](../domains/authorization-permissions.md).
+1. Implement Phase 2 from [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md).
+2. Resolve or respect [OD-011](https://github.com/tswarren/shelfstack-5/issues/14) (identifier generation) and [OD-012](open-decisions.md) as needed for catalog scaffolding.
 3. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
 ### Pre-migration scrub checklist (completed in Phase 0)
@@ -28,9 +27,9 @@ Audit completed 2026-07-17. See [phases/phase-00-scaffold-and-locks.md](phases/p
 
 ## Do not start yet
 
-- Catalog migrations remain Phase 2 (scrub is complete; follow Phase 1 exit first).
 - POS, purchasing, or receiving tables before their phase prerequisites.
 - Closing [OD-003](open-decisions.md) / [OD-004](open-decisions.md) by inventing ad hoc formulas in code.
+- Closing [OD-013](open-decisions.md) role/store authority defaults before Phase 4b needs them.
 - Deferred capabilities listed in [deferred-capabilities.md](deferred-capabilities.md).
 
 ## Pointers
