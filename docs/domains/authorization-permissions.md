@@ -128,10 +128,12 @@ Do **not** add `inventory.cost_correction.approve` or require Approval records i
 ### Phase 3 evaluation
 
 - Create opening/quantity-only draft: `inventory.adjustment.create` (cost entry allowed without `inventory.cost.view`).
-- View existing stock valuation: `inventory.cost.view`.
+- View draft adjustment cost inputs: creator or `inventory.adjustment.create` (without granting general cost access).
+- View posted adjustment cost history or existing stock valuation: `inventory.cost.view`.
 - Post opening/quantity-only: `inventory.adjustment.post`.
 - Post cost correction: `inventory.cost_correction.post` **and** `inventory.cost.view` (correction reviews current value), plus explicit reason and full audit.
 - Numeric self-authority limits deferred until OD-009 / OD-013.
+
 
 After seeding new permissions, existing installs need `bin/rails shelfstack:sync_admin_permissions` (see [bootstrap-and-seed.md](../implementation/bootstrap-and-seed.md)).
 

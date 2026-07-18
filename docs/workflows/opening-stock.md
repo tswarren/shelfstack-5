@@ -15,7 +15,10 @@ Establish sellable on-hand quantity (and opening valuation) **without** a purcha
 - Product variant exists with `inventory_tracking_mode = quantity`.
 - User has `inventory.adjustment.create` and, for posting opening/quantity-only, `inventory.adjustment.post`.
 - Cost-correction kind requires `inventory.cost_correction.post`, explicit reason, and full audit.
-- Viewing existing stock valuation requires `inventory.cost.view`; creating an opening draft that captures cost does not.
+- Creating an opening draft that captures cost does not require `inventory.cost.view`.
+- Viewing draft adjustment cost inputs is allowed for the creator or users with `inventory.adjustment.create`.
+- Viewing posted adjustment cost history or existing stock valuation requires `inventory.cost.view`.
+
 
 ## Records read
 
@@ -53,7 +56,8 @@ draft → posted
 draft → cancelled
 ```
 
-Posted adjustments are not edited in place; corrections use new adjusting records.
+Posted or cancelled adjustments (and their lines) are not edited or destroyed in place; corrections use new adjusting records. Draft updates lock the header and recheck status before replacing lines.
+
 
 ## Ledger / snapshot effects
 
@@ -62,9 +66,12 @@ Each posted line produces ledger entry fields at minimum: quantity delta, unit c
 ## Permissions and approvals
 
 - Create draft: `inventory.adjustment.create`
+- View draft cost inputs: creator or `inventory.adjustment.create`
+- View posted cost history / stock valuation: `inventory.cost.view`
 - Post opening/quantity-only: `inventory.adjustment.post`
 - Post cost correction: `inventory.cost_correction.post` and `inventory.cost.view`, plus reason and audit
 - No mandatory independent Approval in Phase 3
+
 
 ## Notes
 

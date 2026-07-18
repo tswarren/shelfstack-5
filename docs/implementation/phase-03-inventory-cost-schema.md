@@ -52,6 +52,9 @@ unknown valued positive balance → inventory_value_delta_cents null on movement
 reserved >= 0; unavailable >= 0
 ```
 
+`last_known_unit_cost_cents` / `last_known_cost_quality` update whenever a posted movement leaves `on_hand > 0` with a known carrying average (including quantity-only moves that change the average via rounding). When On Hand reaches zero or below, leave last-known unchanged so a defensible pre-zero rate remains available for later retained-cost policy.
+
+
 ## `inventory_ledger_entries` fields
 
 ```text

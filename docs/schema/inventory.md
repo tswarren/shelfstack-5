@@ -29,4 +29,6 @@ Stock balances and reservations require store and variant in the same organizati
 
 Primary: `SELECT … FOR UPDATE` on `stock_balances` inside `Inventory::PostLedgerEntry`.  
 Secondary: `lock_version` on balances.  
+Adjustment headers: `reload.lock!` inside `UpdateAdjustment`, `PostAdjustment`, and `CancelAdjustment`, with draft status rechecked under the lock.  
 Reservations: partial unique index on active source identity.
+

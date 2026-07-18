@@ -401,11 +401,14 @@ Integer cents. Deterministic round-half-up for proportional allocation and rate-
 
 A posted Inventory Adjustment creates Ledger Entries.
 
+Posted or cancelled Adjustments and their lines are immutable. Draft updates lock the header and recheck status before replacing lines. Corrections use new adjusting records.
+
 Suggested structure:
 
 - adjustment header with Store, adjustment kind, status, Classification Inventory Adjustment Reason, optional note, creator, poster, posting key, and timestamps;
 - lines with Variant, optional Unit, quantity or status change, and kind-specific cost inputs (`input_*` / `corrected_inventory_value_cents`);
 - posted headers snapshot reason code and name; ledger entries store structured `reason_code` and `reason_note`.
+
 
 Initial quantity-tracked adjustment kinds:
 

@@ -52,7 +52,8 @@ Phase 3 remains intentionally narrow: balances, ledger posting, reservations, ad
 - concurrency and value reconciliation via posting services
 - when On Hand ≤ 0, inventory asset value is zero; current `cost_quality` at zero is unknown
 - unknown cost never treated as zero
-- optional `last_known_unit_cost_*` for later phases
+- `last_known_unit_cost_*` maintained after every movement that leaves known positive On Hand with a carrying average; preserved (not cleared) when On Hand reaches zero
+
 
 ## Services and behavior
 
@@ -70,10 +71,12 @@ Phase 3 remains intentionally narrow: balances, ledger posting, reservations, ad
 
 ### Permissions in Phase 3
 
+- `inventory.adjustment.create` may enter and view **draft** cost inputs; posted adjustment cost history requires `inventory.cost.view`
 - `inventory.adjustment.post` for opening / quantity-only
 - `inventory.cost_correction.post` + `inventory.cost.view` + reason + audit for cost corrections
 - **no** mandatory independent Approval in Phase 3
 - numeric correction authority deferred
+
 
 ### Classification in Phase 3
 
