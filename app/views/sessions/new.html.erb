@@ -1,0 +1,21 @@
+<% content_for :title, "Sign in" %>
+
+<h1>Sign in</h1>
+
+<% if flash[:alert] %>
+  <p><%= flash[:alert] %></p>
+<% end %>
+
+<%= form_with url: session_path, method: :post do |form| %>
+  <div>
+    <%= form.label :username, "Username" %>
+    <%= form.text_field :username, required: true, autocomplete: "username" %>
+  </div>
+  <div>
+    <%= form.label :password, "Password" %>
+    <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+  </div>
+  <div>
+    <%= form.submit "Sign in" %>
+  </div>
+<% end %>
