@@ -20,7 +20,7 @@ module Classification
         %w[
           tax_categories.csv return_policies.csv return_reasons.csv discount_reasons.csv
           departments.csv merchandise_classes.csv product_formats.csv product_conditions.csv
-          inventory_adjustment_reasons.csv
+          inventory_adjustment_reasons.csv tender_types.csv cash_movement_types.csv
         ].each { |filename| load_csv(filename) }
 
         ActiveRecord::Base.transaction do
@@ -33,6 +33,8 @@ module Classification
           import_product_formats!
           import_product_conditions!
           import_inventory_adjustment_reasons!
+          import_tender_types!
+          import_cash_movement_types!
         end
         true
       end
@@ -198,6 +200,41 @@ module Classification
           record.description = row["description"].presence
           record.requires_note = truthy?(row["requires_note"])
           record.position = parse_integer(row["position"]) || 0
+          assign_active_preserving_deactivation(record, row.fetch("active", "TRUE"))
+          record.save!
+        end
+      end
+
+      def import_tender_types!
+        load_csv("tender_types.csv").each do |row|
+          record = @organization.tender_types.find_or_initialize_by(code: row["code"])
+          record.name = row["name"]
+          if record.new_record?
+            record.tender_category = row["tender_category"]
+            record.shortcut = row["shortcut"].presence
+            record.payment_enabled = truthy?(row.fetch("payment_enabled", "TRUE"))
+            record.refund_enabled = truthy?(row.fetch("refund_enabled", "TRUE"))
+            record.allows_over_tender = truthy?(row.fetch("allows_over_tender", "FALSE"))
+            record.provides_change = truthy?(row.fetch("provides_change", "FALSE"))
+            record.reference_1_requirement = row["reference_1_requirement"].presence || "none"
+            record.reference_1_label = row["reference_1_label"].presence
+            record.reference_2_requirement = row["reference_2_requirement"].presence || "none"
+            record.reference_2_label = row["reference_2_label"].presence
+          end
+          assign_active_preserving_deactivation(record, row.fetch("active", "TRUE"))
+          record.save!
+        end
+      end
+
+      def import_cash_movement_types!
+        load_csv("cash_movement_types.csv").each do |row|
+          record = @organization.cash_movement_types.find_or_initialize_by(code: row["code"])
+          record.name = row["name"]
+          if record.new_record?
+            record.direction = row["direction"]
+            record.requires_approval = truthy?(row.fetch("requires_approval", "TRUE"))
+            record.requires_reference = truthy?(row.fetch("requires_reference", "TRUE"))
+          end
           assign_active_preserving_deactivation(record, row.fetch("active", "TRUE"))
           record.save!
         end

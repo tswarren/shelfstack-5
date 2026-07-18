@@ -1,0 +1,4 @@
+code,name,tender_category,shortcut,payment_enabled,refund_enabled,allows_over_tender,provides_change,reference_1_requirement,reference_1_label,reference_2_requirement,reference_2_label,active
+cash,Cash,cash,1,TRUE,TRUE,TRUE,TRUE,none,,none,,TRUE
+card_standalone,Card (standalone),card,2,TRUE,TRUE,FALSE,FALSE,required,Auth code,optional,Terminal ref,TRUE
+check,Check,check,3,TRUE,TRUE,FALSE,FALSE,optional,Check #,none,,TRUE

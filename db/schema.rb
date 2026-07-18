@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_200000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -39,6 +39,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_200000) do
     t.datetime "updated_at", null: false
     t.index ["store_id", "code"], name: "index_cash_drawers_on_store_id_and_code", unique: true
     t.index ["store_id"], name: "index_cash_drawers_on_store_id"
+  end
+
+  create_table "cash_movement_types", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "direction", null: false
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.boolean "requires_approval", default: true, null: false
+    t.boolean "requires_reference", default: true, null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "code"], name: "index_cash_movement_types_on_organization_id_and_code", unique: true
+    t.index ["organization_id"], name: "index_cash_movement_types_on_organization_id"
   end
 
   create_table "departments", force: :cascade do |t|
@@ -555,6 +569,30 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_200000) do
     t.index ["organization_id"], name: "index_tax_categories_on_organization_id"
   end
 
+  create_table "tender_types", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.boolean "allows_over_tender", default: false, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.boolean "payment_enabled", default: true, null: false
+    t.boolean "provides_change", default: false, null: false
+    t.string "reference_1_label", limit: 20
+    t.string "reference_1_mask"
+    t.string "reference_1_requirement", default: "none", null: false
+    t.string "reference_2_label", limit: 20
+    t.string "reference_2_mask"
+    t.string "reference_2_requirement", default: "none", null: false
+    t.boolean "refund_enabled", default: true, null: false
+    t.string "shortcut", limit: 3
+    t.string "tender_category", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "code"], name: "index_tender_types_on_organization_id_and_code", unique: true
+    t.index ["organization_id", "shortcut"], name: "index_tender_types_on_organization_id_and_shortcut", unique: true, where: "(shortcut IS NOT NULL)"
+    t.index ["organization_id"], name: "index_tender_types_on_organization_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -582,6 +620,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_200000) do
   add_foreign_key "administrative_audit_events", "stores", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "users", column: "actor_user_id", on_delete: :restrict
   add_foreign_key "cash_drawers", "stores", on_delete: :restrict
+  add_foreign_key "cash_movement_types", "organizations", on_delete: :restrict
   add_foreign_key "departments", "departments", column: "parent_department_id"
   add_foreign_key "departments", "organizations"
   add_foreign_key "departments", "return_policies", column: "default_return_policy_id", on_delete: :restrict
@@ -637,5 +676,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_200000) do
   add_foreign_key "store_memberships", "users", on_delete: :restrict
   add_foreign_key "stores", "organizations", on_delete: :restrict
   add_foreign_key "tax_categories", "organizations"
+  add_foreign_key "tender_types", "organizations", on_delete: :restrict
   add_foreign_key "users", "stores", column: "default_store_id", on_delete: :nullify
 end

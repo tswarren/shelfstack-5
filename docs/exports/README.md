@@ -31,6 +31,8 @@ One row ≈ one database record. Stable `code` values; suitable for idempotent i
 | [`product_conditions.csv`](product_conditions.csv) | Product conditions (used-copy ladder) |
 | [`merchandise_classes.csv`](merchandise_classes.csv) | Merchandise-class **nodes** (path-qualified codes) |
 | [`inventory_adjustment_reasons.csv`](inventory_adjustment_reasons.csv) | Inventory adjustment reasons by kind (Phase 3) |
+| [`tender_types.csv`](tender_types.csv) | Tender types (Phase 4c; seeded with Phase 4 reference data) |
+| [`cash_movement_types.csv`](cash_movement_types.csv) | Cash movement types (`additional_float`, `paid_in`, `paid_out`, `safe_drop`) |
 
 ## Source-only files
 
