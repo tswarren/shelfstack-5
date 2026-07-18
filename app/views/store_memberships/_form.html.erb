@@ -1,0 +1,13 @@
+<%= form_with model: membership do |form| %>
+  <% if membership.errors.any? %>
+    <ul><% membership.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
+  <% end %>
+  <div><%= form.label :user_id %> <%= form.collection_select :user_id, users, :id, :username %></div>
+  <div><%= form.label :role_id %> <%= form.collection_select :role_id, roles, :id, :name %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.label :starts_on %> <%= form.date_field :starts_on %></div>
+  <div><%= form.label :ends_on %> <%= form.date_field :ends_on %></div>
+  <div><%= form.label :maximum_discount_rate %> <%= form.number_field :maximum_discount_rate, step: :any %></div>
+  <div><%= form.label :maximum_discount_amount_cents %> <%= form.number_field :maximum_discount_amount_cents %></div>
+  <div><%= form.submit %></div>
+<% end %>

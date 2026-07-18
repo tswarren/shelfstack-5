@@ -14,6 +14,9 @@
     <li><%= link_to "Roles", roles_path if Current.user.can?("administration.role.manage", store: Current.store) %></li>
     <li><%= link_to "Permissions", permissions_path if Current.user.can?("administration.store.view", store: Current.store) %></li>
     <li><%= link_to "Audit", administrative_audit_events_path if Current.user.can?("administration.audit.view", store: Current.store) %></li>
+    <li><%= link_to "Memberships", store_memberships_path if Current.user.can?("administration.membership.manage", store: Current.store) %></li>
+    <li><%= link_to "Devices", pos_devices_path if Current.user.can?("administration.device.manage", store: Current.store) %></li>
+    <li><%= link_to "Drawers", cash_drawers_path if Current.user.can?("administration.drawer.manage", store: Current.store) %></li>
   </ul>
 </nav>
 

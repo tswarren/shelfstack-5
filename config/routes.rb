@@ -12,6 +12,9 @@ Rails.application.routes.draw do
   resources :roles, except: %i[destroy]
   resources :permissions, only: %i[index]
   resources :administrative_audit_events, only: %i[index], path: "audit_events"
+  resources :store_memberships, except: %i[show destroy]
+  resources :pos_devices, except: %i[show destroy]
+  resources :cash_drawers, except: %i[show destroy]
 
   root "homes#show"
 end
