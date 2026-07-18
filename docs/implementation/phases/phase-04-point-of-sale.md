@@ -102,6 +102,8 @@ Individual tracking is added in 4d. Stored-value line kind is reserved for Phase
 
 Store tax rates and store tax rules with `treatment`, denormalized `store_id`, effective dates, taxable fraction, calculation order, compounding, component labels, overlap validation, and hybrid transaction-component rounding per [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md) and [phase-04-tax-schema.md](../phase-04-tax-schema.md). OD-004 / OD-005 are accepted.
 
+**Landed** on `phase/p4-point-of-sale`: `store_tax_rates` / `store_tax_rules` schema and overlap/treatment validations, minimal admin CRUD under `classification.store_tax_rule.manage`, the pure `Tax::CalculateTransaction` calculation service, ADR-0014 fixtures/tests, and demo `GST13` seed data (see [service-catalog.md](../service-catalog.md)). Persisting calculated tax onto `pos_line_item_taxes` (`Pos::RecalculateTransaction`) and wiring completion blockers remain open 4b work.
+
 ### Tables / records
 
 - `pos_discounts` (including `tax_treatment`), `pos_discount_allocations`
@@ -124,7 +126,7 @@ Store tax rates and store tax rules with `treatment`, denormalized `store_id`, e
 
 ### Exit
 
-- [ ] Tax fixtures prove aggregation residual allocation, compounding, taxable fraction, and rule treatments (ADR-0014)
+- [x] Tax fixtures prove aggregation residual allocation, compounding, taxable fraction, and rule treatments (ADR-0014)
 - [ ] Discount allocation totals match line caches
 - [ ] Missing store tax rule for a line’s Tax Category blocks completion
 - [ ] `pos.tax_category.override` permission-denied path tested

@@ -1,6 +1,6 @@
 # Phase 4 — Tax and POS Commercial Schema Notes
 
-**Status:** Authoritative deltas before Phase 4 tax / 4b migrations  
+**Status:** `store_tax_rates` / `store_tax_rules` deltas below landed on `phase/p4-point-of-sale` (migration `20260719040000_create_phase4_store_tax_rates_and_rules.rb`). `pos_line_item_taxes`, `pos_discounts`, and the remaining deltas below are still pending Phase 4b persistence work.  
 **Governing:** [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md), [classification-and-configuration](../domains/classification-and-configuration.md), [point-of-sale](../domains/point-of-sale.md)  
 **Related:** Reconciled proforma under [../exports/schema/](../exports/schema/) (update when these deltas land)
 

@@ -107,11 +107,26 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Individually tracked variants (`inventory_tracking_mode: individual`) are rejected by `Pos::AddLine` until Phase 4d.
 - No service in this list sets `pos_transactions.status` or `pos_line_items.status` to `completed`; that is reserved for `Pos::CompleteTransaction` (Phase 4c).
 
+## Phase 4b (partial) — Store tax configuration and Tax::CalculateTransaction
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Classification::CreateStoreTaxRate` / `UpdateStoreTaxRate` | Classification and Configuration | 4b | Yes | No | Store Tax Rate | Store, rate attrs (code immutable on update) | Persisted Store Tax Rate + audit |
+| `Classification::CreateStoreTaxRule` / `UpdateStoreTaxRule` | Classification and Configuration | 4b | Yes | No | Store Tax Rule | Store, Tax Category, optional Store Tax Rate, treatment, fraction, order, compounding, effective dates | Persisted Store Tax Rule + audit; overlap and treatment/rate consistency validated on the model |
+| `Tax::CalculateTransaction` | Point of Sale / Classification and Configuration | 4b | No (read-only rule resolution) | Yes | None | Store, completion date, duck-typed lines (`id`, `tax_category_id`, `direction`, `taxable_merchandise_amount_cents`, `position`) | Per-line component results (taxable base, amount, snapshots), warnings, blockers; missing effective rule is a blocker, never an exemption |
+
+### Phase 4b tax notes
+
+- `Tax::CalculateTransaction` is the pure ADR-0014 hybrid calculation: taxability/base resolved per line, one round-half-up aggregation per transaction component (`store_tax_rate_id` + `calculation_order` + `compounds_on_prior_tax`) and line direction, largest-remainder cent allocation (tie-break: remainder desc, then position asc, then id asc), and ascending-`calculation_order` compounding using already-finalized (allocated) prior tax amounts on the line.
+- `exempt` treatment produces no `pos_line_item_taxes`-shaped component row (no collectible tax); `zero_rated` produces an explicit zero-amount component so the base still reports.
+- It does not persist anything. `Pos::RecalculateTransaction` (persist pending discounts/tax/totals) and `Pos::CompleteTransaction` (blocker enforcement at completion) remain open Phase 4b/4c work.
+- Effective Store Tax Rules are resolved by the **store-local calendar date at completion**, not the Business Day `reporting_date` (ADR-0014).
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 4b–4c: `Pos::RecalculateTransaction`, `Tax::CalculateTransaction`, `Pos::CompleteTransaction`, discount/tender helpers
+- Phase 4b–4c: `Pos::RecalculateTransaction`, `Pos::CompleteTransaction`, discount/tender helpers
 - Phase 5: receipt posting, PO placement, allocation services
 - Phase 6: stored-value posting, post-void
 

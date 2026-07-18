@@ -8,8 +8,8 @@
 ## Immediate next work
 
 1. Manually test Phase 4a on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
-2. Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b (hard prerequisite; may proceed in parallel with 4a). See [phase-04-tax-schema.md](phase-04-tax-schema.md) and [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
-3. Begin Phase 4b (price, tax, discounts, approvals) once store tax rates/rules land.
+2. ~~Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b~~ — done on `phase/p4-point-of-sale`: `store_tax_rates` / `store_tax_rules` schema, admin CRUD, the pure `Tax::CalculateTransaction` service, ADR-0014 fixtures/tests, and demo seed data. See [phase-04-tax-schema.md](phase-04-tax-schema.md), [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md), and [service-catalog.md](service-catalog.md).
+3. Begin the remainder of Phase 4b (discount allocation, `Pos::RecalculateTransaction` persisting `pos_line_item_taxes`, approvals) now that store tax rates/rules and `Tax::CalculateTransaction` have landed.
 4. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
 5. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
