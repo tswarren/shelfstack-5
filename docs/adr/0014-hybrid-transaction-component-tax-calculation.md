@@ -155,9 +155,11 @@ A Business Day may cross midnight while a statutory rate change becomes effectiv
 * completion re-resolves and validates rules;
 * if totals change materially, the cashier must review before completion.
 
-### Tax Category status and missing configuration
+### Store Tax Rule treatment and missing configuration
 
-Tax Categories carry an explicit status such as:
+A Tax Category describes what the merchandise is for tax purposes at the Organization level. It does **not** carry a global taxable / zero-rated / exempt status. Actual treatment depends on Store, jurisdiction, effective date, and the applicable Store Tax Rule.
+
+Each Store Tax Rule carries an explicit `treatment`:
 
 ```text
 taxable
@@ -165,14 +167,16 @@ zero_rated
 exempt
 ```
 
-Rules:
+Interpretation:
 
-* `taxable` must resolve one or more effective Store Tax Rules;
-* `zero_rated` creates an explicit 0% component row for reporting (`amount_cents = 0`);
-* `exempt` creates no collectible tax but retains the tax-status snapshot;
-* missing effective Store Tax Rules for a `taxable` category are a completion blocker and are not interpreted as an exemption.
+* `taxable` must reference an effective Store Tax Rate with a nonnegative rate;
+* `zero_rated` requires an explicit 0% Store Tax Rate and creates an explicit 0% component row for reporting (`amount_cents = 0`);
+* `exempt` creates no collectible tax, retains the treatment snapshot, and may omit `store_tax_rate_id`;
+* missing an effective Store Tax Rule for a line’s Tax Category at Completion is a configuration error and completion blocker — not an exemption.
 
-A transaction Tax Exemption is separate from an inherently exempt Tax Category. It records why an otherwise taxable line or component was exempted. Reusable tax-exemption master records remain deferred.
+A transaction Tax Exemption is separate from a Store Tax Rule with `treatment = exempt`. It records why an otherwise rule-taxable line or component was exempted for that transaction. Reusable tax-exemption master records remain deferred.
+
+Store Tax Rules include a denormalized `store_id` (in addition to the store implied by `store_tax_rate_id` when present) so overlap constraints and Store-scoped queries remain clear.
 
 ### Returns and corrections
 
@@ -191,12 +195,27 @@ Deferred:
 
 ### Schema expectations
 
+`store_tax_rules` include at least:
+
+```text
+store_id
+tax_category_id
+store_tax_rate_id   # required for taxable and zero_rated; nullable for exempt
+component_code      # equals rate.code when rate present; required for exempt
+treatment           # taxable | zero_rated | exempt
+taxable_fraction
+calculation_order
+compounds_on_prior_tax
+effective_from / effective_to
+```
+
 Completed `pos_line_item_taxes` retain enough snapshots to explain the result, including at least:
 
 ```text
 store_tax_rule_id
 store_tax_rate_id
 tax_category_id
+treatment_snapshot
 receipt_code_snapshot
 position
 taxable_amount_cents
@@ -208,7 +227,7 @@ amount_cents
 
 `pos_discounts` include `tax_treatment` as above.
 
-Effective periods must not overlap for the same store tax rate, tax category, and component identity.
+Effective periods must not overlap for the same `(store_id, tax_category_id, component_code)`. See [phase-04-tax-schema.md](../implementation/phase-04-tax-schema.md).
 
 Exact column names may follow schema documentation; the snapshots and behaviors above are required.
 
@@ -262,7 +281,8 @@ Rejected because reporting date answers an operating-period reporting question, 
 * Components process in ascending calculation order; compounding uses finalized prior line component amounts.
 * Sale and return directions are separate rounding pools.
 * Effective tax rules use store-local calendar date at completion.
-* Missing rules for taxable categories block completion.
+* Store Tax Rule `treatment` determines taxable, zero-rated, or exempt handling; Tax Category does not.
+* Missing effective Store Tax Rules for a line’s Tax Category block completion.
 * Linked returns and post-voids reverse stored tax components exactly.
 * Transaction tax totals are derived only from stored line components.
 

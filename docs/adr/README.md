@@ -163,6 +163,7 @@ available = on_hand - reserved - unavailable
 * Receipt numbers are assigned only during successful completion.
 * Reservations convert into inventory movements only when completion succeeds.
 * Tax uses a hybrid line and transaction-component model: eligibility and taxable base per line, rounding once per transaction tax component and direction, largest-remainder allocation back to lines (ADR-0014).
+* Store Tax Rule `treatment` determines taxable / zero-rated / exempt handling; Tax Category does not carry a global status.
 * Tax follows Discount allocation; final tax rules use the store-local calendar date at completion, not Business Day reporting date.
 
 ### Store operations and authorization

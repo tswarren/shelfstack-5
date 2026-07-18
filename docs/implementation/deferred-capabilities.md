@@ -17,6 +17,7 @@ Do not scaffold speculative tables, statuses, or services for these areas. When 
 | Customer notifications platform | After customer domain design |
 | Customer holds / special-order product beyond requests | Extend Product Requests carefully |
 | Reusable tax exemptions | Transaction-specific exemptions may exist earlier |
+| Selected-line / selected-component tax exemptions | Phase 4b is `whole_transaction` coverage only; later `pos_tax_exemption_applications` |
 | Tax-inclusive pricing | Initial release is tax-exclusive (ADR-0014) |
 | Jurisdiction-configurable line-level tax rounding | v1 uses hybrid transaction-component rounding (ADR-0014) |
 | Advanced promotions | `promotion_id` may remain nullable until designed |

@@ -32,3 +32,5 @@ The actual implemented database structure is defined by Rails migrations and `db
 | Table | Reason |
 | --- | --- |
 | `administrative_audit_events` | Organization and Authorization owns administrative audit events ([organization-and-authorization.md](../../domains/organization-and-authorization.md)); append-only events for Phase 1 admin mutations. |
+
+Phase 4 tax / commercial schema deltas (Store Tax Rule `treatment`, `store_id`, nullable rate for exempt, line tax snapshots, discount `tax_treatment`, Tax Category override audit fields, whole-transaction exemption coverage) are governed by [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md) and [phase-04-tax-schema.md](../../implementation/phase-04-tax-schema.md). Reconcile those fields into this proforma before or with the Phase 4 tax migrations.

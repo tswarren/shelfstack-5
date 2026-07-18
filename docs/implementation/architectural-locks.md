@@ -74,15 +74,16 @@ A tax category alone is not enough for transaction tax.
 Before Phase 4b code begins, implement at least:
 
 - store tax rates;
-- store tax rules linking tax category to rate;
-- effective dates;
+- store tax rules linking tax category to store (and rate when applicable);
+- Store Tax Rule `treatment` (`taxable` / `zero_rated` / `exempt`) — not a global Tax Category status;
+- denormalized `store_id` on store tax rules;
+- effective dates with non-overlapping periods per `(store_id, tax_category_id, component code)`;
 - taxable fraction;
 - calculation order;
 - compounding flag;
 - component label / receipt code;
-- Tax Category status (`taxable` / `zero_rated` / `exempt`);
 - hybrid transaction-component rounding with largest-remainder residual allocation per ADR-0014;
-- fixtures that prove aggregation, residual allocation, compounding, and taxable fraction.
+- fixtures that prove aggregation, residual allocation, compounding, taxable fraction, and treatments.
 
 Do not invent an alternate residual policy (including “last line gets the residual”) in Phase 4b.
 

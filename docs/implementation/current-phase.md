@@ -8,7 +8,7 @@
 ## Immediate next work
 
 1. Begin Phase 4a (editable POS: business days, sessions, open transactions) per [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), using [../design/pos-register-ui.md](../design/pos-register-ui.md).
-2. Land store tax rates/rules and ADR-0014 fixtures before Phase 4b (hard prerequisite; may proceed in parallel with 4a). OD-004 / OD-005 are accepted via [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
+2. Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b (hard prerequisite; may proceed in parallel with 4a). See [phase-04-tax-schema.md](phase-04-tax-schema.md) and [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
 3. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
 4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
@@ -42,6 +42,7 @@ Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phas
 - Git workflow: [git-workflow.md](git-workflow.md)
 - Index: [README.md](README.md)
 - Phase 3 cost schema: [phase-03-inventory-cost-schema.md](phase-03-inventory-cost-schema.md)
+- Phase 4 tax schema: [phase-04-tax-schema.md](phase-04-tax-schema.md)
 - Identifiers: [../reference/identifiers.md](../reference/identifiers.md)
 - Testing mechanics: [testing.md](testing.md)
 - Services: [service-catalog.md](service-catalog.md)

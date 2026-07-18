@@ -145,7 +145,9 @@ open_ring
 stored_value
 ```
 
-Statuses:
+`stored_value` is reserved for Phase 6 and is inactive until Stored Value delivery.
+
+Statuses (full enum from table introduction):
 
 ```text
 pending
@@ -155,13 +157,21 @@ removed
 
 Amounts and quantities remain positive; direction determines effect.
 
+Inventory-tracking mode (`quantity`, `none`, `individual`) belongs to the Product Variant. It is not a POS line kind. A non-inventory service sold through catalog remains a Product line with Variant, Department, Tax Category, price, discounts, and returns, and creates no Inventory Reservation when tracking mode is `none`.
+
 ### Product Line
 
-Requires Product Variant, Department, Tax Category, and exact Inventory Unit where individual tracking applies.
+Requires Product Variant, postable Department, Tax Category, and exact Inventory Unit where individual tracking applies.
+
+Product lines use the Tax Category resolved from catalog defaults unless an authorized Tax Category override is recorded.
 
 ### Open-Ring Line
 
-Requires description, Department, Tax Category, and price.
+Requires an effective description, postable Department, Tax Category, and price. It references no Product Variant and creates no Inventory Reservation.
+
+User-entered description may be blank during entry. The line must always resolve an effective description; if blank, effective description defaults to the selected Department name. The effective description is snapshotted before Completion.
+
+Tax Category initially defaults from the selected Department. Selecting a different Tax Category at create, or changing Tax Category after the line exists, is an audited Tax Category override (`pos.tax_category.override`), not ordinary line editing.
 
 ### Stored-Value Line
 
@@ -169,7 +179,7 @@ Represents issuance or reload and does not create ordinary merchandise inventory
 
 ## Reservations
 
-Adding a Product Line creates an Inventory Reservation.
+Adding a Product Line with quantity or individual tracking creates an Inventory Reservation. Product lines with tracking mode `none` do not.
 
 - quantity tracking reserves quantity;
 - individual tracking reserves exact Unit;
@@ -205,7 +215,7 @@ Tax is calculated after Discount allocation. Only Discounts with `tax_treatment 
 
 ShelfStack uses a hybrid model:
 
-1. resolve taxability, Tax Category, taxable fraction, exemptions, and taxable merchandise amount per line;
+1. resolve taxability, Tax Category, Store Tax Rule treatment, taxable fraction, exemptions, and taxable merchandise amount per line;
 2. aggregate and round once per transaction tax component and line direction;
 3. allocate rounded taxable base and tax amounts back to lines with largest remainder;
 4. store completed line tax-component records that reconcile to each line’s Tax Amount.
@@ -214,11 +224,44 @@ Sale and return directions are calculated separately. Removed lines and Stored-V
 
 Final tax rules use the store-local calendar date at Completion, not the Business Day `reporting_date`. Open and recalled Transactions display current provisional calculations; Completion re-resolves and validates that applicable rules remain current.
 
-Completed line tax components retain taxable amount, rate, allocated tax amount, component order, compounding behavior, receipt code, Tax Category, Store Tax Rule, and Store Tax Rate used.
+Completed line tax components retain taxable amount, rate, allocated tax amount, component order, compounding behavior, treatment, receipt code, Tax Category, Store Tax Rule, and Store Tax Rate used (when applicable).
 
 Linked Returns and Post-Voids reverse stored tax components exactly rather than recalculating current tax.
 
-Transaction-scoped Tax Exemptions may exist; reusable exemption masters remain Deferred. Completed activity snapshots the exemption evidence used.
+### Tax Category override
+
+Changing the effective Tax Category on a POS line is a restricted, audited action (`pos.tax_category.override`). Ordinary cashiers must not change Product-line Tax Categories through ordinary line edit. Override records retain original Tax Category, override reason, actor, and timestamp.
+
+### Tax Exemptions
+
+Initial transaction Tax Exemptions use coverage `whole_transaction`: the exemption applies to all otherwise taxable qualifying lines and components in that Transaction.
+
+Deferred:
+
+* `selected_lines`;
+* `selected_tax_components`;
+* a later `pos_tax_exemption_applications` table binding exemption to specific lines or component identities.
+
+Reusable exemption masters remain Deferred. Completed activity snapshots the exemption evidence and coverage used.
+
+### Recalculation ownership
+
+One service owns provisional recalculation order for an editable Transaction:
+
+```text
+resolve prices
+→ allocate discounts
+→ calculate tax
+→ calculate transaction totals
+```
+
+Changes to line quantity, selling price, Price Override, Discount or allocation, Department where it affects Tax Category, Tax Category, Tax Exemption, effective Store Tax Rules, or line removal/restoration invalidate and recalculate totals. Controllers must not update cached totals independently of that ownership.
+
+Service boundary:
+
+* `Tax::CalculateTransaction` — deterministic calculation (bases, components, warnings, blockers, metadata);
+* `Pos::RecalculateTransaction` — persists pending allocations and tax records for an editable Transaction;
+* `Pos::CompleteTransaction` — revalidates under lock and finalizes atomically.
 
 ## Tenders
 
@@ -237,13 +280,23 @@ completed received Tenders
 = Transaction net total
 ```
 
+### Tender-state lock
+
+Once a pending or authorized Tender exists:
+
+* line additions, removals, quantities, prices, Discounts, Tax Categories, exemptions, and other tax-affecting fields are locked;
+* the cashier must remove the Tender or confirm the required external void before commercial editing may resume;
+* changing an authorized standalone-card amount requires voiding or reprocessing it externally.
+
+`CompleteTransaction` revalidates the current calculation under Transaction lock and requires completed Tender net to equal the final Transaction net.
+
 ### Cash
 
 Records amount presented, amount applied, and change.
 
 ### Card
 
-MVP uses standalone terminals. ShelfStack stores no full card number. Approved external payment followed by failed internal Completion must be visible for Reconciliation.
+MVP uses standalone terminals. ShelfStack stores no full card number. An externally approved card Tender is stored as `status: authorized` with fields such as `authorization_code`, `terminal_reference`, and `authorized_at` before internal Completion. If Completion fails, that authorized Tender remains visible and unsettled for operational follow-up. A separate exception table is not required for Phase 4c.
 
 ### Stored Value
 
@@ -305,7 +358,9 @@ Cash Variance = counted cash - expected cash
 
 ## Completion workflow
 
-Before Completion validate Transaction, Business Day and Session, sale eligibility, exact Units, Reservations, prices and classifications, Discounts and tax, Return Approvals and Dispositions, exact Tender settlement, Stored-Value balance, card confirmation, and idempotency.
+Before Completion validate Transaction, Business Day and Session, sale eligibility, exact Units, Reservations, prices and classifications, postable Departments, Discounts and tax, Return Approvals and Dispositions, exact Tender settlement, Stored-Value balance, card confirmation, and idempotency.
+
+Completion blocks when the resolved Department on a contributing line is missing, inactive, or non-postable (`postable = false`).
 
 Within one database transaction:
 
@@ -344,6 +399,7 @@ Audit Transaction lifecycle, line removal, Price Override, Discount, tax exempti
 - Tender net equals Transaction net.
 - Discount Allocations reconcile.
 - Tax components reconcile.
+- Pending or authorized Tenders lock commercial editing until cleared.
 - Linked Returns do not exceed remaining quantity.
 - Customer Return does not alter original Line.
 - Post-Void is a new full reversing Transaction.

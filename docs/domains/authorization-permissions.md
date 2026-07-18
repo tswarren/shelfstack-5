@@ -157,7 +157,8 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.price.override` | Override selling price | store | 4b | `maximum_price_override_rate` | yes | yes |
 | `pos.discount.apply` | Apply discounts | store | 4b | `maximum_discount_rate` / `maximum_discount_amount_cents` | yes | yes |
 | `pos.discount.approve` | Approve discounts beyond requester authority | store | 4b | approver’s discount authority | — | yes |
-| `pos.tax.exempt` | Apply transaction tax exemption | store | 4b | — | yes | yes |
+| `pos.tax.exempt` | Apply whole-transaction tax exemption | store | 4b | — | yes | yes |
+| `pos.tax_category.override` | Override effective Tax Category on a POS line | store | 4b | — | yes | yes |
 | `pos.return.create` | Create return lines | store | 4e | — | no | yes |
 | `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_cents` | yes | yes |
 | `pos.tender.cash` | Accept cash tenders | store | 4c | — | no | no |
