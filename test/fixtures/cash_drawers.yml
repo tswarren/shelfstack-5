@@ -1,0 +1,5 @@
+drawer_1:
+  store: main_street
+  code: DRW1
+  name: Drawer 1
+  active: true

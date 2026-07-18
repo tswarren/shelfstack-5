@@ -135,15 +135,15 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.transaction.cancel` | Cancel open/suspended transactions | store | 4a | — | no | yes |
 | `pos.transaction.complete` | Complete transactions | store | 4c | — | no | yes |
 | `pos.line.remove` | Remove pending lines | store | 4a | — | no | yes |
-| `pos.price.override` | Override selling price | store | 4b | `maximum_price_override_rate` / amount | yes | yes |
-| `pos.discount.apply` | Apply discounts | store | 4b | `maximum_discount_rate` / amount | yes | yes |
+| `pos.price.override` | Override selling price | store | 4b | `maximum_price_override_rate` | yes | yes |
+| `pos.discount.apply` | Apply discounts | store | 4b | `maximum_discount_rate` / `maximum_discount_amount_cents` | yes | yes |
 | `pos.discount.approve` | Approve discounts beyond requester authority | store | 4b | approver’s discount authority | — | yes |
 | `pos.tax.exempt` | Apply transaction tax exemption | store | 4b | — | yes | yes |
 | `pos.return.create` | Create return lines | store | 4e | — | no | yes |
-| `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_amount` | yes | yes |
+| `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_cents` | yes | yes |
 | `pos.tender.cash` | Accept cash tenders | store | 4c | — | no | no |
 | `pos.tender.card_standalone` | Record standalone card tenders | store | 4c | — | no | yes |
-| `pos.cash_movement.create` | Paid-in / paid-out / drops | store | 4c | `maximum_paid_out_amount` | yes | yes |
+| `pos.cash_movement.create` | Paid-in / paid-out / drops | store | 4c | `maximum_paid_out_cents` | yes | yes |
 | `pos.receipt.reprint` | Reprint receipts | store | 4c | — | no | yes |
 | `pos.post_void.create` | Create post-void corrections | store | 6 | — | yes | yes |
 

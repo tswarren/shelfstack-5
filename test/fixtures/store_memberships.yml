@@ -1,0 +1,14 @@
+admin_main_street:
+  user: admin
+  store: main_street
+  role: administrator
+  active: true
+  starts_on: <%= Date.current - 30 %>
+  maximum_discount_rate: 0.10
+  maximum_discount_amount_cents: 5000
+
+clerk_main_street:
+  user: clerk
+  store: main_street
+  role: associate
+  active: true

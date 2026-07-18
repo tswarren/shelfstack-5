@@ -5,6 +5,8 @@ class User < ApplicationRecord
   has_secure_password :pin, validations: false
 
   belongs_to :default_store, class_name: "Store", optional: true
+  has_many :store_memberships, dependent: :restrict_with_exception
+  has_many :stores, through: :store_memberships
 
   before_validation :normalize_username
 

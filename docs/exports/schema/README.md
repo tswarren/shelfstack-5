@@ -26,3 +26,9 @@ For demand and supply commitments, [ADR-0005](../../adr/0005-demand-allocations-
 The Phase 3 proforma must include Product Requests and Purchase-Order Allocations even when an older export grouped customer demand under Purchasing.
 
 The actual implemented database structure is defined by Rails migrations and `db/schema.rb`. An implementation conflict with a governing ADR or Domain Specification must be resolved explicitly rather than silently treating the current database as the intended architecture.
+
+### Implementation additions beyond the 260717.1402 reconciled proforma
+
+| Table | Reason |
+| --- | --- |
+| `administrative_audit_events` | Organization and Authorization owns administrative audit events ([organization-and-authorization.md](../../domains/organization-and-authorization.md)); append-only events for Phase 1 admin mutations. |
