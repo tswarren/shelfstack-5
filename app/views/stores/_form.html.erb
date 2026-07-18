@@ -1,0 +1,15 @@
+<%= form_with model: store do |form| %>
+  <% if store.errors.any? %>
+    <ul>
+      <% store.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <div><%= form.label :code %> <%= form.text_field :code %></div>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :timezone %> <%= form.text_field :timezone %></div>
+  <div><%= form.label :currency_code %> <%= form.text_field :currency_code %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>

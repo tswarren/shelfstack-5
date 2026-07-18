@@ -1,0 +1,5 @@
+<h1><%= @store.name %></h1>
+<p>Code: <%= @store.code %></p>
+<p>Active: <%= @store.active %></p>
+<p><%= link_to "Edit", edit_store_path(@store) if Current.user.can?("administration.store.manage", store: Current.store) %></p>
+<p><%= link_to "All stores", stores_path %></p>

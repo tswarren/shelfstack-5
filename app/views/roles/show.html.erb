@@ -1,0 +1,9 @@
+<h1><%= @role.name %></h1>
+<p>Code: <%= @role.code %></p>
+<ul>
+  <% @role.permissions.order(:code).each do |permission| %>
+    <li><%= permission.code %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Edit", edit_role_path(@role) %></p>
+<p><%= link_to "All roles", roles_path %></p>

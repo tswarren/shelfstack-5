@@ -1,0 +1,8 @@
+<h1>Permissions</h1>
+<p>Permission definitions are code-managed. This list is read-only.</p>
+<ul>
+  <% @permissions.each do |permission| %>
+    <li><code><%= permission.code %></code> — <%= permission.name %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

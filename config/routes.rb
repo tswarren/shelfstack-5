@@ -7,5 +7,11 @@ Rails.application.routes.draw do
   resource :store_selection, only: %i[new create]
   get "no_store_access", to: "no_store_accesses#show", as: :no_store_access
 
+  resources :stores, except: %i[destroy]
+  resources :users, except: %i[destroy]
+  resources :roles, except: %i[destroy]
+  resources :permissions, only: %i[index]
+  resources :administrative_audit_events, only: %i[index], path: "audit_events"
+
   root "homes#show"
 end
