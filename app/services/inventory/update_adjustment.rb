@@ -13,19 +13,17 @@ module Inventory
     end
 
     def call
-      unless @adjustment.draft?
-        return Result.new(adjustment: @adjustment, success?: false, error: "only draft adjustments can be updated")
-      end
-
-      unless @adjustment.store_id == @store.id
-        return Result.new(adjustment: @adjustment, success?: false, error: "adjustment store mismatch")
-      end
-
       unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "inventory.adjustment.create") == :allow
-        return Result.new(adjustment: @adjustment, success?: false, error: "not permitted")
+        return failure("not permitted")
       end
 
       ActiveRecord::Base.transaction do
+        @adjustment.reload.lock!
+
+        return failure("only draft adjustments can be updated") unless @adjustment.draft?
+        return failure("adjustment store mismatch") unless @adjustment.store_id == @store.id
+
+
         @adjustment.assign_attributes(@attributes.slice("inventory_adjustment_reason_id", "note", "kind"))
         @adjustment.save!
 
@@ -38,7 +36,6 @@ module Inventory
             line.save!
           end
         end
-
 
         Administration::RecordAuditEvent.call(
           actor: @actor,
@@ -55,7 +52,13 @@ module Inventory
 
       Result.new(adjustment: @adjustment.reload, success?: true, error: nil)
     rescue ActiveRecord::RecordInvalid => e
-      Result.new(adjustment: @adjustment, success?: false, error: e.record.errors.full_messages.to_sentence)
+      failure(e.record.errors.full_messages.to_sentence)
+    end
+
+    private
+
+    def failure(message)
+      Result.new(adjustment: @adjustment, success?: false, error: message)
     end
   end
 end

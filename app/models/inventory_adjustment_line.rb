@@ -3,6 +3,10 @@
 class InventoryAdjustmentLine < ApplicationRecord
   COST_METHODS = %w[explicit configured_estimate moving_average unknown].freeze
   COST_QUALITIES = %w[actual estimated mixed unknown].freeze
+  OPENING_METHODS = %w[explicit configured_estimate unknown].freeze
+  OPENING_KNOWN_QUALITIES = %w[actual estimated].freeze
+  CORRECTION_METHODS = %w[explicit].freeze
+  CORRECTION_QUALITIES = %w[actual estimated mixed].freeze
 
   belongs_to :inventory_adjustment
   belongs_to :product_variant
@@ -11,11 +15,21 @@ class InventoryAdjustmentLine < ApplicationRecord
   validates :product_variant_id, uniqueness: { scope: :inventory_adjustment_id }
   validates :position, numericality: { only_integer: true }
   validates :quantity_delta, numericality: { only_integer: true }
+  validates :input_unit_cost_cents,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 },
+            allow_nil: true
+  validates :corrected_inventory_value_cents,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0 },
+            allow_nil: true
   validates :input_cost_method, inclusion: { in: COST_METHODS }, allow_nil: true
   validates :input_cost_quality, inclusion: { in: COST_QUALITIES }, allow_nil: true
   validate :variant_matches_organization
   validate :quantity_tracked_variant
   validate :kind_specific_inputs
+  validate :cost_state_combinations
+
+  before_update :require_draft_parent
+  before_destroy :require_draft_parent
 
   private
 
@@ -57,5 +71,69 @@ class InventoryAdjustmentLine < ApplicationRecord
         errors.add(:input_unit_cost_cents, "must be blank for cost corrections; use corrected aggregate value")
       end
     end
+  end
+
+  def cost_state_combinations
+    return if inventory_adjustment.blank?
+
+    case inventory_adjustment.kind
+    when "opening_inventory"
+      validate_opening_cost_state
+    when "cost_correction"
+      validate_cost_correction_state
+    end
+  end
+
+  def validate_opening_cost_state
+    method = input_cost_method.to_s.presence
+    quality = input_cost_quality.to_s.presence
+
+    if method.present? && OPENING_METHODS.exclude?(method)
+      errors.add(:input_cost_method, "is not valid for opening inventory")
+    end
+
+    if method == "configured_estimate"
+      errors.add(:input_unit_cost_cents, "must be blank when using configured estimate") if input_unit_cost_cents.present?
+    elsif method == "unknown"
+      errors.add(:input_unit_cost_cents, "must be blank when cost is unknown") if input_unit_cost_cents.present?
+      if quality.present? && quality != "unknown"
+        errors.add(:input_cost_quality, "must be unknown when cost method is unknown")
+      end
+    elsif input_unit_cost_cents.present?
+      if method.present? && method != "explicit"
+        errors.add(:input_cost_method, "must be explicit when a unit cost is supplied")
+      end
+      if quality.present? && OPENING_KNOWN_QUALITIES.exclude?(quality)
+        errors.add(:input_cost_quality, "must be actual or estimated when a unit cost is supplied")
+      end
+    end
+  end
+
+
+  def validate_cost_correction_state
+    method = input_cost_method.to_s.presence || "explicit"
+    quality = input_cost_quality.to_s.presence
+
+    if corrected_inventory_value_cents.nil?
+      errors.add(:corrected_inventory_value_cents, "is required for cost corrections")
+    end
+
+    unless CORRECTION_METHODS.include?(method)
+      errors.add(:input_cost_method, "must be explicit for Phase 3 cost corrections")
+    end
+
+    if quality.blank?
+      # defaulted at post to actual
+    elsif CORRECTION_QUALITIES.exclude?(quality)
+      errors.add(:input_cost_quality, "must be actual, estimated, or mixed for cost corrections")
+    end
+  end
+
+
+  def require_draft_parent
+    return if inventory_adjustment&.draft?
+
+    errors.add(:base, "lines can only be changed while the adjustment is draft")
+    throw(:abort)
   end
 end

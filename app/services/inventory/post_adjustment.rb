@@ -13,9 +13,10 @@ module Inventory
 
     def call
       ActiveRecord::Base.transaction do
-        @adjustment.lock!
+        @adjustment.reload.lock!
 
         if @adjustment.posted?
+
           return Result.new(adjustment: @adjustment, success?: true, error: nil, replayed: true)
         end
 
@@ -66,7 +67,10 @@ module Inventory
       Result.new(adjustment: @adjustment, success?: false, error: e.message, replayed: false)
     rescue ActiveRecord::RecordInvalid => e
       Result.new(adjustment: @adjustment, success?: false, error: e.record.errors.full_messages.to_sentence, replayed: false)
+    rescue ActiveRecord::StatementInvalid => e
+      Result.new(adjustment: @adjustment, success?: false, error: e.cause&.message || e.message, replayed: false)
     end
+
 
     private
 

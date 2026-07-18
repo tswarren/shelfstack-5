@@ -1,6 +1,7 @@
 # Phase 3 — Quantity Inventory Bootstrap
 
-**Status:** In review (hardening)  
+**Status:** In review (second hardening pass)  
+
 
 
 **Depends on:** Phase 2  
@@ -103,6 +104,8 @@ Phase 3 remains intentionally narrow: balances, ledger posting, reservations, ad
 - [x] No receipt tables in schema
 
 Hardening follow-up (reopened review gate): first-balance `create_or_find_by!`, financial idempotency compare, aggregate inbound rounding, posting ArgumentError rescue, draft cost permission, remove routine `sync_admin_permissions` from `bin/setup`, unknown-delta/null semantics, `last_known` from resulting average, reservation lock order, ledger immutability, Department estimate precedence, store-mismatch guards.
+
+Second hardening pass: `UpdateAdjustment` locks and rechecks draft status; finalized Adjustment/Line mutation blocked; posted cost history requires `inventory.cost.view`; monetary and cost-state combination validations; `last_known_*` synced after every known positive carrying rate; `StatementInvalid` rescued on post.
 
 ## Out of scope
 

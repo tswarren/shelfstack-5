@@ -6,12 +6,13 @@
 
 ## Immediate next work
 
-1. Finish Phase 3 hardening from the reopened review gate (concurrency coverage remaining: first-balance creation, reserve vs release, reserve vs post).
+1. Re-close Phase 3 review gate after the second hardening pass (update/post races, finalized mutation guards, posted cost visibility, monetary/cost-state validations, `last_known_*` sync).
 2. Do not begin Phase 4a until Phase 3 exit criteria are re-closed.
 3. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
 4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
-Phase 3 structure is landed; review-gate hardening is in progress. See [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md).
+Phase 3 structure is landed; second hardening pass addresses the reopened review findings. See [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md).
+
 
 Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md).
 

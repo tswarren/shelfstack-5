@@ -141,7 +141,9 @@ module Inventory
         cost_quality: calc.resulting_cost_quality
       }
 
-      if calc.update_last_known &&
+      # Keep last_known synchronized with every known positive carrying rate.
+      # When On Hand reaches zero/negative, leave last_known unchanged (pre-zero rate).
+      if calc.resulting_on_hand.positive? &&
          calc.resulting_moving_average_cost_cents &&
          CalculateQuantityCost::KNOWN_QUALITIES.include?(calc.resulting_cost_quality)
         attrs[:last_known_unit_cost_cents] = calc.resulting_moving_average_cost_cents
@@ -150,6 +152,7 @@ module Inventory
 
       balance.update!(attrs)
     end
+
 
     def replay_or_conflict!(existing)
       unless compatible_with?(existing)

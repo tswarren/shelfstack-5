@@ -3,6 +3,7 @@
 class InventoryAdjustment < ApplicationRecord
   KINDS = %w[opening_inventory quantity_only cost_correction].freeze
   STATUSES = %w[draft posted cancelled].freeze
+  FINALIZED_STATUSES = %w[posted cancelled].freeze
 
   belongs_to :store
   belongs_to :inventory_adjustment_reason
@@ -19,6 +20,9 @@ class InventoryAdjustment < ApplicationRecord
   validate :reason_active_when_draft
   validate :note_required_when_posted_and_reason_requires_note
 
+  before_update :prevent_update_when_finalized
+  before_destroy :prevent_destroy_when_finalized
+
   scope :draft, -> { where(status: "draft") }
 
   def draft?
@@ -31,6 +35,10 @@ class InventoryAdjustment < ApplicationRecord
 
   def cancelled?
     status == "cancelled"
+  end
+
+  def finalized?
+    FINALIZED_STATUSES.include?(status)
   end
 
   def qualified_reason_code
@@ -68,5 +76,20 @@ class InventoryAdjustment < ApplicationRecord
     return if note.present?
 
     errors.add(:note, "is required for this reason")
+  end
+
+  # Allow the draft → posted/cancelled transition; block any later mutation.
+  def prevent_update_when_finalized
+    return if status_in_database == "draft"
+
+    errors.add(:base, "posted or cancelled adjustments cannot be modified")
+    throw(:abort)
+  end
+
+  def prevent_destroy_when_finalized
+    return if draft?
+
+    errors.add(:base, "posted or cancelled adjustments cannot be destroyed")
+    throw(:abort)
   end
 end

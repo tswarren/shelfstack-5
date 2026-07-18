@@ -13,10 +13,11 @@ module Inventory
 
     def call
       ActiveRecord::Base.transaction do
-        @adjustment.lock!
+        @adjustment.reload.lock!
         return failure("only draft adjustments can be cancelled") unless @adjustment.draft?
         return failure("adjustment store mismatch") unless @adjustment.store_id == @store.id
         return failure("cancel note is required") if @cancel_note.blank?
+
 
         own_draft = @adjustment.created_by_user_id == @actor.id
         can_create = Authorization::EvaluatePermission.call(

@@ -25,17 +25,28 @@ class InventoryAdjustmentCostVisibilityTest < ActionDispatch::IntegrationTest
   end
 
   test "stock viewer without cost or create permission cannot see draft costs" do
-    RolePermission.where(role: roles(:associate), permission: permissions(:inventory_stock_view)).first_or_create!
-    # Grant only stock.view to associate for this test.
     associate = roles(:associate)
-    Permission.find_each do |permission|
-      next unless permission.code == "inventory.stock.view"
-
-      RolePermission.find_or_create_by!(role: associate, permission: permission)
-    end
+    RolePermission.find_or_create_by!(role: associate, permission: permissions(:inventory_stock_view))
 
     post session_path, params: { username: "clerk", password: "password123" }
     get inventory_adjustment_path(@adjustment)
+    assert_response :success
+    assert_no_match(/\$9\.99/, response.body)
+  end
+
+  test "adjustment.create without cost.view cannot see posted costs" do
+    assert Inventory::PostAdjustment.call(
+      adjustment: @adjustment,
+      actor: users(:admin),
+      store: @store
+    ).success?
+
+    associate = roles(:associate)
+    RolePermission.find_or_create_by!(role: associate, permission: permissions(:inventory_stock_view))
+    RolePermission.find_or_create_by!(role: associate, permission: permissions(:inventory_adjustment_create))
+
+    post session_path, params: { username: "clerk", password: "password123" }
+    get inventory_adjustment_path(@adjustment.reload)
     assert_response :success
     assert_no_match(/\$9\.99/, response.body)
   end

@@ -97,11 +97,12 @@ class InventoryAdjustmentsController < ApplicationController
 
   def can_view_adjustment_cost?
     return true if Current.user.can?("inventory.cost.view", store: Current.store)
-    return true if Current.user.can?("inventory.adjustment.create", store: Current.store)
-    return true if @inventory_adjustment.draft? && @inventory_adjustment.created_by_user_id == Current.user.id
+    return false unless @inventory_adjustment.draft?
 
-    false
+    @inventory_adjustment.created_by_user_id == Current.user.id ||
+      Current.user.can?("inventory.adjustment.create", store: Current.store)
   end
+
 
   def load_form_collections
     @reasons = Current.organization.inventory_adjustment_reasons.active.ordered
