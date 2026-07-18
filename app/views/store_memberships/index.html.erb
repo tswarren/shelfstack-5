@@ -1,0 +1,11 @@
+<h1>Store memberships — <%= Current.store.name %></h1>
+<p><%= link_to "New membership", new_store_membership_path %></p>
+<ul>
+  <% @memberships.each do |membership| %>
+    <li>
+      <%= membership.user.username %> / <%= membership.role.code %>
+      <%= link_to "Edit", edit_store_membership_path(membership) %>
+    </li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

@@ -1,0 +1,8 @@
+<h1>POS devices — <%= Current.store.name %></h1>
+<p><%= link_to "New device", new_pos_device_path %></p>
+<ul>
+  <% @devices.each do |device| %>
+    <li><%= device.code %> — <%= device.name %> <%= link_to "Edit", edit_pos_device_path(device) %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

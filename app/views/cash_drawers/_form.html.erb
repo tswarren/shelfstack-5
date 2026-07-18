@@ -1,0 +1,9 @@
+<%= form_with model: drawer do |form| %>
+  <% if drawer.errors.any? %>
+    <ul><% drawer.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
+  <% end %>
+  <div><%= form.label :code %> <%= form.text_field :code %></div>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>

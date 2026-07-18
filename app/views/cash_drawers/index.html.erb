@@ -1,0 +1,8 @@
+<h1>Cash drawers — <%= Current.store.name %></h1>
+<p><%= link_to "New drawer", new_cash_drawer_path %></p>
+<ul>
+  <% @drawers.each do |drawer| %>
+    <li><%= drawer.code %> — <%= drawer.name %> <%= link_to "Edit", edit_cash_drawer_path(drawer) %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>
