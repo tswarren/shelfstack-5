@@ -1,0 +1,30 @@
+<%= form_with model: store_tax_rule do |form| %>
+  <% if store_tax_rule.errors.any? %>
+    <ul>
+      <% store_tax_rule.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <div>
+    <%= form.label :tax_category_id %>
+    <%= form.select :tax_category_id, @tax_categories.map { |c| [ "#{c.code} — #{c.name}", c.id ] } %>
+  </div>
+  <div>
+    <%= form.label :store_tax_rate_id, "Store tax rate (blank for exempt)" %>
+    <%= form.select :store_tax_rate_id, @store_tax_rates.map { |r| [ "#{r.code} — #{r.name}", r.id ] },
+                     include_blank: true %>
+  </div>
+  <div><%= form.label :component_code %> <%= form.text_field :component_code %></div>
+  <div>
+    <%= form.label :treatment %>
+    <%= form.select :treatment, StoreTaxRule::TREATMENTS %>
+  </div>
+  <div><%= form.label :taxable_fraction %> <%= form.text_field :taxable_fraction %></div>
+  <div><%= form.label :calculation_order %> <%= form.number_field :calculation_order %></div>
+  <div><%= form.label :compounds_on_prior_tax %> <%= form.check_box :compounds_on_prior_tax %></div>
+  <div><%= form.label :effective_from %> <%= form.date_field :effective_from %></div>
+  <div><%= form.label :effective_to %> <%= form.date_field :effective_to %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>

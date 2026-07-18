@@ -1,0 +1,36 @@
+<h1>Store tax rules — <%= Current.store.name %></h1>
+<p><%= link_to "New store tax rule", new_store_tax_rule_path if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %></p>
+<table>
+  <thead>
+    <tr>
+      <th>Tax category</th>
+      <th>Component</th>
+      <th>Treatment</th>
+      <th>Rate</th>
+      <th>Taxable fraction</th>
+      <th>Order</th>
+      <th>Compounds</th>
+      <th>Effective</th>
+      <th>Active</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @store_tax_rules.each do |rule| %>
+      <tr>
+        <td><%= rule.tax_category.code %></td>
+        <td><%= rule.component_code %></td>
+        <td><%= rule.treatment %></td>
+        <td><%= rule.store_tax_rate&.rate %></td>
+        <td><%= rule.taxable_fraction %></td>
+        <td><%= rule.calculation_order %></td>
+        <td><%= rule.compounds_on_prior_tax %></td>
+        <td><%= rule.effective_from %> – <%= rule.effective_to %></td>
+        <td><%= rule.active %></td>
+        <td><%= link_to "Edit", edit_store_tax_rule_path(rule) if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Store tax rates", store_tax_rates_path %></p>
+<p><%= link_to "Home", root_path %></p>

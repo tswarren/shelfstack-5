@@ -50,6 +50,8 @@
     <% end %>
     <% if Current.user.can?("classification.view", store: Current.store) %>
       <li><%= link_to "Tax categories", tax_categories_path %></li>
+      <li><%= link_to "Store tax rates", store_tax_rates_path %></li>
+      <li><%= link_to "Store tax rules", store_tax_rules_path %></li>
       <li><%= link_to "Return policies", return_policies_path %></li>
       <li><%= link_to "Return reasons", return_reasons_path %></li>
       <li><%= link_to "Discount reasons", discount_reasons_path %></li>

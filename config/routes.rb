@@ -16,6 +16,8 @@ Rails.application.routes.draw do
   resources :pos_devices, except: %i[show destroy]
   resources :cash_drawers, except: %i[show destroy]
   resources :tax_categories, except: %i[destroy]
+  resources :store_tax_rates, except: %i[show destroy]
+  resources :store_tax_rules, except: %i[show destroy]
   resources :return_policies, except: %i[destroy]
   resources :return_reasons, except: %i[destroy]
   resources :discount_reasons, except: %i[destroy]

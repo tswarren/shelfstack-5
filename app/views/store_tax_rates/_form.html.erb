@@ -1,0 +1,22 @@
+<%= form_with model: store_tax_rate do |form| %>
+  <% if store_tax_rate.errors.any? %>
+    <ul>
+      <% store_tax_rate.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% if store_tax_rate.persisted? %>
+    <div><%= form.label :code %> <%= store_tax_rate.code %></div>
+  <% else %>
+    <div><%= form.label :code %> <%= form.text_field :code %></div>
+  <% end %>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :rate %> <%= form.text_field :rate %> (e.g. 0.13000000 for 13%)</div>
+  <div><%= form.label :receipt_code %> <%= form.text_field :receipt_code, maxlength: 3 %></div>
+  <div><%= form.label :jurisdiction_name %> <%= form.text_field :jurisdiction_name %></div>
+  <div><%= form.label :effective_from %> <%= form.date_field :effective_from %></div>
+  <div><%= form.label :effective_to %> <%= form.date_field :effective_to %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>
