@@ -27,6 +27,7 @@ Establish who may act, at which store, under which permissions and numeric autho
 - Store-context selection; default store is navigation preference only.
 - Permission evaluation: `user.can?(permission_key, store:)` — never hard-code role names.
 - Numeric authority fields on memberships; approval **records** wait until POS Phase 4b.
+- Authority evaluation uses **membership overrides only** until [OD-013](../open-decisions.md#od-013-role-and-store-authority-defaults) lands (null override = unconfigured deny).
 - Minimal admin UI: sign-in, store switcher, CRUD for stores/users/roles/permissions.
 - Seeds: one organization, at least one store, roles, core permission catalog.
 
