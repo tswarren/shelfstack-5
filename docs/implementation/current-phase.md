@@ -8,7 +8,7 @@
 ## Immediate next work
 
 1. Begin Phase 4a (editable POS: business days, sessions, open transactions) per [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), using [../design/pos-register-ui.md](../design/pos-register-ui.md).
-2. Land store tax rates/rules before Phase 4b (hard prerequisite; may proceed in parallel with 4a).
+2. Land store tax rates/rules and ADR-0014 fixtures before Phase 4b (hard prerequisite; may proceed in parallel with 4a). OD-004 / OD-005 are accepted via [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
 3. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
 4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
@@ -29,7 +29,8 @@ Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phas
 
 - Full redesign of Phase 1–3 admin CRUD to match mockups.
 - Purchasing or receiving tables before their phase prerequisites.
-- Closing [OD-014](open-decisions.md) / [OD-004](open-decisions.md) by inventing ad hoc formulas in code.
+- Closing [OD-014](open-decisions.md) by inventing ad hoc formulas in code.
+- Implementing Phase 4b tax with a residual policy other than [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
 - Closing [OD-013](open-decisions.md) role/store authority defaults before Phase 4b needs them.
 - Deferred capabilities listed in [deferred-capabilities.md](deferred-capabilities.md).
 - PWA / offline POS as adopted architecture.

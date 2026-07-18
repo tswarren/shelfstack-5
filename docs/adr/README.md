@@ -54,6 +54,7 @@ A conflict between implementation and an accepted ADR must be resolved explicitl
 | [ADR-0011](0011-permissions-authority-and-approvals.md)          | Separate Permissions, Numeric Authority, and Approval Events                | Accepted                   |
 | [ADR-0012](0012-stored-value-ledger.md)                          | Govern Stored Value Through Independent Accounts and an Append-Only Ledger  | Accepted                   |
 | [ADR-0013](0013-govern-quantity-tracked-inventory-cost.md)       | Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance | Accepted with open details |
+| [ADR-0014](0014-hybrid-transaction-component-tax-calculation.md) | Use Hybrid Transaction-Component Tax Calculation with Largest-Remainder Allocation | Accepted                   |
 
 ---
 
@@ -161,6 +162,8 @@ available = on_hand - reserved - unavailable
 * POS completion is atomic and idempotent.
 * Receipt numbers are assigned only during successful completion.
 * Reservations convert into inventory movements only when completion succeeds.
+* Tax uses a hybrid line and transaction-component model: eligibility and taxable base per line, rounding once per transaction tax component and direction, largest-remainder allocation back to lines (ADR-0014).
+* Tax follows Discount allocation; final tax rules use the store-local calendar date at completion, not Business Day reporting date.
 
 ### Store operations and authorization
 

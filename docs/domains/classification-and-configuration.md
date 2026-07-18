@@ -169,23 +169,37 @@ Product Type may guide data-entry forms, search, imports, and metadata presentat
 
 ## Tax configuration
 
+POS tax calculation, rounding, residual allocation, compounding, and effective-date selection are governed by [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
+
 ### Tax Category
 
 Describes what is being sold for tax purposes.
 
 Examples may include printed books, periodicals, prepared food, packaged food, general merchandise, services, exempt merchandise, and Stored-Value issuance.
 
+Each Tax Category has an explicit status such as:
+
+```text
+taxable
+zero_rated
+exempt
+```
+
+A `taxable` category must resolve one or more effective Store Tax Rules for the Store and completion date. Missing rules are a completion blocker, not an implicit exemption. `zero_rated` produces an explicit 0% historical component for reporting. `exempt` creates no collectible tax but retains the status snapshot.
+
 ### Store Tax Rate
 
 Defines an effective-dated jurisdictional percentage.
 
-Suggested attributes include Store, code, name, jurisdiction, rate, effective period, receipt code, and active status.
+Suggested attributes include Store, code, name, jurisdiction, rate (`decimal(10,8)`), effective period, receipt code, and active status.
 
 ### Store Tax Rule
 
-Connects Store, Tax Category, Store Tax Rate, taxable fraction, calculation order, compounding behavior, and effective period.
+Connects Store, Tax Category, Store Tax Rate, taxable fraction (`decimal(10,8)`), calculation order, compounding behavior (`compounds_on_prior_tax`), and effective period.
 
-Rates require fixed precision. Completed POS activity stores historical tax components.
+Rules that share the same Store Tax Rate must use consistent calculation order, compounding behavior, and receipt code. Effective periods must not overlap for the same store tax rate, tax category, and component identity.
+
+Rates require fixed precision. Completed POS activity stores historical tax components, including rule, rate, fraction, compounding, and receipt-code snapshots.
 
 ## Policy and reason records
 
@@ -282,6 +296,7 @@ Audit Merchandise-Class changes, Department changes, default changes, Tax Catego
 - Temporary placement does not change inventory ownership.
 - Product Type remains descriptive.
 - Tax Category is distinct from Tax Rate.
+- Tax Category status distinguishes taxable, zero-rated, and exempt treatment (ADR-0014).
 - Completed lines snapshot classifications and tax components.
 - Current classification changes do not rewrite history.
 - Tender Type does not define revenue.

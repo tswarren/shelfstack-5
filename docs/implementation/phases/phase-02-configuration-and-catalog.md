@@ -101,7 +101,7 @@ Store tax rates/rules and the tax engine are **not** required for Phase 2 exit (
 - Inventory quantities / units / stock balances
 - Purchasing, receiving, POS completion
 - Identifier correction workflow UI
-- Closing OD-003 / OD-004 / OD-013
+- Closing OD-003 / OD-013 (OD-004 closed later by ADR-0014 before Phase 4b)
 - Tender / cash-movement type masters
 - Re-deriving merchandise hierarchy at seed time
 

@@ -1008,26 +1008,36 @@ Regular Price
 → Selling Price
 → Gross Amount
 → Discount Allocation
-→ Taxable Amount
+→ Taxable Merchandise Amount
 → Tax
 → Total Amount
 ```
 
+Only Discount allocations with tax treatment that reduces the taxable base reduce Taxable Merchandise Amount. See [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
+
 ## INV-TAX-002 — Tax components reconcile
 
-The sum of completed Tax Components for a POS Line Item must equal the line’s Tax Amount.
+The sum of completed Tax Components for a POS Line Item must equal the line’s Tax Amount. Transaction tax totals are derived only from stored line tax components.
 
 ## INV-TAX-003 — Completed tax uses historical rules
 
-Completed tax reporting must use stored tax components and snapshots, not current Tax Rates or Tax Rules.
+Completed tax reporting must use stored tax components and snapshots, not current Tax Rates or Tax Rules. Linked Returns and Post-Voids reverse stored components exactly.
 
 ## INV-TAX-004 — Tax exemption is snapshotted
 
-A Completed Transaction using a Tax Exemption must retain the exemption evidence and scope used at Completion.
+A Completed Transaction using a Tax Exemption must retain the exemption evidence and scope used at Completion. A missing Store Tax Rule for a taxable Tax Category is not an exemption.
 
 ## INV-TAX-005 — Tax and revenue remain separate
 
 Collected tax must not be included in ordinary sales revenue.
+
+## INV-TAX-006 — Hybrid transaction-component rounding
+
+Taxability and taxable base are resolved per line. Each transaction tax component and line direction is rounded once (half up to the nearest cent) and allocated to lines with largest remainder. Residual cents are not assigned automatically to the last line. Sale and return directions are separate rounding pools. Governing decision: [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
+
+## INV-TAX-007 — Tax rule effective date at Completion
+
+Final tax rules are selected using the store-local calendar date at Transaction Completion, not the Business Day reporting date.
 
 ---
 

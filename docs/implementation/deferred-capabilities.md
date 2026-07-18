@@ -17,6 +17,8 @@ Do not scaffold speculative tables, statuses, or services for these areas. When 
 | Customer notifications platform | After customer domain design |
 | Customer holds / special-order product beyond requests | Extend Product Requests carefully |
 | Reusable tax exemptions | Transaction-specific exemptions may exist earlier |
+| Tax-inclusive pricing | Initial release is tax-exclusive (ADR-0014) |
+| Jurisdiction-configurable line-level tax rounding | v1 uses hybrid transaction-component rounding (ADR-0014) |
 | Advanced promotions | `promotion_id` may remain nullable until designed |
 | Loyalty | Separate domain |
 | Stored-value replacement, transfer, expiration | Ledger baseline comes first (Phase 6) |

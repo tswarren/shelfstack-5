@@ -90,7 +90,7 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 Completed: Phases 0–3 (scaffold, org/auth, config/catalog, quantity inventory bootstrap).
 
 1. UX readiness gate ([../design/](../design/README.md); tokens/shell in Rails)  
-2. Store tax rates/rules (∥ with 4a) → Phase 4a → 4b → 4c (first completed sale)  
+2. Store tax rates/rules + ADR-0014 fixtures (∥ with 4a; OD-004/005 accepted) → Phase 4a → 4b → 4c (first completed sale)  
 3. Phase 4d individual units; Phase 4e linked returns  
 4. Phase 5 purchasing, receiving, minimal customer, requests — then first app-wide UX consolidation  
 5. Phases 6–7 as separate epics  

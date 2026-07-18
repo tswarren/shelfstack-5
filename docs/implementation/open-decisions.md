@@ -28,8 +28,8 @@ superseded
 | OD-001 | Business / reporting-date assignment rule | accepted | Phase 4a | POS | [architectural-locks.md](architectural-locks.md#business--reporting-date-v1-choice) — store `reporting_date` explicitly; v1 rule = date selected at business-day open |
 | OD-002 | Receipt-sequence owner | accepted | Phase 4c | POS | [architectural-locks.md](architectural-locks.md#receipt-sequence-ownership-v1-choice) — next sequence on `stores`, locked at successful completion |
 | OD-003 | Inventory costing (positive MWA, zero/negative asset, opening, adjustments, unknown vs zero, immutability) | accepted | Phase 3 | Inventory / Reporting | [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md); Inventory Domain cost sections |
-| OD-004 | Tax residual-cent allocation, compounding, and rounding policy | open | Phase 4b | Classification / POS | Domain updates required; ADR if competing rounding/compounding approaches are selected |
-| OD-005 | Tax calculated per line vs transaction after discount allocation | open | Phase 4b | Classification / POS | Domain specs say tax after discount; finalize aggregation and residual rules |
+| OD-004 | Tax residual-cent allocation, compounding, and rounding policy | accepted | Phase 4b | Classification / POS | [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md) |
+| OD-005 | Tax calculated per line vs transaction after discount allocation | accepted | Phase 4b | Classification / POS | [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md) — hybrid line resolution + transaction-component rounding |
 | OD-006 | Minimal customer shell shape for Phase 5 | proposed | Phase 5 | Product Requests / future Customer | [architectural-locks.md](architectural-locks.md#customer-identity-before-customer-requests) requires a minimal contact record before `customer_request`; fields and table name TBD. Reconcile with product-requests.md v1 opaque-reference text |
 | OD-007 | PO allocation `received` / `fulfilled` — persist vs derive | open | Phase 5 | Purchasing / Inventory | Phase 3 schema persists only `active` / `cancelled` |
 | OD-008 | Department GL account codes vs later mapping table | accepted | Phase 2 | Classification | GL account code columns remain on `departments` for Phase 2; no separate mapping table |
@@ -103,17 +103,20 @@ They deliberately leave unresolved how provisional deficit cost is allocated whe
 - Receipt-correction allocation algorithm (may become a separate OD if substantial)
 - Accounting journal patterns
 
-## OD-004 / OD-005 tax topics (must settle before Phase 4b)
+## OD-004 / OD-005 — closed by ADR-0014
 
-- Taxable base after discount allocation  
-- Multiple components and calculation order  
-- Compounding yes/no  
-- Taxable fraction  
-- Rate and intermediate precision  
-- Cent rounding and residual-cent allocation  
-- Returns and post-voids  
-- Transaction-scoped exemptions (reusable exemptions deferred)  
-- Receipt labels / codes  
+Accepted behavior:
+
+- hybrid model: taxability and taxable base per line; round once per transaction tax component and line direction; allocate cents to lines with largest remainder;
+- exact decimal intermediate arithmetic; integer cents for finalized money; no binary floats; rates and fractions at eight decimal places;
+- round half up only at defined taxable-base and tax-component aggregation points;
+- ordered components; compounding uses finalized (allocated) prior line tax amounts; taxable fraction applies to merchandise first;
+- sale and return directions are separate rounding pools;
+- tax effective date = store-local calendar date at completion (not Business Day `reporting_date`);
+- Tax Category status distinguishes `taxable`, `zero_rated`, and `exempt`; missing rules for taxable categories block completion;
+- linked returns and post-voids reverse stored tax components exactly;
+- tax-exclusive prices in initial release; tax-inclusive pricing and jurisdiction-configurable line-level rounding remain deferred;
+- reusable tax-exemption masters remain deferred; transaction-scoped exemptions may exist earlier.
 
 ## Already settled (do not reopen here)
 

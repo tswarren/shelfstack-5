@@ -4,7 +4,7 @@
 **Depends on:** Phase 3 (complete); [UX readiness gate](../../design/README.md) before 4a coding; store tax rates/rules before 4b  
 
 **Unlocks:** Phase 5 (after 4c minimum; 4d/4e recommended before broad supply fulfilment)  
-**Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011; [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md); [pos-register-ui](../../design/pos-register-ui.md); [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
+**Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011, [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md); [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md); [pos-register-ui](../../design/pos-register-ui.md); [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
 
 ## Goal
 
@@ -74,27 +74,28 @@ Prototype JS and mockup calculations are non-authoritative. Server services own 
 
 ### Prerequisite
 
-Store tax rates and store tax rules with effective dates, taxable fraction, calculation order, component labels, and deterministic rounding ([architectural-locks](../architectural-locks.md#tax-before-phase-4b)).
+Store tax rates and store tax rules with effective dates, taxable fraction, calculation order, compounding, component labels, Tax Category status, and hybrid transaction-component rounding per [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md) ([architectural-locks](../architectural-locks.md#tax-before-phase-4b)). OD-004 / OD-005 are accepted.
 
 ### Tables / records
 
-- `pos_discounts`, `pos_discount_allocations`
-- `pos_line_item_taxes`
+- `pos_discounts` (including `tax_treatment`), `pos_discount_allocations`
+- `pos_line_item_taxes` (with ADR-0014 snapshots)
 - `pos_tax_exemptions` (transaction-scoped as needed)
 - `pos_approvals`
 
 ### Behavior
 
 - Price overrides distinct from discounts.
-- Line and transaction discounts with deterministic allocations.
-- Tax components from store rules.
+- Line and transaction discounts with deterministic allocations; ordinary discounts default to `reduces_taxable_base`.
+- Tax per ADR-0014: per-line taxable base; round once per transaction component and direction; largest-remainder allocation; compounding uses finalized prior line components.
 - Approval records with requester, approver, reason, values, authority context.
 - Historical snapshots on lines (product/variant, identifiers, description, department, merchandise class, tax category, return policy, prices, cost inputs as available).
 
 ### Exit
 
-- [ ] Tax components reproducible for a known rate/rule fixture
+- [ ] Tax fixtures prove aggregation residual allocation, compounding, and taxable fraction (ADR-0014)
 - [ ] Discount allocation totals match line caches
+- [ ] Missing store tax rule for a taxable category blocks completion
 - [ ] Insufficient authority requires independent approver credentials
 
 ### UX acceptance (4b)

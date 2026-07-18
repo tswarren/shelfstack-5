@@ -199,13 +199,26 @@ Advanced Promotion definitions remain Deferred.
 
 ## Tax
 
-Tax is calculated after Discount allocation.
+Tax calculation is governed by [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
 
-Completed lines store tax components with Tax Category, rate or Rule reference, taxable amount, rate, amount, and calculation order.
+Tax is calculated after Discount allocation. Only Discounts with `tax_treatment = reduces_taxable_base` reduce the taxable merchandise amount.
 
-Tax components sum to the line Tax Amount.
+ShelfStack uses a hybrid model:
 
-Tax Exemptions may be reusable or transaction-specific. Completed activity snapshots the evidence used.
+1. resolve taxability, Tax Category, taxable fraction, exemptions, and taxable merchandise amount per line;
+2. aggregate and round once per transaction tax component and line direction;
+3. allocate rounded taxable base and tax amounts back to lines with largest remainder;
+4. store completed line tax-component records that reconcile to each line’s Tax Amount.
+
+Sale and return directions are calculated separately. Removed lines and Stored-Value lines do not participate in ordinary merchandise tax calculations.
+
+Final tax rules use the store-local calendar date at Completion, not the Business Day `reporting_date`. Open and recalled Transactions display current provisional calculations; Completion re-resolves and validates that applicable rules remain current.
+
+Completed line tax components retain taxable amount, rate, allocated tax amount, component order, compounding behavior, receipt code, Tax Category, Store Tax Rule, and Store Tax Rate used.
+
+Linked Returns and Post-Voids reverse stored tax components exactly rather than recalculating current tax.
+
+Transaction-scoped Tax Exemptions may exist; reusable exemption masters remain Deferred. Completed activity snapshots the exemption evidence used.
 
 ## Tenders
 
@@ -340,9 +353,10 @@ Audit Transaction lifecycle, line removal, Price Override, Discount, tax exempti
 
 ## Open and deferred questions
 
-- What policy assigns Business Date?
+- Business / reporting-date assignment for v1 is accepted (OD-001); later policy refinements remain possible without rewriting history.
 - Which advanced Promotion strategies are required?
-- What is the final reusable Tax-Exemption model?
+- What is the final reusable Tax-Exemption model? (transaction-scoped exemptions may exist earlier; ADR-0014)
+- Tax-inclusive pricing and jurisdiction-configurable line-level rounding remain Deferred (ADR-0014).
 - When will integrated payment processing be introduced?
 - What offline POS behavior is required?
 - Are café routing, tips, weighted merchandise, layaway, and installments needed?

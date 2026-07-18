@@ -69,15 +69,22 @@ Ledger entries retain at minimum:
 
 A tax category alone is not enough for transaction tax.
 
-Before Phase 4b begins, implement at least:
+**Accepted calculation contract:** [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md) (closes OD-004 / OD-005).
+
+Before Phase 4b code begins, implement at least:
 
 - store tax rates;
 - store tax rules linking tax category to rate;
 - effective dates;
 - taxable fraction;
 - calculation order;
+- compounding flag;
 - component label / receipt code;
-- deterministic rounding.
+- Tax Category status (`taxable` / `zero_rated` / `exempt`);
+- hybrid transaction-component rounding with largest-remainder residual allocation per ADR-0014;
+- fixtures that prove aggregation, residual allocation, compounding, and taxable fraction.
+
+Do not invent an alternate residual policy (including “last line gets the residual”) in Phase 4b.
 
 ## Receipt sequence ownership (v1 choice)
 
