@@ -1,0 +1,17 @@
+# frozen_string_literal: true
+
+class Store < ApplicationRecord
+  belongs_to :organization
+  has_many :defaulting_users, class_name: "User", foreign_key: :default_store_id, dependent: :nullify, inverse_of: :default_store
+
+  validates :code, presence: true, uniqueness: { scope: :organization_id }
+  validates :name, presence: true
+  validates :timezone, presence: true
+  validates :currency_code, presence: true, length: { is: 3 }
+  validates :active, inclusion: { in: [ true, false ] }
+  validates :store_number, uniqueness: { scope: :organization_id }, allow_nil: true
+  validates :postal_code, length: { maximum: 12 }, allow_nil: true
+  validates :country_code, length: { is: 2 }, allow_nil: true
+  validates :phone, length: { maximum: 30 }, allow_nil: true
+  validates :san_number, length: { maximum: 8 }, allow_nil: true
+end

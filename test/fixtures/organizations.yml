@@ -1,0 +1,7 @@
+acme:
+  code: acme
+  name: Acme Books
+  legal_name: Acme Books LLC
+  default_currency_code: USD
+  default_timezone: America/New_York
+  active: true
