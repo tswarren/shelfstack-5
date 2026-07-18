@@ -5,32 +5,19 @@
 
 ## Context
 
-ShelfStack must assign cost to inventory and completed merchandise activity for:
+ShelfStack must assign cost for inventory valuation, completed-sale snapshots, margin reporting, opening stock, adjustments, returns, post-voids, and later receiving workflows.
 
-* current inventory valuation;
-* completed-sale cost snapshots;
-* gross-margin reporting;
-* opening inventory;
-* inventory adjustments;
-* customer returns;
-* post-voids;
-* future receiving, transfer, RTV, count, and purchasing workflows.
+Quantity-tracked merchandise is maintained at the Store-and-Product-Variant level and may be sold into negative On Hand after a warning. Individually tracked Inventory Units use exact acquisition cost and are outside this ADR’s moving-average rules.
 
-Quantity-tracked merchandise is maintained at the Store-and-Product-Variant level. Catalog owns Product Variant identity, Inventory-Tracking Mode, and regular selling price. Receiving and Inventory owns Stock Balances, Inventory Movements, and posted cost. Classification owns Department estimation defaults and GL mapping codes.
+A durable model must:
 
-Quantity-tracked merchandise may be sold into negative On Hand after a visible warning.
+* value positive interchangeable stock without cumulative rounding drift;
+* keep missing cost distinct from confirmed zero cost;
+* prevent negative On Hand from becoming a negative inventory asset;
+* allow estimated cost without misrepresenting it as actual acquisition cost;
+* keep completed POS history immutable when later supply or corrections arrive.
 
-A simple rounded average-cost field is not sufficient because:
-
-* opening inventory may have no Receipt history;
-* actual acquisition cost may be unknown;
-* estimated cost may be required during migration;
-* missing cost must remain distinct from confirmed zero cost;
-* quantity-only adjustments must not arbitrarily revalue inventory;
-* negative On Hand does not represent a negative physical asset;
-* later incoming inventory may reveal a difference from provisional deficit cost;
-* completed POS activity must remain historically reproducible;
-* repeated cent rounding must not cause inventory valuation to drift.
+Catalog owns Product Variant identity, Inventory-Tracking Mode, and regular selling price. Receiving and Inventory owns Stock Balances, Inventory Movements, and posted cost. Classification may supply optional Department estimation defaults.
 
 ## Decision
 
@@ -38,18 +25,24 @@ A simple rounded average-cost field is not sufficient because:
 
 This ADR governs costing for **quantity-tracked Product Variants at the Store level**.
 
-It does not govern individually tracked Inventory Units. Each Inventory Unit retains its own acquisition cost and does not participate in a Store-and-Variant moving weighted average.
+It does not govern individually tracked Inventory-Unit acquisition cost.
 
-Catalog remains upstream: Inventory-Tracking Mode determines whether Stock Balances and Inventory Movements exist; regular selling price supplies Department-margin estimates. Catalog does not own Stock Balances or ledger posting.
+It does not establish document lifecycles for Receipts, transfers, RTV, counts, or Receipt corrections. Future workflows must:
 
-This ADR settles **costing behavior** for future workflows (Receipts, transfers, RTV, counts, Receipt corrections). It does not establish their document lifecycles, statuses, or permissions. Those workflows must post inventory effects consistently with this decision.
+* preserve carried cost;
+* avoid rewriting completed history;
+* represent discrepancies explicitly.
 
-### Current valuation and history
+Their detailed costing and allocation rules remain governed by their domain and workflow designs.
 
-ShelfStack will use moving weighted-average cost for positive quantity-tracked inventory.
+### Positive inventory valuation
+
+Quantity-tracked positive On Hand uses moving weighted-average cost.
+
+Aggregate positive inventory value is authoritative for current valuation calculations. The moving-average unit cost may be derived or cached for convenience, but proportional allocations use aggregate value and positive quantity, not a repeatedly rounded unit average.
 
 ```text
-Inventory Ledger Entries
+Inventory Ledger Entries / posted Inventory Movements
 → authoritative history
 
 Stock Balance
@@ -57,199 +50,99 @@ Stock Balance
 → reconcilable from history
 ```
 
-Aggregate inventory value (`inventory_value_cents`) is stored on the Stock Balance as a reconcilable current-state cache. Posted Inventory Ledger Entries remain the historical explanation.
-
-The rounded moving-average unit cost may be cached for display and convenience. Proportional calculations use aggregate inventory value and positive On Hand, not the cached unit average.
-
-Every cost-bearing posting locks the applicable Stock Balance, creates ledger (and variance) records, and updates the balance atomically.
-
 ### Zero and negative On Hand
 
-Negative On Hand represents an operational inventory deficit. It does not represent a negative inventory asset.
+Negative On Hand is an operational deficit, not a negative inventory asset.
 
-When On Hand is zero or negative:
+When On Hand is zero or negative, positive inventory asset value is zero.
 
-```text
-positive inventory asset value = 0
-```
+An outbound movement that creates or increases a deficit may carry provisional cost when a defensible rate exists; otherwise its cost remains unknown. Provisional deficit cost is separate from positive inventory asset value.
 
-An outbound movement that creates or increases a deficit may receive a provisional cost based on the most recent applicable known or estimated quantity cost. If no defensible cost is available, its cost remains unknown.
+Incoming quantity settles an existing deficit before creating positive inventory value. Differences between provisional deficit cost and later settling cost are represented as explicit variance facts that do not change On Hand and do not rewrite completed outbound snapshots.
 
-Provisional deficit cost is tracked separately from positive inventory asset value. The Stock Balance caches aggregate deficit-cost state; immutable detail remains on deficit-origin movements and related settlement records.
-
-Incoming quantity settles an existing deficit before creating positive inventory:
-
-1. the portion that offsets the deficit resolves provisional deficit cost in deterministic FIFO order of outstanding deficit-origin movements (`posted_at`, then ledger-entry ID);
-2. any difference between provisional cost and the incoming cost becomes an explicit cost variance;
-3. only quantity remaining after the deficit is settled creates positive inventory value.
-
-FIFO settlement order is a reconciliation rule for outstanding negative movements. It is not physical FIFO inventory costing.
-
-Later incoming cost does not rewrite completed sale or other posted outbound cost snapshots.
-
-### Cost variances
-
-Negative-inventory and related cost differences that do not change physical quantity are represented as related `inventory_cost_variances` records, not as overloaded Inventory Movement types.
-
-Variances report in the period of the resolving event. They do not reinterpret completed historical snapshots.
+Exact deficit-allocation algorithms and variance/settlement table shapes are Inventory Domain and schema decisions.
 
 ### Cost provenance
 
-ShelfStack must distinguish three independent dimensions:
+Posted and snapshotted cost must distinguish at least:
 
-* **cost method** — how the amount was calculated;
-* **cost quality** — evidentiary basis (`actual`, `estimated`, `mixed`, `unknown`);
-* **cost finality** — whether the amount is `final`, `provisional`, or `unresolved`.
+* calculation approach (for example moving average, exact Unit, original snapshot, explicit entry, configured estimate, unknown);
+* evidentiary quality: `actual`, `estimated`, `mixed`, or `unknown`.
 
-Confirmed zero cost is not missing cost.
+Confirmed zero cost is not missing cost. Unknown cost must never be treated as zero.
 
-```text
-cost amount = null  → unknown
-cost amount = 0     → explicitly established zero cost
-```
-
-Exact column and enum names are documented in the Receiving and Inventory Domain Specification and schema documentation. Persistence uses string columns with application validation and database check constraints, not native PostgreSQL enums.
+Exact field names, enums, and allowed combinations are schema decisions.
 
 ### Estimated cost
 
-ShelfStack may use an explicit estimated cost when actual acquisition cost is unavailable.
+Estimated cost may be used when actual acquisition cost is unavailable. A Department may provide an optional Organization-level gross-margin fallback. That fallback:
 
-A Department may provide an optional Organization-level default gross-margin assumption as a fallback. Such a default:
-
-* is an estimation policy, not actual acquisition cost;
-* does not make the Department the owner of Product-Variant cost;
-* must use Catalog regular selling price, not a temporary transaction price;
-* must retain the price and rate used when the estimate is posted;
-* must be classified as estimated;
+* is estimation policy, not actual acquisition cost;
+* does not make the Department the owner of Variant cost;
+* must use an identified regular selling price, not a temporary transaction price;
+* must be snapshotted when posted;
 * must not be recalculated historically when Department, price, or policy changes.
-
-Cost-source precedence:
-
-```text
-original historical cost
-→ explicit actual cost
-→ receipt or vendor-specific actual cost
-→ explicit line-level estimate
-→ vendor expected net cost
-→ Store-and-Department estimation policy (future)
-→ Organization Department default
-→ unknown
-```
-
-Vendor expected cost remains estimated until it becomes documented actual acquisition cost.
 
 Users may leave cost unknown rather than accept an unsupported estimate.
 
-Effective-dated Store-level estimation overrides are supported later through a separate policy table. They are out of Phase 3 scope.
+More authoritative actual or specific estimated cost takes precedence over a Department fallback. Store-specific estimation overrides, if introduced later, remain a Classification configuration concern.
 
-### Opening inventory and adjustments
+### Adjustments
 
-Separate adjustment kinds:
+Retain distinct adjustment kinds:
 
-* `opening_inventory`;
-* `quantity_only`;
-* `cost_correction`.
+* opening inventory;
+* quantity-only adjustment;
+* cost correction.
 
 Opening inventory may establish quantity with actual, estimated, or unknown cost.
 
-A quantity-only adjustment uses the applicable current or retained costing basis and must not accept an arbitrary replacement valuation.
+Quantity-only adjustments use the applicable current or retained costing basis and must not arbitrarily rewrite valuation.
 
-A cost correction changes cost or valuation explicitly without disguising the change as a quantity movement. It requires:
-
-* `inventory.cost_correction.post` (distinct from ordinary adjustment posting);
-* sufficient numeric authority on amount and, when evaluable, relative rate;
-* an independent Approval when mandatory conditions apply (see Inventory Domain / permission catalog).
-
-System-calculated variances created by ordinary receiving settlement do not require a separate cost-correction Approval. Manual overrides of those variances do.
-
-Corrections do not rewrite earlier Inventory Movements or completed POS cost snapshots.
+Cost corrections change cost or valuation explicitly, require audit reason and appropriate authorization, and must not rewrite earlier Inventory Movements or completed POS cost snapshots.
 
 ### Returns and post-voids
 
-A linked customer return restores the cost snapshotted on the original completed sale line.
+Linked customer returns restore original completed-line cost snapshots.
 
-A post-void reverses the cost effects snapshotted on the original transaction.
+Post-voids reverse original completed cost snapshots.
 
-Neither recalculates historical cost from the current moving average, price, Department, or purchasing terms.
+Neither recalculates historical cost from current moving average, price, Department, or purchasing terms.
 
-When restored quantity enters a current positive balance, its restored value participates in the current moving weighted average.
+### Posting integrity
 
-### Workflow costing (lifecycles deferred)
-
-Full document lifecycles remain open. Costing rules are settled now:
-
-* **Transfers** — transfer out removes available stock at source moving-average (or Unit) cost; transfer in adds that exact carried value at destination; average differences alone create no profit/loss; transfers must not create negative On Hand.
-* **RTV** — holding increases Unavailable only; shipment removes On Hand and value at carrying cost; Vendor-credit differences are RTV/purchasing settlement variances, not negative-inventory cost variances.
-* **Counts** — posting creates a quantity-only adjustment; overages do not automatically invoke Department estimates; correcting a deficit toward zero is not an acquisition-cost variance.
-* **Receipt corrections** — never edit posted Receipts or original movements; linked corrections split effects into current inventory-value adjustment plus historical `inventory_cost_variance` via counterfactual replay from the original Receipt movement forward. Implementation may wait until Receipt corrections are introduced.
-
-### Inventory movement history
-
-Posted Inventory Movements form an append-only inventory ledger.
-
-Each cost-bearing movement retains enough information to reproduce quantity change, inventory-value change, cost method, quality, finality, source, reversal relationship, resulting balance state, and posting identity/time.
-
-Inventory movement posting, Stock Balance updates, and related variance creation must be atomic and idempotent.
-
-### Rounding
-
-ShelfStack stores money in integer cents.
-
-Cost allocation and rate-based estimation use deterministic rounding. Residual cents follow documented rules so that:
-
-* a fully depleted positive balance retains no inventory value;
-* a fully settled provisional deficit retains no cost residual;
-* retries and concurrent execution produce the same posted result.
+Cost-bearing posting is atomic and idempotent. Money is stored in integer cents. Rounding is deterministic so that fully depleted positive balances and fully settled provisional deficits leave no unexplained residual value.
 
 Detailed formulas belong in the Receiving and Inventory Domain Specification.
-
-### Accounting mapping
-
-Departments carry GL mapping codes including:
-
-* inventory deficit clearing;
-* inventory cost variance.
-
-Export journal patterns for negative sales, deficit settlement, and unknown-cost catch-up are specified in the Inventory Domain. External export batch protocol remains outside this ADR.
-
-### Presentation
-
-UI and reports must never present unknown cost as zero. Amount, quality, source, and finality must remain distinguishable for users with `inventory.cost.view`. Detailed presentation guidance belongs in the Inventory Domain.
 
 ## Consequences
 
 ### Benefits
 
-* Establishes one quantity-tracked costing model across Catalog inputs, Inventory, POS, and Reporting.
-* Prevents repeated unit-cost rounding from causing valuation drift.
-* Preserves actual, estimated, mixed, unknown, confirmed-zero, provisional, and variance distinctions.
-* Allows opening inventory before Receipt history exists.
-* Permits Department-based estimates without representing them as actual acquisition cost.
-* Prevents negative On Hand from becoming a negative inventory asset.
-* Makes later negative-inventory cost differences explicit and reportable.
+* One quantity-tracked costing model across Inventory, POS, and Reporting.
+* Clear separation of current balance state and historical explanation.
+* Distinguishes actual, estimated, mixed, unknown, and confirmed-zero cost.
+* Supports opening inventory before Receipt history.
+* Prevents negative On Hand from corrupting inventory asset value.
 * Preserves completed POS history.
-* Settles workflow costing rules before those workflows are designed.
-* Keeps individually tracked Unit cost separate from quantity moving average.
 
 ### Costs
 
-* Stock Balance and ledger require richer cost metadata.
-* Negative inventory requires provisional-cost cache, FIFO settlement detail, and variance records.
-* Some current inventory valuation may remain unknown.
-* Reports must distinguish provenance and variance amounts.
-* Cost corrections require separate permission, authority, and Approval paths.
-* Receipt-cost corrections require counterfactual replay when introduced.
-* Concurrency and rounding behavior require dedicated tests.
+* Stock Balance and ledger require cost metadata beyond a single average field.
+* Negative inventory requires provisional-cost and later variance handling.
+* Some valuation may remain unknown.
+* Reports must distinguish provenance and later variances.
+* Centralized costing services and concurrency tests are required.
 
 ## Alternatives considered
 
 ### Store only a rounded moving-average unit cost
 
-Rejected because repeated multiplication and rounding can cause aggregate inventory value to drift.
+Rejected because repeated rounding can drift aggregate valuation.
 
 ### Use most recent acquisition cost
 
-Rejected because the latest cost would revalue older interchangeable stock.
+Rejected because it revalues older interchangeable stock.
 
 ### Treat Department margin as actual cost
 
@@ -257,79 +150,56 @@ Rejected because a Department is too broad to establish acquisition cost.
 
 ### Treat missing cost as zero
 
-Rejected because it would understate inventory value and overstate margin.
+Rejected because it understates inventory value and overstates margin.
 
 ### Maintain negative inventory asset value
 
-Rejected because negative On Hand is an operational deficit, not physical merchandise owned by the Store.
-
-### Represent variances only as Inventory Movements
-
-Rejected because variances do not change quantity, may link one incoming event to several origins, and need distinct accounting and reporting treatment.
-
-### Derive deficit state from the full ledger on every posting
-
-Rejected because concurrent posting needs a locked current aggregate; history remains available for reconstruction and reconciliation.
+Rejected because negative On Hand is not physical merchandise owned by the Store.
 
 ### Recalculate completed sale cost after later receiving
 
-Rejected because completed POS records and their financial snapshots are immutable.
-
-### Dynamically recalculate estimates during reporting
-
-Rejected because later policy or price changes would reinterpret posted history.
+Rejected because completed POS snapshots are immutable.
 
 ## Governing rules
 
-* This ADR governs quantity-tracked inventory only.
-* Individually tracked Inventory Units retain exact Unit acquisition cost.
-* Catalog owns tracking mode and regular price; Inventory owns posted cost and balances.
-* Positive quantity-tracked inventory uses moving weighted-average cost.
-* Aggregate positive inventory value on Stock Balance governs current valuation calculations.
-* Inventory Ledger Entries remain authoritative history.
+* Quantity-tracked inventory uses Store-and-Variant moving weighted-average cost.
+* Individually tracked Units retain exact Unit acquisition cost.
+* Aggregate positive inventory value governs current valuation calculations.
+* Posted Inventory Movements remain authoritative history; Stock Balance is reconcilable current state.
 * Zero or negative On Hand carries no positive inventory asset value.
-* Negative quantity may retain separate provisional cost state.
-* Deficit settlement uses deterministic FIFO of outstanding deficit-origin movements.
 * Incoming quantity settles deficits before creating positive inventory.
-* Cost variances use related `inventory_cost_variances` records.
-* Missing cost and confirmed zero cost remain distinct.
-* Cost method, quality, and finality remain distinguishable.
-* Department margin is an estimated-cost fallback, not actual cost.
+* Later cost differences create explicit variance facts; they do not rewrite completed history.
+* Missing cost differs from confirmed zero cost.
+* Actual, estimated, mixed, and unknown remain distinguishable.
+* Department margin is an optional estimated-cost fallback, not actual cost.
 * Estimate inputs are snapshotted when posted.
+* Opening, quantity-only, and cost-correction adjustments remain distinct.
 * Quantity-only adjustments do not arbitrarily rewrite valuation.
-* Cost corrections are explicit, permissioned, authority-checked, and approved when required.
-* Linked returns restore original completed-line cost.
-* Post-voids reverse original completed cost.
-* Completed cost snapshots are not recalculated.
-* Posted Inventory Movements are append-only.
-* Movement, balance, and variance posting are atomic and idempotent.
-* Cost calculations use deterministic rounding.
-* Unknown cost must never be displayed or exported as zero.
-* Transfer, RTV, count, and Receipt-correction costing follow this ADR; their document lifecycles remain separately designed.
+* Cost corrections are explicit and audited.
+* Linked returns and post-voids use original completed cost.
+* Posting is atomic, idempotent, and deterministically rounded.
 
 ## Open details
 
-The following operating and integration details remain outside this ADR:
+* Deficit settlement algorithm (for example aggregate proportional pool versus origin-FIFO settlement records).
+* Exact variance and settlement table shapes.
+* Exact persisted field and enum names and allowed combinations.
+* Cost-correction permission and authority model beyond the requirement for explicit, audited correction.
+* Accounting-export journal patterns and GL-account placement.
+* UI presentation details.
+* Store-level estimation override configuration model.
+* Detailed transfer, RTV, count, and Receipt-correction costing algorithms, including any Receipt-correction allocation method.
 
-* configured numeric authority values by Role and Store;
-* external accounting-system export format and batch protocol;
-* full Transfer lifecycle and in-transit discrepancy workflow;
-* full Return-to-Vendor document and settlement lifecycle;
-* Inventory Count scheduling, freezing, recount, and approval workflow;
-* Receipt-correction UI and counterfactual replay implementation;
-* timing for introducing effective-dated Store-level cost-estimation policies.
-
-These details must preserve the costing, provenance, variance, and historical-immutability rules established by this ADR.
+A posted Receipt correction, when designed, must divide its effect between current inventory valuation and a separately reported historical cost variance without rewriting completed POS snapshots. The exact allocation algorithm remains open.
 
 ## Related domains
 
 * Catalog and Products
 * Classification and Configuration
-* Organization and Authorization
-* Vendors and Purchasing
 * Receiving and Inventory
 * Point of Sale
 * Reporting and Reconciliation
+* Organization and Authorization
 
 ## Related ADRs
 

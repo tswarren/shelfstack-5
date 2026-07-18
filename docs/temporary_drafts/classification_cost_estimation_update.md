@@ -1,110 +1,40 @@
 # Proposed changes to `docs/domains/classification-and-configuration.md`
 
-Companion drafts:
-
-* [ADR-0013 draft](0013-govern-quantity-tracked-inventory-cost.md)
-* [Receiving and Inventory domain update](receiving_inventory_domain_update.md)
-* [Catalog cost interaction](catalog_cost_interaction_update.md)
-
----
-
-## Governing ADR addition
-
-Add:
+## Related / governing ADR
 
 ```markdown
 - [ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance](../adr/0013-govern-quantity-tracked-inventory-cost.md)
 ```
 
----
+## Department estimation (keep)
 
-## Extend `## Departments` suggested attributes
+A Department may define an optional Organization-level default gross-margin assumption for estimating inventory cost when no more authoritative cost is available.
 
-Add optional costing and GL attributes (OD-008 style: codes on the Department row):
+* Express as basis points of gross margin, not markup.
+* The estimate is Classification policy, not actual acquisition cost.
+* The Department does not own Product-Variant cost.
+* Inventory snapshots price and rate when the estimate is posted.
+* Users may reject the estimate and leave cost unknown.
+* Later Department or Catalog price changes do not recalculate posted estimates.
 
-* optional `default_cost_estimation_margin_bps` — Organization-level gross-margin assumption used only as an estimated-cost fallback;
-* `inventory_deficit_clearing_gl_account_code`;
-* `inventory_cost_variance_gl_account_code`;
-
-Retain existing inventory-asset, COGS, adjustment, write-down, and shrinkage mappings as already modeled.
-
-### Department cost estimation
-
-A Department may define an optional default gross-margin assumption for estimating inventory cost when no more authoritative cost is available.
-
-The rate is expressed in basis points and represents gross margin, not markup.
+Suggested field (schema when implemented):
 
 ```text
-estimated unit cost
-=
-round_half_up(
-  Catalog regular selling price
-  × (10,000 - margin basis points)
-  / 10,000
-)
+default_cost_estimation_margin_bps   optional integer
 ```
 
-Rules:
+## Store overrides (one sentence only)
 
-* the estimate is Classification policy, not actual acquisition cost;
-* the Department does not own Product-Variant cost;
-* Inventory posts and snapshots the estimate when used;
-* users may reject the estimate and leave cost unknown;
-* later Department or price changes do not recalculate posted estimates.
+Store-specific estimation policy may later override the Organization Department default through an effective-dated configuration model. Do not design that table in Phase 3.
 
-Cost-source precedence (Inventory / ADR-0013):
+## Defer
 
-```text
-original historical cost
-→ explicit actual cost
-→ receipt or vendor-specific actual cost
-→ explicit line-level estimate
-→ vendor expected net cost
-→ Store-and-Department estimation policy (future)
-→ Organization Department default
-→ unknown
-```
+* `inventory_deficit_clearing_gl_account_code`
+* `inventory_cost_variance_gl_account_code`
+* exact Store override table shape
 
-### Future Store overrides
+See [inventory_cost_reporting_accounting_note.md](inventory_cost_reporting_accounting_note.md).
 
-Do not add nullable Store columns or duplicate Departments per Store for Phase 3.
-
-A later effective-dated policy table may provide Store overrides:
-
-```text
-store_department_cost_estimation_policies
-```
-
-Suggested fields:
-
-* `store_id`;
-* `department_id`;
-* `gross_margin_bps`;
-* `effective_from` / `effective_to`;
-* `active`;
-* audit identity and timestamps.
-
-### Accounting mapping for negative inventory
-
-Export patterns for deficit clearing and cost variance are specified in Receiving and Inventory. Classification owns the Department GL code fields those exports resolve.
-
-The inventory cost-variance account normally rolls up to COGS or cost-of-sales reporting.
-
----
-
-## Add to `## Invariants`
+## Invariant
 
 * Department gross-margin defaults are estimation policy only, not actual acquisition cost.
-* Department GL mappings may include inventory deficit clearing and inventory cost variance accounts.
-* A department used as an active merchandise-class default must remain postable (existing Phase 2 reciprocal rule).
-
----
-
-## Open questions
-
-Defer:
-
-* timing for introducing `store_department_cost_estimation_policies`;
-* whether any Department estimation margin is required versus optional for specific Department types.
-
-Remove or narrow any lingering question that treated quantity moving-average behavior under negative On Hand as Classification-owned; that belongs to Inventory / ADR-0013.

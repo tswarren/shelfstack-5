@@ -1,21 +1,49 @@
-# Phase 3 scoping note for ADR-0013 dispositions
+# Phase 3 costing scope note
 
 **Status:** Draft companion to Phase 3  
 **Related:** [phase-03-quantity-inventory-bootstrap.md](../implementation/phases/phase-03-quantity-inventory-bootstrap.md), [ADR-0013 draft](0013-govern-quantity-tracked-inventory-cost.md)
 
-## Intent
+Phase 3 remains intentionally narrow: balances, ledger posting, reservations, adjustments, and opening stock **without** purchasing or Receipts.
 
-Accept ADR-0013 costing rules before or with Phase 3. Implement only the Phase 3 slice; document later workflow costing without building those workflows.
+## Required Phase 3 behavior
 
-## Add to Phase 3 governing docs
+* `inventory_value_cents` on Stock Balance
+* cached `moving_average_cost_cents`
+* basic `cost_quality`
+* opening inventory with actual, estimated, or unknown cost
+* quantity-only adjustments that do not arbitrarily rewrite valuation
+* explicit positive-balance cost corrections
+* ledger quantity and value deltas
+* deterministic rounding
+* concurrency and value reconciliation
+* when On Hand ≤ 0, positive inventory asset value is zero
+* unknown cost never treated as zero
+* optional `last_known_unit_cost_*` if useful for later negative-sale provisional COGS
 
-* ADR-0013 (once accepted)
-* Inventory domain cost sections from the domain update draft
-* Permission catalog cost-correction keys
+## Permissions in Phase 3
 
-## Principal tables (revised)
+* `inventory.adjustment.post` for opening / quantity-only
+* `inventory.cost_correction.post` + Approval for cost corrections
+* numeric correction authority deferred (see permission draft)
 
-Keep:
+## Classification in Phase 3
+
+* optional `default_cost_estimation_margin_bps` when estimate path is implemented
+* **no** deficit-clearing or cost-variance GL fields
+
+## Future-compatible, not implemented in Phase 3
+
+* provisional COGS from POS negative sales (Phase 4c)
+* deficit settlement from Receipts (Phase 5)
+* `inventory_cost_variances` / settlement tables
+* FIFO or proportional deficit allocation
+* accounting clearing / export journals
+* Receipt-correction allocation
+* transfer / RTV / count workflows
+
+## Principal tables
+
+Keep Phase 3 list:
 
 * `stock_balances`
 * `inventory_ledger_entries`
@@ -23,50 +51,22 @@ Keep:
 * `inventory_adjustments`
 * `inventory_adjustment_lines`
 
-Add for Phase 3 if negative On Hand or cost corrections can create variances before Receipts:
-
-* `inventory_cost_variances`
-
-## Stock Balance fields in Phase 3
-
-Implement ADR-0013 current-state cache fields:
-
-* `inventory_value_cents`
-* `moving_average_cost_cents`
-* `cost_quality`
-* `last_known_unit_cost_cents`
-* `last_known_cost_quality`
-* `deficit_costed_quantity`
-* `provisional_deficit_cost_cents`
-* `provisional_deficit_cost_quality`
-* lock version
-
-## Classification fields in Phase 3
-
-* optional `default_cost_estimation_margin_bps` on departments
-* `inventory_deficit_clearing_gl_account_code`
-* `inventory_cost_variance_gl_account_code`
-
-Store-level estimation policy table: **not** Phase 3.
-
-## Document only in Phase 3 (do not implement workflows)
-
-* Transfer costing rules
-* RTV costing rules
-* Count costing rules
-* Receipt-correction counterfactual replay
+Do **not** require `inventory_cost_variances` for Phase 3 exit.
 
 ## Exit criteria additions
 
-* Posted opening adjustment establishes quantity and actual, estimated, or unknown cost correctly
+* Posted opening adjustment creates sellable on-hand with correct cost quality / value
 * Quantity-only adjustment does not arbitrarily rewrite valuation
-* Cost correction posts only with `inventory.cost_correction.post` (+ authority/Approval when required)
-* Negative On Hand keeps `inventory_value_cents = 0` and retains provisional deficit cache when applicable
-* Ledger explains quantity and value deltas; balance remains reconcilable
-* Unknown cost is never treated or displayed as zero
+* Positive cost correction posts only via cost-correction permission + Approval
+* Negative On Hand keeps inventory asset value at zero
+* Ledger explains quantity and value deltas; balance reconcilable
+* Unknown cost is never treated as zero
+* No receipt tables in schema
 
-## Close when promoting docs
+## On ADR acceptance
 
-* OD-003 → accepted, citing ADR-0013
-* Remove Inventory domain open question on negative On Hand moving average
 * Index ADR-0013 in `docs/adr/README.md`
+* Close OD-003 citing ADR-0013
+* Apply Inventory domain cost sections (not the design-note companions)
+* Apply slim Catalog / Classification / permission patches
+* Update this note into Phase 3 governing docs

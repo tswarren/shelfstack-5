@@ -1,23 +1,34 @@
 # Temporary drafts — quantity inventory costing (ADR-0013)
 
-These drafts are **not authoritative** until promoted into `docs/adr/`, `docs/domains/`, and implementation docs.
+These drafts are **not authoritative** until promoted.
 
-## Package
+There must be **exactly one** ADR-0013 candidate. The live tree must not contain a second `docs/adr/0013-*.md` while this package is under review.
 
-| Draft | Promotes to |
+## Document hierarchy
+
+| Draft | Role | Auto-promote with ADR? |
+| --- | --- | --- |
+| [0013-govern-quantity-tracked-inventory-cost.md](0013-govern-quantity-tracked-inventory-cost.md) | Proposed ADR (~durable decision only) | Yes → `docs/adr/` |
+| [receiving_inventory_domain_update.md](receiving_inventory_domain_update.md) | Inventory Domain patch | Yes → domain, after ADR accept |
+| [catalog_cost_interaction_update.md](catalog_cost_interaction_update.md) | Minimal Catalog cross-link | Yes → short domain patch |
+| [classification_cost_estimation_update.md](classification_cost_estimation_update.md) | Department estimation fallback | Yes → domain (margin only) |
+| [permission_catalog_cost_correction_update.md](permission_catalog_cost_correction_update.md) | Phase 3 permission interim | Yes → permission catalog |
+| [phase_03_costing_scope_note.md](phase_03_costing_scope_note.md) | Phase 3 required vs deferred | Yes → Phase 3 / OD-003 notes |
+
+### Design notes (do **not** auto-promote)
+
+| Draft | Role |
 | --- | --- |
-| [0013-govern-quantity-tracked-inventory-cost.md](0013-govern-quantity-tracked-inventory-cost.md) | `docs/adr/0013-govern-quantity-tracked-inventory-cost.md` |
-| [receiving_inventory_domain_update.md](receiving_inventory_domain_update.md) | patches `docs/domains/receiving-and-inventory.md` |
-| [catalog_cost_interaction_update.md](catalog_cost_interaction_update.md) | patches `docs/domains/catalog-and-products.md` |
-| [classification_cost_estimation_update.md](classification_cost_estimation_update.md) | patches `docs/domains/classification-and-configuration.md` |
-| [permission_catalog_cost_correction_update.md](permission_catalog_cost_correction_update.md) | patches `docs/domains/authorization-permissions.md` |
-| [phase_03_costing_scope_note.md](phase_03_costing_scope_note.md) | patches Phase 3 + OD-003 on acceptance |
+| [inventory_cost_schema_design_note.md](inventory_cost_schema_design_note.md) | Proposed fields, enums, deficit-allocation alternatives |
+| [inventory_workflow_costing_design_note.md](inventory_workflow_costing_design_note.md) | Transfer / RTV / count / Receipt-correction candidates |
+| [inventory_cost_reporting_accounting_note.md](inventory_cost_reporting_accounting_note.md) | Export / GL open questions |
+| [inventory_cost_ui_guidance_note.md](inventory_cost_ui_guidance_note.md) | Presentation guidance |
 
 ## Promotion checklist
 
-1. Accept ADR-0013 (or Accepted with open details using the draft Open details section).
-2. Apply domain and permission patches.
-3. Index ADR in `docs/adr/README.md`.
-4. Close OD-003.
-5. Update Phase 3 governing docs and principal tables per the Phase 3 note.
-6. Remove or archive these temporary drafts.
+1. Accept ADR-0013 (Open details remain open).
+2. Apply **authoritative** domain / permission / Phase 3 patches only.
+3. Do **not** automatically promote every implementation suggestion from design notes.
+4. Index ADR in `docs/adr/README.md`.
+5. Close OD-003.
+6. Remove or archive this temporary package.
