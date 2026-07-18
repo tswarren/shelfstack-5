@@ -17,12 +17,13 @@ ShelfStack separates installation data into three explicit layers:
 
 Do not load organization-owned CSV masters from bare `db:seed`. Reference data requires an organization created by bootstrap.
 
-`bin/setup` runs all three layers after preparing the database:
+`bin/setup` runs all three layers after preparing the database, then syncs administrator permissions so newly seeded catalog keys are granted:
 
 ```text
 db:prepare
 → db:seed
 → shelfstack:bootstrap
+→ shelfstack:sync_admin_permissions
 → shelfstack:seed_reference_data
 ```
 

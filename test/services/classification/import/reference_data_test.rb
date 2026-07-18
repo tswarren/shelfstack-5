@@ -50,6 +50,18 @@ module Classification
         assert_equal "9999", department.sales_revenue_gl_account_code
         assert_equal "New General Trade", department.name
       end
+
+      test "imports inventory adjustment reasons by kind and code" do
+        Classification::Import::ReferenceData.call(organization: @organization)
+
+        reason = @organization.inventory_adjustment_reasons.find_by!(
+          adjustment_kind: "quantity_only",
+          code: "physical_count_shortage"
+        )
+        assert_equal "Physical Count Shortage", reason.name
+        assert_equal "quantity_only.physical_count_shortage", reason.qualified_code
+        refute reason.requires_note?
+      end
     end
   end
 end

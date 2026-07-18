@@ -1,0 +1,8 @@
+<h1>Inventory adjustment reasons</h1>
+<p><%= link_to "New reason", new_inventory_adjustment_reason_path if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
+<ul>
+  <% @inventory_adjustment_reasons.each do |reason| %>
+    <li><%= link_to "#{reason.qualified_code} — #{reason.name}", reason %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

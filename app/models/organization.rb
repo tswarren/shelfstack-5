@@ -15,6 +15,7 @@ class Organization < ApplicationRecord
   has_many :merchandise_classes, dependent: :restrict_with_exception
   has_many :product_formats, dependent: :restrict_with_exception
   has_many :product_conditions, dependent: :restrict_with_exception
+  has_many :inventory_adjustment_reasons, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: true
   validates :name, presence: true

@@ -1,0 +1,37 @@
+<h1>Stock balances</h1>
+<p><%= link_to "New adjustment", new_inventory_adjustment_path if Current.user.can?("inventory.adjustment.create", store: Current.store) %></p>
+<table>
+  <thead>
+    <tr>
+      <th>SKU</th>
+      <th>Variant</th>
+      <th>On hand</th>
+      <th>Reserved</th>
+      <th>Unavailable</th>
+      <th>Available</th>
+      <% if @can_view_cost %>
+        <th>Value</th>
+        <th>Avg cost</th>
+        <th>Quality</th>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @stock_balances.each do |balance| %>
+      <tr>
+        <td><%= link_to balance.product_variant.sku, balance %></td>
+        <td><%= balance.product_variant.name %></td>
+        <td><%= balance.on_hand %></td>
+        <td><%= balance.reserved %></td>
+        <td><%= balance.unavailable %></td>
+        <td><%= balance.available %></td>
+        <% if @can_view_cost %>
+          <td><%= inventory_money(balance.inventory_value_cents, quality: balance.cost_quality) %></td>
+          <td><%= inventory_money(balance.moving_average_cost_cents, quality: balance.cost_quality) %></td>
+          <td><%= balance.cost_quality %></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Home", root_path %></p>

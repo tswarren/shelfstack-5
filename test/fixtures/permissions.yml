@@ -177,3 +177,45 @@ label_print:
   name: Print labels
   permission_group: catalog
   active: true
+
+inventory_stock_view:
+  code: inventory.stock.view
+  name: View store stock balances
+  permission_group: inventory
+  active: true
+
+inventory_cost_view:
+  code: inventory.cost.view
+  name: View inventory cost
+  permission_group: inventory
+  active: true
+
+inventory_adjustment_create:
+  code: inventory.adjustment.create
+  name: Create draft adjustments
+  permission_group: inventory
+  active: true
+
+inventory_adjustment_post:
+  code: inventory.adjustment.post
+  name: Post opening and quantity-only adjustments
+  permission_group: inventory
+  active: true
+
+inventory_cost_correction_post:
+  code: inventory.cost_correction.post
+  name: Post inventory cost corrections
+  permission_group: inventory
+  active: true
+
+inventory_reservation_view:
+  code: inventory.reservation.view
+  name: Review reservations
+  permission_group: inventory
+  active: true
+
+inventory_reservation_release:
+  code: inventory.reservation.release
+  name: Release active reservations
+  permission_group: inventory
+  active: true

@@ -1,0 +1,63 @@
+<%= form_with model: inventory_adjustment do |form| %>
+  <% if flash[:alert].present? %>
+    <p><%= flash[:alert] %></p>
+  <% end %>
+  <% if inventory_adjustment.errors.any? %>
+    <ul>
+      <% inventory_adjustment.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div>
+    <%= form.label :kind %>
+    <%= form.select :kind, InventoryAdjustment::KINDS %>
+  </div>
+  <div>
+    <%= form.label :inventory_adjustment_reason_id, "Reason" %>
+    <%= form.collection_select :inventory_adjustment_reason_id,
+          reasons.select { |r| r.adjustment_kind == inventory_adjustment.kind || inventory_adjustment.kind.blank? },
+          :id, :name %>
+  </div>
+  <div>
+    <%= form.label :note %>
+    <%= form.text_area :note %>
+    <p>Note may be left blank while drafting; required at post when the reason requires a note.</p>
+  </div>
+
+  <h2>Lines</h2>
+  <% lines = inventory_adjustment.inventory_adjustment_lines.to_a
+     lines = [ inventory_adjustment.inventory_adjustment_lines.build ] if lines.empty? %>
+  <%= form.fields_for :inventory_adjustment_lines, lines do |line_form| %>
+    <fieldset>
+      <div>
+        <%= line_form.label :product_variant_id, "Variant" %>
+        <%= line_form.collection_select :product_variant_id, variants, :id, :sku %>
+      </div>
+      <div>
+        <%= line_form.label :quantity_delta %>
+        <%= line_form.number_field :quantity_delta %>
+      </div>
+      <div>
+        <%= line_form.label :input_unit_cost_cents, "Input unit cost (cents)" %>
+        <%= line_form.number_field :input_unit_cost_cents %>
+      </div>
+      <div>
+        <%= line_form.label :input_cost_method %>
+        <%= line_form.select :input_cost_method, InventoryAdjustmentLine::COST_METHODS, include_blank: true %>
+      </div>
+      <div>
+        <%= line_form.label :input_cost_quality %>
+        <%= line_form.select :input_cost_quality, InventoryAdjustmentLine::COST_QUALITIES, include_blank: true %>
+      </div>
+      <div>
+        <%= line_form.label :corrected_inventory_value_cents, "Corrected inventory value (cents)" %>
+        <%= line_form.number_field :corrected_inventory_value_cents %>
+      </div>
+      <%= line_form.hidden_field :position, value: line_form.index || 0 %>
+    </fieldset>
+  <% end %>
+
+  <div><%= form.submit %></div>
+<% end %>

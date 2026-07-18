@@ -9,6 +9,10 @@ class Store < ApplicationRecord
   has_many :users, through: :store_memberships
   has_many :pos_devices, dependent: :restrict_with_exception
   has_many :cash_drawers, dependent: :restrict_with_exception
+  has_many :stock_balances, dependent: :restrict_with_exception
+  has_many :inventory_ledger_entries, dependent: :restrict_with_exception
+  has_many :inventory_reservations, dependent: :restrict_with_exception
+  has_many :inventory_adjustments, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true

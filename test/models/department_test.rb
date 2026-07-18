@@ -66,4 +66,3 @@ class DepartmentTest < ActiveSupport::TestCase
       "cannot be false while active merchandise classes use this department as a default"
   end
 end
-

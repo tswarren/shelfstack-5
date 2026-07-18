@@ -19,6 +19,11 @@ module Catalog
     def call
       return false if @attributes.key?("sku")
 
+      if tracking_mode_change_blocked?
+        @variant.errors.add(:inventory_tracking_mode, "cannot change after inventory history exists")
+        return false
+      end
+
       ActiveRecord::Base.transaction do
         before = Administration::ChangeMetadata.snapshot(@variant, TRACKED_ATTRIBUTES)
 
@@ -43,6 +48,19 @@ module Catalog
       true
     rescue ActiveRecord::RecordInvalid
       false
+    end
+
+    private
+
+    def tracking_mode_change_blocked?
+      requested = @attributes["inventory_tracking_mode"]
+      return false if requested.blank?
+      return false if requested.to_s == @variant.inventory_tracking_mode
+
+      StockBalance.exists?(product_variant_id: @variant.id) ||
+        InventoryLedgerEntry.exists?(product_variant_id: @variant.id) ||
+        InventoryReservation.exists?(product_variant_id: @variant.id) ||
+        InventoryAdjustmentLine.exists?(product_variant_id: @variant.id)
     end
   end
 end

@@ -403,8 +403,9 @@ A posted Inventory Adjustment creates Ledger Entries.
 
 Suggested structure:
 
-- adjustment header with Store, adjustment kind, status, reason, creator, poster, and timestamps;
-- lines with Variant, optional Unit, quantity or status change, cost, and reason.
+- adjustment header with Store, adjustment kind, status, Classification Inventory Adjustment Reason, optional note, creator, poster, posting key, and timestamps;
+- lines with Variant, optional Unit, quantity or status change, and kind-specific cost inputs (`input_*` / `corrected_inventory_value_cents`);
+- posted headers snapshot reason code and name; ledger entries store structured `reason_code` and `reason_note`.
 
 Initial quantity-tracked adjustment kinds:
 

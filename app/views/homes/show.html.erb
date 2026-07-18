@@ -9,23 +9,53 @@
 
 <nav>
   <ul>
-    <li><%= link_to "Products", products_path if Current.user.can?("catalog.product.view", store: Current.store) %></li>
-    <li><%= link_to "Stores", stores_path if Current.user.can?("administration.store.view", store: Current.store) %></li>
-    <li><%= link_to "Users", users_path if Current.user.can?("administration.user.view", store: Current.store) %></li>
-    <li><%= link_to "Roles", roles_path if Current.user.can?("administration.role.manage", store: Current.store) %></li>
-    <li><%= link_to "Permissions", permissions_path if Current.user.can?("administration.store.view", store: Current.store) %></li>
-    <li><%= link_to "Audit", administrative_audit_events_path if Current.user.can?("administration.audit.view", store: Current.store) %></li>
-    <li><%= link_to "Memberships", store_memberships_path if Current.user.can?("administration.membership.manage", store: Current.store) %></li>
-    <li><%= link_to "Devices", pos_devices_path if Current.user.can?("administration.device.manage", store: Current.store) %></li>
-    <li><%= link_to "Drawers", cash_drawers_path if Current.user.can?("administration.drawer.manage", store: Current.store) %></li>
-    <li><%= link_to "Tax categories", tax_categories_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Return policies", return_policies_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Return reasons", return_reasons_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Discount reasons", discount_reasons_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Departments", departments_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Merchandise classes", merchandise_classes_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Product formats", product_formats_path if Current.user.can?("classification.view", store: Current.store) %></li>
-    <li><%= link_to "Product conditions", product_conditions_path if Current.user.can?("classification.view", store: Current.store) %></li>
+    <% if Current.user.can?("catalog.product.view", store: Current.store) %>
+      <li><%= link_to "Products", products_path %></li>
+    <% end %>
+    <% if Current.user.can?("inventory.stock.view", store: Current.store) %>
+      <li><%= link_to "Stock", stock_balances_path %></li>
+      <li><%= link_to "Inventory adjustments", inventory_adjustments_path %></li>
+    <% end %>
+    <% if Current.user.can?("inventory.reservation.view", store: Current.store) %>
+      <li><%= link_to "Reservations", inventory_reservations_path %></li>
+    <% end %>
+    <% if Current.user.can?("classification.view", store: Current.store) %>
+      <li><%= link_to "Inventory adjustment reasons", inventory_adjustment_reasons_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.store.view", store: Current.store) %>
+      <li><%= link_to "Stores", stores_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.user.view", store: Current.store) %>
+      <li><%= link_to "Users", users_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.role.manage", store: Current.store) %>
+      <li><%= link_to "Roles", roles_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.store.view", store: Current.store) %>
+      <li><%= link_to "Permissions", permissions_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.audit.view", store: Current.store) %>
+      <li><%= link_to "Audit", administrative_audit_events_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.membership.manage", store: Current.store) %>
+      <li><%= link_to "Memberships", store_memberships_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.device.manage", store: Current.store) %>
+      <li><%= link_to "Devices", pos_devices_path %></li>
+    <% end %>
+    <% if Current.user.can?("administration.drawer.manage", store: Current.store) %>
+      <li><%= link_to "Drawers", cash_drawers_path %></li>
+    <% end %>
+    <% if Current.user.can?("classification.view", store: Current.store) %>
+      <li><%= link_to "Tax categories", tax_categories_path %></li>
+      <li><%= link_to "Return policies", return_policies_path %></li>
+      <li><%= link_to "Return reasons", return_reasons_path %></li>
+      <li><%= link_to "Discount reasons", discount_reasons_path %></li>
+      <li><%= link_to "Departments", departments_path %></li>
+      <li><%= link_to "Merchandise classes", merchandise_classes_path %></li>
+      <li><%= link_to "Product formats", product_formats_path %></li>
+      <li><%= link_to "Product conditions", product_conditions_path %></li>
+    <% end %>
   </ul>
 </nav>
 

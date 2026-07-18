@@ -1,6 +1,7 @@
 # Phase 3 — Quantity Inventory Bootstrap
 
-**Status:** Not started  
+**Status:** Complete  
+
 **Depends on:** Phase 2  
 **Unlocks:** Phase 4a  
 **Governing docs:** ADR-0004, ADR-0006, ADR-0013; [receiving-and-inventory](../../domains/receiving-and-inventory.md); [architectural-locks](../architectural-locks.md); [phase-03-inventory-cost-schema.md](../phase-03-inventory-cost-schema.md)
@@ -25,6 +26,7 @@ Individual units are Phase 4d.
 - `inventory_reservations`
 - `inventory_adjustments`
 - `inventory_adjustment_lines`
+- `inventory_adjustment_reasons` (controlled Classification master; seeded from CSV)
 
 Do **not** require `inventory_cost_variances` or Approval tables for Phase 3 exit.
 
@@ -85,18 +87,18 @@ Phase 3 remains intentionally narrow: balances, ledger posting, reservations, ad
 
 ## Exit criteria
 
-- [ ] Posted opening adjustment creates sellable on-hand for a quantity variant
-- [ ] Posted opening from zero with known cost initializes aggregate value and average
-- [ ] Ledger explains the quantity and value delta
-- [ ] Cost-quality transitions follow Inventory Domain matrix
-- [ ] Quantity-only adjustment does not arbitrarily rewrite valuation
-- [ ] Positive cost correction posts only via cost-correction permission + reason + audit
-- [ ] Negative / zero On Hand keeps inventory asset value at zero; zero balance quality is unknown
-- [ ] Unknown cost is never treated as zero
-- [ ] Concurrent reservation tests pass
-- [ ] Concurrent posting tests cover balance lock + value-state updates
-- [ ] Negative available with warning behaves per lock
-- [ ] No receipt tables in schema
+- [x] Posted opening adjustment creates sellable on-hand for a quantity variant
+- [x] Posted opening from zero with known cost initializes aggregate value and average
+- [x] Ledger explains the quantity and value delta
+- [x] Cost-quality transitions follow Inventory Domain matrix
+- [x] Quantity-only adjustment does not arbitrarily rewrite valuation
+- [x] Positive cost correction posts only via cost-correction permission + reason + audit
+- [x] Negative / zero On Hand keeps inventory asset value at zero; zero balance quality is unknown
+- [x] Unknown cost is never treated as zero
+- [x] Concurrent reservation tests pass
+- [x] Concurrent posting tests cover balance lock + value-state updates
+- [x] Negative available with warning behaves per lock
+- [x] No receipt tables in schema
 
 ## Out of scope
 

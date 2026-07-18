@@ -19,6 +19,9 @@ class Department < ApplicationRecord
   validates :name, presence: true
   validates :postable, inclusion: { in: [ true, false ] }
   validates :active, inclusion: { in: [ true, false ] }
+  validates :default_cost_estimation_margin_bps,
+            numericality: { only_integer: true, greater_than_or_equal_to: 0, less_than_or_equal_to: 10_000 },
+            allow_nil: true
   validate :default_tax_category_belongs_to_organization
   validate :postable_when_referenced_as_merchandise_class_default
 

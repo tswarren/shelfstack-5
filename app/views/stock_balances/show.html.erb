@@ -1,0 +1,41 @@
+<h1>Stock: <%= @stock_balance.product_variant.sku %></h1>
+<p><%= @stock_balance.product_variant.name %></p>
+<ul>
+  <li>On hand: <%= @stock_balance.on_hand %></li>
+  <li>Reserved: <%= @stock_balance.reserved %></li>
+  <li>Unavailable: <%= @stock_balance.unavailable %></li>
+  <li>Available: <%= @stock_balance.available %></li>
+  <% if @can_view_cost %>
+    <li>Inventory value: <%= inventory_money(@stock_balance.inventory_value_cents, quality: @stock_balance.cost_quality) %></li>
+    <li>Moving average: <%= inventory_money(@stock_balance.moving_average_cost_cents, quality: @stock_balance.cost_quality) %></li>
+    <li>Cost quality: <%= @stock_balance.cost_quality %></li>
+  <% end %>
+</ul>
+
+<h2>Recent ledger entries</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Posted</th>
+      <th>Type</th>
+      <th>Qty Δ</th>
+      <% if @can_view_cost %><th>Value Δ</th><th>Quality</th><% end %>
+      <th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @ledger_entries.each do |entry| %>
+      <tr>
+        <td><%= entry.posted_at %></td>
+        <td><%= entry.movement_type %></td>
+        <td><%= entry.quantity_delta %></td>
+        <% if @can_view_cost %>
+          <td><%= entry.inventory_value_delta_cents.nil? ? "unknown" : inventory_money(entry.inventory_value_delta_cents) %></td>
+          <td><%= entry.cost_quality %></td>
+        <% end %>
+        <td><%= entry.reason_code %><%= " — #{entry.reason_note}" if entry.reason_note.present? %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Stock balances", stock_balances_path %></p>

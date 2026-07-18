@@ -37,6 +37,7 @@ This domain owns controlled structures that categorize merchandise and govern op
 - Return Policy;
 - Return Reason;
 - Discount Reason;
+- Inventory Adjustment Reason;
 - Price-Override Reason;
 - Cancellation Reason;
 - Post-Void Reason;
@@ -199,6 +200,8 @@ Detailed behavior remains partly Open.
 Controlled reasons should be used where business review or audit requires a stable explanation.
 
 Reason types include Discount, Price Override, line removal, Cancellation, Customer Return, Post-Void, cash movement, Inventory Adjustment, and manual Stored-Value adjustment.
+
+Inventory Adjustment Reasons are scoped by `adjustment_kind` (`opening_inventory`, `quantity_only`, `cost_correction`) with immutable `code` values. Posted Adjustments snapshot reason code and name; `requires_note` is enforced at post, not merely when saving a draft.
 
 ## Tender Types
 

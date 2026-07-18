@@ -55,17 +55,22 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Inventory::PostLedgerEntry` | Receiving and Inventory | 3 | Yes | Yes (posting key) | `stock_balances` row | Quantity/value delta, source, cost inputs | Ledger insert + On Hand / valuation-state update |
-| `Inventory::CalculateQuantityCost` | Receiving and Inventory | 3 | No | Yes | None | Balance state, inbound/outbound cost inputs | Allocated value, average, quality, estimate result |
-| `Inventory::PostAdjustment` | Receiving and Inventory | 3 | Yes | Yes (idempotency key recommended) | `stock_balances` row | Posted adjustment | Ledger entries + balance updates via posting service |
-| `Inventory::Reserve` | Receiving and Inventory | 3 | Yes | Yes | Balance and/or reservation rows | Store, variant, qty, source | Active reservation; may warn on negative available |
+| `Inventory::CalculateQuantityCost` | Receiving and Inventory | 3 | No | Yes | None | Prior balance state, qty/cost inputs | Allocated value, average, quality (pure) |
+| `Inventory::DepartmentEstimate` | Receiving and Inventory | 3 | No | Yes | None | Product variant | Optional Department margin estimate |
+| `Inventory::PostLedgerEntry` | Receiving and Inventory | 3 | Yes | Yes (posting key) | `stock_balances` row (`lock!`) | Qty/value inputs, source, posting key | Ledger insert + On Hand / valuation-state update |
+| `Inventory::CreateAdjustment` | Receiving and Inventory | 3 | Yes | No | Adjustment | Draft header + lines | Persisted draft + audit |
+| `Inventory::UpdateAdjustment` | Receiving and Inventory | 3 | Yes | No | Adjustment | Draft attrs + lines | Updated draft + audit |
+| `Inventory::PostAdjustment` | Receiving and Inventory | 3 | Yes | Yes (header posting key) | Adjustment; balances via PostLedgerEntry | Draft adjustment | Sorted line posts + posted status + audit |
+| `Inventory::CancelAdjustment` | Receiving and Inventory | 3 | Yes | No | Adjustment | Draft + cancel note | Cancelled status + audit |
+| `Inventory::Reserve` | Receiving and Inventory | 3 | Yes | Yes (active source) | Balance + active reservation | Store, variant, qty, source | Active reservation; may warn on negative available |
 | `Inventory::ReleaseReservation` | Receiving and Inventory | 3 | Yes | Yes | Reservation (+ balance) | Reservation | Released reservation; reserved qty restored |
+| `Classification::CreateInventoryAdjustmentReason` / `UpdateInventoryAdjustmentReason` | Classification and Configuration | 3 | Yes | No | Reason | Reason attrs | Persisted reason + audit (`code`/`kind` immutable on update) |
 
 ### Phase 3 service notes
 
-- `Inventory::PostLedgerEntry` is the exclusive owner of Stock Balance On Hand and valuation-state changes for quantity-tracked variants. Atomic with ledger insert; idempotent via posting key. Used by adjustment posting and later sale/receipt posting.
-- `Inventory::CalculateQuantityCost` is a pure calculation helper for positive MWA inbound/outbound allocation, first-positive-from-zero initialization, cost-quality aggregation, Department-margin estimate formula, and residual-cent assignment for fully depleted positive balances. Must not persist balances by itself.
-- `Inventory::PostAdjustment` coordinates draft → posted adjustment kinds (`opening_inventory`, `quantity_only`, `cost_correction`) through the posting service with permission checks.
+- `Inventory::PostLedgerEntry` is the exclusive owner of Stock Balance On Hand and valuation-state changes for quantity-tracked variants. Atomic with ledger insert; idempotent via posting key. Used by adjustment posting and later sale/receipt posting. Callers must not pre-lock balances.
+- `Inventory::CalculateQuantityCost` is a pure calculation helper for positive MWA inbound/outbound allocation, first-positive-from-zero initialization, cost-quality aggregation, aggregate cost-correction deltas, and residual-cent assignment for fully depleted positive balances. Must not persist balances by itself.
+- `Inventory::PostAdjustment` coordinates draft → posted adjustment kinds (`opening_inventory`, `quantity_only`, `cost_correction`) by sorting lines and calling `PostLedgerEntry` under one outer transaction with permission checks.
 
 ### Phase 3 concurrency test matrix
 

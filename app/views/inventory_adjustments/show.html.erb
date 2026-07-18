@@ -1,0 +1,63 @@
+<h1>Adjustment #<%= @inventory_adjustment.id %></h1>
+<ul>
+  <li>Kind: <%= @inventory_adjustment.kind %></li>
+  <li>Status: <%= @inventory_adjustment.status %></li>
+  <li>Reason: <%= @inventory_adjustment.reason_name_snapshot || @inventory_adjustment.inventory_adjustment_reason.name %></li>
+  <li>Note: <%= @inventory_adjustment.note.presence || "(none)" %></li>
+  <% if @inventory_adjustment.posted? %>
+    <li>Qualified reason: <%= @inventory_adjustment.qualified_reason_code %></li>
+    <li>Posted at: <%= @inventory_adjustment.posted_at %></li>
+  <% end %>
+</ul>
+
+<h2>Lines</h2>
+<table>
+  <thead>
+    <tr>
+      <th>SKU</th>
+      <th>Qty Δ</th>
+      <th>Input unit cost</th>
+      <th>Corrected value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @inventory_adjustment.inventory_adjustment_lines.each do |line| %>
+      <tr>
+        <td><%= line.product_variant.sku %></td>
+        <td><%= line.quantity_delta %></td>
+        <td>
+          <% if @can_view_cost || @inventory_adjustment.draft? %>
+            <%= line.input_unit_cost_cents.nil? ? "—" : inventory_money(line.input_unit_cost_cents) %>
+          <% else %>
+            —
+          <% end %>
+        </td>
+        <td>
+          <% if (@can_view_cost || @inventory_adjustment.draft?) && line.corrected_inventory_value_cents %>
+            <%= inventory_money(line.corrected_inventory_value_cents) %>
+          <% else %>
+            —
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @inventory_adjustment.draft? %>
+  <p>
+    <%= link_to "Edit", edit_inventory_adjustment_path(@inventory_adjustment) if Current.user.can?("inventory.adjustment.create", store: Current.store) %>
+  </p>
+  <p>
+    <%= button_to "Post adjustment", post_inventory_adjustment_path(@inventory_adjustment), method: :post %>
+  </p>
+  <%= form_with url: cancel_inventory_adjustment_path(@inventory_adjustment), method: :post do %>
+    <div>
+      <label for="inventory_adjustment_cancel_note">Cancel note</label>
+      <input type="text" name="inventory_adjustment[cancel_note]" id="inventory_adjustment_cancel_note">
+    </div>
+    <%= submit_tag "Cancel adjustment" %>
+  <% end %>
+<% end %>
+
+<p><%= link_to "Adjustments", inventory_adjustments_path %></p>

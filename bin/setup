@@ -27,6 +27,7 @@ FileUtils.chdir APP_ROOT do
   puts "\n== Seeding permissions, bootstrap, and reference data =="
   system! "bin/rails db:seed"
   system! "bin/rails shelfstack:bootstrap"
+  system! "bin/rails shelfstack:sync_admin_permissions"
   system! "bin/rails shelfstack:seed_reference_data"
 
   puts "\n== Removing old logs and tempfiles =="

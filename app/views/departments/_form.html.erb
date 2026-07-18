@@ -19,6 +19,10 @@
   <div><%= form.label :default_tax_category_id, "Default tax category" %> <%= form.collection_select :default_tax_category_id, tax_categories, :id, :code, include_blank: true %></div>
   <div><%= form.label :default_return_policy_id, "Default return policy" %> <%= form.collection_select :default_return_policy_id, return_policies, :id, :code, include_blank: true %></div>
   <div><%= form.label :maximum_merchandise_discount %> <%= form.text_field :maximum_merchandise_discount %></div>
+  <div>
+    <%= form.label :default_cost_estimation_margin_bps, "Default cost estimation margin (bps)" %>
+    <%= form.number_field :default_cost_estimation_margin_bps %>
+  </div>
 
   <fieldset>
     <legend>GL account codes</legend>

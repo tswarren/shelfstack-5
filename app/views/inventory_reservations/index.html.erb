@@ -1,0 +1,30 @@
+<h1>Inventory reservations</h1>
+<table>
+  <thead>
+    <tr>
+      <th>SKU</th>
+      <th>Source</th>
+      <th>Qty</th>
+      <th>Status</th>
+      <th>Reserved at</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @inventory_reservations.each do |reservation| %>
+      <tr>
+        <td><%= reservation.product_variant.sku %></td>
+        <td><%= reservation.source_type %> #<%= reservation.source_id %></td>
+        <td><%= reservation.quantity %></td>
+        <td><%= reservation.status %></td>
+        <td><%= reservation.reserved_at %></td>
+        <td>
+          <% if reservation.active? && Current.user.can?("inventory.reservation.release", store: Current.store) %>
+            <%= button_to "Release", release_inventory_reservation_path(reservation), method: :post, params: { release_reason: "Released from admin UI" } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Home", root_path %></p>

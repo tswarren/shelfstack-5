@@ -24,6 +24,19 @@ Rails.application.routes.draw do
   resources :product_formats, except: %i[destroy]
   resources :product_conditions, except: %i[destroy]
   resources :products, except: %i[destroy]
+  resources :inventory_adjustment_reasons, except: %i[destroy]
+  resources :stock_balances, only: %i[index show]
+  resources :inventory_adjustments, except: %i[destroy] do
+    member do
+      post :post
+      post :cancel
+    end
+  end
+  resources :inventory_reservations, only: %i[index] do
+    member do
+      post :release
+    end
+  end
 
   root "homes#show"
 end

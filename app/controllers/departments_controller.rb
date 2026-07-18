@@ -66,7 +66,8 @@ class DepartmentsController < ApplicationController
       :cogs_gl_account_code, :vendor_returns_gl_account_code,
       :inventory_shrinkage_gl_account_code, :inventory_write_down_gl_account_code,
       :inventory_adjustment_gl_account_code, :freight_in_gl_account_code,
-      :default_tax_category_id, :maximum_merchandise_discount, :default_return_policy_id, :active
+      :default_tax_category_id, :maximum_merchandise_discount, :default_return_policy_id,
+      :default_cost_estimation_margin_bps, :active
     )
   end
 end

@@ -1,0 +1,11 @@
+<h1><%= @inventory_adjustment_reason.qualified_code %></h1>
+<ul>
+  <li>Name: <%= @inventory_adjustment_reason.name %></li>
+  <li>Kind: <%= @inventory_adjustment_reason.adjustment_kind %></li>
+  <li>Requires note: <%= @inventory_adjustment_reason.requires_note %></li>
+  <li>Active: <%= @inventory_adjustment_reason.active %></li>
+  <li>Position: <%= @inventory_adjustment_reason.position %></li>
+  <li>Description: <%= @inventory_adjustment_reason.description %></li>
+</ul>
+<p><%= link_to "Edit", edit_inventory_adjustment_reason_path(@inventory_adjustment_reason) if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
+<p><%= link_to "Reasons", inventory_adjustment_reasons_path %></p>

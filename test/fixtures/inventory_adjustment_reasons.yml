@@ -1,0 +1,49 @@
+opening_initial:
+  organization: acme
+  adjustment_kind: opening_inventory
+  code: initial_opening_balance
+  name: Initial Opening Balance
+  description: Establishes initial recorded quantity and valuation.
+  requires_note: false
+  active: true
+  position: 1
+
+opening_other:
+  organization: acme
+  adjustment_kind: opening_inventory
+  code: other
+  name: Other
+  description: Other opening reason.
+  requires_note: true
+  active: true
+  position: 9
+
+quantity_shortage:
+  organization: acme
+  adjustment_kind: quantity_only
+  code: physical_count_shortage
+  name: Physical Count Shortage
+  description: Count found fewer units.
+  requires_note: false
+  active: true
+  position: 2
+
+quantity_other:
+  organization: acme
+  adjustment_kind: quantity_only
+  code: other
+  name: Other
+  description: Other quantity reason.
+  requires_note: true
+  active: true
+  position: 9
+
+cost_documented:
+  organization: acme
+  adjustment_kind: cost_correction
+  code: documented_cost_correction
+  name: Documented Cost Correction
+  description: Corrects valuation from documentation.
+  requires_note: true
+  active: true
+  position: 2

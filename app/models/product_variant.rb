@@ -12,6 +12,10 @@ class ProductVariant < ApplicationRecord
   belongs_to :tax_category, class_name: "TaxCategory", optional: true
   belongs_to :merchandise_class, optional: true
   belongs_to :return_policy, optional: true
+  has_many :stock_balances, dependent: :restrict_with_exception
+  has_many :inventory_ledger_entries, dependent: :restrict_with_exception
+  has_many :inventory_reservations, dependent: :restrict_with_exception
+  has_many :inventory_adjustment_lines, dependent: :restrict_with_exception
 
   attr_readonly :sku
 

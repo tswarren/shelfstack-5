@@ -20,6 +20,7 @@ module Classification
         %w[
           tax_categories.csv return_policies.csv return_reasons.csv discount_reasons.csv
           departments.csv merchandise_classes.csv product_formats.csv product_conditions.csv
+          inventory_adjustment_reasons.csv
         ].each { |filename| load_csv(filename) }
 
         ActiveRecord::Base.transaction do
@@ -31,6 +32,7 @@ module Classification
           import_merchandise_classes!
           import_product_formats!
           import_product_conditions!
+          import_inventory_adjustment_reasons!
         end
         true
       end
@@ -182,6 +184,21 @@ module Classification
             record.description = row["description"].presence if row.key?("description")
           end
           assign_active_preserving_deactivation(record, row["active"])
+          record.save!
+        end
+      end
+
+      def import_inventory_adjustment_reasons!
+        load_csv("inventory_adjustment_reasons.csv").each do |row|
+          record = @organization.inventory_adjustment_reasons.find_or_initialize_by(
+            adjustment_kind: row["adjustment_kind"],
+            code: row["code"]
+          )
+          record.name = row["name"]
+          record.description = row["description"].presence
+          record.requires_note = truthy?(row["requires_note"])
+          record.position = parse_integer(row["position"]) || 0
+          assign_active_preserving_deactivation(record, row.fetch("active", "TRUE"))
           record.save!
         end
       end

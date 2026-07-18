@@ -1,0 +1,333 @@
+# frozen_string_literal: true
+
+module Inventory
+  # Pure Phase 3 quantity-cost calculator. Must be called under a locked balance.
+  class CalculateQuantityCost < ApplicationService
+    Result = Data.define(
+      :resulting_on_hand,
+      :resulting_inventory_value_cents,
+      :resulting_moving_average_cost_cents,
+      :resulting_cost_quality,
+      :inventory_value_delta_cents,
+      :unit_cost_cents,
+      :movement_cost_cents,
+      :cost_method,
+      :cost_quality,
+      :update_last_known
+    )
+
+    KNOWN_QUALITIES = %w[actual estimated mixed].freeze
+
+    def initialize(
+      prior_on_hand:,
+      prior_inventory_value_cents:,
+      prior_moving_average_cost_cents:,
+      prior_cost_quality:,
+      quantity_delta:,
+      movement_kind:,
+      incoming_unit_cost_cents: nil,
+      incoming_cost_method: nil,
+      incoming_cost_quality: nil,
+      corrected_inventory_value_cents: nil
+    )
+      @prior_on_hand = prior_on_hand.to_i
+      @prior_inventory_value_cents = prior_inventory_value_cents
+      @prior_moving_average_cost_cents = prior_moving_average_cost_cents
+      @prior_cost_quality = prior_cost_quality.to_s
+      @quantity_delta = quantity_delta.to_i
+      @movement_kind = movement_kind.to_sym
+      @incoming_unit_cost_cents = incoming_unit_cost_cents
+      @incoming_cost_method = incoming_cost_method
+      @incoming_cost_quality = incoming_cost_quality
+      @corrected_inventory_value_cents = corrected_inventory_value_cents
+    end
+
+    def call
+      case @movement_kind
+      when :cost_correction
+        calculate_cost_correction
+      when :opening_inventory, :quantity_only
+        calculate_quantity_movement
+      else
+        raise ArgumentError, "unsupported movement_kind: #{@movement_kind}"
+      end
+    end
+
+    private
+
+    def calculate_cost_correction
+      raise ArgumentError, "quantity_delta must be zero for cost correction" unless @quantity_delta.zero?
+      raise ArgumentError, "cost correction requires positive on_hand" unless @prior_on_hand.positive?
+      if @corrected_inventory_value_cents.nil?
+        raise ArgumentError, "corrected_inventory_value_cents is required"
+      end
+
+      corrected = @corrected_inventory_value_cents.to_i
+      raise ArgumentError, "corrected_inventory_value_cents must be >= 0" if corrected.negative?
+
+      prior_value = valued_prior_inventory_value
+      delta = corrected - prior_value
+      quality = (@incoming_cost_quality.presence || "actual").to_s
+      method = (@incoming_cost_method.presence || "explicit").to_s
+      average = corrected.zero? ? 0 : Rounding.round_half_up(corrected, @prior_on_hand)
+
+      Result.new(
+        resulting_on_hand: @prior_on_hand,
+        resulting_inventory_value_cents: corrected,
+        resulting_moving_average_cost_cents: average,
+        resulting_cost_quality: quality,
+        inventory_value_delta_cents: delta,
+        unit_cost_cents: average,
+        movement_cost_cents: nil,
+        cost_method: method,
+        cost_quality: quality,
+        update_last_known: KNOWN_QUALITIES.include?(quality)
+      )
+    end
+
+    def calculate_quantity_movement
+      resulting_on_hand = @prior_on_hand + @quantity_delta
+
+      if @quantity_delta.positive?
+        calculate_inbound(resulting_on_hand)
+      elsif @quantity_delta.negative?
+        calculate_outbound(resulting_on_hand)
+      else
+        raise ArgumentError, "quantity_delta must be non-zero for quantity movements"
+      end
+    end
+
+    def calculate_inbound(resulting_on_hand)
+      if @movement_kind == :quantity_only
+        calculate_quantity_only_inbound(resulting_on_hand)
+      else
+        calculate_opening_inbound(resulting_on_hand)
+      end
+    end
+
+    def calculate_opening_inbound(resulting_on_hand)
+      unknown = unknown_incoming?
+
+      if @prior_on_hand <= 0
+        if resulting_on_hand <= 0
+          # Still non-positive after inbound (partial deficit settle without surplus).
+          return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
+                                                     unit_cost_cents: nil, movement_cost_cents: nil,
+                                                     inventory_value_delta_cents: 0)
+        end
+
+        # Crossing into positive surplus from negative/zero without retained-rate policy → unknown,
+        # unless opening supplies known cost from a zero prior (first-positive-from-zero).
+        if @prior_on_hand.negative?
+          return unknown_positive_result(resulting_on_hand)
+        end
+
+        # prior_on_hand == 0
+        return unknown_positive_result(resulting_on_hand) if unknown
+
+        unit = @incoming_unit_cost_cents.to_i
+        value = Rounding.multiply_round_half_up(unit, resulting_on_hand)
+        quality = @incoming_cost_quality.to_s
+        method = (@incoming_cost_method.presence || "explicit").to_s
+
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: value,
+          resulting_moving_average_cost_cents: unit,
+          resulting_cost_quality: quality,
+          inventory_value_delta_cents: value,
+          unit_cost_cents: unit,
+          movement_cost_cents: value,
+          cost_method: method,
+          cost_quality: quality,
+          update_last_known: KNOWN_QUALITIES.include?(quality)
+        )
+      else
+        # Positive prior + opening inbound: treat like valued inbound using explicit cost or unknown.
+        if unknown || @prior_cost_quality == "unknown"
+          return unknown_positive_result(resulting_on_hand, preserve_unknown_delta: true)
+        end
+
+        unit = @incoming_unit_cost_cents.to_i
+        incoming_value = Rounding.multiply_round_half_up(unit, @quantity_delta)
+        prior_value = valued_prior_inventory_value
+        resulting_value = prior_value + incoming_value
+        average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+        quality = aggregate_quality(@prior_cost_quality, @incoming_cost_quality.to_s)
+        method = (@incoming_cost_method.presence || "explicit").to_s
+
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: resulting_value,
+          resulting_moving_average_cost_cents: average,
+          resulting_cost_quality: quality,
+          inventory_value_delta_cents: incoming_value,
+          unit_cost_cents: unit,
+          movement_cost_cents: incoming_value,
+          cost_method: method,
+          cost_quality: @incoming_cost_quality.to_s,
+          update_last_known: KNOWN_QUALITIES.include?(@incoming_cost_quality.to_s)
+        )
+      end
+    end
+
+    def calculate_quantity_only_inbound(resulting_on_hand)
+      if @prior_on_hand < 0
+        if resulting_on_hand <= 0
+          return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
+                                                     unit_cost_cents: nil, movement_cost_cents: nil,
+                                                     inventory_value_delta_cents: 0)
+        end
+        # Surplus after deficit → unknown in Phase 3
+        return unknown_positive_result(resulting_on_hand)
+      end
+
+      if @prior_on_hand.zero?
+        return unknown_positive_result(resulting_on_hand)
+      end
+
+      # Positive prior
+      if @prior_cost_quality == "unknown" || @prior_inventory_value_cents.nil?
+        return unknown_positive_result(resulting_on_hand, preserve_unknown_delta: true)
+      end
+
+      unit = @prior_moving_average_cost_cents
+      unit = Rounding.round_half_up(@prior_inventory_value_cents, @prior_on_hand) if unit.nil?
+      incoming_value = Rounding.multiply_round_half_up(unit, @quantity_delta)
+      resulting_value = @prior_inventory_value_cents + incoming_value
+      average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+
+      Result.new(
+        resulting_on_hand: resulting_on_hand,
+        resulting_inventory_value_cents: resulting_value,
+        resulting_moving_average_cost_cents: average,
+        resulting_cost_quality: @prior_cost_quality,
+        inventory_value_delta_cents: incoming_value,
+        unit_cost_cents: unit,
+        movement_cost_cents: incoming_value,
+        cost_method: "moving_average",
+        cost_quality: @prior_cost_quality,
+        update_last_known: false
+      )
+    end
+
+    def calculate_outbound(resulting_on_hand)
+      removed = -@quantity_delta
+
+      if @prior_on_hand <= 0
+        # Already in deficit / zero: no positive asset to consume.
+        return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
+                                                   unit_cost_cents: nil, movement_cost_cents: nil,
+                                                   inventory_value_delta_cents: 0)
+      end
+
+      if @prior_cost_quality == "unknown" || @prior_inventory_value_cents.nil?
+        if resulting_on_hand <= 0
+          return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
+                                                     unit_cost_cents: nil, movement_cost_cents: nil,
+                                                     inventory_value_delta_cents: nil)
+        end
+
+        return Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: nil,
+          resulting_moving_average_cost_cents: nil,
+          resulting_cost_quality: "unknown",
+          inventory_value_delta_cents: nil,
+          unit_cost_cents: nil,
+          movement_cost_cents: nil,
+          cost_method: "unknown",
+          cost_quality: "unknown",
+          update_last_known: false
+        )
+      end
+
+      prior_value = @prior_inventory_value_cents.to_i
+      positive_consumed = [ removed, @prior_on_hand ].min
+
+      if resulting_on_hand.positive?
+        allocated = Rounding.round_half_up(prior_value * positive_consumed, @prior_on_hand)
+        resulting_value = prior_value - allocated
+        average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+        unit = Rounding.round_half_up(allocated, positive_consumed)
+
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: resulting_value,
+          resulting_moving_average_cost_cents: average,
+          resulting_cost_quality: @prior_cost_quality,
+          inventory_value_delta_cents: -allocated,
+          unit_cost_cents: unit,
+          movement_cost_cents: allocated,
+          cost_method: "moving_average",
+          cost_quality: @prior_cost_quality,
+          update_last_known: false
+        )
+      else
+        # Fully deplete positive value (consume residual); excess deficit has no asset value.
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: 0,
+          resulting_moving_average_cost_cents: nil,
+          resulting_cost_quality: "unknown",
+          inventory_value_delta_cents: -prior_value,
+          unit_cost_cents: positive_consumed.positive? ? Rounding.round_half_up(prior_value, positive_consumed) : nil,
+          movement_cost_cents: prior_value,
+          cost_method: "moving_average",
+          cost_quality: @prior_cost_quality,
+          update_last_known: false
+        )
+      end
+    end
+
+    def unknown_incoming?
+      @incoming_cost_quality.to_s == "unknown" ||
+        @incoming_cost_method.to_s == "unknown" ||
+        @incoming_unit_cost_cents.nil?
+    end
+
+    def valued_prior_inventory_value
+      return 0 if @prior_inventory_value_cents.nil?
+
+      @prior_inventory_value_cents.to_i
+    end
+
+    def aggregate_quality(existing, incoming)
+      return "unknown" if existing == "unknown" || incoming == "unknown"
+      return "mixed" if existing == "mixed" || incoming == "mixed"
+      return existing if existing == incoming
+
+      "mixed"
+    end
+
+    def unknown_positive_result(resulting_on_hand, preserve_unknown_delta: false)
+      Result.new(
+        resulting_on_hand: resulting_on_hand,
+        resulting_inventory_value_cents: nil,
+        resulting_moving_average_cost_cents: nil,
+        resulting_cost_quality: "unknown",
+        inventory_value_delta_cents: preserve_unknown_delta ? nil : nil,
+        unit_cost_cents: nil,
+        movement_cost_cents: nil,
+        cost_method: "unknown",
+        cost_quality: "unknown",
+        update_last_known: false
+      )
+    end
+
+    def zero_asset_result(resulting_on_hand, cost_method:, cost_quality:, unit_cost_cents:, movement_cost_cents:, inventory_value_delta_cents:)
+      Result.new(
+        resulting_on_hand: resulting_on_hand,
+        resulting_inventory_value_cents: 0,
+        resulting_moving_average_cost_cents: nil,
+        resulting_cost_quality: "unknown",
+        inventory_value_delta_cents: inventory_value_delta_cents,
+        unit_cost_cents: unit_cost_cents,
+        movement_cost_cents: movement_cost_cents,
+        cost_method: cost_method,
+        cost_quality: cost_quality,
+        update_last_known: false
+      )
+    end
+  end
+end
