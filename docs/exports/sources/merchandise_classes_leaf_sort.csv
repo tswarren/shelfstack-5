@@ -1,0 +1,735 @@
+Original Sort,Department #,Department,Primary,Secondary,Minor
+1,1,Books,"Art, Architecture, Photography & Design",Architecture,Architecture & Design
+2,1,Books,"Art, Architecture, Photography & Design",Architecture,Architectural Practice
+3,1,Books,"Art, Architecture, Photography & Design",Architecture,Architects
+4,1,Books,"Art, Architecture, Photography & Design",Architecture,Architectural History
+5,1,Books,"Art, Architecture, Photography & Design",Architecture,Classical
+6,1,Books,"Art, Architecture, Photography & Design",Architecture,Medieval
+7,1,Books,"Art, Architecture, Photography & Design",Architecture,Renaissance
+8,1,Books,"Art, Architecture, Photography & Design",Architecture,17th Century
+9,1,Books,"Art, Architecture, Photography & Design",Architecture,18th Century
+10,1,Books,"Art, Architecture, Photography & Design",Architecture,19th Century
+11,1,Books,"Art, Architecture, Photography & Design",Architecture,20th Century
+12,1,Books,"Art, Architecture, Photography & Design",Architecture,Post-Modern
+13,1,Books,"Art, Architecture, Photography & Design",Architecture,Professional Design
+14,1,Books,"Art, Architecture, Photography & Design",Art,Clip Art
+15,1,Books,"Art, Architecture, Photography & Design",Art,Stereograms
+16,1,Books,"Art, Architecture, Photography & Design",Art,Architecture
+17,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Art History & Criticism
+18,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Ancient/Classical
+19,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Renaissance
+20,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,17th Century
+21,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,18th Century
+22,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,19th Century
+23,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,World Art
+24,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Impressionism
+25,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,20th Century
+26,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Art Techniques
+27,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Drawing
+28,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Watercolor
+29,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Color Theory
+30,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Calligraphy
+31,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Sculpture Techniques
+32,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Sculpture
+33,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Painting
+34,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Stencil Art
+35,1,Books,"Art, Architecture, Photography & Design","Artists, Monographs & Collections",Collections
+36,1,Books,"Art, Architecture, Photography & Design","Artists, Monographs & Collections",Artists
+37,1,Books,"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Couture
+38,1,Books,"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Graphic Design
+39,1,Books,"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Art Business & Careers
+40,1,Books,"Art, Architecture, Photography & Design",Photography,Technique & How-To
+41,1,Books,"Art, Architecture, Photography & Design",Photography,Nature Photography
+42,1,Books,"Art, Architecture, Photography & Design",Photography,35mm Photography
+43,1,Books,"Art, Architecture, Photography & Design",Photography,Camera
+44,1,Books,"Art, Architecture, Photography & Design",Photography,Photo Essays
+45,1,Books,"Art, Architecture, Photography & Design",Photography,Fashion Photography
+46,1,Books,"Art, Architecture, Photography & Design",Photography,Darkrooms
+47,1,Books,"Art, Architecture, Photography & Design",Photography,Photography Business
+48,1,Books,"Art, Architecture, Photography & Design",Photography,Monographs
+49,1,Books,"Art, Architecture, Photography & Design",Photography,Ansel Adams
+50,1,Books,"Business, Economics & Careers",Business & Management,General Business
+51,1,Books,"Business, Economics & Careers",Business & Management,Customer Service
+52,1,Books,"Business, Economics & Careers",Business & Management,Accounting
+53,1,Books,"Business, Economics & Careers",Business & Management,Management
+54,1,Books,"Business, Economics & Careers",Business & Management,Small Business
+55,1,Books,"Business, Economics & Careers",Business & Management,Sales
+56,1,Books,"Business, Economics & Careers",Business & Management,Marketing
+57,1,Books,"Business, Economics & Careers",Business & Management,Advertising
+58,1,Books,"Business, Economics & Careers",Business & Management,Human Resources
+59,1,Books,"Business, Economics & Careers",Business & Management,Consulting
+60,1,Books,"Business, Economics & Careers",Business & Management,Manufacturing
+61,1,Books,"Business, Economics & Careers",Business & Management,Business Life
+62,1,Books,"Business, Economics & Careers",Business & Management,Retail
+63,1,Books,"Business, Economics & Careers",Business Reference & Biography,Business Ref
+64,1,Books,"Business, Economics & Careers",Business Reference & Biography,Business Biography & Corporate Profiles
+65,1,Books,"Business, Economics & Careers",Careers & Job Search,Careers
+66,1,Books,"Business, Economics & Careers",Careers & Job Search,Résumés & Interviews
+67,1,Books,"Business, Economics & Careers","Economics, Trade & Labor",Economics
+68,1,Books,"Business, Economics & Careers","Economics, Trade & Labor",Foreign Trade
+69,1,Books,"Business, Economics & Careers","Economics, Trade & Labor",Labor
+70,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Finance/Banking
+71,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Real Estate
+72,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Personal Finance
+73,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate","Securities, Commodities & Futures"
+74,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Investing & Commodities
+75,1,Books,"Business, Economics & Careers",Nonprofit & Fundraising,Fundraising
+126,1,Books,"Cooking, Food & Drink","Appliances, Grilling & Technique",Appliance Cooking
+127,1,Books,"Cooking, Food & Drink","Appliances, Grilling & Technique",Appliance Cooking & Grilling
+128,1,Books,"Cooking, Food & Drink",Diet & Special Diets,Diet & Weight Management
+129,1,Books,"Cooking, Food & Drink",Diet & Special Diets,Vegetarian
+130,1,Books,"Cooking, Food & Drink","General Cooking, Entertaining & Professional",General Cookbooks
+131,1,Books,"Cooking, Food & Drink","General Cooking, Entertaining & Professional",Entertaining & Gift Cookbooks
+132,1,Books,"Cooking, Food & Drink","General Cooking, Entertaining & Professional",Professional
+133,1,Books,"Cooking, Food & Drink",Wine & Spirits,Wines/Spirits
+134,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,French
+135,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Italian
+136,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Jewish
+137,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Mexican
+138,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Asian
+139,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Other International Cuisines
+140,1,Books,Fiction & Literature,Boxed Sets,Box Sets
+141,1,Books,Fiction & Literature,General Fiction,Paperback Fiction
+142,1,Books,Fiction & Literature,General Fiction,Latin American Fiction
+143,1,Books,Fiction & Literature,General Fiction,Fiction & Literature
+144,1,Books,Fiction & Literature,General Fiction,Anthologies
+145,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Fiction & Literature
+146,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Essays & Memoir
+147,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Literary Theory
+148,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Mythology
+149,1,Books,Fiction & Literature,Poetry,Poetry General
+150,1,Books,Fiction & Literature,Poetry,"Poets, Anthologies & Commentary"
+151,1,Books,Fiction & Literature,Westerns,Westerns
+152,1,Books,Gift Books,Little Gift Books,Little Gift Books — Hardcover
+153,1,Books,Gift Books,Little Gift Books,Little Gift Books — Paperback
+154,1,Books,"Graphic Novels, Manga & Comics",Graphic Novels,Graphic Novels
+155,1,Books,"Graphic Novels, Manga & Comics",Periodical Comics,Comic Books
+156,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Alternative Med
+157,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Herbal Medicine
+158,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Massage/Reflexology
+159,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Aromatherapy
+160,1,Books,"Health, Wellness & Family",Conditions & Diseases,Allergies
+161,1,Books,"Health, Wellness & Family",Conditions & Diseases,Cancer
+162,1,Books,"Health, Wellness & Family",Conditions & Diseases,Diabetes
+163,1,Books,"Health, Wellness & Family",Conditions & Diseases,Heart Disease
+164,1,Books,"Health, Wellness & Family",Conditions & Diseases,Aids
+165,1,Books,"Health, Wellness & Family",Conditions & Diseases,Other Diseases
+166,1,Books,"Health, Wellness & Family",Conditions & Diseases,STDs
+167,1,Books,"Health, Wellness & Family",Diet & Nutrition,Diets
+168,1,Books,"Health, Wellness & Family",Diet & Nutrition,Nutrition
+169,1,Books,"Health, Wellness & Family",Diet & Nutrition,Food Counters
+170,1,Books,"Health, Wellness & Family","Exercise, Fitness & Yoga",Exercise
+171,1,Books,"Health, Wellness & Family","Exercise, Fitness & Yoga",Yoga
+172,1,Books,"Health, Wellness & Family","General Health, Beauty & Aging",Health
+173,1,Books,"Health, Wellness & Family","General Health, Beauty & Aging",Beauty & Grooming
+174,1,Books,"Health, Wellness & Family","General Health, Beauty & Aging",Aging
+175,1,Books,"Health, Wellness & Family",Medicine & Nursing,Medical Ref
+176,1,Books,"Health, Wellness & Family",Medicine & Nursing,Nursing Procedures
+177,1,Books,"Health, Wellness & Family",Medicine & Nursing,Nursing Drug Guides
+178,1,Books,"Health, Wellness & Family",Medicine & Nursing,Anatomy/Physiology
+179,1,Books,"Health, Wellness & Family",Medicine & Nursing,Nursing Exam Review
+180,1,Books,"Health, Wellness & Family",Medicine & Nursing,Allied Health
+181,1,Books,"Health, Wellness & Family",Medicine & Nursing,Medicine
+182,1,Books,"Health, Wellness & Family",Parenting & Family,Parenting & Child Care
+183,1,Books,"Health, Wellness & Family",Parenting & Family,Baby Names
+184,1,Books,"Health, Wellness & Family",Parenting & Family,Pregnancy & Childbirth
+185,1,Books,"Health, Wellness & Family",Parenting & Family,Divorce & Children
+186,1,Books,"Health, Wellness & Family",Parenting & Family,Children with Special Needs
+187,1,Books,"Health, Wellness & Family",Parenting & Family,School-Age Children
+188,1,Books,"Health, Wellness & Family",Parenting & Family,Infants/Toddlers
+189,1,Books,"Health, Wellness & Family",Parenting & Family,Adoption
+190,1,Books,"Health, Wellness & Family",Parenting & Family,Sex Education
+191,1,Books,"Health, Wellness & Family",Parenting & Family,Activities
+192,1,Books,"Health, Wellness & Family",Women's & Reproductive Health,Fertility/Miscarriage
+193,1,Books,"Health, Wellness & Family",Women's & Reproductive Health,Womens Health
+194,1,Books,"History, Biography & Politics","Ancient, Medieval & Renaissance History",Ancient Hist
+195,1,Books,"History, Biography & Politics","Ancient, Medieval & Renaissance History",Medieval & Renaissance History
+196,1,Books,"History, Biography & Politics",Military History,Military History
+197,1,Books,"History, Biography & Politics",Politics & Current Affairs,United States Current Affairs
+198,1,Books,"History, Biography & Politics",Politics & Current Affairs,Media & Journalism
+199,1,Books,"History, Biography & Politics",Politics & Current Affairs,US Politics
+200,1,Books,"History, Biography & Politics",Politics & Current Affairs,International Current Affairs
+201,1,Books,"History, Biography & Politics",Politics & Current Affairs,International Politics
+202,1,Books,"History, Biography & Politics",Regional & National History,Japan Hist
+203,1,Books,"History, Biography & Politics",Regional & National History,Irish History
+204,1,Books,"History, Biography & Politics",Regional & National History,Eur History
+205,1,Books,"History, Biography & Politics",Regional & National History,Middle Eastern History
+206,1,Books,"History, Biography & Politics",Regional & National History,African Hist
+207,1,Books,"History, Biography & Politics",Regional & National History,Asian Hist
+208,1,Books,"History, Biography & Politics",Regional & National History,British Hist
+209,1,Books,"History, Biography & Politics",Regional & National History,Latin Amer Hist
+210,1,Books,"History, Biography & Politics",Regional & National History,Eastern European History
+211,1,Books,"History, Biography & Politics",Regional & National History,Israel Hist
+212,1,Books,"History, Biography & Politics",Regional & National History,Northern European History
+213,1,Books,"History, Biography & Politics",Regional & National History,Caribbean Hist
+214,1,Books,"History, Biography & Politics",Regional & National History,Chinese Hist
+215,1,Books,"History, Biography & Politics",Regional & National History,Western European History
+216,1,Books,"History, Biography & Politics",United States History & Biography,United States History
+217,1,Books,"History, Biography & Politics",United States History & Biography,United States Biography
+218,1,Books,"History, Biography & Politics",United States History & Biography,Civil War
+219,1,Books,"History, Biography & Politics",United States History & Biography,Urban Studies
+220,1,Books,"History, Biography & Politics",World History & Biography,World Hist
+221,1,Books,"History, Biography & Politics",World History & Biography,World Biography
+222,1,Books,"History, Biography & Politics",World History & Biography,General History
+223,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Antiques Gen
+224,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Price Guides
+225,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Coins
+226,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Dolls
+227,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Glass/Stained G
+228,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Jewelry
+229,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,"Pottery, Porcelain & China"
+230,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Stamps
+231,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,General Collecting
+232,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Sports Cards
+233,1,Books,"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Ceramics/Pottery
+234,1,Books,"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Glass & Stained Glass
+235,1,Books,"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Jewelry & Metalworking
+236,1,Books,"Home, Garden, Crafts & Collecting",Gardening,Outdoor Gardening
+237,1,Books,"Home, Garden, Crafts & Collecting",Gardening,Indoor Gardening
+238,1,Books,"Home, Garden, Crafts & Collecting",Gardening,"Fruits, Vegetables & Herbs"
+239,1,Books,"Home, Garden, Crafts & Collecting",Gardening,Flower Gardening
+240,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Crafts & Hobbies
+241,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Artisans & Craftspeople
+242,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Tools
+243,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Projects & Plans
+244,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,House & Home
+245,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Carpentry
+246,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Decorating
+247,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,House Plans
+248,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Home Repair & Renovation
+249,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Design & Lifestyle
+250,1,Books,"Home, Garden, Crafts & Collecting",Models & Doll Making,Modeling
+251,1,Books,"Home, Garden, Crafts & Collecting",Models & Doll Making,Doll Making
+252,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Needlecrafts
+253,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Quilting & Patchwork
+254,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Sewing
+255,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts","Embroidery, Cross-Stitch & Needlepoint"
+256,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Knitting & Crochet
+257,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Weaving & Rug Making
+258,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Lace/Tatting
+259,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Fabric Painting & Dyeing
+260,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Floral Crafts
+261,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Basketry
+262,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Printmaking
+263,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Stenciling
+264,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Papercrafts
+265,1,Books,"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Woodworking
+266,1,Books,"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Furniture Making
+267,1,Books,"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Carving
+268,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",General Games
+269,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Crosswords
+270,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Scrabble
+271,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Pool & Billiards
+272,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Logic & Brain Teasers
+273,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Horse Racing & Gambling
+274,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Chess
+275,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Card Games
+276,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Magic
+277,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Casino Games
+278,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Poker
+279,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Blackjack
+280,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Computer Games
+281,1,Books,"Humor, Games & Puzzles",Humor,Humor
+282,1,Books,"Humor, Games & Puzzles",Humor,Cartoons & Cartooning
+283,1,Books,"Humor, Games & Puzzles",Role-Playing Games,Role Playing
+284,1,Books,Languages & Bilingual,Books in Other Languages,Literature
+285,1,Books,Languages & Bilingual,Books in Other Languages,Non Fiction
+286,1,Books,Languages & Bilingual,Language Learning,Other Foreign Languages
+287,1,Books,Languages & Bilingual,Language Learning,Spanish
+288,1,Books,Languages & Bilingual,Language Learning,French
+289,1,Books,Languages & Bilingual,Language Learning,German
+290,1,Books,Languages & Bilingual,Language Learning,Italian
+291,1,Books,Languages & Bilingual,Language Learning,Japanese
+292,1,Books,Languages & Bilingual,Spanish-Language Books,Novelas
+293,1,Books,Languages & Bilingual,Spanish-Language Books,Literatura
+294,1,Books,Languages & Bilingual,Spanish-Language Books,Novelas Románticas
+295,1,Books,Languages & Bilingual,Spanish-Language Books,Novelas Policíacas
+296,1,Books,Languages & Bilingual,Spanish-Language Books,Historia
+297,1,Books,Languages & Bilingual,Spanish-Language Books,Biografías
+298,1,Books,Languages & Bilingual,Spanish-Language Books,Deportes
+299,1,Books,Languages & Bilingual,Spanish-Language Books,Negocios
+300,1,Books,Languages & Bilingual,Spanish-Language Books,Cocina
+301,1,Books,Languages & Bilingual,Spanish-Language Books,Viajes
+302,1,Books,Languages & Bilingual,Spanish-Language Books,Referencia
+303,1,Books,Languages & Bilingual,Spanish-Language Books,Computación
+304,1,Books,Languages & Bilingual,Spanish-Language Books,Inspiración
+305,1,Books,Languages & Bilingual,Spanish-Language Books,La Biblia
+306,1,Books,Languages & Bilingual,Spanish-Language Books,Cuba
+307,1,Books,Languages & Bilingual,Spanish-Language Books,Autoayuda
+308,1,Books,Languages & Bilingual,Spanish-Language Books,Florida
+309,1,Books,Languages & Bilingual,Spanish-Language Books,Texas
+310,1,Books,Languages & Bilingual,Spanish-Language Books,California
+311,1,Books,Languages & Bilingual,Spanish-Language Books,Mexico
+312,1,Books,Languages & Bilingual,Spanish-Language Books,Otros Libros en Español
+313,1,Books,Merchandising Programs,Children's Rack Programs,Serendipity
+314,1,Books,Merchandising Programs,Children's Rack Programs,Little Golden Books
+315,1,Books,Merchandising Programs,Children's Rack Programs,Ladybird Books
+316,1,Books,Merchandising Programs,Children's Rack Programs,Dover
+317,1,Books,"Mystery, Thrillers & True Crime",Mystery & Adventure,Mystery
+318,1,Books,"Mystery, Thrillers & True Crime",Mystery & Adventure,Action & Adventure
+319,1,Books,"Mystery, Thrillers & True Crime",True Crime,True Crime
+320,1,Books,"Nature, Outdoors, Sports & Pets",Fitness & Strength Training,Weightlifting & Bodybuilding
+321,1,Books,"Nature, Outdoors, Sports & Pets",General Sports & Golf,General Sports
+322,1,Books,"Nature, Outdoors, Sports & Pets",General Sports & Golf,Golf
+323,1,Books,"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Hunting & Shooting Sports
+324,1,Books,"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Martial Arts
+325,1,Books,"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Boxing/Wrestling
+326,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Bicycling
+327,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Racquet Sports
+328,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Running
+329,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Gymnastics
+330,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Nature Writing
+331,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,General Nature
+332,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Earth Sciences
+333,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Environment
+334,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Oceans
+335,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Agriculture
+336,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Botany & Plants
+337,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Birds & Birding
+338,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Audubon
+339,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Eyewitness
+340,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Golden Press
+341,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Petersons
+342,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,S&S
+343,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Stokes
+344,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Other Field Guides
+345,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Camping
+346,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Freshwater Fishing
+347,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Saltwater Fishing
+348,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Skiing
+349,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Hiking
+350,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Mountaineering
+351,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Pets General
+352,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Cats
+353,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Dogs
+354,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Horses
+355,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Aquarium
+356,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Birds
+357,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Veterinary Medicine
+358,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Baseball
+359,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Basketball
+360,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Hockey
+361,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Football
+362,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Soccer
+363,1,Books,"Nature, Outdoors, Sports & Pets",Water Sports,Boating & Sailing
+364,1,Books,"Nature, Outdoors, Sports & Pets",Water Sports,Swimming
+365,1,Books,"Performing Arts, Music & Film",Dance,Dance Technique & Criticism
+366,1,Books,"Performing Arts, Music & Film",Dance,Ballet & Modern
+367,1,Books,"Performing Arts, Music & Film",Dance,Recreational Dance
+368,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Film Studies
+369,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Entertainment Biography
+370,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Television
+371,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Film Reference
+372,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Production
+373,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Screenplays
+374,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Animation
+375,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Radio
+376,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Screenwriting
+377,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Guitar & Stringed Instruments
+378,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Keyboards
+379,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Woodwinds
+380,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Brass
+381,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Percussion
+382,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Voice
+383,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Songbooks
+384,1,Books,"Performing Arts, Music & Film",Music Genres,Electronic Music
+385,1,Books,"Performing Arts, Music & Film",Music Genres,Gospel
+386,1,Books,"Performing Arts, Music & Film",Music Genres,Jazz/Blues
+387,1,Books,"Performing Arts, Music & Film",Music Genres,Classical
+388,1,Books,"Performing Arts, Music & Film",Music Genres,Standards & Easy Listening
+389,1,Books,"Performing Arts, Music & Film",Music Genres,Rock & Roll
+390,1,Books,"Performing Arts, Music & Film",Music Genres,R&B & Rap
+391,1,Books,"Performing Arts, Music & Film",Music Genres,Folk
+392,1,Books,"Performing Arts, Music & Film",Music Genres,"Country, Western & Bluegrass"
+393,1,Books,"Performing Arts, Music & Film",Music Genres,Opera
+394,1,Books,"Performing Arts, Music & Film",Music Genres,World Music
+395,1,Books,"Performing Arts, Music & Film","Music Theory, History & Reference",Music Theory & Criticism
+396,1,Books,"Performing Arts, Music & Film","Music Theory, History & Reference",Music Ref
+397,1,Books,"Performing Arts, Music & Film","Music Theory, History & Reference",Music Education
+398,1,Books,"Performing Arts, Music & Film",Songwriting & Music Business,Songwriting
+399,1,Books,"Performing Arts, Music & Film",Songwriting & Music Business,Music Business
+400,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Drama
+401,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Theatre Arts
+402,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Shakespeare
+403,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Acting
+404,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Technical Theatre
+405,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Musicals
+406,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Monologues & Scenes
+407,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Drama Criticism
+408,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Psychology
+409,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Child Psychology
+410,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Suicide
+411,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Psychiatry
+412,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Social Work
+413,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Addiction & Recovery
+414,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Codependency
+415,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Eating Disorders
+416,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Meditations & Affirmations
+417,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Abuse
+418,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,General Self-Help
+419,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Death & Grief
+420,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Relationships
+421,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Midlife
+422,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Dreams
+423,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Hypnosis
+424,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Graphology
+425,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Sexuality
+426,1,Books,"Reference, Education & Study","Atlases, Almanacs & Facts",Atlases
+427,1,Books,"Reference, Education & Study","Atlases, Almanacs & Facts",Trivia/Facts
+428,1,Books,"Reference, Education & Study","Atlases, Almanacs & Facts",Almanacs
+429,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Vocational
+430,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Civil Service
+431,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Military Service
+432,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Teacher Certification Exams
+433,1,Books,"Reference, Education & Study",Consumer & Life Reference,Weddings
+434,1,Books,"Reference, Education & Study",Consumer & Life Reference,Consumer Reference
+435,1,Books,"Reference, Education & Study",Consumer & Life Reference,Large Print
+436,1,Books,"Reference, Education & Study",Consumer & Life Reference,Secretarial Skills
+437,1,Books,"Reference, Education & Study",Consumer & Life Reference,Etiquette
+438,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Dictionaries
+439,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Thesauri
+440,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Sign Language
+441,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Words & Language
+442,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",ESL
+443,1,Books,"Reference, Education & Study",Education,Education
+444,1,Books,"Reference, Education & Study",Education,Elementary Education
+445,1,Books,"Reference, Education & Study",Education,Secondary Education
+446,1,Books,"Reference, Education & Study",Education,Higher Education
+447,1,Books,"Reference, Education & Study",English-Language Testing,TOEFL/Eng As F
+448,1,Books,"Reference, Education & Study",Genealogy & Heraldry,Genealogy/Heraldry
+449,1,Books,"Reference, Education & Study",General Study Aids & Series,Study Aids Gen
+450,1,Books,"Reference, Education & Study",General Study Aids & Series,Other Series
+451,1,Books,"Reference, Education & Study",General Study Aids & Series,Schaum’s Outlines
+452,1,Books,"Reference, Education & Study",General Study Aids & Series,Made Simple
+453,1,Books,"Reference, Education & Study",General Study Aids & Series,Easy Way
+454,1,Books,"Reference, Education & Study",Graduate & Professional Exams,MAT
+455,1,Books,"Reference, Education & Study",Graduate & Professional Exams,Graduate
+456,1,Books,"Reference, Education & Study",Graduate & Professional Exams,Engineering
+457,1,Books,"Reference, Education & Study",Graduate & Professional Exams,CPA & Accounting Exams
+458,1,Books,"Reference, Education & Study",Graduate & Professional Exams,GMAT
+459,1,Books,"Reference, Education & Study",Graduate & Professional Exams,GRE
+460,1,Books,"Reference, Education & Study",Graduate & Professional Exams,LSAT
+461,1,Books,"Reference, Education & Study",Graduate & Professional Exams,MCAT
+462,1,Books,"Reference, Education & Study",Law & Legal Reference,Law
+463,1,Books,"Reference, Education & Study",Law & Legal Reference,Legal Ref
+464,1,Books,"Reference, Education & Study",School & College Test Preparation,ACT
+465,1,Books,"Reference, Education & Study",School & College Test Preparation,SAT/PSAT
+466,1,Books,"Reference, Education & Study",School & College Test Preparation,High School Entrance
+467,1,Books,"Reference, Education & Study",School & College Test Preparation,Advanced Placement
+468,1,Books,"Reference, Education & Study",School & College Test Preparation,GED
+469,1,Books,"Reference, Education & Study",School & College Test Preparation,College Guides
+470,1,Books,"Reference, Education & Study",School & College Test Preparation,SAT Subject Tests (legacy)
+471,1,Books,"Reference, Education & Study",School & College Test Preparation,CLEP
+472,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,Literature Study Guides
+473,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,Test Prep
+474,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,CliffsNotes
+475,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,Barron’s & Monarch Notes
+476,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Writing & Publishing
+477,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Public Speaking & Quotations
+478,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Books About Books
+479,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Library Science
+480,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,Bibles Gen
+481,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,King James
+482,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,Living Bible
+483,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,New Intl
+484,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Astrology
+485,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",New Age
+486,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Paranormal Experiences
+487,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Magic & Magical Arts
+488,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Occult & Supernatural
+489,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Divination & Prophecy
+490,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Meditation
+491,1,Books,"Religion, Spirituality & Philosophy",Philosophy & Linguistics,Western Philosophy
+492,1,Books,"Religion, Spirituality & Philosophy",Philosophy & Linguistics,Linguistics
+493,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,General Religion
+494,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Religion Reference
+495,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Judaica
+496,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Islam
+497,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Sufism
+498,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Religious Fiction
+499,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Inspiration
+500,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Latter Day Saints
+501,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Eastern Thought
+502,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Hinduism
+503,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Buddhism
+504,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Taoism
+505,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Confucianism
+506,1,Books,Romance,Romance,General Romance
+507,1,Books,Romance,Series Romance,Series Romance
+508,1,Books,"Science Fiction, Fantasy & Horror",Horror,Horror
+509,1,Books,"Science Fiction, Fantasy & Horror",Science Fiction & Fantasy,Science Fiction & Fantasy
+510,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Architecture & Maintenance
+511,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Applications
+512,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Operating Systems
+513,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Programming
+514,1,Books,"Science, Technology & Computing",Artificial Intelligence,Artificial Intelligence
+515,1,Books,"Science, Technology & Computing",Astronomy & Space,Astronomy
+516,1,Books,"Science, Technology & Computing",Astronomy & Space,Extraterrestrial Life
+517,1,Books,"Science, Technology & Computing",Astronomy & Space,Cosmology & Astrophysics
+518,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Intro/Ref
+519,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Buying Guides
+520,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Peripherals
+521,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Architecture & Maintenance
+522,1,Books,"Science, Technology & Computing",Computer Profiles & Culture,Profiles
+523,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Electrical Engineering
+524,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Building Trades
+525,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Communications Engineering
+526,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Professional Electrical
+527,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Engineering
+528,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Professional Plumbing
+529,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",HVAC
+530,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",General Science
+531,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",Chemistry & Biology
+532,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",Evolution
+533,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",Paleontology
+534,1,Books,"Science, Technology & Computing","Graphics, Multimedia & Virtual Reality",Multimedia
+535,1,Books,"Science, Technology & Computing","Graphics, Multimedia & Virtual Reality",Virtual Reality
+536,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Internet
+537,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Digital Life
+538,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",World Wide Web & Mosaic
+539,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Internet Security
+540,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Online Services
+541,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Network Applications
+542,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Telecommunication
+543,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Client-Server Technology
+544,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Mainframe Computer Systems
+545,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows 95
+546,1,Books,"Science, Technology & Computing",Operating Systems & Applications,DOS Manuals
+547,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows NT
+548,1,Books,"Science, Technology & Computing",Operating Systems & Applications,DOS Appl.
+549,1,Books,"Science, Technology & Computing",Operating Systems & Applications,OS/2
+550,1,Books,"Science, Technology & Computing",Operating Systems & Applications,UNIX
+551,1,Books,"Science, Technology & Computing",Operating Systems & Applications,LINUX
+552,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Xwindows
+553,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows Manl
+554,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows Applications
+555,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Physics
+556,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Mathematics
+557,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Statistics & Probability
+558,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Complexity
+559,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Cognitive Science
+560,1,Books,"Science, Technology & Computing",Programming Languages,BASIC & Visual Basic
+561,1,Books,"Science, Technology & Computing",Programming Languages,"C, C++ & Visual C"
+562,1,Books,"Science, Technology & Computing",Programming Languages,Pascal & Turbo Pascal
+563,1,Books,"Science, Technology & Computing",Software Development & Databases,Database Programming
+564,1,Books,"Science, Technology & Computing",Software Development & Databases,Advanced Mainframe Programming
+565,1,Books,"Science, Technology & Computing",Software Development & Databases,Graphics Programming
+566,1,Books,"Science, Technology & Computing",Software Development & Databases,Software Engineering
+567,1,Books,"Science, Technology & Computing","Technology, Electronics & Radio",Consumer Electronics
+568,1,Books,"Science, Technology & Computing","Technology, Electronics & Radio",Technology
+569,1,Books,"Science, Technology & Computing","Technology, Electronics & Radio",Amateur Radio
+570,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Asian Studies
+571,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Cultural Studies
+572,1,Books,Society & Cultural Studies,Cultural & Identity Studies,African American Studies
+573,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Women’s Studies
+574,1,Books,Society & Cultural Studies,Cultural & Identity Studies,LGBTQ+ Studies
+575,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Hispanic Studies
+576,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Gay Fiction
+577,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Gay Nonfiction
+578,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Lesbian Fiction
+579,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Lesbian Nonfiction
+580,1,Books,Society & Cultural Studies,Cultural & Identity Studies,African Studies
+581,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Native American Studies
+582,1,Books,Society & Cultural Studies,Social Sciences,Anthropology
+583,1,Books,Society & Cultural Studies,Social Sciences,Archaeology
+584,1,Books,Society & Cultural Studies,Social Sciences,Sociology
+585,1,Books,"Travel, Local & Regional",International Travel,Travel Foreign
+586,1,Books,"Travel, Local & Regional",International Travel,Mexico
+587,1,Books,"Travel, Local & Regional",International Travel,Caribbean
+588,1,Books,"Travel, Local & Regional",International Travel,Canada
+589,1,Books,"Travel, Local & Regional",International Travel,Eastern Europe & Russia
+590,1,Books,"Travel, Local & Regional",International Travel,Western Europe
+591,1,Books,"Travel, Local & Regional",International Travel,Great Britain
+592,1,Books,"Travel, Local & Regional",International Travel,Africa & Middle East
+593,1,Books,"Travel, Local & Regional",International Travel,India & South Asia
+594,1,Books,"Travel, Local & Regional",International Travel,Japan
+595,1,Books,"Travel, Local & Regional",International Travel,East Asia
+596,1,Books,"Travel, Local & Regional",International Travel,Central America
+597,1,Books,"Travel, Local & Regional",International Travel,Ireland
+598,1,Books,"Travel, Local & Regional",International Travel,Israel
+599,1,Books,"Travel, Local & Regional",International Travel,Germany
+600,1,Books,"Travel, Local & Regional",International Travel,France
+601,1,Books,"Travel, Local & Regional",International Travel,Paris
+602,1,Books,"Travel, Local & Regional",International Travel,Italy
+603,1,Books,"Travel, Local & Regional",International Travel,Spain/Portugal
+604,1,Books,"Travel, Local & Regional",International Travel,Greece & Mediterranean
+605,1,Books,"Travel, Local & Regional",International Travel,Benelux
+606,1,Books,"Travel, Local & Regional",International Travel,Scandinavia
+607,1,Books,"Travel, Local & Regional",International Travel,Switzerland & Austria
+608,1,Books,"Travel, Local & Regional",International Travel,South America
+609,1,Books,"Travel, Local & Regional",International Travel,Oceania
+610,1,Books,"Travel, Local & Regional",Local & Regional Interest,Regional General
+611,1,Books,"Travel, Local & Regional",Local & Regional Interest,Restaurant Guides
+612,1,Books,"Travel, Local & Regional",Local & Regional Interest,Pictorials
+613,1,Books,"Travel, Local & Regional",Local & Regional Interest,Humor
+614,1,Books,"Travel, Local & Regional",Local & Regional Interest,Local Travel
+615,1,Books,"Travel, Local & Regional",Local & Regional Interest,Reference
+616,1,Books,"Travel, Local & Regional",Local & Regional Interest,History & Biography
+617,1,Books,"Travel, Local & Regional",Local & Regional Interest,Transportation
+618,1,Books,"Travel, Local & Regional",Local & Regional Interest,Nature
+619,1,Books,"Travel, Local & Regional",Local & Regional Interest,Sports
+620,1,Books,"Travel, Local & Regional",Local & Regional Interest,Literature
+621,1,Books,"Travel, Local & Regional",Local & Regional Interest,Cooking
+622,1,Books,"Travel, Local & Regional",Local & Regional Interest,Gardening
+623,1,Books,"Travel, Local & Regional",Local & Regional Interest,Business
+624,1,Books,"Travel, Local & Regional",Local & Regional Interest,Current Affairs
+625,1,Books,"Travel, Local & Regional",Local & Regional Interest,Juvenile
+626,1,Books,"Travel, Local & Regional",Local & Regional Interest,Art & Architecture
+627,1,Books,"Travel, Local & Regional",Local & Regional Interest,Native American
+628,1,Books,"Travel, Local & Regional",Local & Regional Interest,Hiking/Camping
+629,1,Books,"Travel, Local & Regional",Local & Regional Interest,Folklore
+630,1,Books,"Travel, Local & Regional",Local & Regional Interest,Holiday
+631,1,Books,"Travel, Local & Regional",Local & Regional Interest,Cowboys
+632,1,Books,"Travel, Local & Regional",Local & Regional Interest,General
+633,1,Books,"Travel, Local & Regional",Local & Regional Interest,Art/Architecture
+634,1,Books,"Travel, Local & Regional",Local & Regional Interest,Amish/Mennonite
+635,1,Books,"Travel, Local & Regional",Transportation,Auto Buying Guides
+636,1,Books,"Travel, Local & Regional",Transportation,Cars & Trucks
+637,1,Books,"Travel, Local & Regional",Transportation,Ships
+638,1,Books,"Travel, Local & Regional",Transportation,Trains
+639,1,Books,"Travel, Local & Regional",Transportation,Planes
+640,1,Books,"Travel, Local & Regional",Transportation,Auto Repair
+641,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Travel General
+642,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,RV & Campground Guides
+643,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Travel Writing
+644,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Recreational Travel
+645,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Pictorial Travel
+646,1,Books,"Travel, Local & Regional",United States Travel,United States Travel
+647,1,Books,"Travel, Local & Regional",United States Travel,Road Atlases
+648,1,Books,"Travel, Local & Regional",United States Travel,California
+649,1,Books,"Travel, Local & Regional",United States Travel,Washington DC
+650,1,Books,"Travel, Local & Regional",United States Travel,Alaska
+651,1,Books,"Travel, Local & Regional",United States Travel,Florida
+652,1,Books,"Travel, Local & Regional",United States Travel,Great Lakes & Upper Midwest
+653,1,Books,"Travel, Local & Regional",United States Travel,Hawaii
+654,1,Books,"Travel, Local & Regional",United States Travel,NYC
+655,1,Books,"Travel, Local & Regional",United States Travel,Texas & South-Central Plains
+656,1,Books,"Travel, Local & Regional",United States Travel,South & Southeast
+657,1,Books,"Travel, Local & Regional",United States Travel,Southwest & Rocky Mountains
+658,1,Books,"Travel, Local & Regional",United States Travel,Mid-Atlantic
+659,1,Books,"Travel, Local & Regional",United States Travel,New England
+660,1,Books,"Travel, Local & Regional",United States Travel,Pacific NW
+661,1,Books,"Travel, Local & Regional",United States Travel,Walt Disney World
+662,1,Books,Young Adult,Young Adult Books,Young Adult PB
+663,1,Books,Young Adult,Young Adult Books,Sweet Valley High
+664,1,Books,Young Adult,Young Adult Books,YA Romance
+665,1,Books,Young Adult,Young Adult Books,YA Non Fiction
+666,1,Books,Young Adult,Young Adult Books,Thrillers
+76,1.1,Books,Children's Books,Board Books & Toddlers,Board & Shaped Books
+77,1.1,Books,Children's Books,Board Books & Toddlers,Peggable & Novelty Books
+78,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Activities
+79,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Workbooks
+80,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Teacher Resources
+81,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Novelty Books
+82,1.1,Books,Children's Books,"Children's Biography, History & Culture",Children’s Biography
+83,1.1,Books,Children's Books,"Children's Biography, History & Culture",Children’s History
+84,1.1,Books,Children's Books,"Children's Biography, History & Culture",Native American History & Culture
+85,1.1,Books,Children's Books,Children's Classics,Children’s Classics
+86,1.1,Books,Children's Books,Children's General Reference & Languages,General Children’s Nonfiction
+87,1.1,Books,Children's Books,Children's General Reference & Languages,Children’s Dictionaries
+88,1.1,Books,Children's Books,Children's General Reference & Languages,Children’s Language Learning
+89,1.1,Books,Children's Books,"Children's Religion, Growing Up & Special Needs",Children’s Religion
+90,1.1,Books,Children's Books,"Children's Religion, Growing Up & Special Needs",Growing Up
+91,1.1,Books,Children's Books,"Children's Religion, Growing Up & Special Needs",Children with Special Needs
+92,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Children’s Nature
+93,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Children’s Science
+94,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Eyewitness Series
+95,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Dinosaurs
+96,1.1,Books,Children's Books,Children's Spanish-Language Books,Libros para Niños
+97,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Sports
+98,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Humor
+99,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Music & Art
+100,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Cookbooks
+101,1.1,Books,Children's Books,Early Readers,Early Readers — Hardcover
+102,1.1,Books,Children's Books,Early Readers,Early Readers — Paperback
+103,1.1,Books,Children's Books,Holidays & Seasonal,Children’s Holidays
+104,1.1,Books,Children's Books,Middle Grade Fiction,Middle Grade Fiction — Paperback
+105,1.1,Books,Children's Books,Middle Grade Fiction,Middle Grade Fiction — Hardcover
+106,1.1,Books,Children's Books,Middle Grade Fiction,Newbery
+107,1.1,Books,Children's Books,Picture Books,Picture Books — Hardcover
+108,1.1,Books,Children's Books,Picture Books,Picture Books — Paperback
+109,1.1,Books,Children's Books,Picture Books,Caldecott
+110,1.1,Books,Children's Books,Picture Books,Book & Doll Sets
+111,1.1,Books,Children's Books,Picture Books & Classics,Dr. Seuss
+112,1.1,Books,Children's Books,Picture Books & Preschool,Preschool Collections
+113,1.1,Books,Children's Books,Picture Books & Preschool,Preschool Poetry
+114,1.1,Books,Children's Books,Picture Books & Preschool,Disney Preschool
+115,1.1,Books,Children's Books,Picture Books & Preschool,General Preschool
+116,1.1,Books,Children's Books,Picture Books & Preschool,Electronic Preschool Books
+117,1.1,Books,Children's Books,Picture Books & Preschool,Pop-Ups
+118,1.1,Books,Children's Books,Picture Books & Preschool,Interactive Books
+119,1.1,Books,Children's Books,Series & Characters,Popular Children’s Series
+120,1.1,Books,Children's Books,Series & Characters,Adventure Series (legacy gendered label)
+121,1.1,Books,Children's Books,Series & Characters,Nancy Drew & Hardy Boys
+122,1.1,Books,Children's Books,Series & Characters,The Baby-Sitters Club
+123,1.1,Books,Children's Books,Series & Characters,Early Chapter Book Series
+124,1.1,Books,Children's Books,Series & Characters,Goosebumps
+125,1.1,Books,Children's Books,Series & Characters,American Girl
+731,2,Newsstand,Magazines & Newspapers,Magazines,Magazines
+732,2,Newsstand,Magazines & Newspapers,Newspapers,Newspapers
+724,3,Media,Audio & Video,Audiobooks,Nonfiction Audiobooks
+725,3,Media,Audio & Video,Audiobooks,Fiction Audiobooks
+726,3,Media,Audio & Video,Audiobooks,Audio Entertainment
+727,3,Media,Audio & Video,Children's Audio & Video,Children’s Book-and-Audio Sets
+728,3,Media,Audio & Video,Children's Audio & Video,Children’s Audiobooks
+729,3,Media,Audio & Video,Children's Audio & Video,Children’s Video
+730,3,Media,Audio & Video,Movies & Video,Movies & Video
+681,4,Gifts & Stationery,Cards & Correspondence,Cards & Postcards,Single Greeting Cards
+682,4,Gifts & Stationery,Cards & Correspondence,Cards & Postcards,Postcards
+683,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Blank Books & Journals
+684,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Specialty Books & Diaries
+685,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Locking Diaries
+686,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Photo Albums
+687,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Address Books
+688,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Decorative Endpaper Books
+689,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Postcard Books,Postcard Books
+690,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Gift Wrap
+691,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Stationery
+692,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Writing Supplies
+693,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",All-Occasion Boxed Cards
+719,4,"Maps, Calendars & Globes","Maps, Calendars & Globes",Calendars,Calendars — Returnable
+720,4,"Maps, Calendars & Globes","Maps, Calendars & Globes",Calendars,Calendars — Nonreturnable
+721,4,"Maps, Calendars & Globes","Maps, Calendars & Globes",Globes,Globes
+694,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Paper Bookmarks
+695,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Metal Bookmarks
+696,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Other Bookmarks
+697,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Bookends
+698,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Bookplates
+699,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Paperweights
+700,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Boxes/Frames
+701,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Other Bookish Gifts
+702,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Premium Bookmarks
+703,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Antioch Bookmarks
+704,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Pomegranate Bookmarks
+705,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Book Holders
+706,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Magnifiers
+707,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Book Lights
+708,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Book Covers
+709,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Other Reading Aids
+710,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Other Electronic Reading Aids
+711,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Tabletop
+712,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Apparel
+713,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Bookbags
+714,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Décor & Other
+715,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Boxed Cards
+716,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Gift Wrap
+717,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Ornaments
+718,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Other Seasonal Gifts
+722,5,"Maps, Calendars & Globes","Maps, Calendars & Globes",Maps,Maps
+723,5,"Maps, Calendars & Globes","Maps, Calendars & Globes",Maps,Maps — Nonreturnable
+733,5,Toys & Gifts,"Toys, Games & Activity",Children's Novelty & Non-Book,Children’s Non-Book
+734,5,Toys & Gifts,"Toys, Games & Activity",Tabletop Games,Tabletop Games
+667,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Tea Accessories
+668,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Coffee Accessories
+669,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Trivets & Coasters
+670,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Electronic & Mechanical Accessories
+671,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Textiles
+672,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Other Accessories
+673,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Coffee Mugs
+674,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Teacups
+675,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Kettles & Brewing Equipment
+676,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Other Serveware
+677,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Gift Baskets
+678,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Cookies
+679,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Beverages
+680,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Chocolate

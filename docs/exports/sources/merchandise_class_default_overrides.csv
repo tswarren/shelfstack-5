@@ -1,0 +1,15 @@
+code,default_department_number,default_used_department_number
+magazines__newspapers,210,130
+audio__video,320,130
+audio__video.audiobooks,310,130
+audio__video.childrens_audio__video,310,130
+journals_notebooks__paper_goods,420,130
+maps_calendars__globes,430,130
+reading_accessories__bookish_gifts,450,130
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,450,130
+reading_accessories__bookish_gifts.storebranded_gifts,440,130
+seasonal__holiday_gifts,440,130
+seasonal__holiday_gifts.seasonal_gifts,440,130
+toys_games__activity,530,130
+caf__food_gifts,680,
+caf__food_gifts.packaged_food__gift_baskets,680,

@@ -26,16 +26,14 @@ Catalog:
 
 - `products`
 - `product_variants`
-- `product_options`, `product_option_values`, `product_variant_option_values`
 
-Optional in this phase (required before Phase 4b if not earlier):
+Option/matrix tables (`product_options`, `product_option_values`, `product_variant_option_values`) are **deferred**; Phase 2 accepts only `variant_structure = single`.
 
-- `store_tax_rates`
-- `store_tax_rules`
+Store tax rates/rules and the tax engine are **not** required for Phase 2 exit (hard prerequisite for Phase 4b).
 
 ## Services and behavior
 
-- Seed/import from [departments](../../exports/departments.csv), [tax_categories](../../exports/tax_categories.csv), [merchandise_classes](../../exports/merchandise_classes.csv).
+- Seed/import organization-owned masters via `shelfstack:seed_reference_data` from cleaned [exports](../../exports/README.md): [departments](../../exports/departments.csv), [tax_categories](../../exports/tax_categories.csv), [merchandise_classes](../../exports/merchandise_classes.csv) (path-qualified nodes), [product_formats](../../exports/product_formats.csv), [product_conditions](../../exports/product_conditions.csv), [return_policies](../../exports/return_policies.csv), [return_reasons](../../exports/return_reasons.csv), [discount_reasons](../../exports/discount_reasons.csv).
 - Identifier normalization (ISBN-10 → ISBN-13) and generation (`29` product, `28` variant SKU).
 - Every sellable product has at least one variant; POS will sell variants only.
 - `inventory_tracking_mode` is authoritative on the variant.

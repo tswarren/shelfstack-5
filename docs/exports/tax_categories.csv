@@ -1,4 +1,4 @@
-sort order,name,code
+sort_order,name,code
 11,Physical: Gen Merchandise,physical_gen_merchandise
 12,Physical: Audio,physical_audio
 13,Physical: Book,physical_book

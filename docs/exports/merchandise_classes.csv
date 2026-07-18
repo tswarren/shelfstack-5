@@ -1,735 +1,926 @@
-Original Sort,Department #,Department,Primary,Secondary,Minor
-1,1,Books,"Art, Architecture, Photography & Design",Architecture,Architecture & Design
-2,1,Books,"Art, Architecture, Photography & Design",Architecture,Architectural Practice
-3,1,Books,"Art, Architecture, Photography & Design",Architecture,Architects
-4,1,Books,"Art, Architecture, Photography & Design",Architecture,Architectural History
-5,1,Books,"Art, Architecture, Photography & Design",Architecture,Classical
-6,1,Books,"Art, Architecture, Photography & Design",Architecture,Medieval
-7,1,Books,"Art, Architecture, Photography & Design",Architecture,Renaissance
-8,1,Books,"Art, Architecture, Photography & Design",Architecture,17th Century
-9,1,Books,"Art, Architecture, Photography & Design",Architecture,18th Century
-10,1,Books,"Art, Architecture, Photography & Design",Architecture,19th Century
-11,1,Books,"Art, Architecture, Photography & Design",Architecture,20th Century
-12,1,Books,"Art, Architecture, Photography & Design",Architecture,Post-Modern
-13,1,Books,"Art, Architecture, Photography & Design",Architecture,Professional Design
-14,1,Books,"Art, Architecture, Photography & Design",Art,Clip Art
-15,1,Books,"Art, Architecture, Photography & Design",Art,Stereograms
-16,1,Books,"Art, Architecture, Photography & Design",Art,Architecture
-17,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Art History & Criticism
-18,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Ancient/Classical
-19,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Renaissance
-20,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,17th Century
-21,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,18th Century
-22,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,19th Century
-23,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,World Art
-24,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,Impressionism
-25,1,Books,"Art, Architecture, Photography & Design",Art History & Criticism,20th Century
-26,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Art Techniques
-27,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Drawing
-28,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Watercolor
-29,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Color Theory
-30,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Calligraphy
-31,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Sculpture Techniques
-32,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Sculpture
-33,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Painting
-34,1,Books,"Art, Architecture, Photography & Design",Art Techniques & Media,Stencil Art
-35,1,Books,"Art, Architecture, Photography & Design","Artists, Monographs & Collections",Collections
-36,1,Books,"Art, Architecture, Photography & Design","Artists, Monographs & Collections",Artists
-37,1,Books,"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Couture
-38,1,Books,"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Graphic Design
-39,1,Books,"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Art Business & Careers
-40,1,Books,"Art, Architecture, Photography & Design",Photography,Technique & How-To
-41,1,Books,"Art, Architecture, Photography & Design",Photography,Nature Photography
-42,1,Books,"Art, Architecture, Photography & Design",Photography,35mm Photography
-43,1,Books,"Art, Architecture, Photography & Design",Photography,Camera
-44,1,Books,"Art, Architecture, Photography & Design",Photography,Photo Essays
-45,1,Books,"Art, Architecture, Photography & Design",Photography,Fashion Photography
-46,1,Books,"Art, Architecture, Photography & Design",Photography,Darkrooms
-47,1,Books,"Art, Architecture, Photography & Design",Photography,Photography Business
-48,1,Books,"Art, Architecture, Photography & Design",Photography,Monographs
-49,1,Books,"Art, Architecture, Photography & Design",Photography,Ansel Adams
-50,1,Books,"Business, Economics & Careers",Business & Management,General Business
-51,1,Books,"Business, Economics & Careers",Business & Management,Customer Service
-52,1,Books,"Business, Economics & Careers",Business & Management,Accounting
-53,1,Books,"Business, Economics & Careers",Business & Management,Management
-54,1,Books,"Business, Economics & Careers",Business & Management,Small Business
-55,1,Books,"Business, Economics & Careers",Business & Management,Sales
-56,1,Books,"Business, Economics & Careers",Business & Management,Marketing
-57,1,Books,"Business, Economics & Careers",Business & Management,Advertising
-58,1,Books,"Business, Economics & Careers",Business & Management,Human Resources
-59,1,Books,"Business, Economics & Careers",Business & Management,Consulting
-60,1,Books,"Business, Economics & Careers",Business & Management,Manufacturing
-61,1,Books,"Business, Economics & Careers",Business & Management,Business Life
-62,1,Books,"Business, Economics & Careers",Business & Management,Retail
-63,1,Books,"Business, Economics & Careers",Business Reference & Biography,Business Ref
-64,1,Books,"Business, Economics & Careers",Business Reference & Biography,Business Biography & Corporate Profiles
-65,1,Books,"Business, Economics & Careers",Careers & Job Search,Careers
-66,1,Books,"Business, Economics & Careers",Careers & Job Search,Résumés & Interviews
-67,1,Books,"Business, Economics & Careers","Economics, Trade & Labor",Economics
-68,1,Books,"Business, Economics & Careers","Economics, Trade & Labor",Foreign Trade
-69,1,Books,"Business, Economics & Careers","Economics, Trade & Labor",Labor
-70,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Finance/Banking
-71,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Real Estate
-72,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Personal Finance
-73,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate","Securities, Commodities & Futures"
-74,1,Books,"Business, Economics & Careers","Finance, Investing & Real Estate",Investing & Commodities
-75,1,Books,"Business, Economics & Careers",Nonprofit & Fundraising,Fundraising
-126,1,Books,"Cooking, Food & Drink","Appliances, Grilling & Technique",Appliance Cooking
-127,1,Books,"Cooking, Food & Drink","Appliances, Grilling & Technique",Appliance Cooking & Grilling
-128,1,Books,"Cooking, Food & Drink",Diet & Special Diets,Diet & Weight Management
-129,1,Books,"Cooking, Food & Drink",Diet & Special Diets,Vegetarian
-130,1,Books,"Cooking, Food & Drink","General Cooking, Entertaining & Professional",General Cookbooks
-131,1,Books,"Cooking, Food & Drink","General Cooking, Entertaining & Professional",Entertaining & Gift Cookbooks
-132,1,Books,"Cooking, Food & Drink","General Cooking, Entertaining & Professional",Professional
-133,1,Books,"Cooking, Food & Drink",Wine & Spirits,Wines/Spirits
-134,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,French
-135,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Italian
-136,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Jewish
-137,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Mexican
-138,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Asian
-139,1,Books,"Cooking, Food & Drink",World & Regional Cuisines,Other International Cuisines
-140,1,Books,Fiction & Literature,Boxed Sets,Box Sets
-141,1,Books,Fiction & Literature,General Fiction,Paperback Fiction
-142,1,Books,Fiction & Literature,General Fiction,Latin American Fiction
-143,1,Books,Fiction & Literature,General Fiction,Fiction & Literature
-144,1,Books,Fiction & Literature,General Fiction,Anthologies
-145,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Fiction & Literature
-146,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Essays & Memoir
-147,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Literary Theory
-148,1,Books,Fiction & Literature,"Literature, Essays & Criticism",Mythology
-149,1,Books,Fiction & Literature,Poetry,Poetry General
-150,1,Books,Fiction & Literature,Poetry,"Poets, Anthologies & Commentary"
-151,1,Books,Fiction & Literature,Westerns,Westerns
-152,1,Books,Gift Books,Little Gift Books,Little Gift Books — Hardcover
-153,1,Books,Gift Books,Little Gift Books,Little Gift Books — Paperback
-154,1,Books,"Graphic Novels, Manga & Comics",Graphic Novels,Graphic Novels
-155,1,Books,"Graphic Novels, Manga & Comics",Periodical Comics,Comic Books
-156,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Alternative Med
-157,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Herbal Medicine
-158,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Massage/Reflexology
-159,1,Books,"Health, Wellness & Family",Alternative & Complementary Medicine,Aromatherapy
-160,1,Books,"Health, Wellness & Family",Conditions & Diseases,Allergies
-161,1,Books,"Health, Wellness & Family",Conditions & Diseases,Cancer
-162,1,Books,"Health, Wellness & Family",Conditions & Diseases,Diabetes
-163,1,Books,"Health, Wellness & Family",Conditions & Diseases,Heart Disease
-164,1,Books,"Health, Wellness & Family",Conditions & Diseases,Aids
-165,1,Books,"Health, Wellness & Family",Conditions & Diseases,Other Diseases
-166,1,Books,"Health, Wellness & Family",Conditions & Diseases,STDs
-167,1,Books,"Health, Wellness & Family",Diet & Nutrition,Diets
-168,1,Books,"Health, Wellness & Family",Diet & Nutrition,Nutrition
-169,1,Books,"Health, Wellness & Family",Diet & Nutrition,Food Counters
-170,1,Books,"Health, Wellness & Family","Exercise, Fitness & Yoga",Exercise
-171,1,Books,"Health, Wellness & Family","Exercise, Fitness & Yoga",Yoga
-172,1,Books,"Health, Wellness & Family","General Health, Beauty & Aging",Health
-173,1,Books,"Health, Wellness & Family","General Health, Beauty & Aging",Beauty & Grooming
-174,1,Books,"Health, Wellness & Family","General Health, Beauty & Aging",Aging
-175,1,Books,"Health, Wellness & Family",Medicine & Nursing,Medical Ref
-176,1,Books,"Health, Wellness & Family",Medicine & Nursing,Nursing Procedures
-177,1,Books,"Health, Wellness & Family",Medicine & Nursing,Nursing Drug Guides
-178,1,Books,"Health, Wellness & Family",Medicine & Nursing,Anatomy/Physiology
-179,1,Books,"Health, Wellness & Family",Medicine & Nursing,Nursing Exam Review
-180,1,Books,"Health, Wellness & Family",Medicine & Nursing,Allied Health
-181,1,Books,"Health, Wellness & Family",Medicine & Nursing,Medicine
-182,1,Books,"Health, Wellness & Family",Parenting & Family,Parenting & Child Care
-183,1,Books,"Health, Wellness & Family",Parenting & Family,Baby Names
-184,1,Books,"Health, Wellness & Family",Parenting & Family,Pregnancy & Childbirth
-185,1,Books,"Health, Wellness & Family",Parenting & Family,Divorce & Children
-186,1,Books,"Health, Wellness & Family",Parenting & Family,Children with Special Needs
-187,1,Books,"Health, Wellness & Family",Parenting & Family,School-Age Children
-188,1,Books,"Health, Wellness & Family",Parenting & Family,Infants/Toddlers
-189,1,Books,"Health, Wellness & Family",Parenting & Family,Adoption
-190,1,Books,"Health, Wellness & Family",Parenting & Family,Sex Education
-191,1,Books,"Health, Wellness & Family",Parenting & Family,Activities
-192,1,Books,"Health, Wellness & Family",Women's & Reproductive Health,Fertility/Miscarriage
-193,1,Books,"Health, Wellness & Family",Women's & Reproductive Health,Womens Health
-194,1,Books,"History, Biography & Politics","Ancient, Medieval & Renaissance History",Ancient Hist
-195,1,Books,"History, Biography & Politics","Ancient, Medieval & Renaissance History",Medieval & Renaissance History
-196,1,Books,"History, Biography & Politics",Military History,Military History
-197,1,Books,"History, Biography & Politics",Politics & Current Affairs,United States Current Affairs
-198,1,Books,"History, Biography & Politics",Politics & Current Affairs,Media & Journalism
-199,1,Books,"History, Biography & Politics",Politics & Current Affairs,US Politics
-200,1,Books,"History, Biography & Politics",Politics & Current Affairs,International Current Affairs
-201,1,Books,"History, Biography & Politics",Politics & Current Affairs,International Politics
-202,1,Books,"History, Biography & Politics",Regional & National History,Japan Hist
-203,1,Books,"History, Biography & Politics",Regional & National History,Irish History
-204,1,Books,"History, Biography & Politics",Regional & National History,Eur History
-205,1,Books,"History, Biography & Politics",Regional & National History,Middle Eastern History
-206,1,Books,"History, Biography & Politics",Regional & National History,African Hist
-207,1,Books,"History, Biography & Politics",Regional & National History,Asian Hist
-208,1,Books,"History, Biography & Politics",Regional & National History,British Hist
-209,1,Books,"History, Biography & Politics",Regional & National History,Latin Amer Hist
-210,1,Books,"History, Biography & Politics",Regional & National History,Eastern European History
-211,1,Books,"History, Biography & Politics",Regional & National History,Israel Hist
-212,1,Books,"History, Biography & Politics",Regional & National History,Northern European History
-213,1,Books,"History, Biography & Politics",Regional & National History,Caribbean Hist
-214,1,Books,"History, Biography & Politics",Regional & National History,Chinese Hist
-215,1,Books,"History, Biography & Politics",Regional & National History,Western European History
-216,1,Books,"History, Biography & Politics",United States History & Biography,United States History
-217,1,Books,"History, Biography & Politics",United States History & Biography,United States Biography
-218,1,Books,"History, Biography & Politics",United States History & Biography,Civil War
-219,1,Books,"History, Biography & Politics",United States History & Biography,Urban Studies
-220,1,Books,"History, Biography & Politics",World History & Biography,World Hist
-221,1,Books,"History, Biography & Politics",World History & Biography,World Biography
-222,1,Books,"History, Biography & Politics",World History & Biography,General History
-223,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Antiques Gen
-224,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Price Guides
-225,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Coins
-226,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Dolls
-227,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Glass/Stained G
-228,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Jewelry
-229,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,"Pottery, Porcelain & China"
-230,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Stamps
-231,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,General Collecting
-232,1,Books,"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Sports Cards
-233,1,Books,"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Ceramics/Pottery
-234,1,Books,"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Glass & Stained Glass
-235,1,Books,"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Jewelry & Metalworking
-236,1,Books,"Home, Garden, Crafts & Collecting",Gardening,Outdoor Gardening
-237,1,Books,"Home, Garden, Crafts & Collecting",Gardening,Indoor Gardening
-238,1,Books,"Home, Garden, Crafts & Collecting",Gardening,"Fruits, Vegetables & Herbs"
-239,1,Books,"Home, Garden, Crafts & Collecting",Gardening,Flower Gardening
-240,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Crafts & Hobbies
-241,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Artisans & Craftspeople
-242,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Tools
-243,1,Books,"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Projects & Plans
-244,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,House & Home
-245,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Carpentry
-246,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Decorating
-247,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,House Plans
-248,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Home Repair & Renovation
-249,1,Books,"Home, Garden, Crafts & Collecting",Home & Decorating,Design & Lifestyle
-250,1,Books,"Home, Garden, Crafts & Collecting",Models & Doll Making,Modeling
-251,1,Books,"Home, Garden, Crafts & Collecting",Models & Doll Making,Doll Making
-252,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Needlecrafts
-253,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Quilting & Patchwork
-254,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Sewing
-255,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts","Embroidery, Cross-Stitch & Needlepoint"
-256,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Knitting & Crochet
-257,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Weaving & Rug Making
-258,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Lace/Tatting
-259,1,Books,"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Fabric Painting & Dyeing
-260,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Floral Crafts
-261,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Basketry
-262,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Printmaking
-263,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Stenciling
-264,1,Books,"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Papercrafts
-265,1,Books,"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Woodworking
-266,1,Books,"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Furniture Making
-267,1,Books,"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Carving
-268,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",General Games
-269,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Crosswords
-270,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Scrabble
-271,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Pool & Billiards
-272,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Logic & Brain Teasers
-273,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Horse Racing & Gambling
-274,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Chess
-275,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Card Games
-276,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Magic
-277,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Casino Games
-278,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Poker
-279,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Blackjack
-280,1,Books,"Humor, Games & Puzzles","Games, Puzzles & Gambling",Computer Games
-281,1,Books,"Humor, Games & Puzzles",Humor,Humor
-282,1,Books,"Humor, Games & Puzzles",Humor,Cartoons & Cartooning
-283,1,Books,"Humor, Games & Puzzles",Role-Playing Games,Role Playing
-284,1,Books,Languages & Bilingual,Books in Other Languages,Literature
-285,1,Books,Languages & Bilingual,Books in Other Languages,Non Fiction
-286,1,Books,Languages & Bilingual,Language Learning,Other Foreign Languages
-287,1,Books,Languages & Bilingual,Language Learning,Spanish
-288,1,Books,Languages & Bilingual,Language Learning,French
-289,1,Books,Languages & Bilingual,Language Learning,German
-290,1,Books,Languages & Bilingual,Language Learning,Italian
-291,1,Books,Languages & Bilingual,Language Learning,Japanese
-292,1,Books,Languages & Bilingual,Spanish-Language Books,Novelas
-293,1,Books,Languages & Bilingual,Spanish-Language Books,Literatura
-294,1,Books,Languages & Bilingual,Spanish-Language Books,Novelas Románticas
-295,1,Books,Languages & Bilingual,Spanish-Language Books,Novelas Policíacas
-296,1,Books,Languages & Bilingual,Spanish-Language Books,Historia
-297,1,Books,Languages & Bilingual,Spanish-Language Books,Biografías
-298,1,Books,Languages & Bilingual,Spanish-Language Books,Deportes
-299,1,Books,Languages & Bilingual,Spanish-Language Books,Negocios
-300,1,Books,Languages & Bilingual,Spanish-Language Books,Cocina
-301,1,Books,Languages & Bilingual,Spanish-Language Books,Viajes
-302,1,Books,Languages & Bilingual,Spanish-Language Books,Referencia
-303,1,Books,Languages & Bilingual,Spanish-Language Books,Computación
-304,1,Books,Languages & Bilingual,Spanish-Language Books,Inspiración
-305,1,Books,Languages & Bilingual,Spanish-Language Books,La Biblia
-306,1,Books,Languages & Bilingual,Spanish-Language Books,Cuba
-307,1,Books,Languages & Bilingual,Spanish-Language Books,Autoayuda
-308,1,Books,Languages & Bilingual,Spanish-Language Books,Florida
-309,1,Books,Languages & Bilingual,Spanish-Language Books,Texas
-310,1,Books,Languages & Bilingual,Spanish-Language Books,California
-311,1,Books,Languages & Bilingual,Spanish-Language Books,Mexico
-312,1,Books,Languages & Bilingual,Spanish-Language Books,Otros Libros en Español
-313,1,Books,Merchandising Programs,Children's Rack Programs,Serendipity
-314,1,Books,Merchandising Programs,Children's Rack Programs,Little Golden Books
-315,1,Books,Merchandising Programs,Children's Rack Programs,Ladybird Books
-316,1,Books,Merchandising Programs,Children's Rack Programs,Dover
-317,1,Books,"Mystery, Thrillers & True Crime",Mystery & Adventure,Mystery
-318,1,Books,"Mystery, Thrillers & True Crime",Mystery & Adventure,Action & Adventure
-319,1,Books,"Mystery, Thrillers & True Crime",True Crime,True Crime
-320,1,Books,"Nature, Outdoors, Sports & Pets",Fitness & Strength Training,Weightlifting & Bodybuilding
-321,1,Books,"Nature, Outdoors, Sports & Pets",General Sports & Golf,General Sports
-322,1,Books,"Nature, Outdoors, Sports & Pets",General Sports & Golf,Golf
-323,1,Books,"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Hunting & Shooting Sports
-324,1,Books,"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Martial Arts
-325,1,Books,"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Boxing/Wrestling
-326,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Bicycling
-327,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Racquet Sports
-328,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Running
-329,1,Books,"Nature, Outdoors, Sports & Pets",Individual Sports,Gymnastics
-330,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Nature Writing
-331,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,General Nature
-332,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Earth Sciences
-333,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Environment
-334,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Oceans
-335,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Agriculture
-336,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Botany & Plants
-337,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Birds & Birding
-338,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Audubon
-339,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Eyewitness
-340,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Golden Press
-341,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Petersons
-342,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,S&S
-343,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Stokes
-344,1,Books,"Nature, Outdoors, Sports & Pets",Nature & Environment,Other Field Guides
-345,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Camping
-346,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Freshwater Fishing
-347,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Saltwater Fishing
-348,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Skiing
-349,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Hiking
-350,1,Books,"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Mountaineering
-351,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Pets General
-352,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Cats
-353,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Dogs
-354,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Horses
-355,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Aquarium
-356,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Birds
-357,1,Books,"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Veterinary Medicine
-358,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Baseball
-359,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Basketball
-360,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Hockey
-361,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Football
-362,1,Books,"Nature, Outdoors, Sports & Pets",Team Sports,Soccer
-363,1,Books,"Nature, Outdoors, Sports & Pets",Water Sports,Boating & Sailing
-364,1,Books,"Nature, Outdoors, Sports & Pets",Water Sports,Swimming
-365,1,Books,"Performing Arts, Music & Film",Dance,Dance Technique & Criticism
-366,1,Books,"Performing Arts, Music & Film",Dance,Ballet & Modern
-367,1,Books,"Performing Arts, Music & Film",Dance,Recreational Dance
-368,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Film Studies
-369,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Entertainment Biography
-370,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Television
-371,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Film Reference
-372,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Production
-373,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Screenplays
-374,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Animation
-375,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Radio
-376,1,Books,"Performing Arts, Music & Film","Film, Television & Media",Screenwriting
-377,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Guitar & Stringed Instruments
-378,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Keyboards
-379,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Woodwinds
-380,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Brass
-381,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Percussion
-382,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Voice
-383,1,Books,"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Songbooks
-384,1,Books,"Performing Arts, Music & Film",Music Genres,Electronic Music
-385,1,Books,"Performing Arts, Music & Film",Music Genres,Gospel
-386,1,Books,"Performing Arts, Music & Film",Music Genres,Jazz/Blues
-387,1,Books,"Performing Arts, Music & Film",Music Genres,Classical
-388,1,Books,"Performing Arts, Music & Film",Music Genres,Standards & Easy Listening
-389,1,Books,"Performing Arts, Music & Film",Music Genres,Rock & Roll
-390,1,Books,"Performing Arts, Music & Film",Music Genres,R&B & Rap
-391,1,Books,"Performing Arts, Music & Film",Music Genres,Folk
-392,1,Books,"Performing Arts, Music & Film",Music Genres,"Country, Western & Bluegrass"
-393,1,Books,"Performing Arts, Music & Film",Music Genres,Opera
-394,1,Books,"Performing Arts, Music & Film",Music Genres,World Music
-395,1,Books,"Performing Arts, Music & Film","Music Theory, History & Reference",Music Theory & Criticism
-396,1,Books,"Performing Arts, Music & Film","Music Theory, History & Reference",Music Ref
-397,1,Books,"Performing Arts, Music & Film","Music Theory, History & Reference",Music Education
-398,1,Books,"Performing Arts, Music & Film",Songwriting & Music Business,Songwriting
-399,1,Books,"Performing Arts, Music & Film",Songwriting & Music Business,Music Business
-400,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Drama
-401,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Theatre Arts
-402,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Shakespeare
-403,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Acting
-404,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Technical Theatre
-405,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Musicals
-406,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Monologues & Scenes
-407,1,Books,"Performing Arts, Music & Film",Theatre & Drama,Drama Criticism
-408,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Psychology
-409,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Child Psychology
-410,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Suicide
-411,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Psychiatry
-412,1,Books,"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Social Work
-413,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Addiction & Recovery
-414,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Codependency
-415,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Eating Disorders
-416,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Meditations & Affirmations
-417,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Abuse
-418,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,General Self-Help
-419,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Death & Grief
-420,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Relationships
-421,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Midlife
-422,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Dreams
-423,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Hypnosis
-424,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Graphology
-425,1,Books,"Psychology, Self-Help & Relationships",Self-Help & Relationships,Sexuality
-426,1,Books,"Reference, Education & Study","Atlases, Almanacs & Facts",Atlases
-427,1,Books,"Reference, Education & Study","Atlases, Almanacs & Facts",Trivia/Facts
-428,1,Books,"Reference, Education & Study","Atlases, Almanacs & Facts",Almanacs
-429,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Vocational
-430,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Civil Service
-431,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Military Service
-432,1,Books,"Reference, Education & Study","Career, Civil Service & Vocational Exams",Teacher Certification Exams
-433,1,Books,"Reference, Education & Study",Consumer & Life Reference,Weddings
-434,1,Books,"Reference, Education & Study",Consumer & Life Reference,Consumer Reference
-435,1,Books,"Reference, Education & Study",Consumer & Life Reference,Large Print
-436,1,Books,"Reference, Education & Study",Consumer & Life Reference,Secretarial Skills
-437,1,Books,"Reference, Education & Study",Consumer & Life Reference,Etiquette
-438,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Dictionaries
-439,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Thesauri
-440,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Sign Language
-441,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",Words & Language
-442,1,Books,"Reference, Education & Study","Dictionaries, Language & Words",ESL
-443,1,Books,"Reference, Education & Study",Education,Education
-444,1,Books,"Reference, Education & Study",Education,Elementary Education
-445,1,Books,"Reference, Education & Study",Education,Secondary Education
-446,1,Books,"Reference, Education & Study",Education,Higher Education
-447,1,Books,"Reference, Education & Study",English-Language Testing,TOEFL/Eng As F
-448,1,Books,"Reference, Education & Study",Genealogy & Heraldry,Genealogy/Heraldry
-449,1,Books,"Reference, Education & Study",General Study Aids & Series,Study Aids Gen
-450,1,Books,"Reference, Education & Study",General Study Aids & Series,Other Series
-451,1,Books,"Reference, Education & Study",General Study Aids & Series,Schaum’s Outlines
-452,1,Books,"Reference, Education & Study",General Study Aids & Series,Made Simple
-453,1,Books,"Reference, Education & Study",General Study Aids & Series,Easy Way
-454,1,Books,"Reference, Education & Study",Graduate & Professional Exams,MAT
-455,1,Books,"Reference, Education & Study",Graduate & Professional Exams,Graduate
-456,1,Books,"Reference, Education & Study",Graduate & Professional Exams,Engineering
-457,1,Books,"Reference, Education & Study",Graduate & Professional Exams,CPA & Accounting Exams
-458,1,Books,"Reference, Education & Study",Graduate & Professional Exams,GMAT
-459,1,Books,"Reference, Education & Study",Graduate & Professional Exams,GRE
-460,1,Books,"Reference, Education & Study",Graduate & Professional Exams,LSAT
-461,1,Books,"Reference, Education & Study",Graduate & Professional Exams,MCAT
-462,1,Books,"Reference, Education & Study",Law & Legal Reference,Law
-463,1,Books,"Reference, Education & Study",Law & Legal Reference,Legal Ref
-464,1,Books,"Reference, Education & Study",School & College Test Preparation,ACT
-465,1,Books,"Reference, Education & Study",School & College Test Preparation,SAT/PSAT
-466,1,Books,"Reference, Education & Study",School & College Test Preparation,High School Entrance
-467,1,Books,"Reference, Education & Study",School & College Test Preparation,Advanced Placement
-468,1,Books,"Reference, Education & Study",School & College Test Preparation,GED
-469,1,Books,"Reference, Education & Study",School & College Test Preparation,College Guides
-470,1,Books,"Reference, Education & Study",School & College Test Preparation,SAT Subject Tests (legacy)
-471,1,Books,"Reference, Education & Study",School & College Test Preparation,CLEP
-472,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,Literature Study Guides
-473,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,Test Prep
-474,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,CliffsNotes
-475,1,Books,"Reference, Education & Study",Study Guides & Literature Notes,Barron’s & Monarch Notes
-476,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Writing & Publishing
-477,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Public Speaking & Quotations
-478,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Books About Books
-479,1,Books,"Reference, Education & Study","Writing, Publishing & Books",Library Science
-480,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,Bibles Gen
-481,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,King James
-482,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,Living Bible
-483,1,Books,"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,New Intl
-484,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Astrology
-485,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",New Age
-486,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Paranormal Experiences
-487,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Magic & Magical Arts
-488,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Occult & Supernatural
-489,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Divination & Prophecy
-490,1,Books,"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Meditation
-491,1,Books,"Religion, Spirituality & Philosophy",Philosophy & Linguistics,Western Philosophy
-492,1,Books,"Religion, Spirituality & Philosophy",Philosophy & Linguistics,Linguistics
-493,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,General Religion
-494,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Religion Reference
-495,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Judaica
-496,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Islam
-497,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Sufism
-498,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Religious Fiction
-499,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Inspiration
-500,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Latter Day Saints
-501,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Eastern Thought
-502,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Hinduism
-503,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Buddhism
-504,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Taoism
-505,1,Books,"Religion, Spirituality & Philosophy",Religion & Inspiration,Confucianism
-506,1,Books,Romance,Romance,General Romance
-507,1,Books,Romance,Series Romance,Series Romance
-508,1,Books,"Science Fiction, Fantasy & Horror",Horror,Horror
-509,1,Books,"Science Fiction, Fantasy & Horror",Science Fiction & Fantasy,Science Fiction & Fantasy
-510,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Architecture & Maintenance
-511,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Applications
-512,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Operating Systems
-513,1,Books,"Science, Technology & Computing",Apple & Mac Computing,Mac Programming
-514,1,Books,"Science, Technology & Computing",Artificial Intelligence,Artificial Intelligence
-515,1,Books,"Science, Technology & Computing",Astronomy & Space,Astronomy
-516,1,Books,"Science, Technology & Computing",Astronomy & Space,Extraterrestrial Life
-517,1,Books,"Science, Technology & Computing",Astronomy & Space,Cosmology & Astrophysics
-518,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Intro/Ref
-519,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Buying Guides
-520,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Peripherals
-521,1,Books,"Science, Technology & Computing",Computer Fundamentals & Hardware,Architecture & Maintenance
-522,1,Books,"Science, Technology & Computing",Computer Profiles & Culture,Profiles
-523,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Electrical Engineering
-524,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Building Trades
-525,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Communications Engineering
-526,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Professional Electrical
-527,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Engineering
-528,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",Professional Plumbing
-529,1,Books,"Science, Technology & Computing","Engineering, Building & Trades",HVAC
-530,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",General Science
-531,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",Chemistry & Biology
-532,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",Evolution
-533,1,Books,"Science, Technology & Computing","General Science, Biology & Evolution",Paleontology
-534,1,Books,"Science, Technology & Computing","Graphics, Multimedia & Virtual Reality",Multimedia
-535,1,Books,"Science, Technology & Computing","Graphics, Multimedia & Virtual Reality",Virtual Reality
-536,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Internet
-537,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Digital Life
-538,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",World Wide Web & Mosaic
-539,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Internet Security
-540,1,Books,"Science, Technology & Computing","Internet, Web & Cybersecurity",Online Services
-541,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Network Applications
-542,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Telecommunication
-543,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Client-Server Technology
-544,1,Books,"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Mainframe Computer Systems
-545,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows 95
-546,1,Books,"Science, Technology & Computing",Operating Systems & Applications,DOS Manuals
-547,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows NT
-548,1,Books,"Science, Technology & Computing",Operating Systems & Applications,DOS Appl.
-549,1,Books,"Science, Technology & Computing",Operating Systems & Applications,OS/2
-550,1,Books,"Science, Technology & Computing",Operating Systems & Applications,UNIX
-551,1,Books,"Science, Technology & Computing",Operating Systems & Applications,LINUX
-552,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Xwindows
-553,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows Manl
-554,1,Books,"Science, Technology & Computing",Operating Systems & Applications,Windows Applications
-555,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Physics
-556,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Mathematics
-557,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Statistics & Probability
-558,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Complexity
-559,1,Books,"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Cognitive Science
-560,1,Books,"Science, Technology & Computing",Programming Languages,BASIC & Visual Basic
-561,1,Books,"Science, Technology & Computing",Programming Languages,"C, C++ & Visual C"
-562,1,Books,"Science, Technology & Computing",Programming Languages,Pascal & Turbo Pascal
-563,1,Books,"Science, Technology & Computing",Software Development & Databases,Database Programming
-564,1,Books,"Science, Technology & Computing",Software Development & Databases,Advanced Mainframe Programming
-565,1,Books,"Science, Technology & Computing",Software Development & Databases,Graphics Programming
-566,1,Books,"Science, Technology & Computing",Software Development & Databases,Software Engineering
-567,1,Books,"Science, Technology & Computing","Technology, Electronics & Radio",Consumer Electronics
-568,1,Books,"Science, Technology & Computing","Technology, Electronics & Radio",Technology
-569,1,Books,"Science, Technology & Computing","Technology, Electronics & Radio",Amateur Radio
-570,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Asian Studies
-571,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Cultural Studies
-572,1,Books,Society & Cultural Studies,Cultural & Identity Studies,African American Studies
-573,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Women’s Studies
-574,1,Books,Society & Cultural Studies,Cultural & Identity Studies,LGBTQ+ Studies
-575,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Hispanic Studies
-576,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Gay Fiction
-577,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Gay Nonfiction
-578,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Lesbian Fiction
-579,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Lesbian Nonfiction
-580,1,Books,Society & Cultural Studies,Cultural & Identity Studies,African Studies
-581,1,Books,Society & Cultural Studies,Cultural & Identity Studies,Native American Studies
-582,1,Books,Society & Cultural Studies,Social Sciences,Anthropology
-583,1,Books,Society & Cultural Studies,Social Sciences,Archaeology
-584,1,Books,Society & Cultural Studies,Social Sciences,Sociology
-585,1,Books,"Travel, Local & Regional",International Travel,Travel Foreign
-586,1,Books,"Travel, Local & Regional",International Travel,Mexico
-587,1,Books,"Travel, Local & Regional",International Travel,Caribbean
-588,1,Books,"Travel, Local & Regional",International Travel,Canada
-589,1,Books,"Travel, Local & Regional",International Travel,Eastern Europe & Russia
-590,1,Books,"Travel, Local & Regional",International Travel,Western Europe
-591,1,Books,"Travel, Local & Regional",International Travel,Great Britain
-592,1,Books,"Travel, Local & Regional",International Travel,Africa & Middle East
-593,1,Books,"Travel, Local & Regional",International Travel,India & South Asia
-594,1,Books,"Travel, Local & Regional",International Travel,Japan
-595,1,Books,"Travel, Local & Regional",International Travel,East Asia
-596,1,Books,"Travel, Local & Regional",International Travel,Central America
-597,1,Books,"Travel, Local & Regional",International Travel,Ireland
-598,1,Books,"Travel, Local & Regional",International Travel,Israel
-599,1,Books,"Travel, Local & Regional",International Travel,Germany
-600,1,Books,"Travel, Local & Regional",International Travel,France
-601,1,Books,"Travel, Local & Regional",International Travel,Paris
-602,1,Books,"Travel, Local & Regional",International Travel,Italy
-603,1,Books,"Travel, Local & Regional",International Travel,Spain/Portugal
-604,1,Books,"Travel, Local & Regional",International Travel,Greece & Mediterranean
-605,1,Books,"Travel, Local & Regional",International Travel,Benelux
-606,1,Books,"Travel, Local & Regional",International Travel,Scandinavia
-607,1,Books,"Travel, Local & Regional",International Travel,Switzerland & Austria
-608,1,Books,"Travel, Local & Regional",International Travel,South America
-609,1,Books,"Travel, Local & Regional",International Travel,Oceania
-610,1,Books,"Travel, Local & Regional",Local & Regional Interest,Regional General
-611,1,Books,"Travel, Local & Regional",Local & Regional Interest,Restaurant Guides
-612,1,Books,"Travel, Local & Regional",Local & Regional Interest,Pictorials
-613,1,Books,"Travel, Local & Regional",Local & Regional Interest,Humor
-614,1,Books,"Travel, Local & Regional",Local & Regional Interest,Local Travel
-615,1,Books,"Travel, Local & Regional",Local & Regional Interest,Reference
-616,1,Books,"Travel, Local & Regional",Local & Regional Interest,History & Biography
-617,1,Books,"Travel, Local & Regional",Local & Regional Interest,Transportation
-618,1,Books,"Travel, Local & Regional",Local & Regional Interest,Nature
-619,1,Books,"Travel, Local & Regional",Local & Regional Interest,Sports
-620,1,Books,"Travel, Local & Regional",Local & Regional Interest,Literature
-621,1,Books,"Travel, Local & Regional",Local & Regional Interest,Cooking
-622,1,Books,"Travel, Local & Regional",Local & Regional Interest,Gardening
-623,1,Books,"Travel, Local & Regional",Local & Regional Interest,Business
-624,1,Books,"Travel, Local & Regional",Local & Regional Interest,Current Affairs
-625,1,Books,"Travel, Local & Regional",Local & Regional Interest,Juvenile
-626,1,Books,"Travel, Local & Regional",Local & Regional Interest,Art & Architecture
-627,1,Books,"Travel, Local & Regional",Local & Regional Interest,Native American
-628,1,Books,"Travel, Local & Regional",Local & Regional Interest,Hiking/Camping
-629,1,Books,"Travel, Local & Regional",Local & Regional Interest,Folklore
-630,1,Books,"Travel, Local & Regional",Local & Regional Interest,Holiday
-631,1,Books,"Travel, Local & Regional",Local & Regional Interest,Cowboys
-632,1,Books,"Travel, Local & Regional",Local & Regional Interest,General
-633,1,Books,"Travel, Local & Regional",Local & Regional Interest,Art/Architecture
-634,1,Books,"Travel, Local & Regional",Local & Regional Interest,Amish/Mennonite
-635,1,Books,"Travel, Local & Regional",Transportation,Auto Buying Guides
-636,1,Books,"Travel, Local & Regional",Transportation,Cars & Trucks
-637,1,Books,"Travel, Local & Regional",Transportation,Ships
-638,1,Books,"Travel, Local & Regional",Transportation,Trains
-639,1,Books,"Travel, Local & Regional",Transportation,Planes
-640,1,Books,"Travel, Local & Regional",Transportation,Auto Repair
-641,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Travel General
-642,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,RV & Campground Guides
-643,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Travel Writing
-644,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Recreational Travel
-645,1,Books,"Travel, Local & Regional",Travel Writing & General Travel,Pictorial Travel
-646,1,Books,"Travel, Local & Regional",United States Travel,United States Travel
-647,1,Books,"Travel, Local & Regional",United States Travel,Road Atlases
-648,1,Books,"Travel, Local & Regional",United States Travel,California
-649,1,Books,"Travel, Local & Regional",United States Travel,Washington DC
-650,1,Books,"Travel, Local & Regional",United States Travel,Alaska
-651,1,Books,"Travel, Local & Regional",United States Travel,Florida
-652,1,Books,"Travel, Local & Regional",United States Travel,Great Lakes & Upper Midwest
-653,1,Books,"Travel, Local & Regional",United States Travel,Hawaii
-654,1,Books,"Travel, Local & Regional",United States Travel,NYC
-655,1,Books,"Travel, Local & Regional",United States Travel,Texas & South-Central Plains
-656,1,Books,"Travel, Local & Regional",United States Travel,South & Southeast
-657,1,Books,"Travel, Local & Regional",United States Travel,Southwest & Rocky Mountains
-658,1,Books,"Travel, Local & Regional",United States Travel,Mid-Atlantic
-659,1,Books,"Travel, Local & Regional",United States Travel,New England
-660,1,Books,"Travel, Local & Regional",United States Travel,Pacific NW
-661,1,Books,"Travel, Local & Regional",United States Travel,Walt Disney World
-662,1,Books,Young Adult,Young Adult Books,Young Adult PB
-663,1,Books,Young Adult,Young Adult Books,Sweet Valley High
-664,1,Books,Young Adult,Young Adult Books,YA Romance
-665,1,Books,Young Adult,Young Adult Books,YA Non Fiction
-666,1,Books,Young Adult,Young Adult Books,Thrillers
-76,1.1,Books,Children's Books,Board Books & Toddlers,Board & Shaped Books
-77,1.1,Books,Children's Books,Board Books & Toddlers,Peggable & Novelty Books
-78,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Activities
-79,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Workbooks
-80,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Teacher Resources
-81,1.1,Books,Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Novelty Books
-82,1.1,Books,Children's Books,"Children's Biography, History & Culture",Children’s Biography
-83,1.1,Books,Children's Books,"Children's Biography, History & Culture",Children’s History
-84,1.1,Books,Children's Books,"Children's Biography, History & Culture",Native American History & Culture
-85,1.1,Books,Children's Books,Children's Classics,Children’s Classics
-86,1.1,Books,Children's Books,Children's General Reference & Languages,General Children’s Nonfiction
-87,1.1,Books,Children's Books,Children's General Reference & Languages,Children’s Dictionaries
-88,1.1,Books,Children's Books,Children's General Reference & Languages,Children’s Language Learning
-89,1.1,Books,Children's Books,"Children's Religion, Growing Up & Special Needs",Children’s Religion
-90,1.1,Books,Children's Books,"Children's Religion, Growing Up & Special Needs",Growing Up
-91,1.1,Books,Children's Books,"Children's Religion, Growing Up & Special Needs",Children with Special Needs
-92,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Children’s Nature
-93,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Children’s Science
-94,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Eyewitness Series
-95,1.1,Books,Children's Books,"Children's Science, Nature & Dinosaurs",Dinosaurs
-96,1.1,Books,Children's Books,Children's Spanish-Language Books,Libros para Niños
-97,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Sports
-98,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Humor
-99,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Music & Art
-100,1.1,Books,Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Cookbooks
-101,1.1,Books,Children's Books,Early Readers,Early Readers — Hardcover
-102,1.1,Books,Children's Books,Early Readers,Early Readers — Paperback
-103,1.1,Books,Children's Books,Holidays & Seasonal,Children’s Holidays
-104,1.1,Books,Children's Books,Middle Grade Fiction,Middle Grade Fiction — Paperback
-105,1.1,Books,Children's Books,Middle Grade Fiction,Middle Grade Fiction — Hardcover
-106,1.1,Books,Children's Books,Middle Grade Fiction,Newbery
-107,1.1,Books,Children's Books,Picture Books,Picture Books — Hardcover
-108,1.1,Books,Children's Books,Picture Books,Picture Books — Paperback
-109,1.1,Books,Children's Books,Picture Books,Caldecott
-110,1.1,Books,Children's Books,Picture Books,Book & Doll Sets
-111,1.1,Books,Children's Books,Picture Books & Classics,Dr. Seuss
-112,1.1,Books,Children's Books,Picture Books & Preschool,Preschool Collections
-113,1.1,Books,Children's Books,Picture Books & Preschool,Preschool Poetry
-114,1.1,Books,Children's Books,Picture Books & Preschool,Disney Preschool
-115,1.1,Books,Children's Books,Picture Books & Preschool,General Preschool
-116,1.1,Books,Children's Books,Picture Books & Preschool,Electronic Preschool Books
-117,1.1,Books,Children's Books,Picture Books & Preschool,Pop-Ups
-118,1.1,Books,Children's Books,Picture Books & Preschool,Interactive Books
-119,1.1,Books,Children's Books,Series & Characters,Popular Children’s Series
-120,1.1,Books,Children's Books,Series & Characters,Adventure Series (legacy gendered label)
-121,1.1,Books,Children's Books,Series & Characters,Nancy Drew & Hardy Boys
-122,1.1,Books,Children's Books,Series & Characters,The Baby-Sitters Club
-123,1.1,Books,Children's Books,Series & Characters,Early Chapter Book Series
-124,1.1,Books,Children's Books,Series & Characters,Goosebumps
-125,1.1,Books,Children's Books,Series & Characters,American Girl
-731,2,Newsstand,Magazines & Newspapers,Magazines,Magazines
-732,2,Newsstand,Magazines & Newspapers,Newspapers,Newspapers
-724,3,Media,Audio & Video,Audiobooks,Nonfiction Audiobooks
-725,3,Media,Audio & Video,Audiobooks,Fiction Audiobooks
-726,3,Media,Audio & Video,Audiobooks,Audio Entertainment
-727,3,Media,Audio & Video,Children's Audio & Video,Children’s Book-and-Audio Sets
-728,3,Media,Audio & Video,Children's Audio & Video,Children’s Audiobooks
-729,3,Media,Audio & Video,Children's Audio & Video,Children’s Video
-730,3,Media,Audio & Video,Movies & Video,Movies & Video
-681,4,Gifts & Stationery,Cards & Correspondence,Cards & Postcards,Single Greeting Cards
-682,4,Gifts & Stationery,Cards & Correspondence,Cards & Postcards,Postcards
-683,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Blank Books & Journals
-684,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Specialty Books & Diaries
-685,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Locking Diaries
-686,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Photo Albums
-687,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Address Books
-688,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Decorative Endpaper Books
-689,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods",Postcard Books,Postcard Books
-690,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Gift Wrap
-691,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Stationery
-692,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Writing Supplies
-693,4,Gifts & Stationery,"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",All-Occasion Boxed Cards
-719,4,"Maps, Calendars & Globes","Maps, Calendars & Globes",Calendars,Calendars — Returnable
-720,4,"Maps, Calendars & Globes","Maps, Calendars & Globes",Calendars,Calendars — Nonreturnable
-721,4,"Maps, Calendars & Globes","Maps, Calendars & Globes",Globes,Globes
-694,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Paper Bookmarks
-695,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Metal Bookmarks
-696,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Other Bookmarks
-697,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Bookends
-698,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Bookplates
-699,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Paperweights
-700,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Boxes/Frames
-701,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Other Bookish Gifts
-702,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Premium Bookmarks
-703,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Antioch Bookmarks
-704,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Pomegranate Bookmarks
-705,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Book Holders
-706,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Magnifiers
-707,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Book Lights
-708,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Book Covers
-709,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Other Reading Aids
-710,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Reading Aids,Other Electronic Reading Aids
-711,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Tabletop
-712,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Apparel
-713,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Bookbags
-714,4,Gifts & Stationery,Reading Accessories & Bookish Gifts,Store-Branded Gifts,Décor & Other
-715,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Boxed Cards
-716,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Gift Wrap
-717,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Ornaments
-718,4,Gifts & Stationery,Seasonal & Holiday Gifts,Seasonal Gifts,Other Seasonal Gifts
-722,5,"Maps, Calendars & Globes","Maps, Calendars & Globes",Maps,Maps
-723,5,"Maps, Calendars & Globes","Maps, Calendars & Globes",Maps,Maps — Nonreturnable
-733,5,Toys & Gifts,"Toys, Games & Activity",Children's Novelty & Non-Book,Children’s Non-Book
-734,5,Toys & Gifts,"Toys, Games & Activity",Tabletop Games,Tabletop Games
-667,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Tea Accessories
-668,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Coffee Accessories
-669,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Trivets & Coasters
-670,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Electronic & Mechanical Accessories
-671,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Textiles
-672,7,Café & Food Gifts,Café & Food Gifts,Coffee & Tea Accessories,Other Accessories
-673,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Coffee Mugs
-674,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Teacups
-675,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Kettles & Brewing Equipment
-676,7,Café & Food Gifts,Café & Food Gifts,Drinkware & Serveware,Other Serveware
-677,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Gift Baskets
-678,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Cookies
-679,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Beverages
-680,7,Café & Food Gifts,Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Chocolate
+code,parent_code,level,name,position,default_department_number,default_used_department_number
+art_architecture_photography__design,,primary,"Art, Architecture, Photography & Design",1,110,130
+art_architecture_photography__design.architecture,art_architecture_photography__design,secondary,Architecture,1,110,130
+art_architecture_photography__design.architecture.architecture__design,art_architecture_photography__design.architecture,minor,Architecture & Design,1,110,130
+art_architecture_photography__design.architecture.architectural_practice,art_architecture_photography__design.architecture,minor,Architectural Practice,2,110,130
+art_architecture_photography__design.architecture.architects,art_architecture_photography__design.architecture,minor,Architects,3,110,130
+art_architecture_photography__design.architecture.architectural_history,art_architecture_photography__design.architecture,minor,Architectural History,4,110,130
+art_architecture_photography__design.architecture.classical,art_architecture_photography__design.architecture,minor,Classical,5,110,130
+art_architecture_photography__design.architecture.medieval,art_architecture_photography__design.architecture,minor,Medieval,6,110,130
+art_architecture_photography__design.architecture.renaissance,art_architecture_photography__design.architecture,minor,Renaissance,7,110,130
+art_architecture_photography__design.architecture.17th_century,art_architecture_photography__design.architecture,minor,17th Century,8,110,130
+art_architecture_photography__design.architecture.18th_century,art_architecture_photography__design.architecture,minor,18th Century,9,110,130
+art_architecture_photography__design.architecture.19th_century,art_architecture_photography__design.architecture,minor,19th Century,10,110,130
+art_architecture_photography__design.architecture.20th_century,art_architecture_photography__design.architecture,minor,20th Century,11,110,130
+art_architecture_photography__design.architecture.postmodern,art_architecture_photography__design.architecture,minor,Post-Modern,12,110,130
+art_architecture_photography__design.architecture.professional_design,art_architecture_photography__design.architecture,minor,Professional Design,13,110,130
+art_architecture_photography__design.art,art_architecture_photography__design,secondary,Art,14,110,130
+art_architecture_photography__design.art.clip_art,art_architecture_photography__design.art,minor,Clip Art,14,110,130
+art_architecture_photography__design.art.stereograms,art_architecture_photography__design.art,minor,Stereograms,15,110,130
+art_architecture_photography__design.art.architecture,art_architecture_photography__design.art,minor,Architecture,16,110,130
+art_architecture_photography__design.art_history__criticism,art_architecture_photography__design,secondary,Art History & Criticism,17,110,130
+art_architecture_photography__design.art_history__criticism.art_history__criticism,art_architecture_photography__design.art_history__criticism,minor,Art History & Criticism,17,110,130
+art_architecture_photography__design.art_history__criticism.ancientclassical,art_architecture_photography__design.art_history__criticism,minor,Ancient/Classical,18,110,130
+art_architecture_photography__design.art_history__criticism.renaissance,art_architecture_photography__design.art_history__criticism,minor,Renaissance,19,110,130
+art_architecture_photography__design.art_history__criticism.17th_century,art_architecture_photography__design.art_history__criticism,minor,17th Century,20,110,130
+art_architecture_photography__design.art_history__criticism.18th_century,art_architecture_photography__design.art_history__criticism,minor,18th Century,21,110,130
+art_architecture_photography__design.art_history__criticism.19th_century,art_architecture_photography__design.art_history__criticism,minor,19th Century,22,110,130
+art_architecture_photography__design.art_history__criticism.world_art,art_architecture_photography__design.art_history__criticism,minor,World Art,23,110,130
+art_architecture_photography__design.art_history__criticism.impressionism,art_architecture_photography__design.art_history__criticism,minor,Impressionism,24,110,130
+art_architecture_photography__design.art_history__criticism.20th_century,art_architecture_photography__design.art_history__criticism,minor,20th Century,25,110,130
+art_architecture_photography__design.art_techniques__media,art_architecture_photography__design,secondary,Art Techniques & Media,26,110,130
+art_architecture_photography__design.art_techniques__media.art_techniques,art_architecture_photography__design.art_techniques__media,minor,Art Techniques,26,110,130
+art_architecture_photography__design.art_techniques__media.drawing,art_architecture_photography__design.art_techniques__media,minor,Drawing,27,110,130
+art_architecture_photography__design.art_techniques__media.watercolor,art_architecture_photography__design.art_techniques__media,minor,Watercolor,28,110,130
+art_architecture_photography__design.art_techniques__media.color_theory,art_architecture_photography__design.art_techniques__media,minor,Color Theory,29,110,130
+art_architecture_photography__design.art_techniques__media.calligraphy,art_architecture_photography__design.art_techniques__media,minor,Calligraphy,30,110,130
+art_architecture_photography__design.art_techniques__media.sculpture_techniques,art_architecture_photography__design.art_techniques__media,minor,Sculpture Techniques,31,110,130
+art_architecture_photography__design.art_techniques__media.sculpture,art_architecture_photography__design.art_techniques__media,minor,Sculpture,32,110,130
+art_architecture_photography__design.art_techniques__media.painting,art_architecture_photography__design.art_techniques__media,minor,Painting,33,110,130
+art_architecture_photography__design.art_techniques__media.stencil_art,art_architecture_photography__design.art_techniques__media,minor,Stencil Art,34,110,130
+art_architecture_photography__design.artists_monographs__collections,art_architecture_photography__design,secondary,"Artists, Monographs & Collections",35,110,130
+art_architecture_photography__design.artists_monographs__collections.collections,art_architecture_photography__design.artists_monographs__collections,minor,Collections,35,110,130
+art_architecture_photography__design.artists_monographs__collections.artists,art_architecture_photography__design.artists_monographs__collections,minor,Artists,36,110,130
+art_architecture_photography__design.design_fashion__art_careers,art_architecture_photography__design,secondary,"Design, Fashion & Art Careers",37,110,130
+art_architecture_photography__design.design_fashion__art_careers.couture,art_architecture_photography__design.design_fashion__art_careers,minor,Couture,37,110,130
+art_architecture_photography__design.design_fashion__art_careers.graphic_design,art_architecture_photography__design.design_fashion__art_careers,minor,Graphic Design,38,110,130
+art_architecture_photography__design.design_fashion__art_careers.art_business__careers,art_architecture_photography__design.design_fashion__art_careers,minor,Art Business & Careers,39,110,130
+art_architecture_photography__design.photography,art_architecture_photography__design,secondary,Photography,40,110,130
+art_architecture_photography__design.photography.technique__howto,art_architecture_photography__design.photography,minor,Technique & How-To,40,110,130
+art_architecture_photography__design.photography.nature_photography,art_architecture_photography__design.photography,minor,Nature Photography,41,110,130
+art_architecture_photography__design.photography.35mm_photography,art_architecture_photography__design.photography,minor,35mm Photography,42,110,130
+art_architecture_photography__design.photography.camera,art_architecture_photography__design.photography,minor,Camera,43,110,130
+art_architecture_photography__design.photography.photo_essays,art_architecture_photography__design.photography,minor,Photo Essays,44,110,130
+art_architecture_photography__design.photography.fashion_photography,art_architecture_photography__design.photography,minor,Fashion Photography,45,110,130
+art_architecture_photography__design.photography.darkrooms,art_architecture_photography__design.photography,minor,Darkrooms,46,110,130
+art_architecture_photography__design.photography.photography_business,art_architecture_photography__design.photography,minor,Photography Business,47,110,130
+art_architecture_photography__design.photography.monographs,art_architecture_photography__design.photography,minor,Monographs,48,110,130
+art_architecture_photography__design.photography.ansel_adams,art_architecture_photography__design.photography,minor,Ansel Adams,49,110,130
+business_economics__careers,,primary,"Business, Economics & Careers",50,110,130
+business_economics__careers.business__management,business_economics__careers,secondary,Business & Management,50,110,130
+business_economics__careers.business__management.general_business,business_economics__careers.business__management,minor,General Business,50,110,130
+business_economics__careers.business__management.customer_service,business_economics__careers.business__management,minor,Customer Service,51,110,130
+business_economics__careers.business__management.accounting,business_economics__careers.business__management,minor,Accounting,52,110,130
+business_economics__careers.business__management.management,business_economics__careers.business__management,minor,Management,53,110,130
+business_economics__careers.business__management.small_business,business_economics__careers.business__management,minor,Small Business,54,110,130
+business_economics__careers.business__management.sales,business_economics__careers.business__management,minor,Sales,55,110,130
+business_economics__careers.business__management.marketing,business_economics__careers.business__management,minor,Marketing,56,110,130
+business_economics__careers.business__management.advertising,business_economics__careers.business__management,minor,Advertising,57,110,130
+business_economics__careers.business__management.human_resources,business_economics__careers.business__management,minor,Human Resources,58,110,130
+business_economics__careers.business__management.consulting,business_economics__careers.business__management,minor,Consulting,59,110,130
+business_economics__careers.business__management.manufacturing,business_economics__careers.business__management,minor,Manufacturing,60,110,130
+business_economics__careers.business__management.business_life,business_economics__careers.business__management,minor,Business Life,61,110,130
+business_economics__careers.business__management.retail,business_economics__careers.business__management,minor,Retail,62,110,130
+business_economics__careers.business_reference__biography,business_economics__careers,secondary,Business Reference & Biography,63,110,130
+business_economics__careers.business_reference__biography.business_ref,business_economics__careers.business_reference__biography,minor,Business Ref,63,110,130
+business_economics__careers.business_reference__biography.business_biography__corporate_profiles,business_economics__careers.business_reference__biography,minor,Business Biography & Corporate Profiles,64,110,130
+business_economics__careers.careers__job_search,business_economics__careers,secondary,Careers & Job Search,65,110,130
+business_economics__careers.careers__job_search.careers,business_economics__careers.careers__job_search,minor,Careers,65,110,130
+business_economics__careers.careers__job_search.rsums__interviews,business_economics__careers.careers__job_search,minor,Résumés & Interviews,66,110,130
+business_economics__careers.economics_trade__labor,business_economics__careers,secondary,"Economics, Trade & Labor",67,110,130
+business_economics__careers.economics_trade__labor.economics,business_economics__careers.economics_trade__labor,minor,Economics,67,110,130
+business_economics__careers.economics_trade__labor.foreign_trade,business_economics__careers.economics_trade__labor,minor,Foreign Trade,68,110,130
+business_economics__careers.economics_trade__labor.labor,business_economics__careers.economics_trade__labor,minor,Labor,69,110,130
+business_economics__careers.finance_investing__real_estate,business_economics__careers,secondary,"Finance, Investing & Real Estate",70,110,130
+business_economics__careers.finance_investing__real_estate.financebanking,business_economics__careers.finance_investing__real_estate,minor,Finance/Banking,70,110,130
+business_economics__careers.finance_investing__real_estate.real_estate,business_economics__careers.finance_investing__real_estate,minor,Real Estate,71,110,130
+business_economics__careers.finance_investing__real_estate.personal_finance,business_economics__careers.finance_investing__real_estate,minor,Personal Finance,72,110,130
+business_economics__careers.finance_investing__real_estate.securities_commodities__futures,business_economics__careers.finance_investing__real_estate,minor,"Securities, Commodities & Futures",73,110,130
+business_economics__careers.finance_investing__real_estate.investing__commodities,business_economics__careers.finance_investing__real_estate,minor,Investing & Commodities,74,110,130
+business_economics__careers.nonprofit__fundraising,business_economics__careers,secondary,Nonprofit & Fundraising,75,110,130
+business_economics__careers.nonprofit__fundraising.fundraising,business_economics__careers.nonprofit__fundraising,minor,Fundraising,75,110,130
+childrens_books,,primary,Children's Books,76,110,130
+childrens_books.board_books__toddlers,childrens_books,secondary,Board Books & Toddlers,76,110,130
+childrens_books.board_books__toddlers.board__shaped_books,childrens_books.board_books__toddlers,minor,Board & Shaped Books,76,110,130
+childrens_books.board_books__toddlers.peggable__novelty_books,childrens_books.board_books__toddlers,minor,Peggable & Novelty Books,77,110,130
+childrens_books.childrens_activities_workbooks__novelty,childrens_books,secondary,"Children's Activities, Workbooks & Novelty",78,110,130
+childrens_books.childrens_activities_workbooks__novelty.childrens_activities,childrens_books.childrens_activities_workbooks__novelty,minor,Children’s Activities,78,110,130
+childrens_books.childrens_activities_workbooks__novelty.childrens_workbooks,childrens_books.childrens_activities_workbooks__novelty,minor,Children’s Workbooks,79,110,130
+childrens_books.childrens_activities_workbooks__novelty.teacher_resources,childrens_books.childrens_activities_workbooks__novelty,minor,Teacher Resources,80,110,130
+childrens_books.childrens_activities_workbooks__novelty.childrens_novelty_books,childrens_books.childrens_activities_workbooks__novelty,minor,Children’s Novelty Books,81,110,130
+childrens_books.childrens_biography_history__culture,childrens_books,secondary,"Children's Biography, History & Culture",82,110,130
+childrens_books.childrens_biography_history__culture.childrens_biography,childrens_books.childrens_biography_history__culture,minor,Children’s Biography,82,110,130
+childrens_books.childrens_biography_history__culture.childrens_history,childrens_books.childrens_biography_history__culture,minor,Children’s History,83,110,130
+childrens_books.childrens_biography_history__culture.native_american_history__culture,childrens_books.childrens_biography_history__culture,minor,Native American History & Culture,84,110,130
+childrens_books.childrens_classics,childrens_books,secondary,Children's Classics,85,110,130
+childrens_books.childrens_classics.childrens_classics,childrens_books.childrens_classics,minor,Children’s Classics,85,110,130
+childrens_books.childrens_general_reference__languages,childrens_books,secondary,Children's General Reference & Languages,86,110,130
+childrens_books.childrens_general_reference__languages.general_childrens_nonfiction,childrens_books.childrens_general_reference__languages,minor,General Children’s Nonfiction,86,110,130
+childrens_books.childrens_general_reference__languages.childrens_dictionaries,childrens_books.childrens_general_reference__languages,minor,Children’s Dictionaries,87,110,130
+childrens_books.childrens_general_reference__languages.childrens_language_learning,childrens_books.childrens_general_reference__languages,minor,Children’s Language Learning,88,110,130
+childrens_books.childrens_religion_growing_up__special_needs,childrens_books,secondary,"Children's Religion, Growing Up & Special Needs",89,110,130
+childrens_books.childrens_religion_growing_up__special_needs.childrens_religion,childrens_books.childrens_religion_growing_up__special_needs,minor,Children’s Religion,89,110,130
+childrens_books.childrens_religion_growing_up__special_needs.growing_up,childrens_books.childrens_religion_growing_up__special_needs,minor,Growing Up,90,110,130
+childrens_books.childrens_religion_growing_up__special_needs.children_with_special_needs,childrens_books.childrens_religion_growing_up__special_needs,minor,Children with Special Needs,91,110,130
+childrens_books.childrens_science_nature__dinosaurs,childrens_books,secondary,"Children's Science, Nature & Dinosaurs",92,110,130
+childrens_books.childrens_science_nature__dinosaurs.childrens_nature,childrens_books.childrens_science_nature__dinosaurs,minor,Children’s Nature,92,110,130
+childrens_books.childrens_science_nature__dinosaurs.childrens_science,childrens_books.childrens_science_nature__dinosaurs,minor,Children’s Science,93,110,130
+childrens_books.childrens_science_nature__dinosaurs.eyewitness_series,childrens_books.childrens_science_nature__dinosaurs,minor,Eyewitness Series,94,110,130
+childrens_books.childrens_science_nature__dinosaurs.dinosaurs,childrens_books.childrens_science_nature__dinosaurs,minor,Dinosaurs,95,110,130
+childrens_books.childrens_spanishlanguage_books,childrens_books,secondary,Children's Spanish-Language Books,96,110,130
+childrens_books.childrens_spanishlanguage_books.libros_para_nios,childrens_books.childrens_spanishlanguage_books,minor,Libros para Niños,96,110,130
+childrens_books.childrens_sports_humor_arts__cooking,childrens_books,secondary,"Children's Sports, Humor, Arts & Cooking",97,110,130
+childrens_books.childrens_sports_humor_arts__cooking.childrens_sports,childrens_books.childrens_sports_humor_arts__cooking,minor,Children’s Sports,97,110,130
+childrens_books.childrens_sports_humor_arts__cooking.childrens_humor,childrens_books.childrens_sports_humor_arts__cooking,minor,Children’s Humor,98,110,130
+childrens_books.childrens_sports_humor_arts__cooking.childrens_music__art,childrens_books.childrens_sports_humor_arts__cooking,minor,Children’s Music & Art,99,110,130
+childrens_books.childrens_sports_humor_arts__cooking.childrens_cookbooks,childrens_books.childrens_sports_humor_arts__cooking,minor,Children’s Cookbooks,100,110,130
+childrens_books.early_readers,childrens_books,secondary,Early Readers,101,110,130
+childrens_books.early_readers.early_readers__hardcover,childrens_books.early_readers,minor,Early Readers — Hardcover,101,110,130
+childrens_books.early_readers.early_readers__paperback,childrens_books.early_readers,minor,Early Readers — Paperback,102,110,130
+childrens_books.holidays__seasonal,childrens_books,secondary,Holidays & Seasonal,103,110,130
+childrens_books.holidays__seasonal.childrens_holidays,childrens_books.holidays__seasonal,minor,Children’s Holidays,103,110,130
+childrens_books.middle_grade_fiction,childrens_books,secondary,Middle Grade Fiction,104,110,130
+childrens_books.middle_grade_fiction.middle_grade_fiction__paperback,childrens_books.middle_grade_fiction,minor,Middle Grade Fiction — Paperback,104,110,130
+childrens_books.middle_grade_fiction.middle_grade_fiction__hardcover,childrens_books.middle_grade_fiction,minor,Middle Grade Fiction — Hardcover,105,110,130
+childrens_books.middle_grade_fiction.newbery,childrens_books.middle_grade_fiction,minor,Newbery,106,110,130
+childrens_books.picture_books,childrens_books,secondary,Picture Books,107,110,130
+childrens_books.picture_books.picture_books__hardcover,childrens_books.picture_books,minor,Picture Books — Hardcover,107,110,130
+childrens_books.picture_books.picture_books__paperback,childrens_books.picture_books,minor,Picture Books — Paperback,108,110,130
+childrens_books.picture_books.caldecott,childrens_books.picture_books,minor,Caldecott,109,110,130
+childrens_books.picture_books.book__doll_sets,childrens_books.picture_books,minor,Book & Doll Sets,110,110,130
+childrens_books.picture_books__classics,childrens_books,secondary,Picture Books & Classics,111,110,130
+childrens_books.picture_books__classics.dr_seuss,childrens_books.picture_books__classics,minor,Dr. Seuss,111,110,130
+childrens_books.picture_books__preschool,childrens_books,secondary,Picture Books & Preschool,112,110,130
+childrens_books.picture_books__preschool.preschool_collections,childrens_books.picture_books__preschool,minor,Preschool Collections,112,110,130
+childrens_books.picture_books__preschool.preschool_poetry,childrens_books.picture_books__preschool,minor,Preschool Poetry,113,110,130
+childrens_books.picture_books__preschool.disney_preschool,childrens_books.picture_books__preschool,minor,Disney Preschool,114,110,130
+childrens_books.picture_books__preschool.general_preschool,childrens_books.picture_books__preschool,minor,General Preschool,115,110,130
+childrens_books.picture_books__preschool.electronic_preschool_books,childrens_books.picture_books__preschool,minor,Electronic Preschool Books,116,110,130
+childrens_books.picture_books__preschool.popups,childrens_books.picture_books__preschool,minor,Pop-Ups,117,110,130
+childrens_books.picture_books__preschool.interactive_books,childrens_books.picture_books__preschool,minor,Interactive Books,118,110,130
+childrens_books.series__characters,childrens_books,secondary,Series & Characters,119,110,130
+childrens_books.series__characters.popular_childrens_series,childrens_books.series__characters,minor,Popular Children’s Series,119,110,130
+childrens_books.series__characters.adventure_series_legacy_gendered_label,childrens_books.series__characters,minor,Adventure Series (legacy gendered label),120,110,130
+childrens_books.series__characters.nancy_drew__hardy_boys,childrens_books.series__characters,minor,Nancy Drew & Hardy Boys,121,110,130
+childrens_books.series__characters.the_babysitters_club,childrens_books.series__characters,minor,The Baby-Sitters Club,122,110,130
+childrens_books.series__characters.early_chapter_book_series,childrens_books.series__characters,minor,Early Chapter Book Series,123,110,130
+childrens_books.series__characters.goosebumps,childrens_books.series__characters,minor,Goosebumps,124,110,130
+childrens_books.series__characters.american_girl,childrens_books.series__characters,minor,American Girl,125,110,130
+cooking_food__drink,,primary,"Cooking, Food & Drink",126,110,130
+cooking_food__drink.appliances_grilling__technique,cooking_food__drink,secondary,"Appliances, Grilling & Technique",126,110,130
+cooking_food__drink.appliances_grilling__technique.appliance_cooking,cooking_food__drink.appliances_grilling__technique,minor,Appliance Cooking,126,110,130
+cooking_food__drink.appliances_grilling__technique.appliance_cooking__grilling,cooking_food__drink.appliances_grilling__technique,minor,Appliance Cooking & Grilling,127,110,130
+cooking_food__drink.diet__special_diets,cooking_food__drink,secondary,Diet & Special Diets,128,110,130
+cooking_food__drink.diet__special_diets.diet__weight_management,cooking_food__drink.diet__special_diets,minor,Diet & Weight Management,128,110,130
+cooking_food__drink.diet__special_diets.vegetarian,cooking_food__drink.diet__special_diets,minor,Vegetarian,129,110,130
+cooking_food__drink.general_cooking_entertaining__professional,cooking_food__drink,secondary,"General Cooking, Entertaining & Professional",130,110,130
+cooking_food__drink.general_cooking_entertaining__professional.general_cookbooks,cooking_food__drink.general_cooking_entertaining__professional,minor,General Cookbooks,130,110,130
+cooking_food__drink.general_cooking_entertaining__professional.entertaining__gift_cookbooks,cooking_food__drink.general_cooking_entertaining__professional,minor,Entertaining & Gift Cookbooks,131,110,130
+cooking_food__drink.general_cooking_entertaining__professional.professional,cooking_food__drink.general_cooking_entertaining__professional,minor,Professional,132,110,130
+cooking_food__drink.wine__spirits,cooking_food__drink,secondary,Wine & Spirits,133,110,130
+cooking_food__drink.wine__spirits.winesspirits,cooking_food__drink.wine__spirits,minor,Wines/Spirits,133,110,130
+cooking_food__drink.world__regional_cuisines,cooking_food__drink,secondary,World & Regional Cuisines,134,110,130
+cooking_food__drink.world__regional_cuisines.french,cooking_food__drink.world__regional_cuisines,minor,French,134,110,130
+cooking_food__drink.world__regional_cuisines.italian,cooking_food__drink.world__regional_cuisines,minor,Italian,135,110,130
+cooking_food__drink.world__regional_cuisines.jewish,cooking_food__drink.world__regional_cuisines,minor,Jewish,136,110,130
+cooking_food__drink.world__regional_cuisines.mexican,cooking_food__drink.world__regional_cuisines,minor,Mexican,137,110,130
+cooking_food__drink.world__regional_cuisines.asian,cooking_food__drink.world__regional_cuisines,minor,Asian,138,110,130
+cooking_food__drink.world__regional_cuisines.other_international_cuisines,cooking_food__drink.world__regional_cuisines,minor,Other International Cuisines,139,110,130
+fiction__literature,,primary,Fiction & Literature,140,110,130
+fiction__literature.boxed_sets,fiction__literature,secondary,Boxed Sets,140,110,130
+fiction__literature.boxed_sets.box_sets,fiction__literature.boxed_sets,minor,Box Sets,140,110,130
+fiction__literature.general_fiction,fiction__literature,secondary,General Fiction,141,110,130
+fiction__literature.general_fiction.paperback_fiction,fiction__literature.general_fiction,minor,Paperback Fiction,141,110,130
+fiction__literature.general_fiction.latin_american_fiction,fiction__literature.general_fiction,minor,Latin American Fiction,142,110,130
+fiction__literature.general_fiction.fiction__literature,fiction__literature.general_fiction,minor,Fiction & Literature,143,110,130
+fiction__literature.general_fiction.anthologies,fiction__literature.general_fiction,minor,Anthologies,144,110,130
+fiction__literature.literature_essays__criticism,fiction__literature,secondary,"Literature, Essays & Criticism",145,110,130
+fiction__literature.literature_essays__criticism.fiction__literature,fiction__literature.literature_essays__criticism,minor,Fiction & Literature,145,110,130
+fiction__literature.literature_essays__criticism.essays__memoir,fiction__literature.literature_essays__criticism,minor,Essays & Memoir,146,110,130
+fiction__literature.literature_essays__criticism.literary_theory,fiction__literature.literature_essays__criticism,minor,Literary Theory,147,110,130
+fiction__literature.literature_essays__criticism.mythology,fiction__literature.literature_essays__criticism,minor,Mythology,148,110,130
+fiction__literature.poetry,fiction__literature,secondary,Poetry,149,110,130
+fiction__literature.poetry.poetry_general,fiction__literature.poetry,minor,Poetry General,149,110,130
+fiction__literature.poetry.poets_anthologies__commentary,fiction__literature.poetry,minor,"Poets, Anthologies & Commentary",150,110,130
+fiction__literature.westerns,fiction__literature,secondary,Westerns,151,110,130
+fiction__literature.westerns.westerns,fiction__literature.westerns,minor,Westerns,151,110,130
+gift_books,,primary,Gift Books,152,110,130
+gift_books.little_gift_books,gift_books,secondary,Little Gift Books,152,110,130
+gift_books.little_gift_books.little_gift_books__hardcover,gift_books.little_gift_books,minor,Little Gift Books — Hardcover,152,110,130
+gift_books.little_gift_books.little_gift_books__paperback,gift_books.little_gift_books,minor,Little Gift Books — Paperback,153,110,130
+graphic_novels_manga__comics,,primary,"Graphic Novels, Manga & Comics",154,110,130
+graphic_novels_manga__comics.graphic_novels,graphic_novels_manga__comics,secondary,Graphic Novels,154,110,130
+graphic_novels_manga__comics.graphic_novels.graphic_novels,graphic_novels_manga__comics.graphic_novels,minor,Graphic Novels,154,110,130
+graphic_novels_manga__comics.periodical_comics,graphic_novels_manga__comics,secondary,Periodical Comics,155,110,130
+graphic_novels_manga__comics.periodical_comics.comic_books,graphic_novels_manga__comics.periodical_comics,minor,Comic Books,155,110,130
+health_wellness__family,,primary,"Health, Wellness & Family",156,110,130
+health_wellness__family.alternative__complementary_medicine,health_wellness__family,secondary,Alternative & Complementary Medicine,156,110,130
+health_wellness__family.alternative__complementary_medicine.alternative_med,health_wellness__family.alternative__complementary_medicine,minor,Alternative Med,156,110,130
+health_wellness__family.alternative__complementary_medicine.herbal_medicine,health_wellness__family.alternative__complementary_medicine,minor,Herbal Medicine,157,110,130
+health_wellness__family.alternative__complementary_medicine.massagereflexology,health_wellness__family.alternative__complementary_medicine,minor,Massage/Reflexology,158,110,130
+health_wellness__family.alternative__complementary_medicine.aromatherapy,health_wellness__family.alternative__complementary_medicine,minor,Aromatherapy,159,110,130
+health_wellness__family.conditions__diseases,health_wellness__family,secondary,Conditions & Diseases,160,110,130
+health_wellness__family.conditions__diseases.allergies,health_wellness__family.conditions__diseases,minor,Allergies,160,110,130
+health_wellness__family.conditions__diseases.cancer,health_wellness__family.conditions__diseases,minor,Cancer,161,110,130
+health_wellness__family.conditions__diseases.diabetes,health_wellness__family.conditions__diseases,minor,Diabetes,162,110,130
+health_wellness__family.conditions__diseases.heart_disease,health_wellness__family.conditions__diseases,minor,Heart Disease,163,110,130
+health_wellness__family.conditions__diseases.aids,health_wellness__family.conditions__diseases,minor,Aids,164,110,130
+health_wellness__family.conditions__diseases.other_diseases,health_wellness__family.conditions__diseases,minor,Other Diseases,165,110,130
+health_wellness__family.conditions__diseases.stds,health_wellness__family.conditions__diseases,minor,STDs,166,110,130
+health_wellness__family.diet__nutrition,health_wellness__family,secondary,Diet & Nutrition,167,110,130
+health_wellness__family.diet__nutrition.diets,health_wellness__family.diet__nutrition,minor,Diets,167,110,130
+health_wellness__family.diet__nutrition.nutrition,health_wellness__family.diet__nutrition,minor,Nutrition,168,110,130
+health_wellness__family.diet__nutrition.food_counters,health_wellness__family.diet__nutrition,minor,Food Counters,169,110,130
+health_wellness__family.exercise_fitness__yoga,health_wellness__family,secondary,"Exercise, Fitness & Yoga",170,110,130
+health_wellness__family.exercise_fitness__yoga.exercise,health_wellness__family.exercise_fitness__yoga,minor,Exercise,170,110,130
+health_wellness__family.exercise_fitness__yoga.yoga,health_wellness__family.exercise_fitness__yoga,minor,Yoga,171,110,130
+health_wellness__family.general_health_beauty__aging,health_wellness__family,secondary,"General Health, Beauty & Aging",172,110,130
+health_wellness__family.general_health_beauty__aging.health,health_wellness__family.general_health_beauty__aging,minor,Health,172,110,130
+health_wellness__family.general_health_beauty__aging.beauty__grooming,health_wellness__family.general_health_beauty__aging,minor,Beauty & Grooming,173,110,130
+health_wellness__family.general_health_beauty__aging.aging,health_wellness__family.general_health_beauty__aging,minor,Aging,174,110,130
+health_wellness__family.medicine__nursing,health_wellness__family,secondary,Medicine & Nursing,175,110,130
+health_wellness__family.medicine__nursing.medical_ref,health_wellness__family.medicine__nursing,minor,Medical Ref,175,110,130
+health_wellness__family.medicine__nursing.nursing_procedures,health_wellness__family.medicine__nursing,minor,Nursing Procedures,176,110,130
+health_wellness__family.medicine__nursing.nursing_drug_guides,health_wellness__family.medicine__nursing,minor,Nursing Drug Guides,177,110,130
+health_wellness__family.medicine__nursing.anatomyphysiology,health_wellness__family.medicine__nursing,minor,Anatomy/Physiology,178,110,130
+health_wellness__family.medicine__nursing.nursing_exam_review,health_wellness__family.medicine__nursing,minor,Nursing Exam Review,179,110,130
+health_wellness__family.medicine__nursing.allied_health,health_wellness__family.medicine__nursing,minor,Allied Health,180,110,130
+health_wellness__family.medicine__nursing.medicine,health_wellness__family.medicine__nursing,minor,Medicine,181,110,130
+health_wellness__family.parenting__family,health_wellness__family,secondary,Parenting & Family,182,110,130
+health_wellness__family.parenting__family.parenting__child_care,health_wellness__family.parenting__family,minor,Parenting & Child Care,182,110,130
+health_wellness__family.parenting__family.baby_names,health_wellness__family.parenting__family,minor,Baby Names,183,110,130
+health_wellness__family.parenting__family.pregnancy__childbirth,health_wellness__family.parenting__family,minor,Pregnancy & Childbirth,184,110,130
+health_wellness__family.parenting__family.divorce__children,health_wellness__family.parenting__family,minor,Divorce & Children,185,110,130
+health_wellness__family.parenting__family.children_with_special_needs,health_wellness__family.parenting__family,minor,Children with Special Needs,186,110,130
+health_wellness__family.parenting__family.schoolage_children,health_wellness__family.parenting__family,minor,School-Age Children,187,110,130
+health_wellness__family.parenting__family.infantstoddlers,health_wellness__family.parenting__family,minor,Infants/Toddlers,188,110,130
+health_wellness__family.parenting__family.adoption,health_wellness__family.parenting__family,minor,Adoption,189,110,130
+health_wellness__family.parenting__family.sex_education,health_wellness__family.parenting__family,minor,Sex Education,190,110,130
+health_wellness__family.parenting__family.activities,health_wellness__family.parenting__family,minor,Activities,191,110,130
+health_wellness__family.womens__reproductive_health,health_wellness__family,secondary,Women's & Reproductive Health,192,110,130
+health_wellness__family.womens__reproductive_health.fertilitymiscarriage,health_wellness__family.womens__reproductive_health,minor,Fertility/Miscarriage,192,110,130
+health_wellness__family.womens__reproductive_health.womens_health,health_wellness__family.womens__reproductive_health,minor,Womens Health,193,110,130
+history_biography__politics,,primary,"History, Biography & Politics",194,110,130
+history_biography__politics.ancient_medieval__renaissance_history,history_biography__politics,secondary,"Ancient, Medieval & Renaissance History",194,110,130
+history_biography__politics.ancient_medieval__renaissance_history.ancient_hist,history_biography__politics.ancient_medieval__renaissance_history,minor,Ancient Hist,194,110,130
+history_biography__politics.ancient_medieval__renaissance_history.medieval__renaissance_history,history_biography__politics.ancient_medieval__renaissance_history,minor,Medieval & Renaissance History,195,110,130
+history_biography__politics.military_history,history_biography__politics,secondary,Military History,196,110,130
+history_biography__politics.military_history.military_history,history_biography__politics.military_history,minor,Military History,196,110,130
+history_biography__politics.politics__current_affairs,history_biography__politics,secondary,Politics & Current Affairs,197,110,130
+history_biography__politics.politics__current_affairs.united_states_current_affairs,history_biography__politics.politics__current_affairs,minor,United States Current Affairs,197,110,130
+history_biography__politics.politics__current_affairs.media__journalism,history_biography__politics.politics__current_affairs,minor,Media & Journalism,198,110,130
+history_biography__politics.politics__current_affairs.us_politics,history_biography__politics.politics__current_affairs,minor,US Politics,199,110,130
+history_biography__politics.politics__current_affairs.international_current_affairs,history_biography__politics.politics__current_affairs,minor,International Current Affairs,200,110,130
+history_biography__politics.politics__current_affairs.international_politics,history_biography__politics.politics__current_affairs,minor,International Politics,201,110,130
+history_biography__politics.regional__national_history,history_biography__politics,secondary,Regional & National History,202,110,130
+history_biography__politics.regional__national_history.japan_hist,history_biography__politics.regional__national_history,minor,Japan Hist,202,110,130
+history_biography__politics.regional__national_history.irish_history,history_biography__politics.regional__national_history,minor,Irish History,203,110,130
+history_biography__politics.regional__national_history.eur_history,history_biography__politics.regional__national_history,minor,Eur History,204,110,130
+history_biography__politics.regional__national_history.middle_eastern_history,history_biography__politics.regional__national_history,minor,Middle Eastern History,205,110,130
+history_biography__politics.regional__national_history.african_hist,history_biography__politics.regional__national_history,minor,African Hist,206,110,130
+history_biography__politics.regional__national_history.asian_hist,history_biography__politics.regional__national_history,minor,Asian Hist,207,110,130
+history_biography__politics.regional__national_history.british_hist,history_biography__politics.regional__national_history,minor,British Hist,208,110,130
+history_biography__politics.regional__national_history.latin_amer_hist,history_biography__politics.regional__national_history,minor,Latin Amer Hist,209,110,130
+history_biography__politics.regional__national_history.eastern_european_history,history_biography__politics.regional__national_history,minor,Eastern European History,210,110,130
+history_biography__politics.regional__national_history.israel_hist,history_biography__politics.regional__national_history,minor,Israel Hist,211,110,130
+history_biography__politics.regional__national_history.northern_european_history,history_biography__politics.regional__national_history,minor,Northern European History,212,110,130
+history_biography__politics.regional__national_history.caribbean_hist,history_biography__politics.regional__national_history,minor,Caribbean Hist,213,110,130
+history_biography__politics.regional__national_history.chinese_hist,history_biography__politics.regional__national_history,minor,Chinese Hist,214,110,130
+history_biography__politics.regional__national_history.western_european_history,history_biography__politics.regional__national_history,minor,Western European History,215,110,130
+history_biography__politics.united_states_history__biography,history_biography__politics,secondary,United States History & Biography,216,110,130
+history_biography__politics.united_states_history__biography.united_states_history,history_biography__politics.united_states_history__biography,minor,United States History,216,110,130
+history_biography__politics.united_states_history__biography.united_states_biography,history_biography__politics.united_states_history__biography,minor,United States Biography,217,110,130
+history_biography__politics.united_states_history__biography.civil_war,history_biography__politics.united_states_history__biography,minor,Civil War,218,110,130
+history_biography__politics.united_states_history__biography.urban_studies,history_biography__politics.united_states_history__biography,minor,Urban Studies,219,110,130
+history_biography__politics.world_history__biography,history_biography__politics,secondary,World History & Biography,220,110,130
+history_biography__politics.world_history__biography.world_hist,history_biography__politics.world_history__biography,minor,World Hist,220,110,130
+history_biography__politics.world_history__biography.world_biography,history_biography__politics.world_history__biography,minor,World Biography,221,110,130
+history_biography__politics.world_history__biography.general_history,history_biography__politics.world_history__biography,minor,General History,222,110,130
+home_garden_crafts__collecting,,primary,"Home, Garden, Crafts & Collecting",223,110,130
+home_garden_crafts__collecting.antiques__collectibles,home_garden_crafts__collecting,secondary,Antiques & Collectibles,223,110,130
+home_garden_crafts__collecting.antiques__collectibles.antiques_gen,home_garden_crafts__collecting.antiques__collectibles,minor,Antiques Gen,223,110,130
+home_garden_crafts__collecting.antiques__collectibles.price_guides,home_garden_crafts__collecting.antiques__collectibles,minor,Price Guides,224,110,130
+home_garden_crafts__collecting.antiques__collectibles.coins,home_garden_crafts__collecting.antiques__collectibles,minor,Coins,225,110,130
+home_garden_crafts__collecting.antiques__collectibles.dolls,home_garden_crafts__collecting.antiques__collectibles,minor,Dolls,226,110,130
+home_garden_crafts__collecting.antiques__collectibles.glassstained_g,home_garden_crafts__collecting.antiques__collectibles,minor,Glass/Stained G,227,110,130
+home_garden_crafts__collecting.antiques__collectibles.jewelry,home_garden_crafts__collecting.antiques__collectibles,minor,Jewelry,228,110,130
+home_garden_crafts__collecting.antiques__collectibles.pottery_porcelain__china,home_garden_crafts__collecting.antiques__collectibles,minor,"Pottery, Porcelain & China",229,110,130
+home_garden_crafts__collecting.antiques__collectibles.stamps,home_garden_crafts__collecting.antiques__collectibles,minor,Stamps,230,110,130
+home_garden_crafts__collecting.antiques__collectibles.general_collecting,home_garden_crafts__collecting.antiques__collectibles,minor,General Collecting,231,110,130
+home_garden_crafts__collecting.antiques__collectibles.sports_cards,home_garden_crafts__collecting.antiques__collectibles,minor,Sports Cards,232,110,130
+home_garden_crafts__collecting.ceramics_glass__jewelry,home_garden_crafts__collecting,secondary,"Ceramics, Glass & Jewelry",233,110,130
+home_garden_crafts__collecting.ceramics_glass__jewelry.ceramicspottery,home_garden_crafts__collecting.ceramics_glass__jewelry,minor,Ceramics/Pottery,233,110,130
+home_garden_crafts__collecting.ceramics_glass__jewelry.glass__stained_glass,home_garden_crafts__collecting.ceramics_glass__jewelry,minor,Glass & Stained Glass,234,110,130
+home_garden_crafts__collecting.ceramics_glass__jewelry.jewelry__metalworking,home_garden_crafts__collecting.ceramics_glass__jewelry,minor,Jewelry & Metalworking,235,110,130
+home_garden_crafts__collecting.gardening,home_garden_crafts__collecting,secondary,Gardening,236,110,130
+home_garden_crafts__collecting.gardening.outdoor_gardening,home_garden_crafts__collecting.gardening,minor,Outdoor Gardening,236,110,130
+home_garden_crafts__collecting.gardening.indoor_gardening,home_garden_crafts__collecting.gardening,minor,Indoor Gardening,237,110,130
+home_garden_crafts__collecting.gardening.fruits_vegetables__herbs,home_garden_crafts__collecting.gardening,minor,"Fruits, Vegetables & Herbs",238,110,130
+home_garden_crafts__collecting.gardening.flower_gardening,home_garden_crafts__collecting.gardening,minor,Flower Gardening,239,110,130
+home_garden_crafts__collecting.general_crafts_tools__projects,home_garden_crafts__collecting,secondary,"General Crafts, Tools & Projects",240,110,130
+home_garden_crafts__collecting.general_crafts_tools__projects.crafts__hobbies,home_garden_crafts__collecting.general_crafts_tools__projects,minor,Crafts & Hobbies,240,110,130
+home_garden_crafts__collecting.general_crafts_tools__projects.artisans__craftspeople,home_garden_crafts__collecting.general_crafts_tools__projects,minor,Artisans & Craftspeople,241,110,130
+home_garden_crafts__collecting.general_crafts_tools__projects.tools,home_garden_crafts__collecting.general_crafts_tools__projects,minor,Tools,242,110,130
+home_garden_crafts__collecting.general_crafts_tools__projects.projects__plans,home_garden_crafts__collecting.general_crafts_tools__projects,minor,Projects & Plans,243,110,130
+home_garden_crafts__collecting.home__decorating,home_garden_crafts__collecting,secondary,Home & Decorating,244,110,130
+home_garden_crafts__collecting.home__decorating.house__home,home_garden_crafts__collecting.home__decorating,minor,House & Home,244,110,130
+home_garden_crafts__collecting.home__decorating.carpentry,home_garden_crafts__collecting.home__decorating,minor,Carpentry,245,110,130
+home_garden_crafts__collecting.home__decorating.decorating,home_garden_crafts__collecting.home__decorating,minor,Decorating,246,110,130
+home_garden_crafts__collecting.home__decorating.house_plans,home_garden_crafts__collecting.home__decorating,minor,House Plans,247,110,130
+home_garden_crafts__collecting.home__decorating.home_repair__renovation,home_garden_crafts__collecting.home__decorating,minor,Home Repair & Renovation,248,110,130
+home_garden_crafts__collecting.home__decorating.design__lifestyle,home_garden_crafts__collecting.home__decorating,minor,Design & Lifestyle,249,110,130
+home_garden_crafts__collecting.models__doll_making,home_garden_crafts__collecting,secondary,Models & Doll Making,250,110,130
+home_garden_crafts__collecting.models__doll_making.modeling,home_garden_crafts__collecting.models__doll_making,minor,Modeling,250,110,130
+home_garden_crafts__collecting.models__doll_making.doll_making,home_garden_crafts__collecting.models__doll_making,minor,Doll Making,251,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,home_garden_crafts__collecting,secondary,"Needlecrafts, Sewing & Fiber Arts",252,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.needlecrafts,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Needlecrafts,252,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.quilting__patchwork,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Quilting & Patchwork,253,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.sewing,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Sewing,254,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.embroidery_crossstitch__needlepoint,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,"Embroidery, Cross-Stitch & Needlepoint",255,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.knitting__crochet,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Knitting & Crochet,256,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.weaving__rug_making,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Weaving & Rug Making,257,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.lacetatting,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Lace/Tatting,258,110,130
+home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts.fabric_painting__dyeing,home_garden_crafts__collecting.needlecrafts_sewing__fiber_arts,minor,Fabric Painting & Dyeing,259,110,130
+home_garden_crafts__collecting.paper_floral__decorative_crafts,home_garden_crafts__collecting,secondary,"Paper, Floral & Decorative Crafts",260,110,130
+home_garden_crafts__collecting.paper_floral__decorative_crafts.floral_crafts,home_garden_crafts__collecting.paper_floral__decorative_crafts,minor,Floral Crafts,260,110,130
+home_garden_crafts__collecting.paper_floral__decorative_crafts.basketry,home_garden_crafts__collecting.paper_floral__decorative_crafts,minor,Basketry,261,110,130
+home_garden_crafts__collecting.paper_floral__decorative_crafts.printmaking,home_garden_crafts__collecting.paper_floral__decorative_crafts,minor,Printmaking,262,110,130
+home_garden_crafts__collecting.paper_floral__decorative_crafts.stenciling,home_garden_crafts__collecting.paper_floral__decorative_crafts,minor,Stenciling,263,110,130
+home_garden_crafts__collecting.paper_floral__decorative_crafts.papercrafts,home_garden_crafts__collecting.paper_floral__decorative_crafts,minor,Papercrafts,264,110,130
+home_garden_crafts__collecting.woodworking_furniture__carving,home_garden_crafts__collecting,secondary,"Woodworking, Furniture & Carving",265,110,130
+home_garden_crafts__collecting.woodworking_furniture__carving.woodworking,home_garden_crafts__collecting.woodworking_furniture__carving,minor,Woodworking,265,110,130
+home_garden_crafts__collecting.woodworking_furniture__carving.furniture_making,home_garden_crafts__collecting.woodworking_furniture__carving,minor,Furniture Making,266,110,130
+home_garden_crafts__collecting.woodworking_furniture__carving.carving,home_garden_crafts__collecting.woodworking_furniture__carving,minor,Carving,267,110,130
+humor_games__puzzles,,primary,"Humor, Games & Puzzles",268,110,130
+humor_games__puzzles.games_puzzles__gambling,humor_games__puzzles,secondary,"Games, Puzzles & Gambling",268,110,130
+humor_games__puzzles.games_puzzles__gambling.general_games,humor_games__puzzles.games_puzzles__gambling,minor,General Games,268,110,130
+humor_games__puzzles.games_puzzles__gambling.crosswords,humor_games__puzzles.games_puzzles__gambling,minor,Crosswords,269,110,130
+humor_games__puzzles.games_puzzles__gambling.scrabble,humor_games__puzzles.games_puzzles__gambling,minor,Scrabble,270,110,130
+humor_games__puzzles.games_puzzles__gambling.pool__billiards,humor_games__puzzles.games_puzzles__gambling,minor,Pool & Billiards,271,110,130
+humor_games__puzzles.games_puzzles__gambling.logic__brain_teasers,humor_games__puzzles.games_puzzles__gambling,minor,Logic & Brain Teasers,272,110,130
+humor_games__puzzles.games_puzzles__gambling.horse_racing__gambling,humor_games__puzzles.games_puzzles__gambling,minor,Horse Racing & Gambling,273,110,130
+humor_games__puzzles.games_puzzles__gambling.chess,humor_games__puzzles.games_puzzles__gambling,minor,Chess,274,110,130
+humor_games__puzzles.games_puzzles__gambling.card_games,humor_games__puzzles.games_puzzles__gambling,minor,Card Games,275,110,130
+humor_games__puzzles.games_puzzles__gambling.magic,humor_games__puzzles.games_puzzles__gambling,minor,Magic,276,110,130
+humor_games__puzzles.games_puzzles__gambling.casino_games,humor_games__puzzles.games_puzzles__gambling,minor,Casino Games,277,110,130
+humor_games__puzzles.games_puzzles__gambling.poker,humor_games__puzzles.games_puzzles__gambling,minor,Poker,278,110,130
+humor_games__puzzles.games_puzzles__gambling.blackjack,humor_games__puzzles.games_puzzles__gambling,minor,Blackjack,279,110,130
+humor_games__puzzles.games_puzzles__gambling.computer_games,humor_games__puzzles.games_puzzles__gambling,minor,Computer Games,280,110,130
+humor_games__puzzles.humor,humor_games__puzzles,secondary,Humor,281,110,130
+humor_games__puzzles.humor.humor,humor_games__puzzles.humor,minor,Humor,281,110,130
+humor_games__puzzles.humor.cartoons__cartooning,humor_games__puzzles.humor,minor,Cartoons & Cartooning,282,110,130
+humor_games__puzzles.roleplaying_games,humor_games__puzzles,secondary,Role-Playing Games,283,110,130
+humor_games__puzzles.roleplaying_games.role_playing,humor_games__puzzles.roleplaying_games,minor,Role Playing,283,110,130
+languages__bilingual,,primary,Languages & Bilingual,284,110,130
+languages__bilingual.books_in_other_languages,languages__bilingual,secondary,Books in Other Languages,284,110,130
+languages__bilingual.books_in_other_languages.literature,languages__bilingual.books_in_other_languages,minor,Literature,284,110,130
+languages__bilingual.books_in_other_languages.non_fiction,languages__bilingual.books_in_other_languages,minor,Non Fiction,285,110,130
+languages__bilingual.language_learning,languages__bilingual,secondary,Language Learning,286,110,130
+languages__bilingual.language_learning.other_foreign_languages,languages__bilingual.language_learning,minor,Other Foreign Languages,286,110,130
+languages__bilingual.language_learning.spanish,languages__bilingual.language_learning,minor,Spanish,287,110,130
+languages__bilingual.language_learning.french,languages__bilingual.language_learning,minor,French,288,110,130
+languages__bilingual.language_learning.german,languages__bilingual.language_learning,minor,German,289,110,130
+languages__bilingual.language_learning.italian,languages__bilingual.language_learning,minor,Italian,290,110,130
+languages__bilingual.language_learning.japanese,languages__bilingual.language_learning,minor,Japanese,291,110,130
+languages__bilingual.spanishlanguage_books,languages__bilingual,secondary,Spanish-Language Books,292,110,130
+languages__bilingual.spanishlanguage_books.novelas,languages__bilingual.spanishlanguage_books,minor,Novelas,292,110,130
+languages__bilingual.spanishlanguage_books.literatura,languages__bilingual.spanishlanguage_books,minor,Literatura,293,110,130
+languages__bilingual.spanishlanguage_books.novelas_romnticas,languages__bilingual.spanishlanguage_books,minor,Novelas Románticas,294,110,130
+languages__bilingual.spanishlanguage_books.novelas_policacas,languages__bilingual.spanishlanguage_books,minor,Novelas Policíacas,295,110,130
+languages__bilingual.spanishlanguage_books.historia,languages__bilingual.spanishlanguage_books,minor,Historia,296,110,130
+languages__bilingual.spanishlanguage_books.biografas,languages__bilingual.spanishlanguage_books,minor,Biografías,297,110,130
+languages__bilingual.spanishlanguage_books.deportes,languages__bilingual.spanishlanguage_books,minor,Deportes,298,110,130
+languages__bilingual.spanishlanguage_books.negocios,languages__bilingual.spanishlanguage_books,minor,Negocios,299,110,130
+languages__bilingual.spanishlanguage_books.cocina,languages__bilingual.spanishlanguage_books,minor,Cocina,300,110,130
+languages__bilingual.spanishlanguage_books.viajes,languages__bilingual.spanishlanguage_books,minor,Viajes,301,110,130
+languages__bilingual.spanishlanguage_books.referencia,languages__bilingual.spanishlanguage_books,minor,Referencia,302,110,130
+languages__bilingual.spanishlanguage_books.computacin,languages__bilingual.spanishlanguage_books,minor,Computación,303,110,130
+languages__bilingual.spanishlanguage_books.inspiracin,languages__bilingual.spanishlanguage_books,minor,Inspiración,304,110,130
+languages__bilingual.spanishlanguage_books.la_biblia,languages__bilingual.spanishlanguage_books,minor,La Biblia,305,110,130
+languages__bilingual.spanishlanguage_books.cuba,languages__bilingual.spanishlanguage_books,minor,Cuba,306,110,130
+languages__bilingual.spanishlanguage_books.autoayuda,languages__bilingual.spanishlanguage_books,minor,Autoayuda,307,110,130
+languages__bilingual.spanishlanguage_books.florida,languages__bilingual.spanishlanguage_books,minor,Florida,308,110,130
+languages__bilingual.spanishlanguage_books.texas,languages__bilingual.spanishlanguage_books,minor,Texas,309,110,130
+languages__bilingual.spanishlanguage_books.california,languages__bilingual.spanishlanguage_books,minor,California,310,110,130
+languages__bilingual.spanishlanguage_books.mexico,languages__bilingual.spanishlanguage_books,minor,Mexico,311,110,130
+languages__bilingual.spanishlanguage_books.otros_libros_en_espaol,languages__bilingual.spanishlanguage_books,minor,Otros Libros en Español,312,110,130
+merchandising_programs,,primary,Merchandising Programs,313,110,130
+merchandising_programs.childrens_rack_programs,merchandising_programs,secondary,Children's Rack Programs,313,110,130
+merchandising_programs.childrens_rack_programs.serendipity,merchandising_programs.childrens_rack_programs,minor,Serendipity,313,110,130
+merchandising_programs.childrens_rack_programs.little_golden_books,merchandising_programs.childrens_rack_programs,minor,Little Golden Books,314,110,130
+merchandising_programs.childrens_rack_programs.ladybird_books,merchandising_programs.childrens_rack_programs,minor,Ladybird Books,315,110,130
+merchandising_programs.childrens_rack_programs.dover,merchandising_programs.childrens_rack_programs,minor,Dover,316,110,130
+mystery_thrillers__true_crime,,primary,"Mystery, Thrillers & True Crime",317,110,130
+mystery_thrillers__true_crime.mystery__adventure,mystery_thrillers__true_crime,secondary,Mystery & Adventure,317,110,130
+mystery_thrillers__true_crime.mystery__adventure.mystery,mystery_thrillers__true_crime.mystery__adventure,minor,Mystery,317,110,130
+mystery_thrillers__true_crime.mystery__adventure.action__adventure,mystery_thrillers__true_crime.mystery__adventure,minor,Action & Adventure,318,110,130
+mystery_thrillers__true_crime.true_crime,mystery_thrillers__true_crime,secondary,True Crime,319,110,130
+mystery_thrillers__true_crime.true_crime.true_crime,mystery_thrillers__true_crime.true_crime,minor,True Crime,319,110,130
+nature_outdoors_sports__pets,,primary,"Nature, Outdoors, Sports & Pets",320,110,130
+nature_outdoors_sports__pets.fitness__strength_training,nature_outdoors_sports__pets,secondary,Fitness & Strength Training,320,110,130
+nature_outdoors_sports__pets.fitness__strength_training.weightlifting__bodybuilding,nature_outdoors_sports__pets.fitness__strength_training,minor,Weightlifting & Bodybuilding,320,110,130
+nature_outdoors_sports__pets.general_sports__golf,nature_outdoors_sports__pets,secondary,General Sports & Golf,321,110,130
+nature_outdoors_sports__pets.general_sports__golf.general_sports,nature_outdoors_sports__pets.general_sports__golf,minor,General Sports,321,110,130
+nature_outdoors_sports__pets.general_sports__golf.golf,nature_outdoors_sports__pets.general_sports__golf,minor,Golf,322,110,130
+nature_outdoors_sports__pets.hunting__combat_sports,nature_outdoors_sports__pets,secondary,Hunting & Combat Sports,323,110,130
+nature_outdoors_sports__pets.hunting__combat_sports.hunting__shooting_sports,nature_outdoors_sports__pets.hunting__combat_sports,minor,Hunting & Shooting Sports,323,110,130
+nature_outdoors_sports__pets.hunting__combat_sports.martial_arts,nature_outdoors_sports__pets.hunting__combat_sports,minor,Martial Arts,324,110,130
+nature_outdoors_sports__pets.hunting__combat_sports.boxingwrestling,nature_outdoors_sports__pets.hunting__combat_sports,minor,Boxing/Wrestling,325,110,130
+nature_outdoors_sports__pets.individual_sports,nature_outdoors_sports__pets,secondary,Individual Sports,326,110,130
+nature_outdoors_sports__pets.individual_sports.bicycling,nature_outdoors_sports__pets.individual_sports,minor,Bicycling,326,110,130
+nature_outdoors_sports__pets.individual_sports.racquet_sports,nature_outdoors_sports__pets.individual_sports,minor,Racquet Sports,327,110,130
+nature_outdoors_sports__pets.individual_sports.running,nature_outdoors_sports__pets.individual_sports,minor,Running,328,110,130
+nature_outdoors_sports__pets.individual_sports.gymnastics,nature_outdoors_sports__pets.individual_sports,minor,Gymnastics,329,110,130
+nature_outdoors_sports__pets.nature__environment,nature_outdoors_sports__pets,secondary,Nature & Environment,330,110,130
+nature_outdoors_sports__pets.nature__environment.nature_writing,nature_outdoors_sports__pets.nature__environment,minor,Nature Writing,330,110,130
+nature_outdoors_sports__pets.nature__environment.general_nature,nature_outdoors_sports__pets.nature__environment,minor,General Nature,331,110,130
+nature_outdoors_sports__pets.nature__environment.earth_sciences,nature_outdoors_sports__pets.nature__environment,minor,Earth Sciences,332,110,130
+nature_outdoors_sports__pets.nature__environment.environment,nature_outdoors_sports__pets.nature__environment,minor,Environment,333,110,130
+nature_outdoors_sports__pets.nature__environment.oceans,nature_outdoors_sports__pets.nature__environment,minor,Oceans,334,110,130
+nature_outdoors_sports__pets.nature__environment.agriculture,nature_outdoors_sports__pets.nature__environment,minor,Agriculture,335,110,130
+nature_outdoors_sports__pets.nature__environment.botany__plants,nature_outdoors_sports__pets.nature__environment,minor,Botany & Plants,336,110,130
+nature_outdoors_sports__pets.nature__environment.birds__birding,nature_outdoors_sports__pets.nature__environment,minor,Birds & Birding,337,110,130
+nature_outdoors_sports__pets.nature__environment.audubon,nature_outdoors_sports__pets.nature__environment,minor,Audubon,338,110,130
+nature_outdoors_sports__pets.nature__environment.eyewitness,nature_outdoors_sports__pets.nature__environment,minor,Eyewitness,339,110,130
+nature_outdoors_sports__pets.nature__environment.golden_press,nature_outdoors_sports__pets.nature__environment,minor,Golden Press,340,110,130
+nature_outdoors_sports__pets.nature__environment.petersons,nature_outdoors_sports__pets.nature__environment,minor,Petersons,341,110,130
+nature_outdoors_sports__pets.nature__environment.ss,nature_outdoors_sports__pets.nature__environment,minor,S&S,342,110,130
+nature_outdoors_sports__pets.nature__environment.stokes,nature_outdoors_sports__pets.nature__environment,minor,Stokes,343,110,130
+nature_outdoors_sports__pets.nature__environment.other_field_guides,nature_outdoors_sports__pets.nature__environment,minor,Other Field Guides,344,110,130
+nature_outdoors_sports__pets.outdoor_recreation,nature_outdoors_sports__pets,secondary,Outdoor Recreation,345,110,130
+nature_outdoors_sports__pets.outdoor_recreation.camping,nature_outdoors_sports__pets.outdoor_recreation,minor,Camping,345,110,130
+nature_outdoors_sports__pets.outdoor_recreation.freshwater_fishing,nature_outdoors_sports__pets.outdoor_recreation,minor,Freshwater Fishing,346,110,130
+nature_outdoors_sports__pets.outdoor_recreation.saltwater_fishing,nature_outdoors_sports__pets.outdoor_recreation,minor,Saltwater Fishing,347,110,130
+nature_outdoors_sports__pets.outdoor_recreation.skiing,nature_outdoors_sports__pets.outdoor_recreation,minor,Skiing,348,110,130
+nature_outdoors_sports__pets.outdoor_recreation.hiking,nature_outdoors_sports__pets.outdoor_recreation,minor,Hiking,349,110,130
+nature_outdoors_sports__pets.outdoor_recreation.mountaineering,nature_outdoors_sports__pets.outdoor_recreation,minor,Mountaineering,350,110,130
+nature_outdoors_sports__pets.pets__animal_care,nature_outdoors_sports__pets,secondary,Pets & Animal Care,351,110,130
+nature_outdoors_sports__pets.pets__animal_care.pets_general,nature_outdoors_sports__pets.pets__animal_care,minor,Pets General,351,110,130
+nature_outdoors_sports__pets.pets__animal_care.cats,nature_outdoors_sports__pets.pets__animal_care,minor,Cats,352,110,130
+nature_outdoors_sports__pets.pets__animal_care.dogs,nature_outdoors_sports__pets.pets__animal_care,minor,Dogs,353,110,130
+nature_outdoors_sports__pets.pets__animal_care.horses,nature_outdoors_sports__pets.pets__animal_care,minor,Horses,354,110,130
+nature_outdoors_sports__pets.pets__animal_care.aquarium,nature_outdoors_sports__pets.pets__animal_care,minor,Aquarium,355,110,130
+nature_outdoors_sports__pets.pets__animal_care.birds,nature_outdoors_sports__pets.pets__animal_care,minor,Birds,356,110,130
+nature_outdoors_sports__pets.pets__animal_care.veterinary_medicine,nature_outdoors_sports__pets.pets__animal_care,minor,Veterinary Medicine,357,110,130
+nature_outdoors_sports__pets.team_sports,nature_outdoors_sports__pets,secondary,Team Sports,358,110,130
+nature_outdoors_sports__pets.team_sports.baseball,nature_outdoors_sports__pets.team_sports,minor,Baseball,358,110,130
+nature_outdoors_sports__pets.team_sports.basketball,nature_outdoors_sports__pets.team_sports,minor,Basketball,359,110,130
+nature_outdoors_sports__pets.team_sports.hockey,nature_outdoors_sports__pets.team_sports,minor,Hockey,360,110,130
+nature_outdoors_sports__pets.team_sports.football,nature_outdoors_sports__pets.team_sports,minor,Football,361,110,130
+nature_outdoors_sports__pets.team_sports.soccer,nature_outdoors_sports__pets.team_sports,minor,Soccer,362,110,130
+nature_outdoors_sports__pets.water_sports,nature_outdoors_sports__pets,secondary,Water Sports,363,110,130
+nature_outdoors_sports__pets.water_sports.boating__sailing,nature_outdoors_sports__pets.water_sports,minor,Boating & Sailing,363,110,130
+nature_outdoors_sports__pets.water_sports.swimming,nature_outdoors_sports__pets.water_sports,minor,Swimming,364,110,130
+performing_arts_music__film,,primary,"Performing Arts, Music & Film",365,110,130
+performing_arts_music__film.dance,performing_arts_music__film,secondary,Dance,365,110,130
+performing_arts_music__film.dance.dance_technique__criticism,performing_arts_music__film.dance,minor,Dance Technique & Criticism,365,110,130
+performing_arts_music__film.dance.ballet__modern,performing_arts_music__film.dance,minor,Ballet & Modern,366,110,130
+performing_arts_music__film.dance.recreational_dance,performing_arts_music__film.dance,minor,Recreational Dance,367,110,130
+performing_arts_music__film.film_television__media,performing_arts_music__film,secondary,"Film, Television & Media",368,110,130
+performing_arts_music__film.film_television__media.film_studies,performing_arts_music__film.film_television__media,minor,Film Studies,368,110,130
+performing_arts_music__film.film_television__media.entertainment_biography,performing_arts_music__film.film_television__media,minor,Entertainment Biography,369,110,130
+performing_arts_music__film.film_television__media.television,performing_arts_music__film.film_television__media,minor,Television,370,110,130
+performing_arts_music__film.film_television__media.film_reference,performing_arts_music__film.film_television__media,minor,Film Reference,371,110,130
+performing_arts_music__film.film_television__media.production,performing_arts_music__film.film_television__media,minor,Production,372,110,130
+performing_arts_music__film.film_television__media.screenplays,performing_arts_music__film.film_television__media,minor,Screenplays,373,110,130
+performing_arts_music__film.film_television__media.animation,performing_arts_music__film.film_television__media,minor,Animation,374,110,130
+performing_arts_music__film.film_television__media.radio,performing_arts_music__film.film_television__media,minor,Radio,375,110,130
+performing_arts_music__film.film_television__media.screenwriting,performing_arts_music__film.film_television__media,minor,Screenwriting,376,110,130
+performing_arts_music__film.instruments_voice__songbooks,performing_arts_music__film,secondary,"Instruments, Voice & Songbooks",377,110,130
+performing_arts_music__film.instruments_voice__songbooks.guitar__stringed_instruments,performing_arts_music__film.instruments_voice__songbooks,minor,Guitar & Stringed Instruments,377,110,130
+performing_arts_music__film.instruments_voice__songbooks.keyboards,performing_arts_music__film.instruments_voice__songbooks,minor,Keyboards,378,110,130
+performing_arts_music__film.instruments_voice__songbooks.woodwinds,performing_arts_music__film.instruments_voice__songbooks,minor,Woodwinds,379,110,130
+performing_arts_music__film.instruments_voice__songbooks.brass,performing_arts_music__film.instruments_voice__songbooks,minor,Brass,380,110,130
+performing_arts_music__film.instruments_voice__songbooks.percussion,performing_arts_music__film.instruments_voice__songbooks,minor,Percussion,381,110,130
+performing_arts_music__film.instruments_voice__songbooks.voice,performing_arts_music__film.instruments_voice__songbooks,minor,Voice,382,110,130
+performing_arts_music__film.instruments_voice__songbooks.songbooks,performing_arts_music__film.instruments_voice__songbooks,minor,Songbooks,383,110,130
+performing_arts_music__film.music_genres,performing_arts_music__film,secondary,Music Genres,384,110,130
+performing_arts_music__film.music_genres.electronic_music,performing_arts_music__film.music_genres,minor,Electronic Music,384,110,130
+performing_arts_music__film.music_genres.gospel,performing_arts_music__film.music_genres,minor,Gospel,385,110,130
+performing_arts_music__film.music_genres.jazzblues,performing_arts_music__film.music_genres,minor,Jazz/Blues,386,110,130
+performing_arts_music__film.music_genres.classical,performing_arts_music__film.music_genres,minor,Classical,387,110,130
+performing_arts_music__film.music_genres.standards__easy_listening,performing_arts_music__film.music_genres,minor,Standards & Easy Listening,388,110,130
+performing_arts_music__film.music_genres.rock__roll,performing_arts_music__film.music_genres,minor,Rock & Roll,389,110,130
+performing_arts_music__film.music_genres.rb__rap,performing_arts_music__film.music_genres,minor,R&B & Rap,390,110,130
+performing_arts_music__film.music_genres.folk,performing_arts_music__film.music_genres,minor,Folk,391,110,130
+performing_arts_music__film.music_genres.country_western__bluegrass,performing_arts_music__film.music_genres,minor,"Country, Western & Bluegrass",392,110,130
+performing_arts_music__film.music_genres.opera,performing_arts_music__film.music_genres,minor,Opera,393,110,130
+performing_arts_music__film.music_genres.world_music,performing_arts_music__film.music_genres,minor,World Music,394,110,130
+performing_arts_music__film.music_theory_history__reference,performing_arts_music__film,secondary,"Music Theory, History & Reference",395,110,130
+performing_arts_music__film.music_theory_history__reference.music_theory__criticism,performing_arts_music__film.music_theory_history__reference,minor,Music Theory & Criticism,395,110,130
+performing_arts_music__film.music_theory_history__reference.music_ref,performing_arts_music__film.music_theory_history__reference,minor,Music Ref,396,110,130
+performing_arts_music__film.music_theory_history__reference.music_education,performing_arts_music__film.music_theory_history__reference,minor,Music Education,397,110,130
+performing_arts_music__film.songwriting__music_business,performing_arts_music__film,secondary,Songwriting & Music Business,398,110,130
+performing_arts_music__film.songwriting__music_business.songwriting,performing_arts_music__film.songwriting__music_business,minor,Songwriting,398,110,130
+performing_arts_music__film.songwriting__music_business.music_business,performing_arts_music__film.songwriting__music_business,minor,Music Business,399,110,130
+performing_arts_music__film.theatre__drama,performing_arts_music__film,secondary,Theatre & Drama,400,110,130
+performing_arts_music__film.theatre__drama.drama,performing_arts_music__film.theatre__drama,minor,Drama,400,110,130
+performing_arts_music__film.theatre__drama.theatre_arts,performing_arts_music__film.theatre__drama,minor,Theatre Arts,401,110,130
+performing_arts_music__film.theatre__drama.shakespeare,performing_arts_music__film.theatre__drama,minor,Shakespeare,402,110,130
+performing_arts_music__film.theatre__drama.acting,performing_arts_music__film.theatre__drama,minor,Acting,403,110,130
+performing_arts_music__film.theatre__drama.technical_theatre,performing_arts_music__film.theatre__drama,minor,Technical Theatre,404,110,130
+performing_arts_music__film.theatre__drama.musicals,performing_arts_music__film.theatre__drama,minor,Musicals,405,110,130
+performing_arts_music__film.theatre__drama.monologues__scenes,performing_arts_music__film.theatre__drama,minor,Monologues & Scenes,406,110,130
+performing_arts_music__film.theatre__drama.drama_criticism,performing_arts_music__film.theatre__drama,minor,Drama Criticism,407,110,130
+psychology_selfhelp__relationships,,primary,"Psychology, Self-Help & Relationships",408,110,130
+psychology_selfhelp__relationships.psychology__psychiatry,psychology_selfhelp__relationships,secondary,Psychology & Psychiatry,408,110,130
+psychology_selfhelp__relationships.psychology__psychiatry.psychology,psychology_selfhelp__relationships.psychology__psychiatry,minor,Psychology,408,110,130
+psychology_selfhelp__relationships.psychology__psychiatry.child_psychology,psychology_selfhelp__relationships.psychology__psychiatry,minor,Child Psychology,409,110,130
+psychology_selfhelp__relationships.psychology__psychiatry.suicide,psychology_selfhelp__relationships.psychology__psychiatry,minor,Suicide,410,110,130
+psychology_selfhelp__relationships.psychology__psychiatry.psychiatry,psychology_selfhelp__relationships.psychology__psychiatry,minor,Psychiatry,411,110,130
+psychology_selfhelp__relationships.psychology__psychiatry.social_work,psychology_selfhelp__relationships.psychology__psychiatry,minor,Social Work,412,110,130
+psychology_selfhelp__relationships.selfhelp__relationships,psychology_selfhelp__relationships,secondary,Self-Help & Relationships,413,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.addiction__recovery,psychology_selfhelp__relationships.selfhelp__relationships,minor,Addiction & Recovery,413,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.codependency,psychology_selfhelp__relationships.selfhelp__relationships,minor,Codependency,414,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.eating_disorders,psychology_selfhelp__relationships.selfhelp__relationships,minor,Eating Disorders,415,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.meditations__affirmations,psychology_selfhelp__relationships.selfhelp__relationships,minor,Meditations & Affirmations,416,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.abuse,psychology_selfhelp__relationships.selfhelp__relationships,minor,Abuse,417,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.general_selfhelp,psychology_selfhelp__relationships.selfhelp__relationships,minor,General Self-Help,418,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.death__grief,psychology_selfhelp__relationships.selfhelp__relationships,minor,Death & Grief,419,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.relationships,psychology_selfhelp__relationships.selfhelp__relationships,minor,Relationships,420,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.midlife,psychology_selfhelp__relationships.selfhelp__relationships,minor,Midlife,421,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.dreams,psychology_selfhelp__relationships.selfhelp__relationships,minor,Dreams,422,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.hypnosis,psychology_selfhelp__relationships.selfhelp__relationships,minor,Hypnosis,423,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.graphology,psychology_selfhelp__relationships.selfhelp__relationships,minor,Graphology,424,110,130
+psychology_selfhelp__relationships.selfhelp__relationships.sexuality,psychology_selfhelp__relationships.selfhelp__relationships,minor,Sexuality,425,110,130
+reference_education__study,,primary,"Reference, Education & Study",426,110,130
+reference_education__study.atlases_almanacs__facts,reference_education__study,secondary,"Atlases, Almanacs & Facts",426,110,130
+reference_education__study.atlases_almanacs__facts.atlases,reference_education__study.atlases_almanacs__facts,minor,Atlases,426,110,130
+reference_education__study.atlases_almanacs__facts.triviafacts,reference_education__study.atlases_almanacs__facts,minor,Trivia/Facts,427,110,130
+reference_education__study.atlases_almanacs__facts.almanacs,reference_education__study.atlases_almanacs__facts,minor,Almanacs,428,110,130
+reference_education__study.career_civil_service__vocational_exams,reference_education__study,secondary,"Career, Civil Service & Vocational Exams",429,110,130
+reference_education__study.career_civil_service__vocational_exams.vocational,reference_education__study.career_civil_service__vocational_exams,minor,Vocational,429,110,130
+reference_education__study.career_civil_service__vocational_exams.civil_service,reference_education__study.career_civil_service__vocational_exams,minor,Civil Service,430,110,130
+reference_education__study.career_civil_service__vocational_exams.military_service,reference_education__study.career_civil_service__vocational_exams,minor,Military Service,431,110,130
+reference_education__study.career_civil_service__vocational_exams.teacher_certification_exams,reference_education__study.career_civil_service__vocational_exams,minor,Teacher Certification Exams,432,110,130
+reference_education__study.consumer__life_reference,reference_education__study,secondary,Consumer & Life Reference,433,110,130
+reference_education__study.consumer__life_reference.weddings,reference_education__study.consumer__life_reference,minor,Weddings,433,110,130
+reference_education__study.consumer__life_reference.consumer_reference,reference_education__study.consumer__life_reference,minor,Consumer Reference,434,110,130
+reference_education__study.consumer__life_reference.large_print,reference_education__study.consumer__life_reference,minor,Large Print,435,110,130
+reference_education__study.consumer__life_reference.secretarial_skills,reference_education__study.consumer__life_reference,minor,Secretarial Skills,436,110,130
+reference_education__study.consumer__life_reference.etiquette,reference_education__study.consumer__life_reference,minor,Etiquette,437,110,130
+reference_education__study.dictionaries_language__words,reference_education__study,secondary,"Dictionaries, Language & Words",438,110,130
+reference_education__study.dictionaries_language__words.dictionaries,reference_education__study.dictionaries_language__words,minor,Dictionaries,438,110,130
+reference_education__study.dictionaries_language__words.thesauri,reference_education__study.dictionaries_language__words,minor,Thesauri,439,110,130
+reference_education__study.dictionaries_language__words.sign_language,reference_education__study.dictionaries_language__words,minor,Sign Language,440,110,130
+reference_education__study.dictionaries_language__words.words__language,reference_education__study.dictionaries_language__words,minor,Words & Language,441,110,130
+reference_education__study.dictionaries_language__words.esl,reference_education__study.dictionaries_language__words,minor,ESL,442,110,130
+reference_education__study.education,reference_education__study,secondary,Education,443,110,130
+reference_education__study.education.education,reference_education__study.education,minor,Education,443,110,130
+reference_education__study.education.elementary_education,reference_education__study.education,minor,Elementary Education,444,110,130
+reference_education__study.education.secondary_education,reference_education__study.education,minor,Secondary Education,445,110,130
+reference_education__study.education.higher_education,reference_education__study.education,minor,Higher Education,446,110,130
+reference_education__study.englishlanguage_testing,reference_education__study,secondary,English-Language Testing,447,110,130
+reference_education__study.englishlanguage_testing.toefleng_as_f,reference_education__study.englishlanguage_testing,minor,TOEFL/Eng As F,447,110,130
+reference_education__study.genealogy__heraldry,reference_education__study,secondary,Genealogy & Heraldry,448,110,130
+reference_education__study.genealogy__heraldry.genealogyheraldry,reference_education__study.genealogy__heraldry,minor,Genealogy/Heraldry,448,110,130
+reference_education__study.general_study_aids__series,reference_education__study,secondary,General Study Aids & Series,449,110,130
+reference_education__study.general_study_aids__series.study_aids_gen,reference_education__study.general_study_aids__series,minor,Study Aids Gen,449,110,130
+reference_education__study.general_study_aids__series.other_series,reference_education__study.general_study_aids__series,minor,Other Series,450,110,130
+reference_education__study.general_study_aids__series.schaums_outlines,reference_education__study.general_study_aids__series,minor,Schaum’s Outlines,451,110,130
+reference_education__study.general_study_aids__series.made_simple,reference_education__study.general_study_aids__series,minor,Made Simple,452,110,130
+reference_education__study.general_study_aids__series.easy_way,reference_education__study.general_study_aids__series,minor,Easy Way,453,110,130
+reference_education__study.graduate__professional_exams,reference_education__study,secondary,Graduate & Professional Exams,454,110,130
+reference_education__study.graduate__professional_exams.mat,reference_education__study.graduate__professional_exams,minor,MAT,454,110,130
+reference_education__study.graduate__professional_exams.graduate,reference_education__study.graduate__professional_exams,minor,Graduate,455,110,130
+reference_education__study.graduate__professional_exams.engineering,reference_education__study.graduate__professional_exams,minor,Engineering,456,110,130
+reference_education__study.graduate__professional_exams.cpa__accounting_exams,reference_education__study.graduate__professional_exams,minor,CPA & Accounting Exams,457,110,130
+reference_education__study.graduate__professional_exams.gmat,reference_education__study.graduate__professional_exams,minor,GMAT,458,110,130
+reference_education__study.graduate__professional_exams.gre,reference_education__study.graduate__professional_exams,minor,GRE,459,110,130
+reference_education__study.graduate__professional_exams.lsat,reference_education__study.graduate__professional_exams,minor,LSAT,460,110,130
+reference_education__study.graduate__professional_exams.mcat,reference_education__study.graduate__professional_exams,minor,MCAT,461,110,130
+reference_education__study.law__legal_reference,reference_education__study,secondary,Law & Legal Reference,462,110,130
+reference_education__study.law__legal_reference.law,reference_education__study.law__legal_reference,minor,Law,462,110,130
+reference_education__study.law__legal_reference.legal_ref,reference_education__study.law__legal_reference,minor,Legal Ref,463,110,130
+reference_education__study.school__college_test_preparation,reference_education__study,secondary,School & College Test Preparation,464,110,130
+reference_education__study.school__college_test_preparation.act,reference_education__study.school__college_test_preparation,minor,ACT,464,110,130
+reference_education__study.school__college_test_preparation.satpsat,reference_education__study.school__college_test_preparation,minor,SAT/PSAT,465,110,130
+reference_education__study.school__college_test_preparation.high_school_entrance,reference_education__study.school__college_test_preparation,minor,High School Entrance,466,110,130
+reference_education__study.school__college_test_preparation.advanced_placement,reference_education__study.school__college_test_preparation,minor,Advanced Placement,467,110,130
+reference_education__study.school__college_test_preparation.ged,reference_education__study.school__college_test_preparation,minor,GED,468,110,130
+reference_education__study.school__college_test_preparation.college_guides,reference_education__study.school__college_test_preparation,minor,College Guides,469,110,130
+reference_education__study.school__college_test_preparation.sat_subject_tests_legacy,reference_education__study.school__college_test_preparation,minor,SAT Subject Tests (legacy),470,110,130
+reference_education__study.school__college_test_preparation.clep,reference_education__study.school__college_test_preparation,minor,CLEP,471,110,130
+reference_education__study.study_guides__literature_notes,reference_education__study,secondary,Study Guides & Literature Notes,472,110,130
+reference_education__study.study_guides__literature_notes.literature_study_guides,reference_education__study.study_guides__literature_notes,minor,Literature Study Guides,472,110,130
+reference_education__study.study_guides__literature_notes.test_prep,reference_education__study.study_guides__literature_notes,minor,Test Prep,473,110,130
+reference_education__study.study_guides__literature_notes.cliffsnotes,reference_education__study.study_guides__literature_notes,minor,CliffsNotes,474,110,130
+reference_education__study.study_guides__literature_notes.barrons__monarch_notes,reference_education__study.study_guides__literature_notes,minor,Barron’s & Monarch Notes,475,110,130
+reference_education__study.writing_publishing__books,reference_education__study,secondary,"Writing, Publishing & Books",476,110,130
+reference_education__study.writing_publishing__books.writing__publishing,reference_education__study.writing_publishing__books,minor,Writing & Publishing,476,110,130
+reference_education__study.writing_publishing__books.public_speaking__quotations,reference_education__study.writing_publishing__books,minor,Public Speaking & Quotations,477,110,130
+reference_education__study.writing_publishing__books.books_about_books,reference_education__study.writing_publishing__books,minor,Books About Books,478,110,130
+reference_education__study.writing_publishing__books.library_science,reference_education__study.writing_publishing__books,minor,Library Science,479,110,130
+religion_spirituality__philosophy,,primary,"Religion, Spirituality & Philosophy",480,110,130
+religion_spirituality__philosophy.bibles__biblical_studies,religion_spirituality__philosophy,secondary,Bibles & Biblical Studies,480,110,130
+religion_spirituality__philosophy.bibles__biblical_studies.bibles_gen,religion_spirituality__philosophy.bibles__biblical_studies,minor,Bibles Gen,480,110,130
+religion_spirituality__philosophy.bibles__biblical_studies.king_james,religion_spirituality__philosophy.bibles__biblical_studies,minor,King James,481,110,130
+religion_spirituality__philosophy.bibles__biblical_studies.living_bible,religion_spirituality__philosophy.bibles__biblical_studies,minor,Living Bible,482,110,130
+religion_spirituality__philosophy.bibles__biblical_studies.new_intl,religion_spirituality__philosophy.bibles__biblical_studies,minor,New Intl,483,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult,religion_spirituality__philosophy,secondary,"New Age, Metaphysical & Occult",484,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.astrology,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,Astrology,484,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.new_age,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,New Age,485,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.paranormal_experiences,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,Paranormal Experiences,486,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.magic__magical_arts,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,Magic & Magical Arts,487,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.occult__supernatural,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,Occult & Supernatural,488,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.divination__prophecy,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,Divination & Prophecy,489,110,130
+religion_spirituality__philosophy.new_age_metaphysical__occult.meditation,religion_spirituality__philosophy.new_age_metaphysical__occult,minor,Meditation,490,110,130
+religion_spirituality__philosophy.philosophy__linguistics,religion_spirituality__philosophy,secondary,Philosophy & Linguistics,491,110,130
+religion_spirituality__philosophy.philosophy__linguistics.western_philosophy,religion_spirituality__philosophy.philosophy__linguistics,minor,Western Philosophy,491,110,130
+religion_spirituality__philosophy.philosophy__linguistics.linguistics,religion_spirituality__philosophy.philosophy__linguistics,minor,Linguistics,492,110,130
+religion_spirituality__philosophy.religion__inspiration,religion_spirituality__philosophy,secondary,Religion & Inspiration,493,110,130
+religion_spirituality__philosophy.religion__inspiration.general_religion,religion_spirituality__philosophy.religion__inspiration,minor,General Religion,493,110,130
+religion_spirituality__philosophy.religion__inspiration.religion_reference,religion_spirituality__philosophy.religion__inspiration,minor,Religion Reference,494,110,130
+religion_spirituality__philosophy.religion__inspiration.judaica,religion_spirituality__philosophy.religion__inspiration,minor,Judaica,495,110,130
+religion_spirituality__philosophy.religion__inspiration.islam,religion_spirituality__philosophy.religion__inspiration,minor,Islam,496,110,130
+religion_spirituality__philosophy.religion__inspiration.sufism,religion_spirituality__philosophy.religion__inspiration,minor,Sufism,497,110,130
+religion_spirituality__philosophy.religion__inspiration.religious_fiction,religion_spirituality__philosophy.religion__inspiration,minor,Religious Fiction,498,110,130
+religion_spirituality__philosophy.religion__inspiration.inspiration,religion_spirituality__philosophy.religion__inspiration,minor,Inspiration,499,110,130
+religion_spirituality__philosophy.religion__inspiration.latter_day_saints,religion_spirituality__philosophy.religion__inspiration,minor,Latter Day Saints,500,110,130
+religion_spirituality__philosophy.religion__inspiration.eastern_thought,religion_spirituality__philosophy.religion__inspiration,minor,Eastern Thought,501,110,130
+religion_spirituality__philosophy.religion__inspiration.hinduism,religion_spirituality__philosophy.religion__inspiration,minor,Hinduism,502,110,130
+religion_spirituality__philosophy.religion__inspiration.buddhism,religion_spirituality__philosophy.religion__inspiration,minor,Buddhism,503,110,130
+religion_spirituality__philosophy.religion__inspiration.taoism,religion_spirituality__philosophy.religion__inspiration,minor,Taoism,504,110,130
+religion_spirituality__philosophy.religion__inspiration.confucianism,religion_spirituality__philosophy.religion__inspiration,minor,Confucianism,505,110,130
+romance,,primary,Romance,506,110,130
+romance.romance,romance,secondary,Romance,506,110,130
+romance.romance.general_romance,romance.romance,minor,General Romance,506,110,130
+romance.series_romance,romance,secondary,Series Romance,507,110,130
+romance.series_romance.series_romance,romance.series_romance,minor,Series Romance,507,110,130
+science_fiction_fantasy__horror,,primary,"Science Fiction, Fantasy & Horror",508,110,130
+science_fiction_fantasy__horror.horror,science_fiction_fantasy__horror,secondary,Horror,508,110,130
+science_fiction_fantasy__horror.horror.horror,science_fiction_fantasy__horror.horror,minor,Horror,508,110,130
+science_fiction_fantasy__horror.science_fiction__fantasy,science_fiction_fantasy__horror,secondary,Science Fiction & Fantasy,509,110,130
+science_fiction_fantasy__horror.science_fiction__fantasy.science_fiction__fantasy,science_fiction_fantasy__horror.science_fiction__fantasy,minor,Science Fiction & Fantasy,509,110,130
+science_technology__computing,,primary,"Science, Technology & Computing",510,110,130
+science_technology__computing.apple__mac_computing,science_technology__computing,secondary,Apple & Mac Computing,510,110,130
+science_technology__computing.apple__mac_computing.mac_architecture__maintenance,science_technology__computing.apple__mac_computing,minor,Mac Architecture & Maintenance,510,110,130
+science_technology__computing.apple__mac_computing.mac_applications,science_technology__computing.apple__mac_computing,minor,Mac Applications,511,110,130
+science_technology__computing.apple__mac_computing.mac_operating_systems,science_technology__computing.apple__mac_computing,minor,Mac Operating Systems,512,110,130
+science_technology__computing.apple__mac_computing.mac_programming,science_technology__computing.apple__mac_computing,minor,Mac Programming,513,110,130
+science_technology__computing.artificial_intelligence,science_technology__computing,secondary,Artificial Intelligence,514,110,130
+science_technology__computing.artificial_intelligence.artificial_intelligence,science_technology__computing.artificial_intelligence,minor,Artificial Intelligence,514,110,130
+science_technology__computing.astronomy__space,science_technology__computing,secondary,Astronomy & Space,515,110,130
+science_technology__computing.astronomy__space.astronomy,science_technology__computing.astronomy__space,minor,Astronomy,515,110,130
+science_technology__computing.astronomy__space.extraterrestrial_life,science_technology__computing.astronomy__space,minor,Extraterrestrial Life,516,110,130
+science_technology__computing.astronomy__space.cosmology__astrophysics,science_technology__computing.astronomy__space,minor,Cosmology & Astrophysics,517,110,130
+science_technology__computing.computer_fundamentals__hardware,science_technology__computing,secondary,Computer Fundamentals & Hardware,518,110,130
+science_technology__computing.computer_fundamentals__hardware.introref,science_technology__computing.computer_fundamentals__hardware,minor,Intro/Ref,518,110,130
+science_technology__computing.computer_fundamentals__hardware.buying_guides,science_technology__computing.computer_fundamentals__hardware,minor,Buying Guides,519,110,130
+science_technology__computing.computer_fundamentals__hardware.peripherals,science_technology__computing.computer_fundamentals__hardware,minor,Peripherals,520,110,130
+science_technology__computing.computer_fundamentals__hardware.architecture__maintenance,science_technology__computing.computer_fundamentals__hardware,minor,Architecture & Maintenance,521,110,130
+science_technology__computing.computer_profiles__culture,science_technology__computing,secondary,Computer Profiles & Culture,522,110,130
+science_technology__computing.computer_profiles__culture.profiles,science_technology__computing.computer_profiles__culture,minor,Profiles,522,110,130
+science_technology__computing.engineering_building__trades,science_technology__computing,secondary,"Engineering, Building & Trades",523,110,130
+science_technology__computing.engineering_building__trades.electrical_engineering,science_technology__computing.engineering_building__trades,minor,Electrical Engineering,523,110,130
+science_technology__computing.engineering_building__trades.building_trades,science_technology__computing.engineering_building__trades,minor,Building Trades,524,110,130
+science_technology__computing.engineering_building__trades.communications_engineering,science_technology__computing.engineering_building__trades,minor,Communications Engineering,525,110,130
+science_technology__computing.engineering_building__trades.professional_electrical,science_technology__computing.engineering_building__trades,minor,Professional Electrical,526,110,130
+science_technology__computing.engineering_building__trades.engineering,science_technology__computing.engineering_building__trades,minor,Engineering,527,110,130
+science_technology__computing.engineering_building__trades.professional_plumbing,science_technology__computing.engineering_building__trades,minor,Professional Plumbing,528,110,130
+science_technology__computing.engineering_building__trades.hvac,science_technology__computing.engineering_building__trades,minor,HVAC,529,110,130
+science_technology__computing.general_science_biology__evolution,science_technology__computing,secondary,"General Science, Biology & Evolution",530,110,130
+science_technology__computing.general_science_biology__evolution.general_science,science_technology__computing.general_science_biology__evolution,minor,General Science,530,110,130
+science_technology__computing.general_science_biology__evolution.chemistry__biology,science_technology__computing.general_science_biology__evolution,minor,Chemistry & Biology,531,110,130
+science_technology__computing.general_science_biology__evolution.evolution,science_technology__computing.general_science_biology__evolution,minor,Evolution,532,110,130
+science_technology__computing.general_science_biology__evolution.paleontology,science_technology__computing.general_science_biology__evolution,minor,Paleontology,533,110,130
+science_technology__computing.graphics_multimedia__virtual_reality,science_technology__computing,secondary,"Graphics, Multimedia & Virtual Reality",534,110,130
+science_technology__computing.graphics_multimedia__virtual_reality.multimedia,science_technology__computing.graphics_multimedia__virtual_reality,minor,Multimedia,534,110,130
+science_technology__computing.graphics_multimedia__virtual_reality.virtual_reality,science_technology__computing.graphics_multimedia__virtual_reality,minor,Virtual Reality,535,110,130
+science_technology__computing.internet_web__cybersecurity,science_technology__computing,secondary,"Internet, Web & Cybersecurity",536,110,130
+science_technology__computing.internet_web__cybersecurity.internet,science_technology__computing.internet_web__cybersecurity,minor,Internet,536,110,130
+science_technology__computing.internet_web__cybersecurity.digital_life,science_technology__computing.internet_web__cybersecurity,minor,Digital Life,537,110,130
+science_technology__computing.internet_web__cybersecurity.world_wide_web__mosaic,science_technology__computing.internet_web__cybersecurity,minor,World Wide Web & Mosaic,538,110,130
+science_technology__computing.internet_web__cybersecurity.internet_security,science_technology__computing.internet_web__cybersecurity,minor,Internet Security,539,110,130
+science_technology__computing.internet_web__cybersecurity.online_services,science_technology__computing.internet_web__cybersecurity,minor,Online Services,540,110,130
+science_technology__computing.networks_telecom__enterprise_systems,science_technology__computing,secondary,"Networks, Telecom & Enterprise Systems",541,110,130
+science_technology__computing.networks_telecom__enterprise_systems.network_applications,science_technology__computing.networks_telecom__enterprise_systems,minor,Network Applications,541,110,130
+science_technology__computing.networks_telecom__enterprise_systems.telecommunication,science_technology__computing.networks_telecom__enterprise_systems,minor,Telecommunication,542,110,130
+science_technology__computing.networks_telecom__enterprise_systems.clientserver_technology,science_technology__computing.networks_telecom__enterprise_systems,minor,Client-Server Technology,543,110,130
+science_technology__computing.networks_telecom__enterprise_systems.mainframe_computer_systems,science_technology__computing.networks_telecom__enterprise_systems,minor,Mainframe Computer Systems,544,110,130
+science_technology__computing.operating_systems__applications,science_technology__computing,secondary,Operating Systems & Applications,545,110,130
+science_technology__computing.operating_systems__applications.windows_95,science_technology__computing.operating_systems__applications,minor,Windows 95,545,110,130
+science_technology__computing.operating_systems__applications.dos_manuals,science_technology__computing.operating_systems__applications,minor,DOS Manuals,546,110,130
+science_technology__computing.operating_systems__applications.windows_nt,science_technology__computing.operating_systems__applications,minor,Windows NT,547,110,130
+science_technology__computing.operating_systems__applications.dos_appl,science_technology__computing.operating_systems__applications,minor,DOS Appl.,548,110,130
+science_technology__computing.operating_systems__applications.os2,science_technology__computing.operating_systems__applications,minor,OS/2,549,110,130
+science_technology__computing.operating_systems__applications.unix,science_technology__computing.operating_systems__applications,minor,UNIX,550,110,130
+science_technology__computing.operating_systems__applications.linux,science_technology__computing.operating_systems__applications,minor,LINUX,551,110,130
+science_technology__computing.operating_systems__applications.xwindows,science_technology__computing.operating_systems__applications,minor,Xwindows,552,110,130
+science_technology__computing.operating_systems__applications.windows_manl,science_technology__computing.operating_systems__applications,minor,Windows Manl,553,110,130
+science_technology__computing.operating_systems__applications.windows_applications,science_technology__computing.operating_systems__applications,minor,Windows Applications,554,110,130
+science_technology__computing.physics_mathematics__cognitive_science,science_technology__computing,secondary,"Physics, Mathematics & Cognitive Science",555,110,130
+science_technology__computing.physics_mathematics__cognitive_science.physics,science_technology__computing.physics_mathematics__cognitive_science,minor,Physics,555,110,130
+science_technology__computing.physics_mathematics__cognitive_science.mathematics,science_technology__computing.physics_mathematics__cognitive_science,minor,Mathematics,556,110,130
+science_technology__computing.physics_mathematics__cognitive_science.statistics__probability,science_technology__computing.physics_mathematics__cognitive_science,minor,Statistics & Probability,557,110,130
+science_technology__computing.physics_mathematics__cognitive_science.complexity,science_technology__computing.physics_mathematics__cognitive_science,minor,Complexity,558,110,130
+science_technology__computing.physics_mathematics__cognitive_science.cognitive_science,science_technology__computing.physics_mathematics__cognitive_science,minor,Cognitive Science,559,110,130
+science_technology__computing.programming_languages,science_technology__computing,secondary,Programming Languages,560,110,130
+science_technology__computing.programming_languages.basic__visual_basic,science_technology__computing.programming_languages,minor,BASIC & Visual Basic,560,110,130
+science_technology__computing.programming_languages.c_c__visual_c,science_technology__computing.programming_languages,minor,"C, C++ & Visual C",561,110,130
+science_technology__computing.programming_languages.pascal__turbo_pascal,science_technology__computing.programming_languages,minor,Pascal & Turbo Pascal,562,110,130
+science_technology__computing.software_development__databases,science_technology__computing,secondary,Software Development & Databases,563,110,130
+science_technology__computing.software_development__databases.database_programming,science_technology__computing.software_development__databases,minor,Database Programming,563,110,130
+science_technology__computing.software_development__databases.advanced_mainframe_programming,science_technology__computing.software_development__databases,minor,Advanced Mainframe Programming,564,110,130
+science_technology__computing.software_development__databases.graphics_programming,science_technology__computing.software_development__databases,minor,Graphics Programming,565,110,130
+science_technology__computing.software_development__databases.software_engineering,science_technology__computing.software_development__databases,minor,Software Engineering,566,110,130
+science_technology__computing.technology_electronics__radio,science_technology__computing,secondary,"Technology, Electronics & Radio",567,110,130
+science_technology__computing.technology_electronics__radio.consumer_electronics,science_technology__computing.technology_electronics__radio,minor,Consumer Electronics,567,110,130
+science_technology__computing.technology_electronics__radio.technology,science_technology__computing.technology_electronics__radio,minor,Technology,568,110,130
+science_technology__computing.technology_electronics__radio.amateur_radio,science_technology__computing.technology_electronics__radio,minor,Amateur Radio,569,110,130
+society__cultural_studies,,primary,Society & Cultural Studies,570,110,130
+society__cultural_studies.cultural__identity_studies,society__cultural_studies,secondary,Cultural & Identity Studies,570,110,130
+society__cultural_studies.cultural__identity_studies.asian_studies,society__cultural_studies.cultural__identity_studies,minor,Asian Studies,570,110,130
+society__cultural_studies.cultural__identity_studies.cultural_studies,society__cultural_studies.cultural__identity_studies,minor,Cultural Studies,571,110,130
+society__cultural_studies.cultural__identity_studies.african_american_studies,society__cultural_studies.cultural__identity_studies,minor,African American Studies,572,110,130
+society__cultural_studies.cultural__identity_studies.womens_studies,society__cultural_studies.cultural__identity_studies,minor,Women’s Studies,573,110,130
+society__cultural_studies.cultural__identity_studies.lgbtq_studies,society__cultural_studies.cultural__identity_studies,minor,LGBTQ+ Studies,574,110,130
+society__cultural_studies.cultural__identity_studies.hispanic_studies,society__cultural_studies.cultural__identity_studies,minor,Hispanic Studies,575,110,130
+society__cultural_studies.cultural__identity_studies.gay_fiction,society__cultural_studies.cultural__identity_studies,minor,Gay Fiction,576,110,130
+society__cultural_studies.cultural__identity_studies.gay_nonfiction,society__cultural_studies.cultural__identity_studies,minor,Gay Nonfiction,577,110,130
+society__cultural_studies.cultural__identity_studies.lesbian_fiction,society__cultural_studies.cultural__identity_studies,minor,Lesbian Fiction,578,110,130
+society__cultural_studies.cultural__identity_studies.lesbian_nonfiction,society__cultural_studies.cultural__identity_studies,minor,Lesbian Nonfiction,579,110,130
+society__cultural_studies.cultural__identity_studies.african_studies,society__cultural_studies.cultural__identity_studies,minor,African Studies,580,110,130
+society__cultural_studies.cultural__identity_studies.native_american_studies,society__cultural_studies.cultural__identity_studies,minor,Native American Studies,581,110,130
+society__cultural_studies.social_sciences,society__cultural_studies,secondary,Social Sciences,582,110,130
+society__cultural_studies.social_sciences.anthropology,society__cultural_studies.social_sciences,minor,Anthropology,582,110,130
+society__cultural_studies.social_sciences.archaeology,society__cultural_studies.social_sciences,minor,Archaeology,583,110,130
+society__cultural_studies.social_sciences.sociology,society__cultural_studies.social_sciences,minor,Sociology,584,110,130
+travel_local__regional,,primary,"Travel, Local & Regional",585,110,130
+travel_local__regional.international_travel,travel_local__regional,secondary,International Travel,585,110,130
+travel_local__regional.international_travel.travel_foreign,travel_local__regional.international_travel,minor,Travel Foreign,585,110,130
+travel_local__regional.international_travel.mexico,travel_local__regional.international_travel,minor,Mexico,586,110,130
+travel_local__regional.international_travel.caribbean,travel_local__regional.international_travel,minor,Caribbean,587,110,130
+travel_local__regional.international_travel.canada,travel_local__regional.international_travel,minor,Canada,588,110,130
+travel_local__regional.international_travel.eastern_europe__russia,travel_local__regional.international_travel,minor,Eastern Europe & Russia,589,110,130
+travel_local__regional.international_travel.western_europe,travel_local__regional.international_travel,minor,Western Europe,590,110,130
+travel_local__regional.international_travel.great_britain,travel_local__regional.international_travel,minor,Great Britain,591,110,130
+travel_local__regional.international_travel.africa__middle_east,travel_local__regional.international_travel,minor,Africa & Middle East,592,110,130
+travel_local__regional.international_travel.india__south_asia,travel_local__regional.international_travel,minor,India & South Asia,593,110,130
+travel_local__regional.international_travel.japan,travel_local__regional.international_travel,minor,Japan,594,110,130
+travel_local__regional.international_travel.east_asia,travel_local__regional.international_travel,minor,East Asia,595,110,130
+travel_local__regional.international_travel.central_america,travel_local__regional.international_travel,minor,Central America,596,110,130
+travel_local__regional.international_travel.ireland,travel_local__regional.international_travel,minor,Ireland,597,110,130
+travel_local__regional.international_travel.israel,travel_local__regional.international_travel,minor,Israel,598,110,130
+travel_local__regional.international_travel.germany,travel_local__regional.international_travel,minor,Germany,599,110,130
+travel_local__regional.international_travel.france,travel_local__regional.international_travel,minor,France,600,110,130
+travel_local__regional.international_travel.paris,travel_local__regional.international_travel,minor,Paris,601,110,130
+travel_local__regional.international_travel.italy,travel_local__regional.international_travel,minor,Italy,602,110,130
+travel_local__regional.international_travel.spainportugal,travel_local__regional.international_travel,minor,Spain/Portugal,603,110,130
+travel_local__regional.international_travel.greece__mediterranean,travel_local__regional.international_travel,minor,Greece & Mediterranean,604,110,130
+travel_local__regional.international_travel.benelux,travel_local__regional.international_travel,minor,Benelux,605,110,130
+travel_local__regional.international_travel.scandinavia,travel_local__regional.international_travel,minor,Scandinavia,606,110,130
+travel_local__regional.international_travel.switzerland__austria,travel_local__regional.international_travel,minor,Switzerland & Austria,607,110,130
+travel_local__regional.international_travel.south_america,travel_local__regional.international_travel,minor,South America,608,110,130
+travel_local__regional.international_travel.oceania,travel_local__regional.international_travel,minor,Oceania,609,110,130
+travel_local__regional.local__regional_interest,travel_local__regional,secondary,Local & Regional Interest,610,110,130
+travel_local__regional.local__regional_interest.regional_general,travel_local__regional.local__regional_interest,minor,Regional General,610,110,130
+travel_local__regional.local__regional_interest.restaurant_guides,travel_local__regional.local__regional_interest,minor,Restaurant Guides,611,110,130
+travel_local__regional.local__regional_interest.pictorials,travel_local__regional.local__regional_interest,minor,Pictorials,612,110,130
+travel_local__regional.local__regional_interest.humor,travel_local__regional.local__regional_interest,minor,Humor,613,110,130
+travel_local__regional.local__regional_interest.local_travel,travel_local__regional.local__regional_interest,minor,Local Travel,614,110,130
+travel_local__regional.local__regional_interest.reference,travel_local__regional.local__regional_interest,minor,Reference,615,110,130
+travel_local__regional.local__regional_interest.history__biography,travel_local__regional.local__regional_interest,minor,History & Biography,616,110,130
+travel_local__regional.local__regional_interest.transportation,travel_local__regional.local__regional_interest,minor,Transportation,617,110,130
+travel_local__regional.local__regional_interest.nature,travel_local__regional.local__regional_interest,minor,Nature,618,110,130
+travel_local__regional.local__regional_interest.sports,travel_local__regional.local__regional_interest,minor,Sports,619,110,130
+travel_local__regional.local__regional_interest.literature,travel_local__regional.local__regional_interest,minor,Literature,620,110,130
+travel_local__regional.local__regional_interest.cooking,travel_local__regional.local__regional_interest,minor,Cooking,621,110,130
+travel_local__regional.local__regional_interest.gardening,travel_local__regional.local__regional_interest,minor,Gardening,622,110,130
+travel_local__regional.local__regional_interest.business,travel_local__regional.local__regional_interest,minor,Business,623,110,130
+travel_local__regional.local__regional_interest.current_affairs,travel_local__regional.local__regional_interest,minor,Current Affairs,624,110,130
+travel_local__regional.local__regional_interest.juvenile,travel_local__regional.local__regional_interest,minor,Juvenile,625,110,130
+travel_local__regional.local__regional_interest.art__architecture,travel_local__regional.local__regional_interest,minor,Art & Architecture,626,110,130
+travel_local__regional.local__regional_interest.native_american,travel_local__regional.local__regional_interest,minor,Native American,627,110,130
+travel_local__regional.local__regional_interest.hikingcamping,travel_local__regional.local__regional_interest,minor,Hiking/Camping,628,110,130
+travel_local__regional.local__regional_interest.folklore,travel_local__regional.local__regional_interest,minor,Folklore,629,110,130
+travel_local__regional.local__regional_interest.holiday,travel_local__regional.local__regional_interest,minor,Holiday,630,110,130
+travel_local__regional.local__regional_interest.cowboys,travel_local__regional.local__regional_interest,minor,Cowboys,631,110,130
+travel_local__regional.local__regional_interest.general,travel_local__regional.local__regional_interest,minor,General,632,110,130
+travel_local__regional.local__regional_interest.artarchitecture,travel_local__regional.local__regional_interest,minor,Art/Architecture,633,110,130
+travel_local__regional.local__regional_interest.amishmennonite,travel_local__regional.local__regional_interest,minor,Amish/Mennonite,634,110,130
+travel_local__regional.transportation,travel_local__regional,secondary,Transportation,635,110,130
+travel_local__regional.transportation.auto_buying_guides,travel_local__regional.transportation,minor,Auto Buying Guides,635,110,130
+travel_local__regional.transportation.cars__trucks,travel_local__regional.transportation,minor,Cars & Trucks,636,110,130
+travel_local__regional.transportation.ships,travel_local__regional.transportation,minor,Ships,637,110,130
+travel_local__regional.transportation.trains,travel_local__regional.transportation,minor,Trains,638,110,130
+travel_local__regional.transportation.planes,travel_local__regional.transportation,minor,Planes,639,110,130
+travel_local__regional.transportation.auto_repair,travel_local__regional.transportation,minor,Auto Repair,640,110,130
+travel_local__regional.travel_writing__general_travel,travel_local__regional,secondary,Travel Writing & General Travel,641,110,130
+travel_local__regional.travel_writing__general_travel.travel_general,travel_local__regional.travel_writing__general_travel,minor,Travel General,641,110,130
+travel_local__regional.travel_writing__general_travel.rv__campground_guides,travel_local__regional.travel_writing__general_travel,minor,RV & Campground Guides,642,110,130
+travel_local__regional.travel_writing__general_travel.travel_writing,travel_local__regional.travel_writing__general_travel,minor,Travel Writing,643,110,130
+travel_local__regional.travel_writing__general_travel.recreational_travel,travel_local__regional.travel_writing__general_travel,minor,Recreational Travel,644,110,130
+travel_local__regional.travel_writing__general_travel.pictorial_travel,travel_local__regional.travel_writing__general_travel,minor,Pictorial Travel,645,110,130
+travel_local__regional.united_states_travel,travel_local__regional,secondary,United States Travel,646,110,130
+travel_local__regional.united_states_travel.united_states_travel,travel_local__regional.united_states_travel,minor,United States Travel,646,110,130
+travel_local__regional.united_states_travel.road_atlases,travel_local__regional.united_states_travel,minor,Road Atlases,647,110,130
+travel_local__regional.united_states_travel.california,travel_local__regional.united_states_travel,minor,California,648,110,130
+travel_local__regional.united_states_travel.washington_dc,travel_local__regional.united_states_travel,minor,Washington DC,649,110,130
+travel_local__regional.united_states_travel.alaska,travel_local__regional.united_states_travel,minor,Alaska,650,110,130
+travel_local__regional.united_states_travel.florida,travel_local__regional.united_states_travel,minor,Florida,651,110,130
+travel_local__regional.united_states_travel.great_lakes__upper_midwest,travel_local__regional.united_states_travel,minor,Great Lakes & Upper Midwest,652,110,130
+travel_local__regional.united_states_travel.hawaii,travel_local__regional.united_states_travel,minor,Hawaii,653,110,130
+travel_local__regional.united_states_travel.nyc,travel_local__regional.united_states_travel,minor,NYC,654,110,130
+travel_local__regional.united_states_travel.texas__southcentral_plains,travel_local__regional.united_states_travel,minor,Texas & South-Central Plains,655,110,130
+travel_local__regional.united_states_travel.south__southeast,travel_local__regional.united_states_travel,minor,South & Southeast,656,110,130
+travel_local__regional.united_states_travel.southwest__rocky_mountains,travel_local__regional.united_states_travel,minor,Southwest & Rocky Mountains,657,110,130
+travel_local__regional.united_states_travel.midatlantic,travel_local__regional.united_states_travel,minor,Mid-Atlantic,658,110,130
+travel_local__regional.united_states_travel.new_england,travel_local__regional.united_states_travel,minor,New England,659,110,130
+travel_local__regional.united_states_travel.pacific_nw,travel_local__regional.united_states_travel,minor,Pacific NW,660,110,130
+travel_local__regional.united_states_travel.walt_disney_world,travel_local__regional.united_states_travel,minor,Walt Disney World,661,110,130
+young_adult,,primary,Young Adult,662,110,130
+young_adult.young_adult_books,young_adult,secondary,Young Adult Books,662,110,130
+young_adult.young_adult_books.young_adult_pb,young_adult.young_adult_books,minor,Young Adult PB,662,110,130
+young_adult.young_adult_books.sweet_valley_high,young_adult.young_adult_books,minor,Sweet Valley High,663,110,130
+young_adult.young_adult_books.ya_romance,young_adult.young_adult_books,minor,YA Romance,664,110,130
+young_adult.young_adult_books.ya_non_fiction,young_adult.young_adult_books,minor,YA Non Fiction,665,110,130
+young_adult.young_adult_books.thrillers,young_adult.young_adult_books,minor,Thrillers,666,110,130
+caf__food_gifts,,primary,Café & Food Gifts,667,680,
+caf__food_gifts.coffee__tea_accessories,caf__food_gifts,secondary,Coffee & Tea Accessories,667,440,
+caf__food_gifts.coffee__tea_accessories.tea_accessories,caf__food_gifts.coffee__tea_accessories,minor,Tea Accessories,667,440,
+caf__food_gifts.coffee__tea_accessories.coffee_accessories,caf__food_gifts.coffee__tea_accessories,minor,Coffee Accessories,668,440,
+caf__food_gifts.coffee__tea_accessories.trivets__coasters,caf__food_gifts.coffee__tea_accessories,minor,Trivets & Coasters,669,440,
+caf__food_gifts.coffee__tea_accessories.electronic__mechanical_accessories,caf__food_gifts.coffee__tea_accessories,minor,Electronic & Mechanical Accessories,670,440,
+caf__food_gifts.coffee__tea_accessories.textiles,caf__food_gifts.coffee__tea_accessories,minor,Textiles,671,440,
+caf__food_gifts.coffee__tea_accessories.other_accessories,caf__food_gifts.coffee__tea_accessories,minor,Other Accessories,672,440,
+caf__food_gifts.drinkware__serveware,caf__food_gifts,secondary,Drinkware & Serveware,673,440,
+caf__food_gifts.drinkware__serveware.coffee_mugs,caf__food_gifts.drinkware__serveware,minor,Coffee Mugs,673,440,
+caf__food_gifts.drinkware__serveware.teacups,caf__food_gifts.drinkware__serveware,minor,Teacups,674,440,
+caf__food_gifts.drinkware__serveware.kettles__brewing_equipment,caf__food_gifts.drinkware__serveware,minor,Kettles & Brewing Equipment,675,440,
+caf__food_gifts.drinkware__serveware.other_serveware,caf__food_gifts.drinkware__serveware,minor,Other Serveware,676,440,
+caf__food_gifts.packaged_food__gift_baskets,caf__food_gifts,secondary,Packaged Food & Gift Baskets,677,680,
+caf__food_gifts.packaged_food__gift_baskets.gift_baskets,caf__food_gifts.packaged_food__gift_baskets,minor,Gift Baskets,677,440,
+caf__food_gifts.packaged_food__gift_baskets.packaged_cookies,caf__food_gifts.packaged_food__gift_baskets,minor,Packaged Cookies,678,680,
+caf__food_gifts.packaged_food__gift_baskets.packaged_beverages,caf__food_gifts.packaged_food__gift_baskets,minor,Packaged Beverages,679,660,
+caf__food_gifts.packaged_food__gift_baskets.packaged_chocolate,caf__food_gifts.packaged_food__gift_baskets,minor,Packaged Chocolate,680,680,
+cards__correspondence,,primary,Cards & Correspondence,681,410,
+cards__correspondence.cards__postcards,cards__correspondence,secondary,Cards & Postcards,681,410,
+cards__correspondence.cards__postcards.single_greeting_cards,cards__correspondence.cards__postcards,minor,Single Greeting Cards,681,410,
+cards__correspondence.cards__postcards.postcards,cards__correspondence.cards__postcards,minor,Postcards,682,410,
+journals_notebooks__paper_goods,,primary,"Journals, Notebooks & Paper Goods",683,420,130
+journals_notebooks__paper_goods.journals__specialty_books,journals_notebooks__paper_goods,secondary,Journals & Specialty Books,683,420,
+journals_notebooks__paper_goods.journals__specialty_books.blank_books__journals,journals_notebooks__paper_goods.journals__specialty_books,minor,Blank Books & Journals,683,420,
+journals_notebooks__paper_goods.journals__specialty_books.specialty_books__diaries,journals_notebooks__paper_goods.journals__specialty_books,minor,Specialty Books & Diaries,684,420,
+journals_notebooks__paper_goods.journals__specialty_books.locking_diaries,journals_notebooks__paper_goods.journals__specialty_books,minor,Locking Diaries,685,420,
+journals_notebooks__paper_goods.journals__specialty_books.photo_albums,journals_notebooks__paper_goods.journals__specialty_books,minor,Photo Albums,686,420,
+journals_notebooks__paper_goods.journals__specialty_books.address_books,journals_notebooks__paper_goods.journals__specialty_books,minor,Address Books,687,420,
+journals_notebooks__paper_goods.journals__specialty_books.decorative_endpaper_books,journals_notebooks__paper_goods.journals__specialty_books,minor,Decorative Endpaper Books,688,420,
+journals_notebooks__paper_goods.postcard_books,journals_notebooks__paper_goods,secondary,Postcard Books,689,410,
+journals_notebooks__paper_goods.postcard_books.postcard_books,journals_notebooks__paper_goods.postcard_books,minor,Postcard Books,689,410,
+journals_notebooks__paper_goods.stationery_wrap__writing_supplies,journals_notebooks__paper_goods,secondary,"Stationery, Wrap & Writing Supplies",690,420,
+journals_notebooks__paper_goods.stationery_wrap__writing_supplies.gift_wrap,journals_notebooks__paper_goods.stationery_wrap__writing_supplies,minor,Gift Wrap,690,420,
+journals_notebooks__paper_goods.stationery_wrap__writing_supplies.stationery,journals_notebooks__paper_goods.stationery_wrap__writing_supplies,minor,Stationery,691,420,
+journals_notebooks__paper_goods.stationery_wrap__writing_supplies.writing_supplies,journals_notebooks__paper_goods.stationery_wrap__writing_supplies,minor,Writing Supplies,692,420,
+journals_notebooks__paper_goods.stationery_wrap__writing_supplies.alloccasion_boxed_cards,journals_notebooks__paper_goods.stationery_wrap__writing_supplies,minor,All-Occasion Boxed Cards,693,420,
+reading_accessories__bookish_gifts,,primary,Reading Accessories & Bookish Gifts,694,450,130
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,reading_accessories__bookish_gifts,secondary,"Bookmarks, Bookends & Desk Gifts",694,450,130
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.paper_bookmarks,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Paper Bookmarks,694,410,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.metal_bookmarks,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Metal Bookmarks,695,410,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.other_bookmarks,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Other Bookmarks,696,410,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.bookends,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Bookends,697,440,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.bookplates,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Bookplates,698,440,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.paperweights,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Paperweights,699,440,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.boxesframes,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Boxes/Frames,700,440,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.other_bookish_gifts,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Other Bookish Gifts,701,440,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.premium_bookmarks,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Premium Bookmarks,702,450,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.antioch_bookmarks,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Antioch Bookmarks,703,450,
+reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts.pomegranate_bookmarks,reading_accessories__bookish_gifts.bookmarks_bookends__desk_gifts,minor,Pomegranate Bookmarks,704,450,
+reading_accessories__bookish_gifts.reading_aids,reading_accessories__bookish_gifts,secondary,Reading Aids,705,450,
+reading_accessories__bookish_gifts.reading_aids.book_holders,reading_accessories__bookish_gifts.reading_aids,minor,Book Holders,705,450,
+reading_accessories__bookish_gifts.reading_aids.magnifiers,reading_accessories__bookish_gifts.reading_aids,minor,Magnifiers,706,450,
+reading_accessories__bookish_gifts.reading_aids.book_lights,reading_accessories__bookish_gifts.reading_aids,minor,Book Lights,707,450,
+reading_accessories__bookish_gifts.reading_aids.book_covers,reading_accessories__bookish_gifts.reading_aids,minor,Book Covers,708,450,
+reading_accessories__bookish_gifts.reading_aids.other_reading_aids,reading_accessories__bookish_gifts.reading_aids,minor,Other Reading Aids,709,450,
+reading_accessories__bookish_gifts.reading_aids.other_electronic_reading_aids,reading_accessories__bookish_gifts.reading_aids,minor,Other Electronic Reading Aids,710,450,
+reading_accessories__bookish_gifts.storebranded_gifts,reading_accessories__bookish_gifts,secondary,Store-Branded Gifts,711,440,130
+reading_accessories__bookish_gifts.storebranded_gifts.tabletop,reading_accessories__bookish_gifts.storebranded_gifts,minor,Tabletop,711,440,
+reading_accessories__bookish_gifts.storebranded_gifts.apparel,reading_accessories__bookish_gifts.storebranded_gifts,minor,Apparel,712,470,
+reading_accessories__bookish_gifts.storebranded_gifts.bookbags,reading_accessories__bookish_gifts.storebranded_gifts,minor,Bookbags,713,470,
+reading_accessories__bookish_gifts.storebranded_gifts.dcor__other,reading_accessories__bookish_gifts.storebranded_gifts,minor,Décor & Other,714,470,
+seasonal__holiday_gifts,,primary,Seasonal & Holiday Gifts,715,440,130
+seasonal__holiday_gifts.seasonal_gifts,seasonal__holiday_gifts,secondary,Seasonal Gifts,715,440,130
+seasonal__holiday_gifts.seasonal_gifts.seasonal_boxed_cards,seasonal__holiday_gifts.seasonal_gifts,minor,Seasonal Boxed Cards,715,410,
+seasonal__holiday_gifts.seasonal_gifts.seasonal_gift_wrap,seasonal__holiday_gifts.seasonal_gifts,minor,Seasonal Gift Wrap,716,420,
+seasonal__holiday_gifts.seasonal_gifts.seasonal_ornaments,seasonal__holiday_gifts.seasonal_gifts,minor,Seasonal Ornaments,717,440,
+seasonal__holiday_gifts.seasonal_gifts.other_seasonal_gifts,seasonal__holiday_gifts.seasonal_gifts,minor,Other Seasonal Gifts,718,440,
+maps_calendars__globes,,primary,"Maps, Calendars & Globes",719,430,130
+maps_calendars__globes.calendars,maps_calendars__globes,secondary,Calendars,719,430,
+maps_calendars__globes.calendars.calendars__returnable,maps_calendars__globes.calendars,minor,Calendars — Returnable,719,430,
+maps_calendars__globes.calendars.calendars__nonreturnable,maps_calendars__globes.calendars,minor,Calendars — Nonreturnable,720,430,
+maps_calendars__globes.globes,maps_calendars__globes,secondary,Globes,721,460,
+maps_calendars__globes.globes.globes,maps_calendars__globes.globes,minor,Globes,721,460,
+maps_calendars__globes.maps,maps_calendars__globes,secondary,Maps,722,460,
+maps_calendars__globes.maps.maps,maps_calendars__globes.maps,minor,Maps,722,460,
+maps_calendars__globes.maps.maps__nonreturnable,maps_calendars__globes.maps,minor,Maps — Nonreturnable,723,460,
+audio__video,,primary,Audio & Video,724,320,130
+audio__video.audiobooks,audio__video,secondary,Audiobooks,724,310,130
+audio__video.audiobooks.nonfiction_audiobooks,audio__video.audiobooks,minor,Nonfiction Audiobooks,724,310,
+audio__video.audiobooks.fiction_audiobooks,audio__video.audiobooks,minor,Fiction Audiobooks,725,310,
+audio__video.audiobooks.audio_entertainment,audio__video.audiobooks,minor,Audio Entertainment,726,320,
+audio__video.childrens_audio__video,audio__video,secondary,Children's Audio & Video,727,310,130
+audio__video.childrens_audio__video.childrens_bookandaudio_sets,audio__video.childrens_audio__video,minor,Children’s Book-and-Audio Sets,727,320,
+audio__video.childrens_audio__video.childrens_audiobooks,audio__video.childrens_audio__video,minor,Children’s Audiobooks,728,310,
+audio__video.childrens_audio__video.childrens_video,audio__video.childrens_audio__video,minor,Children’s Video,729,330,
+audio__video.movies__video,audio__video,secondary,Movies & Video,730,330,
+audio__video.movies__video.movies__video,audio__video.movies__video,minor,Movies & Video,730,330,
+magazines__newspapers,,primary,Magazines & Newspapers,731,210,130
+magazines__newspapers.magazines,magazines__newspapers,secondary,Magazines,731,210,
+magazines__newspapers.magazines.magazines,magazines__newspapers.magazines,minor,Magazines,731,210,
+magazines__newspapers.newspapers,magazines__newspapers,secondary,Newspapers,732,220,
+magazines__newspapers.newspapers.newspapers,magazines__newspapers.newspapers,minor,Newspapers,732,220,
+toys_games__activity,,primary,"Toys, Games & Activity",733,530,130
+toys_games__activity.childrens_novelty__nonbook,toys_games__activity,secondary,Children's Novelty & Non-Book,733,530,
+toys_games__activity.childrens_novelty__nonbook.childrens_nonbook,toys_games__activity.childrens_novelty__nonbook,minor,Children’s Non-Book,733,530,
+toys_games__activity.tabletop_games,toys_games__activity,secondary,Tabletop Games,734,510,
+toys_games__activity.tabletop_games.tabletop_games,toys_games__activity.tabletop_games,minor,Tabletop Games,734,510,

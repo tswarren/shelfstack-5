@@ -1,0 +1,6 @@
+code,name,active
+defective,Defective / damaged,TRUE
+unwanted,Changed mind / unwanted,TRUE
+wrong_item,Wrong item,TRUE
+duplicate,Duplicate purchase,TRUE
+other,Other,TRUE
