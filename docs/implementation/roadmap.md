@@ -46,7 +46,7 @@ flowchart TD
 
 | Phase | Name | Status | Document |
 | --- | --- | --- | --- |
-| 0 | Scaffold and architectural locks | Not started | [phases/phase-00-scaffold-and-locks.md](phases/phase-00-scaffold-and-locks.md) |
+| 0 | Scaffold and architectural locks | Complete | [phases/phase-00-scaffold-and-locks.md](phases/phase-00-scaffold-and-locks.md) |
 | 1 | Organization and authorization | Not started | [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) |
 | 2 | Configuration and catalog | Not started | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
 | 3 | Quantity inventory bootstrap | Not started | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
