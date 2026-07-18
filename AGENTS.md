@@ -997,7 +997,13 @@ Bootstrap aborts if an organization already exists under a different code (INV-O
 bin/rails shelfstack:sync_admin_permissions
 ```
 
-`bin/setup` runs `db:seed` and `shelfstack:bootstrap` after preparing the database.
+Seed organization-owned reference data (identifier sequences and classification/catalog CSV masters):
+
+```bash
+bin/rails shelfstack:seed_reference_data
+```
+
+`bin/setup` runs `db:seed`, `shelfstack:bootstrap`, and `shelfstack:seed_reference_data` after preparing the database.
 
 Reset the development database:
 

@@ -1,0 +1,19 @@
+<%= form_with model: product_condition do |form| %>
+  <% if product_condition.errors.any? %>
+    <ul>
+      <% product_condition.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% if product_condition.persisted? %>
+    <div><%= form.label :code %> <%= product_condition.code %></div>
+  <% else %>
+    <div><%= form.label :code %> <%= form.text_field :code %></div>
+  <% end %>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :description %> <%= form.text_area :description %></div>
+  <div><%= form.label :position %> <%= form.number_field :position %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>

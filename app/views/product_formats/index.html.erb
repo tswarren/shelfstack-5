@@ -1,0 +1,8 @@
+<h1>Product Formats</h1>
+<p><%= link_to "New product format", new_product_format_path if Current.user.can?("catalog.format.manage", store: Current.store) %></p>
+<ul>
+  <% @product_formats.each do |product_format| %>
+    <li><%= link_to "#{product_format.code} — #{product_format.name}", product_format %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

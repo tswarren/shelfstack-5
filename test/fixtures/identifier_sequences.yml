@@ -1,0 +1,15 @@
+seq_21:
+  namespace: "21"
+  next_value: 1
+
+seq_27:
+  namespace: "27"
+  next_value: 1
+
+seq_28:
+  namespace: "28"
+  next_value: 100
+
+seq_29:
+  namespace: "29"
+  next_value: 100

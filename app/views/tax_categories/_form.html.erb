@@ -1,0 +1,17 @@
+<%= form_with model: tax_category do |form| %>
+  <% if tax_category.errors.any? %>
+    <ul>
+      <% tax_category.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% if tax_category.persisted? %>
+    <div><%= form.label :code %> <%= tax_category.code %></div>
+  <% else %>
+    <div><%= form.label :code %> <%= form.text_field :code %></div>
+  <% end %>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>

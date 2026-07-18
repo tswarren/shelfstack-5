@@ -55,11 +55,11 @@ Valid: true
 
 ## Generated identifier procedure
 
-1. Allocate the next organization sequence for the namespace (`21` / `27` / `28` / `29`) — ownership tracked as [OD-011](../implementation/open-decisions.md).
-2. Build 12 digits: prefix + payload (no encoded business meaning).
+1. Allocate the next value from the installation-singleton `identifier_sequences` row for the namespace (`21` / `27` / `28` / `29`) — [OD-011 accepted](../implementation/open-decisions.md). Under INV-ORG-001 there is no per-organization sequence table.
+2. Build 12 digits: two-digit prefix + ten-digit zero-padded payload (no encoded business meaning). Fail if the payload would exceed ten digits.
 3. Append EAN-13 check digit.
-4. Persist; never reuse after allocation.
-5. On rare collision, allocate again inside the same transaction.
+4. Persist with the consuming record. **Never reuse** means never reuse a successfully **committed** assignment; a rolled-back allocation may be regenerated.
+5. On rare uniqueness collision at persist time, the **caller** retries (savepoint or whole transaction), allocating again.
 
 ## Lookup precedence (product)
 

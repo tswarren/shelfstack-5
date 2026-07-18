@@ -1,0 +1,43 @@
+<%= form_with model: department do |form| %>
+  <% if department.errors.any? %>
+    <ul>
+      <% department.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% if department.persisted? %>
+    <div><%= form.label :code %> <%= department.code %></div>
+    <div><%= form.label :department_number %> <%= department.department_number %></div>
+  <% else %>
+    <div><%= form.label :code %> <%= form.text_field :code %></div>
+    <div><%= form.label :department_number %> <%= form.number_field :department_number %></div>
+  <% end %>
+  <div><%= form.label :name %> <%= form.text_field :name %></div>
+  <div><%= form.label :parent_department_id, "Parent department" %> <%= form.collection_select :parent_department_id, parent_departments.reject { |d| d.id == department.id }, :id, :code, include_blank: true %></div>
+  <div><%= form.label :postable %> <%= form.check_box :postable %></div>
+  <div><%= form.label :default_tax_category_id, "Default tax category" %> <%= form.collection_select :default_tax_category_id, tax_categories, :id, :code, include_blank: true %></div>
+  <div><%= form.label :default_return_policy_id, "Default return policy" %> <%= form.collection_select :default_return_policy_id, return_policies, :id, :code, include_blank: true %></div>
+  <div><%= form.label :maximum_merchandise_discount %> <%= form.text_field :maximum_merchandise_discount %></div>
+
+  <fieldset>
+    <legend>GL account codes</legend>
+    <% [
+      :inventory_asset_gl_account_code,
+      :sales_revenue_gl_account_code,
+      :sales_returns_gl_account_code,
+      :sales_discounts_gl_account_code,
+      :cogs_gl_account_code,
+      :vendor_returns_gl_account_code,
+      :inventory_shrinkage_gl_account_code,
+      :inventory_write_down_gl_account_code,
+      :inventory_adjustment_gl_account_code,
+      :freight_in_gl_account_code
+    ].each do |attribute| %>
+      <div><%= form.label attribute %> <%= form.text_field attribute %></div>
+    <% end %>
+  </fieldset>
+
+  <div><%= form.label :active %> <%= form.check_box :active %></div>
+  <div><%= form.submit %></div>
+<% end %>

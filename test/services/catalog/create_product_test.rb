@@ -1,0 +1,112 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+class CatalogCreateProductTest < ActiveSupport::TestCase
+  setup do
+    IdentifierSequence.ensure_defaults!
+    @organization = organizations(:acme)
+    @store = stores(:main_street)
+    @actor = users(:admin)
+    @merchandise_class = merchandise_classes(:fiction_primary)
+    @department = departments(:books_new)
+    @tax_category = tax_categories(:physical_book)
+  end
+
+  test "creates product and standard variant with generated identifiers" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: {
+        name: "Local Title",
+        merchandise_class_id: @merchandise_class.id,
+        default_department_id: @department.id,
+        default_tax_category_id: @tax_category.id,
+        status: "active",
+        sellable: true
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1299,
+        sellable: true
+      }
+    )
+
+    assert_difference [ "Product.count", "ProductVariant.count" ], 1 do
+      assert service.call
+    end
+
+    assert_match(/\A29\d{11}\z/, service.product.identifier)
+    assert service.product.identifier_generated?
+    assert_match(/\A28\d{11}\z/, service.variant.sku)
+  end
+
+  test "rolls back product when variant creation fails" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: { name: "Broken Product" },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        sellable: true
+      }
+    )
+
+    assert_no_difference [ "Product.count", "ProductVariant.count" ] do
+      assert_not service.call
+    end
+  end
+
+  test "requires accept_identifier_warning for warned identifiers" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      identifier: "9780306406158",
+      accept_identifier_warning: false,
+      product_attrs: { name: "Warned Product" },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: true
+      }
+    )
+
+    assert_no_difference "Product.count" do
+      assert_not service.call
+    end
+  end
+
+  test "prevents duplicate UPC and EAN equivalent identifiers" do
+    existing = products(:upc_product)
+
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      identifier: "012345678905",
+      product_attrs: { name: "Duplicate UPC" },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: true
+      }
+    )
+
+    assert_no_difference "Product.count" do
+      assert_not service.call
+    end
+
+    assert_equal "0012345678905", existing.identifier
+  end
+
+  test "product identifier is readonly after create" do
+    product = products(:sample_book)
+
+    assert_raises(ActiveRecord::ReadonlyAttributeError) do
+      product.update!(identifier: "9780000000000")
+    end
+  end
+end

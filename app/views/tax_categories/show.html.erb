@@ -1,0 +1,5 @@
+<h1><%= @tax_category.name %></h1>
+<p>Code: <%= @tax_category.code %></p>
+<p>Active: <%= @tax_category.active %></p>
+<p><%= link_to "Edit", edit_tax_category_path(@tax_category) if Current.user.can?("classification.tax_category.manage", store: Current.store) %></p>
+<p><%= link_to "All tax categories", tax_categories_path %></p>

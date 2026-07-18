@@ -32,11 +32,11 @@ superseded
 | OD-005 | Tax calculated per line vs transaction after discount allocation | open | Phase 4b | Classification / POS | Domain specs say tax after discount; finalize aggregation and residual rules |
 | OD-006 | Minimal customer shell shape for Phase 5 | proposed | Phase 5 | Product Requests / future Customer | [architectural-locks.md](architectural-locks.md#customer-identity-before-customer-requests) requires a minimal contact record before `customer_request`; fields and table name TBD. Reconcile with product-requests.md v1 opaque-reference text |
 | OD-007 | PO allocation `received` / `fulfilled` — persist vs derive | open | Phase 5 | Purchasing / Inventory | Phase 3 schema persists only `active` / `cancelled` |
-| OD-008 | Department GL account codes vs later mapping table | open | Phase 2 | Classification | Proforma retains codes on departments for now |
+| OD-008 | Department GL account codes vs later mapping table | accepted | Phase 2 | Classification | GL account code columns remain on `departments` for Phase 2; no separate mapping table |
 | OD-009 | Store configuration home (columns vs `store_configurations` vs policy tables) | open | Phase 4a | Classification / Org | Thresholds and behavioral settings placement |
 | OD-010 | Unavailable quantity by status (aggregate only vs status balances) | open | Phase 3–5 | Inventory | `stock_balances.unavailable` total vs optional status buckets |
-| OD-011 | Identifier generation sequence ownership | open | Phase 2 | Catalog | Organization-wide sequences or equivalent collision-safe generation for `21`/`27`/`28`/`29` |
-| OD-012 | Parent/reporting-only departments (`postable = false`) in first release | proposed | Phase 2 | Classification | Proforma includes hierarchy; treat as in-scope unless overturned |
+| OD-011 | Identifier generation sequence ownership | accepted | Phase 2 | Catalog | Installation-singleton `identifier_sequences` (namespaces `21`/`27`/`28`/`29`); INV-ORG-001. Issue [#14](https://github.com/tswarren/shelfstack-5/issues/14) |
+| OD-012 | Parent/reporting-only departments (`postable = false`) in first release | accepted | Phase 2 | Classification | Hierarchical departments with `postable`; reporting-only parents in scope |
 | OD-013 | Storage and precedence of role and store authority defaults | deferred | Phase 4b | Organization / Authorization | See [OD-013 notes](#od-013-role-and-store-authority-defaults) |
 
 ## OD-013 role and store authority defaults

@@ -1,0 +1,8 @@
+<h1>Return Policies</h1>
+<p><%= link_to "New return policy", new_return_policy_path if Current.user.can?("classification.return_policy.manage", store: Current.store) %></p>
+<ul>
+  <% @return_policies.each do |return_policy| %>
+    <li><%= link_to "#{return_policy.code} — #{return_policy.name}", return_policy %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

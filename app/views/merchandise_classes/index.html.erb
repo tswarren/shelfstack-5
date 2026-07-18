@@ -1,0 +1,12 @@
+<h1>Merchandise Classes</h1>
+<p><%= link_to "New merchandise class", new_merchandise_class_path if Current.user.can?("classification.merchandise_class.manage", store: Current.store) %></p>
+<ul>
+  <% indent_for = { "primary" => 0, "secondary" => 1, "minor" => 2 } %>
+  <% @merchandise_classes.each do |merchandise_class| %>
+    <li style="margin-left: <%= indent_for.fetch(merchandise_class.level, 0) * 1.5 %>em">
+      <%= link_to "#{merchandise_class.code} — #{merchandise_class.name}", merchandise_class %>
+      <small>(<%= merchandise_class.level %>)</small>
+    </li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

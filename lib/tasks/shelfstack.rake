@@ -6,6 +6,11 @@ namespace :shelfstack do
     load Rails.root.join("db/seeds/bootstrap.rb")
   end
 
+  desc "Seed organization-owned reference data (sequences + classification/catalog CSV masters)"
+  task seed_reference_data: :environment do
+    load Rails.root.join("db/seeds/reference_data.rb")
+  end
+
   desc "Grant every catalog permission to the administrator role (audited; additive)"
   task sync_admin_permissions: :environment do
     organization = Organization.first

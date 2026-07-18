@@ -1,0 +1,6 @@
+new:
+  organization: acme
+  code: new
+  name: New
+  position: 0
+  active: true

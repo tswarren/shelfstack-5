@@ -1,0 +1,8 @@
+<h1>Tax Categories</h1>
+<p><%= link_to "New tax category", new_tax_category_path if Current.user.can?("classification.tax_category.manage", store: Current.store) %></p>
+<ul>
+  <% @tax_categories.each do |tax_category| %>
+    <li><%= link_to "#{tax_category.code} — #{tax_category.name}", tax_category %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

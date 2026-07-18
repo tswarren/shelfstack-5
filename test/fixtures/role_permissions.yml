@@ -33,3 +33,87 @@ admin_drawer_manage:
 admin_audit_view:
   role: administrator
   permission: audit_view
+
+admin_classification_view:
+  role: administrator
+  permission: classification_view
+
+admin_merchandise_class_manage:
+  role: administrator
+  permission: merchandise_class_manage
+
+admin_department_manage:
+  role: administrator
+  permission: department_manage
+
+admin_tax_category_manage:
+  role: administrator
+  permission: tax_category_manage
+
+admin_store_tax_rule_manage:
+  role: administrator
+  permission: store_tax_rule_manage
+
+admin_return_policy_manage:
+  role: administrator
+  permission: return_policy_manage
+
+admin_reason_manage:
+  role: administrator
+  permission: reason_manage
+
+admin_tender_type_manage:
+  role: administrator
+  permission: tender_type_manage
+
+admin_store_configuration_manage:
+  role: administrator
+  permission: store_configuration_manage
+
+admin_product_view:
+  role: administrator
+  permission: product_view
+
+admin_product_create:
+  role: administrator
+  permission: product_create
+
+admin_product_edit:
+  role: administrator
+  permission: product_edit
+
+admin_product_deactivate:
+  role: administrator
+  permission: product_deactivate
+
+admin_identifier_correct:
+  role: administrator
+  permission: identifier_correct
+
+admin_variant_create:
+  role: administrator
+  permission: variant_create
+
+admin_variant_edit:
+  role: administrator
+  permission: variant_edit
+
+admin_variant_deactivate:
+  role: administrator
+  permission: variant_deactivate
+
+admin_option_manage:
+  role: administrator
+  permission: option_manage
+
+admin_format_manage:
+  role: administrator
+  permission: format_manage
+
+admin_condition_manage:
+  role: administrator
+  permission: condition_manage
+
+admin_label_print:
+  role: administrator
+  permission: label_print

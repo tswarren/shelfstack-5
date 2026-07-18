@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# Canonical reference data only.
-# Installation bootstrap (org/store/admin user) is explicit:
-#   bin/rails shelfstack:bootstrap
+# Installation-global definitions only (permissions).
+# Organization bootstrap: bin/rails shelfstack:bootstrap
+# Org-owned masters: bin/rails shelfstack:seed_reference_data
 
-load Rails.root.join("db/seeds/phase1_permissions.rb")
+load Rails.root.join("db/seeds/permissions.rb")

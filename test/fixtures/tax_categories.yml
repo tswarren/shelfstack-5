@@ -1,0 +1,5 @@
+physical_book:
+  organization: acme
+  code: physical_book
+  name: Physical Book
+  active: true

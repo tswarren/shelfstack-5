@@ -1,0 +1,8 @@
+<h1>Product Conditions</h1>
+<p><%= link_to "New product condition", new_product_condition_path if Current.user.can?("catalog.condition.manage", store: Current.store) %></p>
+<ul>
+  <% @product_conditions.each do |product_condition| %>
+    <li><%= link_to "#{product_condition.code} — #{product_condition.name}", product_condition %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

@@ -1,0 +1,8 @@
+<h1>Discount Reasons</h1>
+<p><%= link_to "New discount reason", new_discount_reason_path if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
+<ul>
+  <% @discount_reasons.each do |discount_reason| %>
+    <li><%= link_to "#{discount_reason.code} — #{discount_reason.name}", discount_reason %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

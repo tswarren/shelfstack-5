@@ -1,0 +1,25 @@
+sample_book:
+  organization: acme
+  identifier: "9780306406157"
+  identifier_generated: false
+  identifier_validation_status: valid
+  name: The Illustrated Man
+  merchandise_class: fiction_primary
+  default_department: books_new
+  default_tax_category: physical_book
+  variant_structure: single
+  status: active
+  sellable: true
+
+upc_product:
+  organization: acme
+  identifier: "0012345678905"
+  identifier_generated: false
+  identifier_validation_status: valid
+  name: UPC Sample
+  merchandise_class: fiction_primary
+  default_department: books_new
+  default_tax_category: physical_book
+  variant_structure: single
+  status: active
+  sellable: true

@@ -1,0 +1,24 @@
+<% content_for :title, "Products" %>
+
+<h1>Products</h1>
+
+<%= form_with url: products_path, method: :get do |form| %>
+  <div>
+    <%= form.label :q, "Search by identifier, SKU, or name" %>
+    <%= form.search_field :q, value: @query %>
+    <%= form.submit "Search" %>
+  </div>
+<% end %>
+
+<% if Current.user.can?("catalog.product.create", store: Current.store) %>
+  <p><%= link_to "New product", new_product_path %></p>
+<% end %>
+
+<ul>
+  <% @products.each do |product| %>
+    <li>
+      <%= link_to product.name, product_path(product) %>
+      — <%= product.identifier %>
+    </li>
+  <% end %>
+</ul>

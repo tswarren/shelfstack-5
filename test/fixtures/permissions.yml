@@ -51,3 +51,129 @@ audit_view:
   name: View audit
   permission_group: administration
   active: true
+
+classification_view:
+  code: classification.view
+  name: View classification masters
+  permission_group: classification
+  active: true
+
+merchandise_class_manage:
+  code: classification.merchandise_class.manage
+  name: Manage merchandise classes
+  permission_group: classification
+  active: true
+
+department_manage:
+  code: classification.department.manage
+  name: Manage departments
+  permission_group: classification
+  active: true
+
+tax_category_manage:
+  code: classification.tax_category.manage
+  name: Manage tax categories
+  permission_group: classification
+  active: true
+
+store_tax_rule_manage:
+  code: classification.store_tax_rule.manage
+  name: Manage store tax rates/rules
+  permission_group: classification
+  active: true
+
+return_policy_manage:
+  code: classification.return_policy.manage
+  name: Manage return policies
+  permission_group: classification
+  active: true
+
+reason_manage:
+  code: classification.reason.manage
+  name: Manage reason catalogs
+  permission_group: classification
+  active: true
+
+tender_type_manage:
+  code: classification.tender_type.manage
+  name: Manage tender types
+  permission_group: classification
+  active: true
+
+store_configuration_manage:
+  code: classification.store_configuration.manage
+  name: Manage store operating settings
+  permission_group: classification
+  active: true
+
+product_view:
+  code: catalog.product.view
+  name: View products and variants
+  permission_group: catalog
+  active: true
+
+product_create:
+  code: catalog.product.create
+  name: Create products
+  permission_group: catalog
+  active: true
+
+product_edit:
+  code: catalog.product.edit
+  name: Edit products
+  permission_group: catalog
+  active: true
+
+product_deactivate:
+  code: catalog.product.deactivate
+  name: Deactivate products
+  permission_group: catalog
+  active: true
+
+identifier_correct:
+  code: catalog.identifier.correct
+  name: Correct canonical identifiers
+  permission_group: catalog
+  active: true
+
+variant_create:
+  code: catalog.variant.create
+  name: Create variants
+  permission_group: catalog
+  active: true
+
+variant_edit:
+  code: catalog.variant.edit
+  name: Edit variants
+  permission_group: catalog
+  active: true
+
+variant_deactivate:
+  code: catalog.variant.deactivate
+  name: Deactivate variants
+  permission_group: catalog
+  active: true
+
+option_manage:
+  code: catalog.option.manage
+  name: Manage option structures
+  permission_group: catalog
+  active: true
+
+format_manage:
+  code: catalog.format.manage
+  name: Manage product formats
+  permission_group: catalog
+  active: true
+
+condition_manage:
+  code: catalog.condition.manage
+  name: Manage product conditions
+  permission_group: catalog
+  active: true
+
+label_print:
+  code: catalog.label.print
+  name: Print labels
+  permission_group: catalog
+  active: true

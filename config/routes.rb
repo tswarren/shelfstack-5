@@ -15,6 +15,15 @@ Rails.application.routes.draw do
   resources :store_memberships, except: %i[show destroy]
   resources :pos_devices, except: %i[show destroy]
   resources :cash_drawers, except: %i[show destroy]
+  resources :tax_categories, except: %i[destroy]
+  resources :return_policies, except: %i[destroy]
+  resources :return_reasons, except: %i[destroy]
+  resources :discount_reasons, except: %i[destroy]
+  resources :departments, except: %i[destroy]
+  resources :merchandise_classes, except: %i[destroy]
+  resources :product_formats, except: %i[destroy]
+  resources :product_conditions, except: %i[destroy]
+  resources :products, except: %i[destroy]
 
   root "homes#show"
 end

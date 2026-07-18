@@ -1,0 +1,7 @@
+<h1><%= @return_policy.name %></h1>
+<p>Code: <%= @return_policy.code %></p>
+<p>Final sale: <%= @return_policy.final_sale %></p>
+<p>Return window days: <%= @return_policy.return_window_days %></p>
+<p>Active: <%= @return_policy.active %></p>
+<p><%= link_to "Edit", edit_return_policy_path(@return_policy) if Current.user.can?("classification.return_policy.manage", store: Current.store) %></p>
+<p><%= link_to "All return policies", return_policies_path %></p>

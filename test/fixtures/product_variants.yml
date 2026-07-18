@@ -1,0 +1,19 @@
+sample_book_standard:
+  product: sample_book
+  sku: "2800000000011"
+  name: Standard
+  inventory_tracking_mode: quantity
+  regular_price_cents: 1999
+  status: active
+  sellable: true
+  purchasable: true
+
+upc_product_standard:
+  product: upc_product
+  sku: "2800000000028"
+  name: Standard
+  inventory_tracking_mode: quantity
+  regular_price_cents: 999
+  status: active
+  sellable: true
+  purchasable: true

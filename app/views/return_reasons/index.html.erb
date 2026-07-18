@@ -1,0 +1,8 @@
+<h1>Return Reasons</h1>
+<p><%= link_to "New return reason", new_return_reason_path if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
+<ul>
+  <% @return_reasons.each do |return_reason| %>
+    <li><%= link_to "#{return_reason.code} — #{return_reason.name}", return_reason %></li>
+  <% end %>
+</ul>
+<p><%= link_to "Home", root_path %></p>

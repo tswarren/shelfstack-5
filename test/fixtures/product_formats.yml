@@ -1,0 +1,8 @@
+hardcover:
+  organization: acme
+  code: hardcover
+  name: Hardcover
+  short_code: HC
+  format_family: book
+  default_inventory_tracking_mode: quantity
+  active: true

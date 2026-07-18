@@ -40,9 +40,13 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Identifiers::Normalize` | Catalog and Products | 2 | No | Yes | None | Raw identifier string | Normalized typed identifier + warnings |
-| `Identifiers::Generate` | Catalog and Products | 2 | Yes | No* | Sequence / uniqueness | Namespace (`28`/`29`/…) | Generated EAN-13 |
-| `Catalog::SaleEligibility` | Catalog and Products | 2 | No | Yes | None | Variant, store, context | blockers / warnings |
+| `Identifiers::Normalize` | Catalog and Products | 2 | No | Yes | None | Raw identifier string | `Identifiers::NormalizedIdentifier` (canonical value, type, validation status, warnings) |
+| `Identifiers::Generate` | Catalog and Products | 2 | Yes | No* | `identifier_sequences` row (`lock`) | Namespace (`21`/`27`/`28`/`29`) | Generated EAN-13; raises on ten-digit overflow |
+| `Catalog::CreateProduct` | Catalog and Products | 2 | Yes | No | Sequence + product uniqueness | Org, actor, store, product/variant attrs, optional identifier | Product + Standard variant (`28` SKU); rolls back on variant failure |
+| `Catalog::UpdateProduct` | Catalog and Products | 2 | Yes | No | Product row | Product, attrs (no identifier) | Updated product + audit |
+| `Catalog::UpdateVariant` | Catalog and Products | 2 | Yes | No | Variant row | Variant, attrs (no sku) | Updated variant + audit |
+| `Catalog::Lookup` | Catalog and Products | 2 | No | Yes | None | Organization, query | Product or nil |
+| `Catalog::SaleEligibility` | Catalog and Products | 2 | No | Yes | None | Variant, store, as-of date | `Catalog::SaleEligibilityResult` blockers / warnings (catalog readiness) |
 
 \*Generation is not replay-idempotent; callers must not retry blindly without checking uniqueness errors.
 

@@ -1,31 +1,18 @@
 # Current Phase
 
-**Active delivery phase:** Phase 2 — Configuration and catalog  
+**Active delivery phase:** Phase 3 — Quantity inventory bootstrap  
 **Status:** Not started  
-**Plan document:** [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md)
+**Plan document:** [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) *(create when Phase 3 planning begins)*
 
 ## Immediate next work
 
-1. Implement Phase 2 from [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md).
-2. Resolve or respect [OD-011](https://github.com/tswarren/shelfstack-5/issues/14) (identifier generation) and [OD-012](open-decisions.md) as needed for catalog scaffolding.
+1. Implement Phase 3 from the roadmap: quantity bootstrap, opening cost, negative-stock tests.
+2. Resolve or respect [OD-003](open-decisions.md) (inventory costing) before Phase 4c receipt/sale cost behavior expands.
 3. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
+Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md).
+
 Phase 1 hardening follow-up (transactional audited mutations, installation-global users, safe bootstrap, immutable memberships, fail-closed authority, return path, store-local dates) is complete. See [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) § Hardening follow-up.
-
-### Pre-migration scrub checklist (completed in Phase 0)
-
-- [x] No separate display-category tables or `*_display_category_id` fields
-- [x] Merchandise class is hierarchical; department defaults resolve correctly
-- [x] Product / variant / unit ownership matches ADR-0001
-- [x] Quantity vocabulary uses `reserved`, not `pending`
-- [x] Store-level inventory boundary preserved
-- [x] One canonical product identifier; `21` / `27` / `28` / `29` prefixes correct
-- [x] No obsolete special-order / TBO substitutes on PO lines
-- [x] Receipt-to-PO linkage at line level only
-- [x] Money fields use integer cents
-- [x] No premature customer CRM, transfer, RTV, or buyback structures
-
-Audit completed 2026-07-17. See [phases/phase-00-scaffold-and-locks.md](phases/phase-00-scaffold-and-locks.md) § Audit result.
 
 ## Do not start yet
 

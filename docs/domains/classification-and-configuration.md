@@ -241,7 +241,7 @@ Audit Merchandise-Class changes, Department changes, default changes, Tax Catego
 
 ## Open questions
 
-- Are Departments flat or hierarchical?
+- Departments are hierarchical with `postable` (OD-012 accepted). Reporting-only parents use `postable = false`.
 - May a Product have several simultaneous Merchandise-Class assignments?
 - How should temporary merchandising placements be represented?
 - Which defaults belong to Merchandise Class?

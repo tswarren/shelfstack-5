@@ -3,5 +3,5 @@ Used - Like New,used_like_new,"Looks unread. Crisp pages, sharp corners, tight b
 Used - Very Good,used_very_good,"Minimal wear. Small creases on the spine, light shelf wear on edges, clean pages.",2
 Used - Good,used_good,"Read multiple times. Spine is creased, minor edge tears, slight yellowing, a neat owner's name inside.",3
 Used - Acceptable,used_acceptable,"Well-worn but complete. Clean reading copy, heavy spine creases, scuffed cover, but text is entirely intact.",4
-Used - Ex-Library,used_ex_library,Former library copy; may include stamps, pockets, or markings.,5
+Used - Ex-Library,used_ex_library,"Former library copy; may include stamps, pockets, or markings.",5
 Used - Book Club Edition,used_book_club,Book club edition; typically smaller trim or different binding than trade edition.,6

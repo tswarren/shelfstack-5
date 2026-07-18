@@ -1,0 +1,8 @@
+fiction_primary:
+  organization: acme
+  code: fiction_primary
+  name: Fiction
+  level: primary
+  default_department: books_new
+  default_tax_category: physical_book
+  active: true

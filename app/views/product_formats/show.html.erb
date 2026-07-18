@@ -1,0 +1,8 @@
+<h1><%= @product_format.name %></h1>
+<p>Code: <%= @product_format.code %></p>
+<p>Short code: <%= @product_format.short_code %></p>
+<p>Format family: <%= @product_format.format_family %></p>
+<p>Tracking mode: <%= @product_format.default_inventory_tracking_mode %></p>
+<p>Active: <%= @product_format.active %></p>
+<p><%= link_to "Edit", edit_product_format_path(@product_format) if Current.user.can?("catalog.format.manage", store: Current.store) %></p>
+<p><%= link_to "All product formats", product_formats_path %></p>

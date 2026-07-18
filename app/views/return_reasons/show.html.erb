@@ -1,0 +1,6 @@
+<h1><%= @return_reason.name %></h1>
+<p>Code: <%= @return_reason.code %></p>
+<p>Default disposition: <%= @return_reason.default_return_disposition %></p>
+<p>Active: <%= @return_reason.active %></p>
+<p><%= link_to "Edit", edit_return_reason_path(@return_reason) if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
+<p><%= link_to "All return reasons", return_reasons_path %></p>

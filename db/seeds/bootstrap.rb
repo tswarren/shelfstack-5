@@ -5,7 +5,7 @@
 # Never reactivates disabled access or clears lockout counters on existing records.
 # Never re-grants administrator permissions on re-run (use shelfstack:sync_admin_permissions).
 
-load Rails.root.join("db/seeds/phase1_permissions.rb")
+load Rails.root.join("db/seeds/permissions.rb")
 
 development_like = Rails.env.development? || Rails.env.test?
 

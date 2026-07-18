@@ -1,0 +1,31 @@
+<h1><%= @department.name %></h1>
+<p>Code: <%= @department.code %></p>
+<p>Number: <%= @department.department_number %></p>
+<p>Parent: <%= @department.parent_department&.code || "—" %></p>
+<p>Postable: <%= @department.postable %></p>
+<p>Default tax category: <%= @department.default_tax_category&.code || "—" %></p>
+<p>Default return policy: <%= @department.default_return_policy&.code || "—" %></p>
+<p>Maximum merchandise discount: <%= @department.maximum_merchandise_discount || "—" %></p>
+<p>Active: <%= @department.active %></p>
+
+<h2>GL account codes</h2>
+<dl>
+  <% [
+    ["Inventory asset", @department.inventory_asset_gl_account_code],
+    ["Sales revenue", @department.sales_revenue_gl_account_code],
+    ["Sales returns", @department.sales_returns_gl_account_code],
+    ["Sales discounts", @department.sales_discounts_gl_account_code],
+    ["COGS", @department.cogs_gl_account_code],
+    ["Vendor returns", @department.vendor_returns_gl_account_code],
+    ["Inventory shrinkage", @department.inventory_shrinkage_gl_account_code],
+    ["Inventory write-down", @department.inventory_write_down_gl_account_code],
+    ["Inventory adjustment", @department.inventory_adjustment_gl_account_code],
+    ["Freight in", @department.freight_in_gl_account_code]
+  ].each do |label, value| %>
+    <dt><%= label %></dt>
+    <dd><%= value.presence || "—" %></dd>
+  <% end %>
+</dl>
+
+<p><%= link_to "Edit", edit_department_path(@department) if Current.user.can?("classification.department.manage", store: Current.store) %></p>
+<p><%= link_to "All departments", departments_path %></p>

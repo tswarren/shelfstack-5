@@ -1,0 +1,7 @@
+<h1><%= @discount_reason.name %></h1>
+<p>Code: <%= @discount_reason.code %></p>
+<p>Method: <%= @discount_reason.default_calculation_method %></p>
+<p>Requires approval: <%= @discount_reason.requires_approval %></p>
+<p>Active: <%= @discount_reason.active %></p>
+<p><%= link_to "Edit", edit_discount_reason_path(@discount_reason) if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
+<p><%= link_to "All discount reasons", discount_reasons_path %></p>

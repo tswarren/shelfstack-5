@@ -1,0 +1,52 @@
+<%= form_with url: product.persisted? ? product_path(product) : products_path, method: product.persisted? ? :patch : :post do |form| %>
+  <% if product.errors.any? %>
+    <ul>
+      <% product.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <% unless product.persisted? %>
+    <div>
+      <label for="identifier">Identifier (leave blank to generate)</label>
+      <input type="text" name="identifier" id="identifier" value="<%= params[:identifier] %>">
+    </div>
+    <div>
+      <label for="accept_identifier_warning">
+        <input type="checkbox" name="accept_identifier_warning" id="accept_identifier_warning" value="1"
+          <%= "checked" if params[:accept_identifier_warning] == "1" %>>
+        Accept identifier warning
+      </label>
+    </div>
+  <% else %>
+    <div><strong>Identifier:</strong> <%= product.identifier %></div>
+  <% end %>
+
+  <%= fields_for :product, product do |product_form| %>
+    <div><%= product_form.label :name %> <%= product_form.text_field :name %></div>
+    <div><%= product_form.label :subtitle %> <%= product_form.text_field :subtitle %></div>
+    <div><%= product_form.label :description %> <%= product_form.text_area :description %></div>
+    <div><%= product_form.label :merchandise_class_id, "Merchandise class" %>
+      <%= product_form.collection_select :merchandise_class_id, Current.organization.merchandise_classes.order(:code), :id, :name, include_blank: true %></div>
+    <div><%= product_form.label :default_department_id, "Default department" %>
+      <%= product_form.collection_select :default_department_id, Current.organization.departments.order(:code), :id, :name, include_blank: true %></div>
+    <div><%= product_form.label :default_tax_category_id, "Default tax category" %>
+      <%= product_form.collection_select :default_tax_category_id, Current.organization.tax_categories.order(:code), :id, :name, include_blank: true %></div>
+    <div><%= product_form.label :list_price_cents, "List price (cents)" %> <%= product_form.number_field :list_price_cents %></div>
+    <div><%= product_form.label :status %> <%= product_form.select :status, Product::STATUSES %></div>
+    <div><%= product_form.label :sellable %> <%= product_form.check_box :sellable %></div>
+  <% end %>
+
+  <%= fields_for :product_variant, variant do |variant_form| %>
+    <h2>Standard variant</h2>
+    <div><%= variant_form.label :inventory_tracking_mode, "Tracking mode" %>
+      <%= variant_form.select :inventory_tracking_mode, ProductVariant::INVENTORY_TRACKING_MODES %></div>
+    <div><%= variant_form.label :regular_price_cents, "Regular price (cents)" %>
+      <%= variant_form.number_field :regular_price_cents %></div>
+    <div><%= variant_form.label :sellable %> <%= variant_form.check_box :sellable %></div>
+    <div><%= variant_form.label :status %> <%= variant_form.select :status, ProductVariant::STATUSES %></div>
+  <% end %>
+
+  <div><%= form.submit product.persisted? ? "Update product" : "Create product" %></div>
+<% end %>

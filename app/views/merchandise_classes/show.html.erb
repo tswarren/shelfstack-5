@@ -1,0 +1,6 @@
+<h1><%= @merchandise_class.name %></h1>
+<p>Code: <%= @merchandise_class.code %></p>
+<p>Level: <%= @merchandise_class.level %></p>
+<p>Active: <%= @merchandise_class.active %></p>
+<p><%= link_to "Edit", edit_merchandise_class_path(@merchandise_class) if Current.user.can?("classification.merchandise_class.manage", store: Current.store) %></p>
+<p><%= link_to "All merchandise classes", merchandise_classes_path %></p>
