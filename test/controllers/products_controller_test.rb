@@ -80,4 +80,60 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     get products_path
     assert_redirected_to root_path
   end
+
+  test "editor without deactivate can edit an already nonsellable product" do
+    product = products(:sample_book)
+    product.update!(sellable: false)
+    variant = product.product_variants.first
+
+    delete session_path
+    post session_path, params: { username: "cateditor", password: "password123" }
+
+    patch product_path(product), params: {
+      product: {
+        name: "Edited Without Deactivate",
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status,
+        sellable: false
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_redirected_to product_path(product)
+    assert_equal "Edited Without Deactivate", product.reload.name
+  end
+
+  test "editor without deactivate cannot transition sellable product to nonsellable" do
+    product = products(:sample_book)
+    variant = product.product_variants.first
+    assert product.sellable?
+
+    delete session_path
+    post session_path, params: { username: "cateditor", password: "password123" }
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: "active",
+        sellable: false
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: true,
+        status: "active"
+      }
+    }
+
+    assert_redirected_to root_path
+    assert product.reload.sellable?
+  end
 end

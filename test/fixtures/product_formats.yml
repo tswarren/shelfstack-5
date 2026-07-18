@@ -6,3 +6,12 @@ hardcover:
   format_family: book
   default_inventory_tracking_mode: quantity
   active: true
+
+other:
+  organization: acme
+  code: other
+  name: Other
+  short_code: OT
+  format_family: other
+  default_inventory_tracking_mode: quantity
+  active: true

@@ -112,25 +112,40 @@ class ProductsController < ApplicationController
   end
 
   def deactivating_product?
-    return false unless params[:product]
+    return false unless params[:product] && @product
 
     attrs = product_params
     status = attrs[:status].presence || attrs["status"]
-    sellable = attrs.key?(:sellable) || attrs.key?("sellable") ?
-      ActiveModel::Type::Boolean.new.cast(attrs[:sellable] || attrs["sellable"]) : nil
+    if status.present? && status != "active" && @product.status == "active"
+      return true
+    end
 
-    (status.present? && status != "active") || sellable == false
+    if attrs.key?(:sellable) || attrs.key?("sellable")
+      new_sellable = ActiveModel::Type::Boolean.new.cast(attrs[:sellable] || attrs["sellable"])
+      return true if @product.sellable? && new_sellable == false
+    end
+
+    false
   end
 
   def deactivating_variant?
     return false unless params[:product_variant]
 
+    variant = @variant || @product&.product_variants&.first
+    return false unless variant
+
     attrs = variant_params
     status = attrs[:status].presence || attrs["status"]
-    sellable = attrs.key?(:sellable) || attrs.key?("sellable") ?
-      ActiveModel::Type::Boolean.new.cast(attrs[:sellable] || attrs["sellable"]) : nil
+    if status.present? && status != "active" && variant.status == "active"
+      return true
+    end
 
-    (status.present? && status != "active") || sellable == false
+    if attrs.key?(:sellable) || attrs.key?("sellable")
+      new_sellable = ActiveModel::Type::Boolean.new.cast(attrs[:sellable] || attrs["sellable"])
+      return true if variant.sellable? && new_sellable == false
+    end
+
+    false
   end
 
   def variant_params_present?

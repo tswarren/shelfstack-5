@@ -18,3 +18,13 @@ clerk:
   password_digest: <%= BCrypt::Password.create("password123", cost: 4) %>
   active: true
   failed_login_attempts: 0
+
+catalog_editor:
+  username: cateditor
+  user_number: 3
+  first_name: Pat
+  last_name: Editor
+  password_digest: <%= BCrypt::Password.create("password123", cost: 4) %>
+  default_store: main_street
+  active: true
+  failed_login_attempts: 0

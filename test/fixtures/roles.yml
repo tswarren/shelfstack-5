@@ -11,3 +11,10 @@ associate:
   name: Associate
   system_template: true
   active: true
+
+catalog_editor:
+  organization: acme
+  code: catalog_editor
+  name: Catalog Editor
+  system_template: false
+  active: true

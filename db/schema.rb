@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -221,7 +221,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_170000) do
     t.index ["default_product_condition_id"], name: "index_product_variants_on_default_product_condition_id"
     t.index ["department_id"], name: "index_product_variants_on_department_id"
     t.index ["merchandise_class_id"], name: "index_product_variants_on_merchandise_class_id"
-    t.index ["product_id"], name: "index_product_variants_on_product_id"
+    t.index ["product_id"], name: "index_product_variants_on_product_id_unique", unique: true
     t.index ["return_policy_id"], name: "index_product_variants_on_return_policy_id"
     t.index ["sku"], name: "index_product_variants_on_sku", unique: true
     t.index ["tax_category_id"], name: "index_product_variants_on_tax_category_id"

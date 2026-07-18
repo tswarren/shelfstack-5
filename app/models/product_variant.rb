@@ -29,6 +29,10 @@ class ProductVariant < ApplicationRecord
   validate :availability_window_order
   validate :classification_belongs_to_organization
   validate :department_postable_when_present
+  validate :sku_is_generated_28
+  validate :single_structure_allows_only_one_variant, on: :create
+
+  before_destroy :prevent_destroying_last_variant_of_sellable_product
 
   delegate :organization, to: :product
 
@@ -70,5 +74,31 @@ class ProductVariant < ApplicationRecord
     return if department.blank? || department.postable?
 
     errors.add(:department, "must be postable")
+  end
+
+  def sku_is_generated_28
+    return if sku.blank?
+
+    normalized = Identifiers::Normalize.call(sku)
+    return if normalized.type == :generated_28 && normalized.validation_status == :valid
+
+    errors.add(:sku, "must be a valid generated namespace 28 EAN-13")
+  end
+
+  def single_structure_allows_only_one_variant
+    return if product.blank?
+    return unless product.variant_structure == "single"
+    return unless product.product_variants.where.not(id: id).exists?
+
+    errors.add(:base, "single products may have only one variant")
+  end
+
+  def prevent_destroying_last_variant_of_sellable_product
+    return if product.blank?
+    return unless product.sellable?
+    return if product.product_variants.where.not(id: id).exists?
+
+    errors.add(:base, "cannot remove the last variant from a sellable product")
+    throw(:abort)
   end
 end

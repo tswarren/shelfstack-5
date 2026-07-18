@@ -150,4 +150,42 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
       product.update!(identifier: "9780000000000")
     end
   end
+
+  test "skips stale sequence values already used as product identifiers" do
+    IdentifierSequence.find("29").update!(next_value: 1)
+    occupied = Identifiers::Generate.call(namespace: "29")
+    Product.create!(
+      organization: @organization,
+      identifier: occupied,
+      identifier_generated: true,
+      identifier_validation_status: "valid",
+      name: "Occupied",
+      product_type: "book",
+      product_format: product_formats(:hardcover),
+      status: "active",
+      sellable: false
+    )
+    IdentifierSequence.find("29").update!(next_value: 1)
+
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: {
+        name: "After Stale Counter",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id,
+        status: "active",
+        sellable: false
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 500,
+        sellable: false
+      }
+    )
+
+    assert service.call
+    assert_not_equal occupied, service.product.identifier
+  end
 end

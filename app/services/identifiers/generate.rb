@@ -5,9 +5,13 @@ module Identifiers
     class SequenceOverflowError < StandardError; end
 
     MAX_PAYLOAD = 9_999_999_999
+    MAX_SKIP_ATTEMPTS = 1000
 
-    def initialize(namespace:)
+    # occupied: optional callable receiving a candidate EAN-13; when truthy, skip and allocate again
+    # while holding the sequence lock (handles stale counters after imports/restores).
+    def initialize(namespace:, occupied: nil)
       @namespace = namespace.to_s
+      @occupied = occupied
     end
 
     def call
@@ -15,19 +19,37 @@ module Identifiers
 
       ActiveRecord::Base.transaction do
         sequence = IdentifierSequence.lock.find(@namespace)
-        payload = sequence.next_value
+        attempts = 0
 
-        if payload > MAX_PAYLOAD
-          raise SequenceOverflowError,
-                "identifier sequence #{@namespace} exceeded ten-digit payload capacity"
+        loop do
+          attempts += 1
+          if attempts > MAX_SKIP_ATTEMPTS
+            raise SequenceOverflowError,
+                  "identifier sequence #{@namespace} could not find an unoccupied payload"
+          end
+
+          payload = sequence.next_value
+          if payload > MAX_PAYLOAD
+            raise SequenceOverflowError,
+                  "identifier sequence #{@namespace} exceeded ten-digit payload capacity"
+          end
+
+          sequence.update!(next_value: payload + 1)
+          candidate = compose_ean13(@namespace, payload)
+          next if occupied?(candidate)
+
+          return candidate
         end
-
-        sequence.update!(next_value: payload + 1)
-        compose_ean13(@namespace, payload)
       end
     end
 
     private
+
+    def occupied?(candidate)
+      return false if @occupied.nil?
+
+      @occupied.call(candidate)
+    end
 
     def compose_ean13(namespace, payload)
       twelve = "#{namespace}#{payload.to_s.rjust(10, "0")}"

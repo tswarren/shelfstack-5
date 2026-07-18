@@ -24,6 +24,21 @@ class IdentifiersGenerateTest < ActiveSupport::TestCase
     end
   end
 
+  test "skips candidates already present when occupied callback is provided" do
+    IdentifierSequence.find("29").update!(next_value: 1)
+    first = Identifiers::Generate.call(namespace: "29")
+    IdentifierSequence.find("29").update!(next_value: 1)
+
+    occupied = Set.new([ first ])
+    second = Identifiers::Generate.call(
+      namespace: "29",
+      occupied: ->(candidate) { occupied.include?(candidate) }
+    )
+
+    assert_not_equal first, second
+    assert_equal 3, IdentifierSequence.find("29").next_value
+  end
+
   test "concurrent generation produces distinct identifiers" do
     IdentifierSequence.find("28").update!(next_value: 100)
 

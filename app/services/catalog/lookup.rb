@@ -55,10 +55,18 @@ module Catalog
     end
 
     def find_by_alternate(normalized)
-      value = normalized.normalized.presence || normalized.canonical.presence
-      return [] if value.blank?
+      values = [ normalized.normalized, normalized.canonical ].compact_blank
+      # UPC-A ↔ zero-padded EAN-13 equivalence for alternate storage forms.
+      if normalized.canonical.to_s.match?(/\A0\d{12}\z/)
+        values << normalized.canonical[1, 12]
+      end
+      if normalized.type == :upc_a && normalized.normalized.to_s.length == 12
+        values << "0#{normalized.normalized}"
+      end
+      values = values.uniq
+      return [] if values.empty?
 
-      @organization.products.where(alternate_identifier: value).order(:id).to_a
+      @organization.products.where(alternate_identifier: values).order(:id).to_a
     end
   end
 end

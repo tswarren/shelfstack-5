@@ -12,3 +12,10 @@ clerk_main_street:
   store: main_street
   role: associate
   active: true
+
+catalog_editor_main_street:
+  user: catalog_editor
+  store: main_street
+  role: catalog_editor
+  active: true
+  starts_on: <%= Date.current - 30 %>

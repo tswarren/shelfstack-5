@@ -35,7 +35,7 @@ shelfstack:seed_reference_data
 
 **Existing install after permission/reference changes:** `db:seed` → `shelfstack:seed_reference_data` → `shelfstack:sync_admin_permissions`.
 
-**Reference-data rerun rules:** create missing canonical rows; update source-owned descriptive fields; never reset `identifier_sequences.next_value`; never silently reactivate administrator-deactivated rows.
+**Reference-data rerun rules:** create missing canonical rows; update source-owned descriptive fields (e.g. names); preserve operational/accounting fields already set by administrators (GL codes, postability, hierarchy links, discount calculation settings, format tracking defaults); never reset `identifier_sequences.next_value`; never silently reactivate administrator-deactivated rows. Destructive or operational canonical refresh requires an explicit audited sync task (out of Phase 2 scope).
 
 ## Principal tables
 

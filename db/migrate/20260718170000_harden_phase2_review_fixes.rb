@@ -67,15 +67,16 @@ class HardenPhase2ReviewFixes < ActiveRecord::Migration[8.1]
       execute <<~SQL.squish
         UPDATE products AS p
         SET product_format_id = formats.id
-        FROM (
-          SELECT DISTINCT ON (organization_id) id, organization_id
-          FROM product_formats
-          WHERE active = TRUE
-          ORDER BY organization_id, id
-        ) AS formats
+        FROM product_formats AS formats
         WHERE p.product_format_id IS NULL
-          AND p.organization_id = formats.organization_id
+          AND formats.organization_id = p.organization_id
+          AND formats.code = 'other'
       SQL
+
+      remaining = select_value("SELECT COUNT(*) FROM products WHERE product_format_id IS NULL")
+      if remaining.to_i.positive?
+        raise "#{remaining} product(s) lack product_format_id and no format code 'other' exists for their organization."
+      end
     end
 
     change_column_default :products, :sellable, from: true, to: false

@@ -117,3 +117,15 @@ admin_condition_manage:
 admin_label_print:
   role: administrator
   permission: label_print
+
+catalog_editor_product_view:
+  role: catalog_editor
+  permission: product_view
+
+catalog_editor_product_edit:
+  role: catalog_editor
+  permission: product_edit
+
+catalog_editor_variant_edit:
+  role: catalog_editor
+  permission: variant_edit

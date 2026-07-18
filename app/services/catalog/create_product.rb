@@ -55,7 +55,7 @@ module Catalog
 
         true
       rescue ActiveRecord::RecordNotUnique
-        if @generated_identifier && attempts < MAX_COLLISION_RETRIES
+        if attempts < MAX_COLLISION_RETRIES
           @product = nil
           @variant = nil
           @generated_identifier = false
@@ -63,7 +63,7 @@ module Catalog
           retry
         end
 
-        @product&.errors&.add(:identifier, "has already been taken")
+        @product&.errors&.add(:base, "could not allocate a unique identifier or SKU")
         false
       rescue ActiveRecord::RecordInvalid
         copy_variant_errors_to_product!
@@ -84,7 +84,10 @@ module Catalog
 
     def resolve_identifier_inside_transaction!
       if @identifier.blank?
-        generated = Identifiers::Generate.call(namespace: "29")
+        generated = Identifiers::Generate.call(
+          namespace: "29",
+          occupied: ->(candidate) { Product.exists?(identifier: candidate) }
+        )
         @generated_identifier = true
         return Identifiers::Normalize.call(generated)
       end
@@ -143,7 +146,10 @@ module Catalog
 
     def create_variant!
       @variant.product = @product
-      @variant.sku = Identifiers::Generate.call(namespace: "28")
+      @variant.sku = Identifiers::Generate.call(
+        namespace: "28",
+        occupied: ->(candidate) { ProductVariant.exists?(sku: candidate) }
+      )
       @variant.name = @variant_attrs.fetch(:name, "Standard")
       @variant.status = "active"
       @variant.sellable = false

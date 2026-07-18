@@ -34,6 +34,22 @@ module Classification
 
         assert_not tax_category.reload.active?
       end
+
+      test "preserves operational department fields on re-import while refreshing name" do
+        Classification::Import::ReferenceData.call(organization: @organization)
+
+        department = @organization.departments.find_by!(code: "books_new_general_trade")
+        department.update!(
+          name: "Admin Renamed",
+          sales_revenue_gl_account_code: "9999"
+        )
+
+        Classification::Import::ReferenceData.call(organization: @organization)
+        department.reload
+
+        assert_equal "9999", department.sales_revenue_gl_account_code
+        assert_equal "New General Trade", department.name
+      end
     end
   end
 end
