@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ShelfStack UI palette dashboard mockup">
+  <title>ShelfStack UI Mockup — Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="ShelfStack home">
+      <img src="shelfstack-icon.svg" alt="">
+      <span class="brand-wordmark">ShelfStack</span>
+    </a>
+
+    <div class="header-search">
+      <input type="search" aria-label="Search ShelfStack" placeholder="Search products, orders, customers…">
+      <span class="search-key">⌘ K</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-button" type="button" aria-label="Notifications">●</button>
+      <a class="user-chip" href="#">
+        <span class="avatar">TS</span>
+        <span>Thomas</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+
+<aside class="sidebar" aria-label="Primary navigation">
+  <nav>
+    <div class="nav-section">
+      <p class="nav-label">Workspace</p>
+      <div class="nav-list">
+        <a class="nav-item active" href="index.html"><span class="nav-icon">⌂</span>Dashboard</a>
+        <a class="nav-item" href="record.html"><span class="nav-icon">▤</span>Products</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◫</span>Inventory</a>
+        <a class="nav-item" href="#"><span class="nav-icon">⇣</span>Purchasing</a>
+        <a class="nav-item" href="#"><span class="nav-icon">▣</span>Receiving</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Operations</p>
+      <div class="nav-list">
+        <a class="nav-item" href="pos.html"><span class="nav-icon">◎</span>Point of sale</a>
+        <a class="nav-item" href="#"><span class="nav-icon">↗</span>Reports</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◉</span>Customers</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Design reference</p>
+      <div class="nav-list">
+        <a class="nav-item" href="components.html"><span class="nav-icon">◆</span>UI components</a>
+      </div>
+    </div>
+  </nav>
+</aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <div class="mobile-nav-note alert alert-info">
+        <span class="alert-icon">i</span>
+        <div><strong>Responsive preview</strong><p>The desktop sidebar is hidden at this viewport width.</p></div>
+      </div>
+
+      <div class="page-heading">
+        <div>
+          <p class="page-eyebrow">Saturday, July 18</p>
+          <h1>Store dashboard</h1>
+          <p class="page-subtitle">A realistic application view showing how the brand, neutral, and semantic colors work together.</p>
+        </div>
+        <div class="actions">
+          <a class="button button-outline" href="components.html">View components</a>
+          <button class="button button-primary" type="button">New purchase order</button>
+        </div>
+      </div>
+
+      <section class="grid grid-4" aria-label="Summary metrics">
+        <article class="card metric-card">
+          <div class="metric-label"><span>Net sales today</span><span class="kpi-icon">$</span></div>
+          <div class="metric-value">$4,286</div>
+          <div class="metric-change text-success">↑ 8.4% from last Saturday</div>
+        </article>
+        <article class="card metric-card">
+          <div class="metric-label"><span>Open demand</span><span class="kpi-icon">D</span></div>
+          <div class="metric-value">47</div>
+          <div class="metric-change text-warning">12 need vendor review</div>
+        </article>
+        <article class="card metric-card">
+          <div class="metric-label"><span>Units to receive</span><span class="kpi-icon">R</span></div>
+          <div class="metric-value">186</div>
+          <div class="metric-change text-info">Across 6 expected shipments</div>
+        </article>
+        <article class="card metric-card">
+          <div class="metric-label"><span>Inventory alerts</span><span class="kpi-icon">!</span></div>
+          <div class="metric-value">9</div>
+          <div class="metric-change text-danger">3 require immediate action</div>
+        </article>
+      </section>
+
+      <section class="section">
+        <div class="alert alert-warning">
+          <span class="alert-icon">!</span>
+          <div>
+            <div class="alert-title">Three purchase orders are past their expected delivery date</div>
+            <p>Review affected demand before creating replacement orders.</p>
+          </div>
+          <button class="button button-small button-outline" type="button">Review</button>
+        </div>
+      </section>
+
+      <section class="section split-layout">
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <h2>Priority receiving</h2>
+              <small>Expected and recently arrived shipments</small>
+            </div>
+            <a href="#">View all</a>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vendor</th>
+                  <th>PO</th>
+                  <th>Status</th>
+                  <th class="numeric">Units</th>
+                  <th>Expected</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="selected">
+                  <td class="table-primary">Ingram Book Company</td>
+                  <td>PO-10482</td>
+                  <td><span class="badge badge-success"><span class="status-dot"></span>Arrived</span></td>
+                  <td class="numeric">72</td>
+                  <td>Today</td>
+                </tr>
+                <tr>
+                  <td class="table-primary">HarperCollins</td>
+                  <td>PO-10479</td>
+                  <td><span class="badge badge-info"><span class="status-dot"></span>In transit</span></td>
+                  <td class="numeric">31</td>
+                  <td>Jul 19</td>
+                </tr>
+                <tr>
+                  <td class="table-primary">Penguin Random House</td>
+                  <td>PO-10470</td>
+                  <td><span class="badge badge-warning"><span class="status-dot"></span>Delayed</span></td>
+                  <td class="numeric">54</td>
+                  <td>Jul 16</td>
+                </tr>
+                <tr>
+                  <td class="table-primary">Midwest Tape</td>
+                  <td>PO-10485</td>
+                  <td><span class="badge badge-neutral">Submitted</span></td>
+                  <td class="numeric">29</td>
+                  <td>Jul 23</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card-footer">
+            <small>The selected row uses <code>--surface-selected</code>; the header uses <code>--bg-200</code>.</small>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <div>
+              <h2>Demand queue</h2>
+              <small>Items needing purchasing decisions</small>
+            </div>
+            <span class="badge badge-accent">47 open</span>
+          </div>
+          <div class="card-body">
+            <ul class="list-clean">
+              <li>
+                <span><strong>Customer special orders</strong><br><small>Verified and ready to order</small></span>
+                <span class="badge badge-primary">18</span>
+              </li>
+              <li>
+                <span><strong>Stock replenishment</strong><br><small>Below target availability</small></span>
+                <span class="badge badge-secondary">17</span>
+              </li>
+              <li>
+                <span><strong>Vendor verification</strong><br><small>Availability not confirmed</small></span>
+                <span class="badge badge-warning">12</span>
+              </li>
+            </ul>
+          </div>
+          <div class="card-footer">
+            <button class="button button-primary" type="button">Open demand workbench</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="section grid grid-2">
+        <article class="card">
+          <div class="card-header">
+            <h2>Department performance</h2>
+            <button class="button button-small button-ghost" type="button">This week</button>
+          </div>
+          <div class="card-body">
+            <ul class="list-clean">
+              <li>
+                <span><strong>Books</strong><br><small>$18,340 net sales</small></span>
+                <span style="width: 42%"><span class="progress"><span style="width: 82%"></span></span></span>
+              </li>
+              <li>
+                <span><strong>Gifts &amp; stationery</strong><br><small>$5,820 net sales</small></span>
+                <span style="width: 42%"><span class="progress"><span style="width: 51%; background: var(--brand-secondary)"></span></span></span>
+              </li>
+              <li>
+                <span><strong>Café</strong><br><small>$3,945 net sales</small></span>
+                <span style="width: 42%"><span class="progress"><span style="width: 38%; background: var(--brand-accent)"></span></span></span>
+              </li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header">
+            <h2>Recent activity</h2>
+            <a href="#">Audit log</a>
+          </div>
+          <div class="card-body">
+            <div class="timeline">
+              <div class="timeline-item">
+                <span class="timeline-dot"></span>
+                <div class="timeline-content"><strong>Receipt R-3184 posted</strong><br>72 units added from Ingram · 11:42 AM</div>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-dot" style="background: var(--brand-secondary)"></span>
+                <div class="timeline-content"><strong>Price override approved</strong><br>Manager authorization for POS transaction · 10:58 AM</div>
+              </div>
+              <div class="timeline-item">
+                <span class="timeline-dot" style="background: var(--brand-accent)"></span>
+                <div class="timeline-content"><strong>Inventory count variance</strong><br>Two units require reconciliation · 9:31 AM</div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

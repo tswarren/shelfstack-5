@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compact ShelfStack point-of-sale interface mockup">
+  <title>ShelfStack UI Mockup — Point of Sale</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="pos-page">
+  <header class="pos-header">
+    <div class="pos-header-inner">
+      <a class="pos-brand" href="index.html" aria-label="Return to ShelfStack dashboard">
+        <img src="shelfstack-icon.svg" alt="">
+        <span>ShelfStack POS</span>
+      </a>
+
+      <div class="pos-session">
+        <span class="badge badge-success"><span class="status-dot"></span>Session open</span>
+        <span><strong>Main Street</strong></span>
+        <span class="session-secondary">Register 2 · Drawer 2</span>
+        <span class="session-secondary">Cashier: Thomas</span>
+      </div>
+
+      <div class="pos-header-spacer"></div>
+      <span class="pos-clock" id="clock">1:24 PM</span>
+      <a class="button button-small button-outline" href="index.html">Back office</a>
+      <button class="icon-button" type="button" aria-label="POS settings">⚙</button>
+    </div>
+  </header>
+
+  <main class="pos-workspace">
+    <section class="pos-sale-panel" aria-label="Current transaction">
+      <div class="pos-entry">
+        <div class="pos-scan-wrap">
+          <span class="pos-scan-icon" aria-hidden="true">⌕</span>
+          <input
+            class="pos-scan"
+            id="scan-input"
+            type="text"
+            autocomplete="off"
+            autofocus
+            placeholder="Scan barcode or search title, author, or SKU"
+            aria-label="Scan barcode or search inventory">
+          <span class="pos-scan-hint">Enter</span>
+        </div>
+        <button class="button button-outline" type="button">Advanced lookup <span class="key">F2</span></button>
+        <button class="button button-outline customer-button" type="button">Customer <span class="key">F3</span></button>
+      </div>
+
+      <div class="pos-context-bar">
+        <span>Customer: <span class="customer">Walk-in</span></span>
+        <span class="context-separator"></span>
+        <span>Price level: Retail</span>
+        <span class="context-separator"></span>
+        <span>Tax: Standard</span>
+        <span style="margin-left:auto"><span class="badge badge-neutral">Sale mode</span></span>
+      </div>
+
+      <div class="pos-demo-note alert alert-info" style="margin:10px">
+        <span class="alert-icon">i</span>
+        <div><strong>Compact desktop interface</strong><p>The layout stacks vertically on narrow screens, but is designed primarily for a register-sized display.</p></div>
+      </div>
+
+      <div class="pos-cart-wrap">
+        <table class="pos-cart" aria-label="Transaction lines">
+          <thead>
+            <tr>
+              <th class="col-qty">Qty</th>
+              <th class="col-item">Item</th>
+              <th class="col-price numeric">Price</th>
+              <th class="col-discount numeric">Discount</th>
+              <th class="col-total numeric">Total</th>
+            </tr>
+          </thead>
+          <tbody id="cart-body">
+            <tr class="pos-cart-row selected" data-price="20.00" data-discount="0">
+              <td>
+                <div class="qty-control">
+                  <button type="button" data-action="decrease" aria-label="Decrease quantity">−</button>
+                  <span class="qty-value">1</span>
+                  <button type="button" data-action="increase" aria-label="Increase quantity">+</button>
+                </div>
+              </td>
+              <td>
+                <div class="pos-item-name">The Serviceberry</div>
+                <div class="pos-item-meta">
+                  <span>9781668072240 · Hardcover · Books</span>
+                  <span class="badge badge-success">9 available</span>
+                </div>
+              </td>
+              <td class="pos-price">$20.00</td>
+              <td class="pos-discount">—</td>
+              <td class="pos-line-total">$20.00</td>
+            </tr>
+
+            <tr class="pos-cart-row" data-price="18.99" data-discount="3.80">
+              <td>
+                <div class="qty-control">
+                  <button type="button" data-action="decrease" aria-label="Decrease quantity">−</button>
+                  <span class="qty-value">1</span>
+                  <button type="button" data-action="increase" aria-label="Increase quantity">+</button>
+                </div>
+              </td>
+              <td>
+                <div class="pos-item-name">James: A Novel</div>
+                <div class="pos-item-meta">
+                  <span>9780385550369 · Hardcover · Books</span>
+                  <span class="badge badge-secondary">Member 20%</span>
+                </div>
+              </td>
+              <td class="pos-price">$18.99</td>
+              <td class="pos-discount">−$3.80</td>
+              <td class="pos-line-total">$15.19</td>
+            </tr>
+
+            <tr class="pos-cart-row" data-price="6.95" data-discount="0">
+              <td>
+                <div class="qty-control">
+                  <button type="button" data-action="decrease" aria-label="Decrease quantity">−</button>
+                  <span class="qty-value">2</span>
+                  <button type="button" data-action="increase" aria-label="Increase quantity">+</button>
+                </div>
+              </td>
+              <td>
+                <div class="pos-item-name">Moleskine Cahier Pocket Notebook</div>
+                <div class="pos-item-meta">
+                  <span>SKU 104-8821 · Stationery</span>
+                  <span class="pos-inline-warning">Only 2 available</span>
+                </div>
+              </td>
+              <td class="pos-price">$6.95</td>
+              <td class="pos-discount">—</td>
+              <td class="pos-line-total">$13.90</td>
+            </tr>
+
+            <tr class="pos-cart-row" data-price="4.50" data-discount="0">
+              <td>
+                <div class="qty-control">
+                  <button type="button" data-action="decrease" aria-label="Decrease quantity">−</button>
+                  <span class="qty-value">1</span>
+                  <button type="button" data-action="increase" aria-label="Increase quantity">+</button>
+                </div>
+              </td>
+              <td>
+                <div class="pos-item-name">Café — Large Drip Coffee</div>
+                <div class="pos-item-meta">
+                  <span>Open ring · Café beverages</span>
+                  <span class="badge badge-accent">Taxable</span>
+                </div>
+              </td>
+              <td class="pos-price">$4.50</td>
+              <td class="pos-discount">—</td>
+              <td class="pos-line-total">$4.50</td>
+            </tr>
+
+            <tr class="pos-cart-row" data-price="12.00" data-discount="0">
+              <td>
+                <div class="qty-control">
+                  <button type="button" data-action="decrease" aria-label="Decrease quantity">−</button>
+                  <span class="qty-value">1</span>
+                  <button type="button" data-action="increase" aria-label="Increase quantity">+</button>
+                </div>
+              </td>
+              <td>
+                <div class="pos-item-name">ShelfStack Gift Card</div>
+                <div class="pos-item-meta">
+                  <span>Stored value issuance · Card ending 8241</span>
+                  <span class="badge badge-info">Non-revenue</span>
+                </div>
+              </td>
+              <td class="pos-price">$12.00</td>
+              <td class="pos-discount">—</td>
+              <td class="pos-line-total">$12.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="pos-cart-empty" id="cart-empty">
+          <strong>No items in the transaction</strong>
+          <p>Scan a barcode or enter a title above to begin.</p>
+        </div>
+      </div>
+
+      <div class="pos-sale-footer">
+        <button class="pos-command" type="button"><span class="key">F4</span> Quantity</button>
+        <button class="pos-command" type="button"><span class="key">F5</span> Price</button>
+        <button class="pos-command" type="button"><span class="key">F6</span> Discount</button>
+        <button class="pos-command" id="return-mode" type="button"><span class="key">F7</span> Return</button>
+        <button class="pos-command" type="button"><span class="key">F8</span> Suspend</button>
+        <button class="pos-command danger" id="remove-line" type="button"><span class="key">Del</span> Remove</button>
+      </div>
+    </section>
+
+    <aside class="pos-summary-panel" aria-label="Transaction summary and tender">
+      <div class="pos-summary-head">
+        <div>
+          <div class="pos-transaction-id">Transaction 00018452</div>
+          <small id="line-count">6 units · 5 lines</small>
+        </div>
+        <span class="badge badge-primary">Open</span>
+      </div>
+
+      <div class="pos-summary-scroll">
+        <section class="pos-total-card" aria-label="Transaction total">
+          <div class="pos-total-label">Balance due</div>
+          <div class="pos-total-value" id="balance-due">$71.07</div>
+          <div class="pos-total-breakdown">
+            <div class="pos-total-row"><span>Merchandise &amp; café</span><strong id="subtotal">$69.59</strong></div>
+            <div class="pos-total-row"><span>Discounts</span><strong id="discount-total">−$3.80</strong></div>
+            <div class="pos-total-row"><span>Tax</span><strong id="tax-total">$1.48</strong></div>
+          </div>
+        </section>
+
+        <section class="pos-panel-section">
+          <div class="pos-panel-title">
+            <span>Quick tender</span>
+            <span class="key">F9</span>
+          </div>
+          <div class="pos-tender-grid">
+            <button class="pos-tender selected" type="button" data-tender="Card">
+              <span>Card</span><small>Standalone terminal</small>
+            </button>
+            <button class="pos-tender" type="button" data-tender="Cash">
+              <span>Cash</span><small>Calculate change</small>
+            </button>
+            <button class="pos-tender" type="button" data-tender="Gift card">
+              <span>Gift card</span><small>Stored value</small>
+            </button>
+            <button class="pos-tender" type="button" data-tender="Store credit">
+              <span>Store credit</span><small>Customer account</small>
+            </button>
+          </div>
+          <div class="pos-amount-entry">
+            <input id="tender-amount" inputmode="decimal" aria-label="Tender amount" value="$71.07">
+            <button class="button button-primary" id="add-tender" type="button">Add</button>
+          </div>
+        </section>
+
+        <section class="pos-panel-section">
+          <div class="pos-panel-title">
+            <span>Transaction</span>
+            <button class="button button-small button-ghost" type="button">Details</button>
+          </div>
+          <div class="pos-line-summary">
+            <div><span>Customer</span><strong>Walk-in</strong></div>
+            <div><span>Items</span><strong id="summary-items">6</strong></div>
+            <div><span>Return value</span><strong>$0.00</strong></div>
+            <div><span>Tendered</span><strong id="tendered">$0.00</strong></div>
+          </div>
+        </section>
+
+        <div class="pos-message" id="pos-message">
+          Card is selected. Process the amount on the standalone terminal, then confirm approval.
+        </div>
+      </div>
+
+      <div class="pos-complete-area">
+        <button class="pos-complete" id="complete-sale" type="button">Confirm card approval · $71.07</button>
+        <div class="pos-shortcuts"><span class="key">Ctrl</span> + <span class="key">Enter</span> completes when all tenders are resolved</div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    (() => {
+      const cartBody = document.getElementById("cart-body");
+      const cartEmpty = document.getElementById("cart-empty");
+      const scanInput = document.getElementById("scan-input");
+      const lineCount = document.getElementById("line-count");
+      const summaryItems = document.getElementById("summary-items");
+      const subtotalEl = document.getElementById("subtotal");
+      const discountEl = document.getElementById("discount-total");
+      const taxEl = document.getElementById("tax-total");
+      const balanceEl = document.getElementById("balance-due");
+      const tenderInput = document.getElementById("tender-amount");
+      const tenderedEl = document.getElementById("tendered");
+      const completeButton = document.getElementById("complete-sale");
+      const message = document.getElementById("pos-message");
+      let selectedTender = "Card";
+      let tendered = 0;
+
+      const money = value =>
+        new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+
+      function selectRow(row) {
+        cartBody.querySelectorAll(".pos-cart-row").forEach(item => item.classList.remove("selected"));
+        if (row) row.classList.add("selected");
+      }
+
+      function recalculate() {
+        let itemSubtotal = 0;
+        let totalDiscount = 0;
+        let units = 0;
+        const rows = [...cartBody.querySelectorAll(".pos-cart-row")];
+
+        rows.forEach(row => {
+          const quantity = Number(row.querySelector(".qty-value").textContent);
+          const price = Number(row.dataset.price);
+          const perLineDiscount = Number(row.dataset.discount);
+          const gross = quantity * price;
+          const discount = quantity * perLineDiscount;
+          const lineTotal = gross - discount;
+
+          units += quantity;
+          itemSubtotal += gross;
+          totalDiscount += discount;
+          row.querySelector(".pos-line-total").textContent = money(lineTotal);
+          row.querySelector(".pos-discount").textContent =
+            discount > 0 ? "−" + money(discount) : "—";
+        });
+
+        const taxableBase = rows.reduce((sum, row) => {
+          const item = row.querySelector(".pos-item-name").textContent;
+          if (!item.includes("Coffee")) return sum;
+          return sum + Number(row.dataset.price) * Number(row.querySelector(".qty-value").textContent);
+        }, 0);
+        const tax = taxableBase * 0.0825;
+        const total = itemSubtotal - totalDiscount + tax;
+        const balance = Math.max(0, total - tendered);
+
+        subtotalEl.textContent = money(itemSubtotal);
+        discountEl.textContent = totalDiscount > 0 ? "−" + money(totalDiscount) : money(0);
+        taxEl.textContent = money(tax);
+        balanceEl.textContent = money(balance);
+        lineCount.textContent = `${units} unit${units === 1 ? "" : "s"} · ${rows.length} line${rows.length === 1 ? "" : "s"}`;
+        summaryItems.textContent = units;
+        tenderedEl.textContent = money(tendered);
+        tenderInput.value = money(balance);
+        completeButton.textContent =
+          selectedTender === "Card"
+            ? `Confirm card approval · ${money(balance)}`
+            : balance > 0
+              ? `Add ${selectedTender.toLowerCase()} tender · ${money(balance)}`
+              : "Complete transaction";
+        cartEmpty.style.display = rows.length ? "none" : "block";
+      }
+
+      cartBody.addEventListener("click", event => {
+        const row = event.target.closest(".pos-cart-row");
+        if (!row) return;
+        selectRow(row);
+
+        const action = event.target.closest("button")?.dataset.action;
+        if (!action) return;
+
+        const qty = row.querySelector(".qty-value");
+        let value = Number(qty.textContent);
+        value = action === "increase" ? value + 1 : Math.max(1, value - 1);
+        qty.textContent = value;
+        recalculate();
+      });
+
+      document.getElementById("remove-line").addEventListener("click", () => {
+        const selected = cartBody.querySelector(".pos-cart-row.selected");
+        if (!selected) return;
+        const next = selected.nextElementSibling || selected.previousElementSibling;
+        selected.remove();
+        selectRow(next);
+        message.textContent = "Line removed. The scan field is ready for the next item.";
+        scanInput.focus();
+        recalculate();
+      });
+
+      scanInput.addEventListener("keydown", event => {
+        if (event.key !== "Enter" || !scanInput.value.trim()) return;
+        event.preventDefault();
+
+        const query = scanInput.value.trim();
+        const row = document.createElement("tr");
+        row.className = "pos-cart-row selected";
+        row.dataset.price = "12.99";
+        row.dataset.discount = "0";
+        row.innerHTML = `
+          <td>
+            <div class="qty-control">
+              <button type="button" data-action="decrease" aria-label="Decrease quantity">−</button>
+              <span class="qty-value">1</span>
+              <button type="button" data-action="increase" aria-label="Increase quantity">+</button>
+            </div>
+          </td>
+          <td>
+            <div class="pos-item-name">${query.replace(/[<>&"]/g, "")}</div>
+            <div class="pos-item-meta">
+              <span>Demo scan result · SKU 900-${Math.floor(Math.random() * 9000 + 1000)}</span>
+              <span class="badge badge-primary">Added</span>
+            </div>
+          </td>
+          <td class="pos-price">$12.99</td>
+          <td class="pos-discount">—</td>
+          <td class="pos-line-total">$12.99</td>
+        `;
+        cartBody.querySelectorAll(".pos-cart-row").forEach(item => item.classList.remove("selected"));
+        cartBody.appendChild(row);
+        row.scrollIntoView({ block: "nearest" });
+        scanInput.value = "";
+        message.textContent = "Item added. Continue scanning or use the selected-line shortcuts.";
+        recalculate();
+      });
+
+      document.querySelectorAll(".pos-tender").forEach(button => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".pos-tender").forEach(item => item.classList.remove("selected"));
+          button.classList.add("selected");
+          selectedTender = button.dataset.tender;
+          message.textContent =
+            selectedTender === "Card"
+              ? "Card is selected. Process the amount on the standalone terminal, then confirm approval."
+              : `${selectedTender} is selected. Enter the amount received and choose Add.`;
+          recalculate();
+        });
+      });
+
+      document.getElementById("add-tender").addEventListener("click", () => {
+        const amount = Number(tenderInput.value.replace(/[^0-9.]/g, ""));
+        if (!Number.isFinite(amount) || amount <= 0) {
+          message.textContent = "Enter a valid tender amount.";
+          return;
+        }
+        tendered += amount;
+        message.textContent = `${selectedTender} tender of ${money(amount)} added.`;
+        recalculate();
+      });
+
+      document.getElementById("return-mode").addEventListener("click", event => {
+        event.currentTarget.classList.toggle("pos-return-mode");
+        const active = event.currentTarget.classList.contains("pos-return-mode");
+        event.currentTarget.innerHTML = active
+          ? '<span class="key">F7</span> Return mode on'
+          : '<span class="key">F7</span> Return';
+        message.textContent = active
+          ? "Return mode is active. Scanned items will be added as returns."
+          : "Sale mode restored.";
+      });
+
+      completeButton.addEventListener("click", () => {
+        if (selectedTender === "Card" && tendered === 0) {
+          tendered = Number(balanceEl.textContent.replace(/[^0-9.]/g, ""));
+          message.textContent = "Card approval confirmed. Transaction is ready to complete.";
+          recalculate();
+          completeButton.textContent = "Complete transaction";
+          return;
+        }
+
+        if (Number(balanceEl.textContent.replace(/[^0-9.]/g, "")) > 0.005) {
+          message.textContent = "The transaction still has an outstanding balance.";
+          return;
+        }
+
+        message.textContent = "Demo complete: receipt number 104892 would now be assigned.";
+        completeButton.textContent = "Transaction completed";
+        completeButton.disabled = true;
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.ctrlKey && event.key === "Enter") {
+          event.preventDefault();
+          completeButton.click();
+        }
+        if (event.key === "Delete" && document.activeElement !== scanInput) {
+          event.preventDefault();
+          document.getElementById("remove-line").click();
+        }
+        if (event.key === "F7") {
+          event.preventDefault();
+          document.getElementById("return-mode").click();
+        }
+        if (event.key === "F8") {
+          event.preventDefault();
+          message.textContent = "Demo: transaction suspended with all inventory reservations retained.";
+          scanInput.focus();
+        }
+      });
+
+      function updateClock() {
+        document.getElementById("clock").textContent = new Intl.DateTimeFormat("en-US", {
+          hour: "numeric",
+          minute: "2-digit"
+        }).format(new Date());
+      }
+
+      updateClock();
+      setInterval(updateClock, 30000);
+      recalculate();
+    })();
+  </script>
+</body>
+</html>

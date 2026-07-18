@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ShelfStack product record page mockup">
+  <title>ShelfStack UI Mockup — Product Record</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="ShelfStack home">
+      <img src="shelfstack-icon.svg" alt="">
+      <span class="brand-wordmark">ShelfStack</span>
+    </a>
+
+    <div class="header-search">
+      <input type="search" aria-label="Search ShelfStack" placeholder="Search products, orders, customers…">
+      <span class="search-key">⌘ K</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-button" type="button" aria-label="Notifications">●</button>
+      <a class="user-chip" href="#">
+        <span class="avatar">TS</span>
+        <span>Thomas</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+
+<aside class="sidebar" aria-label="Primary navigation">
+  <nav>
+    <div class="nav-section">
+      <p class="nav-label">Workspace</p>
+      <div class="nav-list">
+        <a class="nav-item" href="index.html"><span class="nav-icon">⌂</span>Dashboard</a>
+        <a class="nav-item active" href="record.html"><span class="nav-icon">▤</span>Products</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◫</span>Inventory</a>
+        <a class="nav-item" href="#"><span class="nav-icon">⇣</span>Purchasing</a>
+        <a class="nav-item" href="#"><span class="nav-icon">▣</span>Receiving</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Operations</p>
+      <div class="nav-list">
+        <a class="nav-item" href="pos.html"><span class="nav-icon">◎</span>Point of sale</a>
+        <a class="nav-item" href="#"><span class="nav-icon">↗</span>Reports</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◉</span>Customers</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Design reference</p>
+      <div class="nav-list">
+        <a class="nav-item" href="components.html"><span class="nav-icon">◆</span>UI components</a>
+      </div>
+    </div>
+  </nav>
+</aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <div class="page-heading">
+        <div>
+          <p class="page-eyebrow">Products / 9781668072240</p>
+          <h1>The Serviceberry</h1>
+          <p class="page-subtitle">Robin Wall Kimmerer · Scribner · Hardcover</p>
+        </div>
+        <div class="actions">
+          <button class="button button-outline">More actions</button>
+          <button class="button button-secondary">Create demand</button>
+          <button class="button button-primary">Edit product</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <span class="alert-icon">i</span>
+        <div><div class="alert-title">External catalog update available</div><p>Publication date and contributor biography differ from the current imported record.</p></div>
+        <button class="button button-small button-outline">Compare fields</button>
+      </div>
+
+      <section class="section card">
+        <div class="tabs" role="tablist">
+          <button class="tab active">Overview</button>
+          <button class="tab">Variants <span class="badge badge-neutral">2</span></button>
+          <button class="tab">Inventory</button>
+          <button class="tab">Vendors</button>
+          <button class="tab">Demand</button>
+          <button class="tab">History</button>
+        </div>
+        <div class="card-body">
+          <div class="split-layout">
+            <div>
+              <div class="grid grid-3">
+                <article>
+                  <small>Primary identifier</small>
+                  <h3>9781668072240</h3>
+                </article>
+                <article>
+                  <small>Department</small>
+                  <h3>Books</h3>
+                </article>
+                <article>
+                  <small>Display category</small>
+                  <h3>Nature &amp; Environment</h3>
+                </article>
+              </div>
+
+              <div class="section">
+                <h2>Product details</h2>
+                <dl class="definition-list">
+                  <dt>Publisher</dt><dd>Scribner</dd>
+                  <dt>Publication date</dt><dd>November 19, 2024</dd>
+                  <dt>Format</dt><dd>Hardcover</dd>
+                  <dt>List price</dt><dd>$20.00</dd>
+                  <dt>Tax category</dt><dd>Books — non-taxable</dd>
+                  <dt>Returnability</dt><dd><span class="badge badge-success">Returnable</span></dd>
+                </dl>
+              </div>
+
+              <div class="section">
+                <h2>Inventory by store</h2>
+                <div class="table-wrap card" style="box-shadow:none">
+                  <table>
+                    <thead><tr><th>Store</th><th class="numeric">On hand</th><th class="numeric">Reserved</th><th class="numeric">Unavailable</th><th class="numeric">Available</th></tr></thead>
+                    <tbody>
+                      <tr class="selected"><td class="table-primary">Main Street</td><td class="numeric">12</td><td class="numeric">2</td><td class="numeric">1</td><td class="numeric"><strong>9</strong></td></tr>
+                      <tr><td class="table-primary">Northside</td><td class="numeric">4</td><td class="numeric">0</td><td class="numeric">0</td><td class="numeric"><strong>4</strong></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <aside>
+              <article class="card" style="box-shadow:none">
+                <div class="card-header">
+                  <h2>Operational status</h2>
+                  <span class="badge badge-primary">Active</span>
+                </div>
+                <div class="card-body">
+                  <ul class="list-clean">
+                    <li><span>Available company-wide</span><strong>13</strong></li>
+                    <li><span>On order</span><strong>24</strong></li>
+                    <li><span>Open demand</span><strong class="text-warning">6</strong></li>
+                    <li><span>Last received</span><strong>Jul 18</strong></li>
+                  </ul>
+                </div>
+              </article>
+
+              <article class="card section" style="box-shadow:none">
+                <div class="card-header"><h2>Primary vendor</h2></div>
+                <div class="card-body">
+                  <h3>Ingram Book Company</h3>
+                  <p class="muted">Default discount: 46%<br>Lead time: 2–4 business days</p>
+                  <div class="alert alert-success" style="grid-template-columns:auto 1fr">
+                    <span class="alert-icon">✓</span>
+                    <div><div class="alert-title">In stock</div><p>Availability checked 18 minutes ago.</p></div>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button class="button button-primary" style="width:100%">Add to live PO</button>
+                </div>
+              </article>
+
+              <article class="card section" style="box-shadow:none">
+                <div class="card-header"><h2>Attention</h2></div>
+                <div class="card-body">
+                  <div class="alert alert-warning" style="grid-template-columns:auto 1fr">
+                    <span class="alert-icon">!</span>
+                    <div><div class="alert-title">One damaged unit</div><p>Unit remains on hand but is excluded from available quantity.</p></div>
+                  </div>
+                </div>
+              </article>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

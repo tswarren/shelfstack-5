@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ShelfStack UI component and color reference">
+  <title>ShelfStack UI Mockup — Components</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="ShelfStack home">
+      <img src="shelfstack-icon.svg" alt="">
+      <span class="brand-wordmark">ShelfStack</span>
+    </a>
+
+    <div class="header-search">
+      <input type="search" aria-label="Search ShelfStack" placeholder="Search products, orders, customers…">
+      <span class="search-key">⌘ K</span>
+    </div>
+
+    <div class="header-actions">
+      <button class="icon-button" type="button" aria-label="Notifications">●</button>
+      <a class="user-chip" href="#">
+        <span class="avatar">TS</span>
+        <span>Thomas</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="app-shell">
+
+<aside class="sidebar" aria-label="Primary navigation">
+  <nav>
+    <div class="nav-section">
+      <p class="nav-label">Workspace</p>
+      <div class="nav-list">
+        <a class="nav-item" href="index.html"><span class="nav-icon">⌂</span>Dashboard</a>
+        <a class="nav-item" href="record.html"><span class="nav-icon">▤</span>Products</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◫</span>Inventory</a>
+        <a class="nav-item" href="#"><span class="nav-icon">⇣</span>Purchasing</a>
+        <a class="nav-item" href="#"><span class="nav-icon">▣</span>Receiving</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Operations</p>
+      <div class="nav-list">
+        <a class="nav-item" href="pos.html"><span class="nav-icon">◎</span>Point of sale</a>
+        <a class="nav-item" href="#"><span class="nav-icon">↗</span>Reports</a>
+        <a class="nav-item" href="#"><span class="nav-icon">◉</span>Customers</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <p class="nav-label">Design reference</p>
+      <div class="nav-list">
+        <a class="nav-item active" href="components.html"><span class="nav-icon">◆</span>UI components</a>
+      </div>
+    </div>
+  </nav>
+</aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <div class="page-heading">
+        <div>
+          <p class="page-eyebrow">Design reference</p>
+          <h1>Color and component system</h1>
+          <p class="page-subtitle">A visual inventory of the proposed ShelfStack UI tokens, states, controls, and action hierarchy.</p>
+        </div>
+        <a class="button button-outline" href="index.html">Return to dashboard</a>
+      </div>
+
+      <section class="card">
+        <div class="card-header"><h2>Core brand and neutral colors</h2></div>
+        <div class="card-body">
+          <div class="swatch-grid">
+            <div class="swatch"><div class="swatch-color" style="background:#09595f"></div><div class="swatch-meta"><div class="swatch-name">Brand primary</div><div class="swatch-hex">#09595F</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#66153e"></div><div class="swatch-meta"><div class="swatch-name">Brand secondary</div><div class="swatch-hex">#66153E</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#c77c00"></div><div class="swatch-meta"><div class="swatch-name">Brand accent</div><div class="swatch-hex">#C77C00</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#f8fafa"></div><div class="swatch-meta"><div class="swatch-name">BG-100</div><div class="swatch-hex">#F8FAFA</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#eef3f3"></div><div class="swatch-meta"><div class="swatch-name">BG-200</div><div class="swatch-hex">#EEF3F3</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#dce7e7"></div><div class="swatch-meta"><div class="swatch-name">BG-300</div><div class="swatch-hex">#DCE7E7</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#cbd8d8"></div><div class="swatch-meta"><div class="swatch-name">Border default</div><div class="swatch-hex">#CBD8D8</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#0b1c2e"></div><div class="swatch-meta"><div class="swatch-name">Text primary</div><div class="swatch-hex">#0B1C2E</div></div></div>
+            <div class="swatch"><div class="swatch-color" style="background:#465663"></div><div class="swatch-meta"><div class="swatch-name">Text secondary</div><div class="swatch-hex">#465663</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section grid grid-2">
+        <article class="card">
+          <div class="card-header"><h2>Actions</h2></div>
+          <div class="card-body">
+            <div class="actions">
+              <button class="button button-primary">Primary action</button>
+              <button class="button button-secondary">Secondary brand</button>
+              <button class="button button-accent">Accent action</button>
+              <button class="button button-outline">Outline</button>
+              <button class="button button-ghost">Tertiary</button>
+              <button class="button button-danger">Destructive</button>
+            </div>
+            <div class="callout" style="margin-top:18px">
+              Use ochre sparingly for attention and emphasis. Keep destructive actions semantically red rather than reusing the logo’s crimson-violet.
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header"><h2>Badges and states</h2></div>
+          <div class="card-body">
+            <div class="actions">
+              <span class="badge badge-neutral">Draft</span>
+              <span class="badge badge-primary">Active</span>
+              <span class="badge badge-secondary">Featured</span>
+              <span class="badge badge-accent">Attention</span>
+              <span class="badge badge-info">In transit</span>
+              <span class="badge badge-success">Received</span>
+              <span class="badge badge-warning">Delayed</span>
+              <span class="badge badge-danger">Cancelled</span>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section card">
+        <div class="card-header"><h2>Semantic alerts</h2></div>
+        <div class="card-body">
+          <div class="alert alert-info">
+            <span class="alert-icon">i</span>
+            <div><div class="alert-title">Information</div><p>The vendor’s availability feed was checked 18 minutes ago.</p></div>
+            <button class="button button-small button-outline">Details</button>
+          </div>
+          <div class="alert alert-success">
+            <span class="alert-icon">✓</span>
+            <div><div class="alert-title">Success</div><p>Receipt R-3184 posted and inventory balances were updated.</p></div>
+            <button class="button button-small button-outline">View</button>
+          </div>
+          <div class="alert alert-warning">
+            <span class="alert-icon">!</span>
+            <div><div class="alert-title">Warning</div><p>The entered cost differs from the purchase-order snapshot by 8.2%.</p></div>
+            <button class="button button-small button-outline">Compare</button>
+          </div>
+          <div class="alert alert-danger">
+            <span class="alert-icon">×</span>
+            <div><div class="alert-title">Error</div><p>This item cannot be received because the quantity exceeds the open balance.</p></div>
+            <button class="button button-small button-outline">Resolve</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section grid grid-2">
+        <article class="card">
+          <div class="card-header"><h2>Form controls</h2></div>
+          <div class="card-body">
+            <form class="form-grid">
+              <div class="field">
+                <label for="title">Product title <span class="required">*</span></label>
+                <input class="input" id="title" value="The Serviceberry">
+              </div>
+              <div class="field">
+                <label for="department">Department</label>
+                <select class="select" id="department">
+                  <option>Books</option>
+                  <option>Gifts &amp; stationery</option>
+                  <option>Media</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="identifier">Primary identifier</label>
+                <input class="input" id="identifier" value="9781668072240">
+                <span class="help-text">ISBN-10 input is normalized before lookup.</span>
+              </div>
+              <div class="field">
+                <label for="cost">Unit cost</label>
+                <input class="input input-invalid" id="cost" value="$14.80">
+                <span class="error-text">Cost exceeds the configured tolerance.</span>
+              </div>
+              <div class="field field-full">
+                <label for="notes">Internal notes</label>
+                <textarea class="textarea" id="notes" placeholder="Add receiving or merchandising notes…"></textarea>
+              </div>
+              <label class="checkbox-row field-full">
+                <input type="checkbox" checked>
+                <span><strong>Returnable to vendor</strong><br><small>Use vendor and product defaults when no override is present.</small></span>
+              </label>
+            </form>
+          </div>
+          <div class="card-footer">
+            <div class="actions">
+              <button class="button button-primary">Save product</button>
+              <button class="button button-outline">Cancel</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-header"><h2>Surfaces and hierarchy</h2></div>
+          <div class="card-body" style="background:var(--bg-100)">
+            <div class="card" style="box-shadow:none">
+              <div class="card-header" style="background:var(--surface-secondary)">
+                <strong>Secondary panel header</strong>
+                <span class="badge badge-primary">Selected</span>
+              </div>
+              <div class="card-body">
+                <p>This white surface sits on <code>BG-100</code>. The surrounding app sidebar uses <code>BG-200</code>.</p>
+                <div style="padding:14px; border:1px solid var(--border-default); border-radius:8px; background:var(--surface-selected)">
+                  A selected or active region uses the primary teal’s soft tint.
+                </div>
+                <div style="margin-top:12px; padding:14px; border-radius:8px; background:var(--surface-disabled); color:var(--text-disabled)">
+                  Disabled or unavailable content uses a distinct neutral surface and restrained text.
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="section card">
+        <div class="card-header"><h2>Tabs and data table</h2></div>
+        <div class="tabs" role="tablist">
+          <button class="tab active">Inventory</button>
+          <button class="tab">Vendors</button>
+          <button class="tab">Demand</button>
+          <button class="tab">History</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Store</th><th>Status</th><th class="numeric">On hand</th><th class="numeric">Reserved</th><th class="numeric">Available</th></tr></thead>
+            <tbody>
+              <tr class="selected"><td class="table-primary">Main Street</td><td><span class="badge badge-success">Available</span></td><td class="numeric">12</td><td class="numeric">2</td><td class="numeric">10</td></tr>
+              <tr><td class="table-primary">Warehouse</td><td><span class="badge badge-warning">Low stock</span></td><td class="numeric">3</td><td class="numeric">1</td><td class="numeric">2</td></tr>
+              <tr><td class="table-primary">Northside</td><td><span class="badge badge-danger">Unavailable</span></td><td class="numeric">0</td><td class="numeric">0</td><td class="numeric">0</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

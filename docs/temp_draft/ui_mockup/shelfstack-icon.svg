@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="850"
+     height="1120"
+     viewBox="0 0 850 1120"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">ShelfStack icon</title>
+  <desc id="desc">Three slanted stacked forms in teal, plum, and gold.</desc>
+
+  <defs>
+    <linearGradient id="tealGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#003F45"/>
+      <stop offset="55%" stop-color="#075D63"/>
+      <stop offset="100%" stop-color="#0A7479"/>
+    </linearGradient>
+
+    <linearGradient id="plumGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#541033"/>
+      <stop offset="55%" stop-color="#6C1742"/>
+      <stop offset="100%" stop-color="#842352"/>
+    </linearGradient>
+
+    <linearGradient id="goldGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B86600"/>
+      <stop offset="55%" stop-color="#C97D00"/>
+      <stop offset="100%" stop-color="#DB9700"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Top shelf -->
+  <path
+    d="M 664 48
+       Q 690 40 690 68
+       L 690 258
+       Q 690 286 662 297
+       L 127 506
+       Q 96 518 96 486
+       L 96 307
+       Q 96 280 122 270
+       L 650 61
+       Q 657 53 664 48 Z"
+    fill="url(#tealGradient)"
+    stroke="#D4DEE1"
+    stroke-width="6"
+    stroke-linejoin="round"/>
+
+  <!-- Middle shelf -->
+  <path
+    d="M 493 407
+       Q 505 402 520 407
+       L 742 486
+       Q 760 492 760 513
+       L 760 567
+       Q 760 589 739 596
+       L 471 687
+       Q 443 697 416 687
+       L 129 579
+       Q 105 570 128 553
+       L 484 412
+       Q 488 409 493 407 Z"
+    fill="url(#plumGradient)"
+    stroke="#D4DEE1"
+    stroke-width="6"
+    stroke-linejoin="round"/>
+
+  <!-- Bottom shelf -->
+  <path
+    d="M 738 639
+       Q 760 632 760 659
+       L 760 839
+       Q 760 866 734 876
+       L 126 1072
+       Q 96 1082 96 1051
+       L 96 851
+       Q 96 825 121 815
+       L 730 645
+       Q 734 642 738 639 Z"
+    fill="url(#goldGradient)"
+    stroke="#D4DEE1"
+    stroke-width="6"
+    stroke-linejoin="round"/>
+</svg>
