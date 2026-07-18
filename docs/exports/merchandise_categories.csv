@@ -1,0 +1,735 @@
+Primary,Secondary,Minor,primary_code,secondary_code,minor_code,default_department,default used department
+"Art, Architecture, Photography & Design",Architecture,Architecture & Design,art_architecture_photography__design,architecture,architecture__design,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Architectural Practice,art_architecture_photography__design,architecture,architectural_practice,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Architects,art_architecture_photography__design,architecture,architects,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Architectural History,art_architecture_photography__design,architecture,architectural_history,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Classical,art_architecture_photography__design,architecture,classical,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Medieval,art_architecture_photography__design,architecture,medieval,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Renaissance,art_architecture_photography__design,architecture,renaissance,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,17th Century,art_architecture_photography__design,architecture,17th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,18th Century,art_architecture_photography__design,architecture,18th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,19th Century,art_architecture_photography__design,architecture,19th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,20th Century,art_architecture_photography__design,architecture,20th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Post-Modern,art_architecture_photography__design,architecture,postmodern,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Architecture,Professional Design,art_architecture_photography__design,architecture,professional_design,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art,Clip Art,art_architecture_photography__design,art,clip_art,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art,Stereograms,art_architecture_photography__design,art,stereograms,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art,Architecture,art_architecture_photography__design,art,architecture,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,Art History & Criticism,art_architecture_photography__design,art_history__criticism,art_history__criticism,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,Ancient/Classical,art_architecture_photography__design,art_history__criticism,ancientclassical,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,Renaissance,art_architecture_photography__design,art_history__criticism,renaissance,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,17th Century,art_architecture_photography__design,art_history__criticism,17th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,18th Century,art_architecture_photography__design,art_history__criticism,18th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,19th Century,art_architecture_photography__design,art_history__criticism,19th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,World Art,art_architecture_photography__design,art_history__criticism,world_art,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,Impressionism,art_architecture_photography__design,art_history__criticism,impressionism,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art History & Criticism,20th Century,art_architecture_photography__design,art_history__criticism,20th_century,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Art Techniques,art_architecture_photography__design,art_techniques__media,art_techniques,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Drawing,art_architecture_photography__design,art_techniques__media,drawing,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Watercolor,art_architecture_photography__design,art_techniques__media,watercolor,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Color Theory,art_architecture_photography__design,art_techniques__media,color_theory,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Calligraphy,art_architecture_photography__design,art_techniques__media,calligraphy,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Sculpture Techniques,art_architecture_photography__design,art_techniques__media,sculpture_techniques,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Sculpture,art_architecture_photography__design,art_techniques__media,sculpture,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Painting,art_architecture_photography__design,art_techniques__media,painting,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Art Techniques & Media,Stencil Art,art_architecture_photography__design,art_techniques__media,stencil_art,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design","Artists, Monographs & Collections",Collections,art_architecture_photography__design,artists_monographs__collections,collections,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design","Artists, Monographs & Collections",Artists,art_architecture_photography__design,artists_monographs__collections,artists,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Couture,art_architecture_photography__design,design_fashion__art_careers,couture,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Graphic Design,art_architecture_photography__design,design_fashion__art_careers,graphic_design,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design","Design, Fashion & Art Careers",Art Business & Careers,art_architecture_photography__design,design_fashion__art_careers,art_business__careers,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Technique & How-To,art_architecture_photography__design,photography,technique__howto,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Nature Photography,art_architecture_photography__design,photography,nature_photography,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,35mm Photography,art_architecture_photography__design,photography,35mm_photography,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Camera,art_architecture_photography__design,photography,camera,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Photo Essays,art_architecture_photography__design,photography,photo_essays,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Fashion Photography,art_architecture_photography__design,photography,fashion_photography,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Darkrooms,art_architecture_photography__design,photography,darkrooms,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Photography Business,art_architecture_photography__design,photography,photography_business,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Monographs,art_architecture_photography__design,photography,monographs,110: Books / New General Trade,130: Books / Used & Collectible
+"Art, Architecture, Photography & Design",Photography,Ansel Adams,art_architecture_photography__design,photography,ansel_adams,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,General Business,business_economics__careers,business__management,general_business,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Customer Service,business_economics__careers,business__management,customer_service,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Accounting,business_economics__careers,business__management,accounting,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Management,business_economics__careers,business__management,management,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Small Business,business_economics__careers,business__management,small_business,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Sales,business_economics__careers,business__management,sales,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Marketing,business_economics__careers,business__management,marketing,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Advertising,business_economics__careers,business__management,advertising,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Human Resources,business_economics__careers,business__management,human_resources,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Consulting,business_economics__careers,business__management,consulting,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Manufacturing,business_economics__careers,business__management,manufacturing,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Business Life,business_economics__careers,business__management,business_life,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business & Management,Retail,business_economics__careers,business__management,retail,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business Reference & Biography,Business Ref,business_economics__careers,business_reference__biography,business_ref,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Business Reference & Biography,Business Biography & Corporate Profiles,business_economics__careers,business_reference__biography,business_biography__corporate_profiles,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Careers & Job Search,Careers,business_economics__careers,careers__job_search,careers,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Careers & Job Search,Résumés & Interviews,business_economics__careers,careers__job_search,rsums__interviews,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Economics, Trade & Labor",Economics,business_economics__careers,economics_trade__labor,economics,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Economics, Trade & Labor",Foreign Trade,business_economics__careers,economics_trade__labor,foreign_trade,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Economics, Trade & Labor",Labor,business_economics__careers,economics_trade__labor,labor,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Finance, Investing & Real Estate",Finance/Banking,business_economics__careers,finance_investing__real_estate,financebanking,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Finance, Investing & Real Estate",Real Estate,business_economics__careers,finance_investing__real_estate,real_estate,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Finance, Investing & Real Estate",Personal Finance,business_economics__careers,finance_investing__real_estate,personal_finance,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Finance, Investing & Real Estate","Securities, Commodities & Futures",business_economics__careers,finance_investing__real_estate,securities_commodities__futures,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers","Finance, Investing & Real Estate",Investing & Commodities,business_economics__careers,finance_investing__real_estate,investing__commodities,110: Books / New General Trade,130: Books / Used & Collectible
+"Business, Economics & Careers",Nonprofit & Fundraising,Fundraising,business_economics__careers,nonprofit__fundraising,fundraising,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink","Appliances, Grilling & Technique",Appliance Cooking,cooking_food__drink,appliances_grilling__technique,appliance_cooking,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink","Appliances, Grilling & Technique",Appliance Cooking & Grilling,cooking_food__drink,appliances_grilling__technique,appliance_cooking__grilling,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",Diet & Special Diets,Diet & Weight Management,cooking_food__drink,diet__special_diets,diet__weight_management,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",Diet & Special Diets,Vegetarian,cooking_food__drink,diet__special_diets,vegetarian,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink","General Cooking, Entertaining & Professional",General Cookbooks,cooking_food__drink,general_cooking_entertaining__professional,general_cookbooks,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink","General Cooking, Entertaining & Professional",Entertaining & Gift Cookbooks,cooking_food__drink,general_cooking_entertaining__professional,entertaining__gift_cookbooks,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink","General Cooking, Entertaining & Professional",Professional,cooking_food__drink,general_cooking_entertaining__professional,professional,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",Wine & Spirits,Wines/Spirits,cooking_food__drink,wine__spirits,winesspirits,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",World & Regional Cuisines,French,cooking_food__drink,world__regional_cuisines,french,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",World & Regional Cuisines,Italian,cooking_food__drink,world__regional_cuisines,italian,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",World & Regional Cuisines,Jewish,cooking_food__drink,world__regional_cuisines,jewish,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",World & Regional Cuisines,Mexican,cooking_food__drink,world__regional_cuisines,mexican,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",World & Regional Cuisines,Asian,cooking_food__drink,world__regional_cuisines,asian,110: Books / New General Trade,130: Books / Used & Collectible
+"Cooking, Food & Drink",World & Regional Cuisines,Other International Cuisines,cooking_food__drink,world__regional_cuisines,other_international_cuisines,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,Boxed Sets,Box Sets,fiction__literature,boxed_sets,box_sets,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,General Fiction,Paperback Fiction,fiction__literature,general_fiction,paperback_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,General Fiction,Latin American Fiction,fiction__literature,general_fiction,latin_american_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,General Fiction,Fiction & Literature,fiction__literature,general_fiction,fiction__literature,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,General Fiction,Anthologies,fiction__literature,general_fiction,anthologies,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,"Literature, Essays & Criticism",Fiction & Literature,fiction__literature,literature_essays__criticism,fiction__literature,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,"Literature, Essays & Criticism",Essays & Memoir,fiction__literature,literature_essays__criticism,essays__memoir,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,"Literature, Essays & Criticism",Literary Theory,fiction__literature,literature_essays__criticism,literary_theory,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,"Literature, Essays & Criticism",Mythology,fiction__literature,literature_essays__criticism,mythology,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,Poetry,Poetry General,fiction__literature,poetry,poetry_general,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,Poetry,"Poets, Anthologies & Commentary",fiction__literature,poetry,poets_anthologies__commentary,110: Books / New General Trade,130: Books / Used & Collectible
+Fiction & Literature,Westerns,Westerns,fiction__literature,westerns,westerns,110: Books / New General Trade,130: Books / Used & Collectible
+Gift Books,Little Gift Books,Little Gift Books — Hardcover,gift_books,little_gift_books,little_gift_books__hardcover,110: Books / New General Trade,130: Books / Used & Collectible
+Gift Books,Little Gift Books,Little Gift Books — Paperback,gift_books,little_gift_books,little_gift_books__paperback,110: Books / New General Trade,130: Books / Used & Collectible
+"Graphic Novels, Manga & Comics",Graphic Novels,Graphic Novels,graphic_novels_manga__comics,graphic_novels,graphic_novels,110: Books / New General Trade,130: Books / Used & Collectible
+"Graphic Novels, Manga & Comics",Periodical Comics,Comic Books,graphic_novels_manga__comics,periodical_comics,comic_books,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Alternative & Complementary Medicine,Alternative Med,health_wellness__family,alternative__complementary_medicine,alternative_med,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Alternative & Complementary Medicine,Herbal Medicine,health_wellness__family,alternative__complementary_medicine,herbal_medicine,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Alternative & Complementary Medicine,Massage/Reflexology,health_wellness__family,alternative__complementary_medicine,massagereflexology,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Alternative & Complementary Medicine,Aromatherapy,health_wellness__family,alternative__complementary_medicine,aromatherapy,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,Allergies,health_wellness__family,conditions__diseases,allergies,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,Cancer,health_wellness__family,conditions__diseases,cancer,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,Diabetes,health_wellness__family,conditions__diseases,diabetes,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,Heart Disease,health_wellness__family,conditions__diseases,heart_disease,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,Aids,health_wellness__family,conditions__diseases,aids,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,Other Diseases,health_wellness__family,conditions__diseases,other_diseases,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Conditions & Diseases,STDs,health_wellness__family,conditions__diseases,stds,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Diet & Nutrition,Diets,health_wellness__family,diet__nutrition,diets,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Diet & Nutrition,Nutrition,health_wellness__family,diet__nutrition,nutrition,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Diet & Nutrition,Food Counters,health_wellness__family,diet__nutrition,food_counters,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family","Exercise, Fitness & Yoga",Exercise,health_wellness__family,exercise_fitness__yoga,exercise,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family","Exercise, Fitness & Yoga",Yoga,health_wellness__family,exercise_fitness__yoga,yoga,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family","General Health, Beauty & Aging",Health,health_wellness__family,general_health_beauty__aging,health,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family","General Health, Beauty & Aging",Beauty & Grooming,health_wellness__family,general_health_beauty__aging,beauty__grooming,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family","General Health, Beauty & Aging",Aging,health_wellness__family,general_health_beauty__aging,aging,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Medical Ref,health_wellness__family,medicine__nursing,medical_ref,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Nursing Procedures,health_wellness__family,medicine__nursing,nursing_procedures,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Nursing Drug Guides,health_wellness__family,medicine__nursing,nursing_drug_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Anatomy/Physiology,health_wellness__family,medicine__nursing,anatomyphysiology,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Nursing Exam Review,health_wellness__family,medicine__nursing,nursing_exam_review,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Allied Health,health_wellness__family,medicine__nursing,allied_health,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Medicine & Nursing,Medicine,health_wellness__family,medicine__nursing,medicine,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Parenting & Child Care,health_wellness__family,parenting__family,parenting__child_care,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Baby Names,health_wellness__family,parenting__family,baby_names,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Pregnancy & Childbirth,health_wellness__family,parenting__family,pregnancy__childbirth,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Divorce & Children,health_wellness__family,parenting__family,divorce__children,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Children with Special Needs,health_wellness__family,parenting__family,children_with_special_needs,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,School-Age Children,health_wellness__family,parenting__family,schoolage_children,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Infants/Toddlers,health_wellness__family,parenting__family,infantstoddlers,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Adoption,health_wellness__family,parenting__family,adoption,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Sex Education,health_wellness__family,parenting__family,sex_education,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Parenting & Family,Activities,health_wellness__family,parenting__family,activities,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Women's & Reproductive Health,Fertility/Miscarriage,health_wellness__family,womens__reproductive_health,fertilitymiscarriage,110: Books / New General Trade,130: Books / Used & Collectible
+"Health, Wellness & Family",Women's & Reproductive Health,Womens Health,health_wellness__family,womens__reproductive_health,womens_health,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics","Ancient, Medieval & Renaissance History",Ancient Hist,history_biography__politics,ancient_medieval__renaissance_history,ancient_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics","Ancient, Medieval & Renaissance History",Medieval & Renaissance History,history_biography__politics,ancient_medieval__renaissance_history,medieval__renaissance_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Military History,Military History,history_biography__politics,military_history,military_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Politics & Current Affairs,United States Current Affairs,history_biography__politics,politics__current_affairs,united_states_current_affairs,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Politics & Current Affairs,Media & Journalism,history_biography__politics,politics__current_affairs,media__journalism,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Politics & Current Affairs,US Politics,history_biography__politics,politics__current_affairs,us_politics,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Politics & Current Affairs,International Current Affairs,history_biography__politics,politics__current_affairs,international_current_affairs,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Politics & Current Affairs,International Politics,history_biography__politics,politics__current_affairs,international_politics,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Japan Hist,history_biography__politics,regional__national_history,japan_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Irish History,history_biography__politics,regional__national_history,irish_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Eur History,history_biography__politics,regional__national_history,eur_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Middle Eastern History,history_biography__politics,regional__national_history,middle_eastern_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,African Hist,history_biography__politics,regional__national_history,african_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Asian Hist,history_biography__politics,regional__national_history,asian_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,British Hist,history_biography__politics,regional__national_history,british_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Latin Amer Hist,history_biography__politics,regional__national_history,latin_amer_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Eastern European History,history_biography__politics,regional__national_history,eastern_european_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Israel Hist,history_biography__politics,regional__national_history,israel_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Northern European History,history_biography__politics,regional__national_history,northern_european_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Caribbean Hist,history_biography__politics,regional__national_history,caribbean_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Chinese Hist,history_biography__politics,regional__national_history,chinese_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",Regional & National History,Western European History,history_biography__politics,regional__national_history,western_european_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",United States History & Biography,United States History,history_biography__politics,united_states_history__biography,united_states_history,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",United States History & Biography,United States Biography,history_biography__politics,united_states_history__biography,united_states_biography,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",United States History & Biography,Civil War,history_biography__politics,united_states_history__biography,civil_war,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",United States History & Biography,Urban Studies,history_biography__politics,united_states_history__biography,urban_studies,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",World History & Biography,World Hist,history_biography__politics,world_history__biography,world_hist,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",World History & Biography,World Biography,history_biography__politics,world_history__biography,world_biography,110: Books / New General Trade,130: Books / Used & Collectible
+"History, Biography & Politics",World History & Biography,General History,history_biography__politics,world_history__biography,general_history,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Antiques Gen,home_garden_crafts__collecting,antiques__collectibles,antiques_gen,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Price Guides,home_garden_crafts__collecting,antiques__collectibles,price_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Coins,home_garden_crafts__collecting,antiques__collectibles,coins,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Dolls,home_garden_crafts__collecting,antiques__collectibles,dolls,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Glass/Stained G,home_garden_crafts__collecting,antiques__collectibles,glassstained_g,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Jewelry,home_garden_crafts__collecting,antiques__collectibles,jewelry,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,"Pottery, Porcelain & China",home_garden_crafts__collecting,antiques__collectibles,pottery_porcelain__china,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Stamps,home_garden_crafts__collecting,antiques__collectibles,stamps,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,General Collecting,home_garden_crafts__collecting,antiques__collectibles,general_collecting,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Antiques & Collectibles,Sports Cards,home_garden_crafts__collecting,antiques__collectibles,sports_cards,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Ceramics/Pottery,home_garden_crafts__collecting,ceramics_glass__jewelry,ceramicspottery,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Glass & Stained Glass,home_garden_crafts__collecting,ceramics_glass__jewelry,glass__stained_glass,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Ceramics, Glass & Jewelry",Jewelry & Metalworking,home_garden_crafts__collecting,ceramics_glass__jewelry,jewelry__metalworking,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Gardening,Outdoor Gardening,home_garden_crafts__collecting,gardening,outdoor_gardening,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Gardening,Indoor Gardening,home_garden_crafts__collecting,gardening,indoor_gardening,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Gardening,"Fruits, Vegetables & Herbs",home_garden_crafts__collecting,gardening,fruits_vegetables__herbs,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Gardening,Flower Gardening,home_garden_crafts__collecting,gardening,flower_gardening,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Crafts & Hobbies,home_garden_crafts__collecting,general_crafts_tools__projects,crafts__hobbies,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Artisans & Craftspeople,home_garden_crafts__collecting,general_crafts_tools__projects,artisans__craftspeople,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Tools,home_garden_crafts__collecting,general_crafts_tools__projects,tools,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","General Crafts, Tools & Projects",Projects & Plans,home_garden_crafts__collecting,general_crafts_tools__projects,projects__plans,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Home & Decorating,House & Home,home_garden_crafts__collecting,home__decorating,house__home,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Home & Decorating,Carpentry,home_garden_crafts__collecting,home__decorating,carpentry,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Home & Decorating,Decorating,home_garden_crafts__collecting,home__decorating,decorating,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Home & Decorating,House Plans,home_garden_crafts__collecting,home__decorating,house_plans,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Home & Decorating,Home Repair & Renovation,home_garden_crafts__collecting,home__decorating,home_repair__renovation,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Home & Decorating,Design & Lifestyle,home_garden_crafts__collecting,home__decorating,design__lifestyle,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Models & Doll Making,Modeling,home_garden_crafts__collecting,models__doll_making,modeling,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting",Models & Doll Making,Doll Making,home_garden_crafts__collecting,models__doll_making,doll_making,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Needlecrafts,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,needlecrafts,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Quilting & Patchwork,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,quilting__patchwork,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Sewing,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,sewing,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts","Embroidery, Cross-Stitch & Needlepoint",home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,embroidery_crossstitch__needlepoint,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Knitting & Crochet,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,knitting__crochet,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Weaving & Rug Making,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,weaving__rug_making,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Lace/Tatting,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,lacetatting,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Needlecrafts, Sewing & Fiber Arts",Fabric Painting & Dyeing,home_garden_crafts__collecting,needlecrafts_sewing__fiber_arts,fabric_painting__dyeing,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Floral Crafts,home_garden_crafts__collecting,paper_floral__decorative_crafts,floral_crafts,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Basketry,home_garden_crafts__collecting,paper_floral__decorative_crafts,basketry,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Printmaking,home_garden_crafts__collecting,paper_floral__decorative_crafts,printmaking,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Stenciling,home_garden_crafts__collecting,paper_floral__decorative_crafts,stenciling,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Paper, Floral & Decorative Crafts",Papercrafts,home_garden_crafts__collecting,paper_floral__decorative_crafts,papercrafts,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Woodworking,home_garden_crafts__collecting,woodworking_furniture__carving,woodworking,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Furniture Making,home_garden_crafts__collecting,woodworking_furniture__carving,furniture_making,110: Books / New General Trade,130: Books / Used & Collectible
+"Home, Garden, Crafts & Collecting","Woodworking, Furniture & Carving",Carving,home_garden_crafts__collecting,woodworking_furniture__carving,carving,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",General Games,humor_games__puzzles,games_puzzles__gambling,general_games,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Crosswords,humor_games__puzzles,games_puzzles__gambling,crosswords,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Scrabble,humor_games__puzzles,games_puzzles__gambling,scrabble,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Pool & Billiards,humor_games__puzzles,games_puzzles__gambling,pool__billiards,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Logic & Brain Teasers,humor_games__puzzles,games_puzzles__gambling,logic__brain_teasers,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Horse Racing & Gambling,humor_games__puzzles,games_puzzles__gambling,horse_racing__gambling,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Chess,humor_games__puzzles,games_puzzles__gambling,chess,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Card Games,humor_games__puzzles,games_puzzles__gambling,card_games,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Magic,humor_games__puzzles,games_puzzles__gambling,magic,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Casino Games,humor_games__puzzles,games_puzzles__gambling,casino_games,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Poker,humor_games__puzzles,games_puzzles__gambling,poker,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Blackjack,humor_games__puzzles,games_puzzles__gambling,blackjack,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles","Games, Puzzles & Gambling",Computer Games,humor_games__puzzles,games_puzzles__gambling,computer_games,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles",Humor,Humor,humor_games__puzzles,humor,humor,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles",Humor,Cartoons & Cartooning,humor_games__puzzles,humor,cartoons__cartooning,110: Books / New General Trade,130: Books / Used & Collectible
+"Humor, Games & Puzzles",Role-Playing Games,Role Playing,humor_games__puzzles,roleplaying_games,role_playing,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Books in Other Languages,Literature,languages__bilingual,books_in_other_languages,literature,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Books in Other Languages,Non Fiction,languages__bilingual,books_in_other_languages,non_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Language Learning,Other Foreign Languages,languages__bilingual,language_learning,other_foreign_languages,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Language Learning,Spanish,languages__bilingual,language_learning,spanish,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Language Learning,French,languages__bilingual,language_learning,french,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Language Learning,German,languages__bilingual,language_learning,german,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Language Learning,Italian,languages__bilingual,language_learning,italian,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Language Learning,Japanese,languages__bilingual,language_learning,japanese,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Novelas,languages__bilingual,spanishlanguage_books,novelas,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Literatura,languages__bilingual,spanishlanguage_books,literatura,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Novelas Románticas,languages__bilingual,spanishlanguage_books,novelas_romnticas,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Novelas Policíacas,languages__bilingual,spanishlanguage_books,novelas_policacas,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Historia,languages__bilingual,spanishlanguage_books,historia,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Biografías,languages__bilingual,spanishlanguage_books,biografas,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Deportes,languages__bilingual,spanishlanguage_books,deportes,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Negocios,languages__bilingual,spanishlanguage_books,negocios,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Cocina,languages__bilingual,spanishlanguage_books,cocina,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Viajes,languages__bilingual,spanishlanguage_books,viajes,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Referencia,languages__bilingual,spanishlanguage_books,referencia,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Computación,languages__bilingual,spanishlanguage_books,computacin,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Inspiración,languages__bilingual,spanishlanguage_books,inspiracin,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,La Biblia,languages__bilingual,spanishlanguage_books,la_biblia,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Cuba,languages__bilingual,spanishlanguage_books,cuba,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Autoayuda,languages__bilingual,spanishlanguage_books,autoayuda,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Florida,languages__bilingual,spanishlanguage_books,florida,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Texas,languages__bilingual,spanishlanguage_books,texas,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,California,languages__bilingual,spanishlanguage_books,california,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Mexico,languages__bilingual,spanishlanguage_books,mexico,110: Books / New General Trade,130: Books / Used & Collectible
+Languages & Bilingual,Spanish-Language Books,Otros Libros en Español,languages__bilingual,spanishlanguage_books,otros_libros_en_espaol,110: Books / New General Trade,130: Books / Used & Collectible
+Merchandising Programs,Children's Rack Programs,Serendipity,merchandising_programs,childrens_rack_programs,serendipity,110: Books / New General Trade,130: Books / Used & Collectible
+Merchandising Programs,Children's Rack Programs,Little Golden Books,merchandising_programs,childrens_rack_programs,little_golden_books,110: Books / New General Trade,130: Books / Used & Collectible
+Merchandising Programs,Children's Rack Programs,Ladybird Books,merchandising_programs,childrens_rack_programs,ladybird_books,110: Books / New General Trade,130: Books / Used & Collectible
+Merchandising Programs,Children's Rack Programs,Dover,merchandising_programs,childrens_rack_programs,dover,110: Books / New General Trade,130: Books / Used & Collectible
+"Mystery, Thrillers & True Crime",Mystery & Adventure,Mystery,mystery_thrillers__true_crime,mystery__adventure,mystery,110: Books / New General Trade,130: Books / Used & Collectible
+"Mystery, Thrillers & True Crime",Mystery & Adventure,Action & Adventure,mystery_thrillers__true_crime,mystery__adventure,action__adventure,110: Books / New General Trade,130: Books / Used & Collectible
+"Mystery, Thrillers & True Crime",True Crime,True Crime,mystery_thrillers__true_crime,true_crime,true_crime,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Fitness & Strength Training,Weightlifting & Bodybuilding,nature_outdoors_sports__pets,fitness__strength_training,weightlifting__bodybuilding,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",General Sports & Golf,General Sports,nature_outdoors_sports__pets,general_sports__golf,general_sports,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",General Sports & Golf,Golf,nature_outdoors_sports__pets,general_sports__golf,golf,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Hunting & Shooting Sports,nature_outdoors_sports__pets,hunting__combat_sports,hunting__shooting_sports,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Martial Arts,nature_outdoors_sports__pets,hunting__combat_sports,martial_arts,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Hunting & Combat Sports,Boxing/Wrestling,nature_outdoors_sports__pets,hunting__combat_sports,boxingwrestling,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Individual Sports,Bicycling,nature_outdoors_sports__pets,individual_sports,bicycling,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Individual Sports,Racquet Sports,nature_outdoors_sports__pets,individual_sports,racquet_sports,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Individual Sports,Running,nature_outdoors_sports__pets,individual_sports,running,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Individual Sports,Gymnastics,nature_outdoors_sports__pets,individual_sports,gymnastics,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Nature Writing,nature_outdoors_sports__pets,nature__environment,nature_writing,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,General Nature,nature_outdoors_sports__pets,nature__environment,general_nature,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Earth Sciences,nature_outdoors_sports__pets,nature__environment,earth_sciences,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Environment,nature_outdoors_sports__pets,nature__environment,environment,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Oceans,nature_outdoors_sports__pets,nature__environment,oceans,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Agriculture,nature_outdoors_sports__pets,nature__environment,agriculture,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Botany & Plants,nature_outdoors_sports__pets,nature__environment,botany__plants,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Birds & Birding,nature_outdoors_sports__pets,nature__environment,birds__birding,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Audubon,nature_outdoors_sports__pets,nature__environment,audubon,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Eyewitness,nature_outdoors_sports__pets,nature__environment,eyewitness,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Golden Press,nature_outdoors_sports__pets,nature__environment,golden_press,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Petersons,nature_outdoors_sports__pets,nature__environment,petersons,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,S&S,nature_outdoors_sports__pets,nature__environment,ss,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Stokes,nature_outdoors_sports__pets,nature__environment,stokes,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Nature & Environment,Other Field Guides,nature_outdoors_sports__pets,nature__environment,other_field_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Camping,nature_outdoors_sports__pets,outdoor_recreation,camping,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Freshwater Fishing,nature_outdoors_sports__pets,outdoor_recreation,freshwater_fishing,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Saltwater Fishing,nature_outdoors_sports__pets,outdoor_recreation,saltwater_fishing,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Skiing,nature_outdoors_sports__pets,outdoor_recreation,skiing,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Hiking,nature_outdoors_sports__pets,outdoor_recreation,hiking,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Outdoor Recreation,Mountaineering,nature_outdoors_sports__pets,outdoor_recreation,mountaineering,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Pets General,nature_outdoors_sports__pets,pets__animal_care,pets_general,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Cats,nature_outdoors_sports__pets,pets__animal_care,cats,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Dogs,nature_outdoors_sports__pets,pets__animal_care,dogs,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Horses,nature_outdoors_sports__pets,pets__animal_care,horses,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Aquarium,nature_outdoors_sports__pets,pets__animal_care,aquarium,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Birds,nature_outdoors_sports__pets,pets__animal_care,birds,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Pets & Animal Care,Veterinary Medicine,nature_outdoors_sports__pets,pets__animal_care,veterinary_medicine,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Team Sports,Baseball,nature_outdoors_sports__pets,team_sports,baseball,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Team Sports,Basketball,nature_outdoors_sports__pets,team_sports,basketball,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Team Sports,Hockey,nature_outdoors_sports__pets,team_sports,hockey,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Team Sports,Football,nature_outdoors_sports__pets,team_sports,football,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Team Sports,Soccer,nature_outdoors_sports__pets,team_sports,soccer,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Water Sports,Boating & Sailing,nature_outdoors_sports__pets,water_sports,boating__sailing,110: Books / New General Trade,130: Books / Used & Collectible
+"Nature, Outdoors, Sports & Pets",Water Sports,Swimming,nature_outdoors_sports__pets,water_sports,swimming,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Dance,Dance Technique & Criticism,performing_arts_music__film,dance,dance_technique__criticism,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Dance,Ballet & Modern,performing_arts_music__film,dance,ballet__modern,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Dance,Recreational Dance,performing_arts_music__film,dance,recreational_dance,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Film Studies,performing_arts_music__film,film_television__media,film_studies,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Entertainment Biography,performing_arts_music__film,film_television__media,entertainment_biography,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Television,performing_arts_music__film,film_television__media,television,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Film Reference,performing_arts_music__film,film_television__media,film_reference,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Production,performing_arts_music__film,film_television__media,production,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Screenplays,performing_arts_music__film,film_television__media,screenplays,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Animation,performing_arts_music__film,film_television__media,animation,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Radio,performing_arts_music__film,film_television__media,radio,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Film, Television & Media",Screenwriting,performing_arts_music__film,film_television__media,screenwriting,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Guitar & Stringed Instruments,performing_arts_music__film,instruments_voice__songbooks,guitar__stringed_instruments,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Keyboards,performing_arts_music__film,instruments_voice__songbooks,keyboards,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Woodwinds,performing_arts_music__film,instruments_voice__songbooks,woodwinds,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Brass,performing_arts_music__film,instruments_voice__songbooks,brass,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Percussion,performing_arts_music__film,instruments_voice__songbooks,percussion,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Voice,performing_arts_music__film,instruments_voice__songbooks,voice,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Instruments, Voice & Songbooks",Songbooks,performing_arts_music__film,instruments_voice__songbooks,songbooks,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Electronic Music,performing_arts_music__film,music_genres,electronic_music,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Gospel,performing_arts_music__film,music_genres,gospel,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Jazz/Blues,performing_arts_music__film,music_genres,jazzblues,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Classical,performing_arts_music__film,music_genres,classical,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Standards & Easy Listening,performing_arts_music__film,music_genres,standards__easy_listening,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Rock & Roll,performing_arts_music__film,music_genres,rock__roll,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,R&B & Rap,performing_arts_music__film,music_genres,rb__rap,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Folk,performing_arts_music__film,music_genres,folk,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,"Country, Western & Bluegrass",performing_arts_music__film,music_genres,country_western__bluegrass,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,Opera,performing_arts_music__film,music_genres,opera,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Music Genres,World Music,performing_arts_music__film,music_genres,world_music,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Music Theory, History & Reference",Music Theory & Criticism,performing_arts_music__film,music_theory_history__reference,music_theory__criticism,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Music Theory, History & Reference",Music Ref,performing_arts_music__film,music_theory_history__reference,music_ref,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film","Music Theory, History & Reference",Music Education,performing_arts_music__film,music_theory_history__reference,music_education,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Songwriting & Music Business,Songwriting,performing_arts_music__film,songwriting__music_business,songwriting,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Songwriting & Music Business,Music Business,performing_arts_music__film,songwriting__music_business,music_business,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Drama,performing_arts_music__film,theatre__drama,drama,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Theatre Arts,performing_arts_music__film,theatre__drama,theatre_arts,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Shakespeare,performing_arts_music__film,theatre__drama,shakespeare,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Acting,performing_arts_music__film,theatre__drama,acting,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Technical Theatre,performing_arts_music__film,theatre__drama,technical_theatre,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Musicals,performing_arts_music__film,theatre__drama,musicals,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Monologues & Scenes,performing_arts_music__film,theatre__drama,monologues__scenes,110: Books / New General Trade,130: Books / Used & Collectible
+"Performing Arts, Music & Film",Theatre & Drama,Drama Criticism,performing_arts_music__film,theatre__drama,drama_criticism,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Psychology,psychology_selfhelp__relationships,psychology__psychiatry,psychology,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Child Psychology,psychology_selfhelp__relationships,psychology__psychiatry,child_psychology,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Suicide,psychology_selfhelp__relationships,psychology__psychiatry,suicide,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Psychiatry,psychology_selfhelp__relationships,psychology__psychiatry,psychiatry,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Psychology & Psychiatry,Social Work,psychology_selfhelp__relationships,psychology__psychiatry,social_work,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Addiction & Recovery,psychology_selfhelp__relationships,selfhelp__relationships,addiction__recovery,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Codependency,psychology_selfhelp__relationships,selfhelp__relationships,codependency,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Eating Disorders,psychology_selfhelp__relationships,selfhelp__relationships,eating_disorders,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Meditations & Affirmations,psychology_selfhelp__relationships,selfhelp__relationships,meditations__affirmations,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Abuse,psychology_selfhelp__relationships,selfhelp__relationships,abuse,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,General Self-Help,psychology_selfhelp__relationships,selfhelp__relationships,general_selfhelp,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Death & Grief,psychology_selfhelp__relationships,selfhelp__relationships,death__grief,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Relationships,psychology_selfhelp__relationships,selfhelp__relationships,relationships,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Midlife,psychology_selfhelp__relationships,selfhelp__relationships,midlife,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Dreams,psychology_selfhelp__relationships,selfhelp__relationships,dreams,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Hypnosis,psychology_selfhelp__relationships,selfhelp__relationships,hypnosis,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Graphology,psychology_selfhelp__relationships,selfhelp__relationships,graphology,110: Books / New General Trade,130: Books / Used & Collectible
+"Psychology, Self-Help & Relationships",Self-Help & Relationships,Sexuality,psychology_selfhelp__relationships,selfhelp__relationships,sexuality,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Atlases, Almanacs & Facts",Atlases,reference_education__study,atlases_almanacs__facts,atlases,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Atlases, Almanacs & Facts",Trivia/Facts,reference_education__study,atlases_almanacs__facts,triviafacts,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Atlases, Almanacs & Facts",Almanacs,reference_education__study,atlases_almanacs__facts,almanacs,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Career, Civil Service & Vocational Exams",Vocational,reference_education__study,career_civil_service__vocational_exams,vocational,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Career, Civil Service & Vocational Exams",Civil Service,reference_education__study,career_civil_service__vocational_exams,civil_service,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Career, Civil Service & Vocational Exams",Military Service,reference_education__study,career_civil_service__vocational_exams,military_service,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Career, Civil Service & Vocational Exams",Teacher Certification Exams,reference_education__study,career_civil_service__vocational_exams,teacher_certification_exams,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Consumer & Life Reference,Weddings,reference_education__study,consumer__life_reference,weddings,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Consumer & Life Reference,Consumer Reference,reference_education__study,consumer__life_reference,consumer_reference,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Consumer & Life Reference,Large Print,reference_education__study,consumer__life_reference,large_print,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Consumer & Life Reference,Secretarial Skills,reference_education__study,consumer__life_reference,secretarial_skills,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Consumer & Life Reference,Etiquette,reference_education__study,consumer__life_reference,etiquette,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Dictionaries, Language & Words",Dictionaries,reference_education__study,dictionaries_language__words,dictionaries,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Dictionaries, Language & Words",Thesauri,reference_education__study,dictionaries_language__words,thesauri,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Dictionaries, Language & Words",Sign Language,reference_education__study,dictionaries_language__words,sign_language,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Dictionaries, Language & Words",Words & Language,reference_education__study,dictionaries_language__words,words__language,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Dictionaries, Language & Words",ESL,reference_education__study,dictionaries_language__words,esl,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Education,Education,reference_education__study,education,education,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Education,Elementary Education,reference_education__study,education,elementary_education,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Education,Secondary Education,reference_education__study,education,secondary_education,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Education,Higher Education,reference_education__study,education,higher_education,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",English-Language Testing,TOEFL/Eng As F,reference_education__study,englishlanguage_testing,toefleng_as_f,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Genealogy & Heraldry,Genealogy/Heraldry,reference_education__study,genealogy__heraldry,genealogyheraldry,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",General Study Aids & Series,Study Aids Gen,reference_education__study,general_study_aids__series,study_aids_gen,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",General Study Aids & Series,Other Series,reference_education__study,general_study_aids__series,other_series,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",General Study Aids & Series,Schaum’s Outlines,reference_education__study,general_study_aids__series,schaums_outlines,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",General Study Aids & Series,Made Simple,reference_education__study,general_study_aids__series,made_simple,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",General Study Aids & Series,Easy Way,reference_education__study,general_study_aids__series,easy_way,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,MAT,reference_education__study,graduate__professional_exams,mat,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,Graduate,reference_education__study,graduate__professional_exams,graduate,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,Engineering,reference_education__study,graduate__professional_exams,engineering,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,CPA & Accounting Exams,reference_education__study,graduate__professional_exams,cpa__accounting_exams,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,GMAT,reference_education__study,graduate__professional_exams,gmat,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,GRE,reference_education__study,graduate__professional_exams,gre,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,LSAT,reference_education__study,graduate__professional_exams,lsat,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Graduate & Professional Exams,MCAT,reference_education__study,graduate__professional_exams,mcat,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Law & Legal Reference,Law,reference_education__study,law__legal_reference,law,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Law & Legal Reference,Legal Ref,reference_education__study,law__legal_reference,legal_ref,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,ACT,reference_education__study,school__college_test_preparation,act,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,SAT/PSAT,reference_education__study,school__college_test_preparation,satpsat,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,High School Entrance,reference_education__study,school__college_test_preparation,high_school_entrance,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,Advanced Placement,reference_education__study,school__college_test_preparation,advanced_placement,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,GED,reference_education__study,school__college_test_preparation,ged,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,College Guides,reference_education__study,school__college_test_preparation,college_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,SAT Subject Tests (legacy),reference_education__study,school__college_test_preparation,sat_subject_tests_legacy,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",School & College Test Preparation,CLEP,reference_education__study,school__college_test_preparation,clep,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Study Guides & Literature Notes,Literature Study Guides,reference_education__study,study_guides__literature_notes,literature_study_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Study Guides & Literature Notes,Test Prep,reference_education__study,study_guides__literature_notes,test_prep,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Study Guides & Literature Notes,CliffsNotes,reference_education__study,study_guides__literature_notes,cliffsnotes,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study",Study Guides & Literature Notes,Barron’s & Monarch Notes,reference_education__study,study_guides__literature_notes,barrons__monarch_notes,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Writing, Publishing & Books",Writing & Publishing,reference_education__study,writing_publishing__books,writing__publishing,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Writing, Publishing & Books",Public Speaking & Quotations,reference_education__study,writing_publishing__books,public_speaking__quotations,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Writing, Publishing & Books",Books About Books,reference_education__study,writing_publishing__books,books_about_books,110: Books / New General Trade,130: Books / Used & Collectible
+"Reference, Education & Study","Writing, Publishing & Books",Library Science,reference_education__study,writing_publishing__books,library_science,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,Bibles Gen,religion_spirituality__philosophy,bibles__biblical_studies,bibles_gen,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,King James,religion_spirituality__philosophy,bibles__biblical_studies,king_james,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,Living Bible,religion_spirituality__philosophy,bibles__biblical_studies,living_bible,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Bibles & Biblical Studies,New Intl,religion_spirituality__philosophy,bibles__biblical_studies,new_intl,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Astrology,religion_spirituality__philosophy,new_age_metaphysical__occult,astrology,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",New Age,religion_spirituality__philosophy,new_age_metaphysical__occult,new_age,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Paranormal Experiences,religion_spirituality__philosophy,new_age_metaphysical__occult,paranormal_experiences,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Magic & Magical Arts,religion_spirituality__philosophy,new_age_metaphysical__occult,magic__magical_arts,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Occult & Supernatural,religion_spirituality__philosophy,new_age_metaphysical__occult,occult__supernatural,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Divination & Prophecy,religion_spirituality__philosophy,new_age_metaphysical__occult,divination__prophecy,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy","New Age, Metaphysical & Occult",Meditation,religion_spirituality__philosophy,new_age_metaphysical__occult,meditation,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Philosophy & Linguistics,Western Philosophy,religion_spirituality__philosophy,philosophy__linguistics,western_philosophy,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Philosophy & Linguistics,Linguistics,religion_spirituality__philosophy,philosophy__linguistics,linguistics,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,General Religion,religion_spirituality__philosophy,religion__inspiration,general_religion,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Religion Reference,religion_spirituality__philosophy,religion__inspiration,religion_reference,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Judaica,religion_spirituality__philosophy,religion__inspiration,judaica,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Islam,religion_spirituality__philosophy,religion__inspiration,islam,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Sufism,religion_spirituality__philosophy,religion__inspiration,sufism,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Religious Fiction,religion_spirituality__philosophy,religion__inspiration,religious_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Inspiration,religion_spirituality__philosophy,religion__inspiration,inspiration,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Latter Day Saints,religion_spirituality__philosophy,religion__inspiration,latter_day_saints,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Eastern Thought,religion_spirituality__philosophy,religion__inspiration,eastern_thought,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Hinduism,religion_spirituality__philosophy,religion__inspiration,hinduism,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Buddhism,religion_spirituality__philosophy,religion__inspiration,buddhism,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Taoism,religion_spirituality__philosophy,religion__inspiration,taoism,110: Books / New General Trade,130: Books / Used & Collectible
+"Religion, Spirituality & Philosophy",Religion & Inspiration,Confucianism,religion_spirituality__philosophy,religion__inspiration,confucianism,110: Books / New General Trade,130: Books / Used & Collectible
+Romance,Romance,General Romance,romance,romance,general_romance,110: Books / New General Trade,130: Books / Used & Collectible
+Romance,Series Romance,Series Romance,romance,series_romance,series_romance,110: Books / New General Trade,130: Books / Used & Collectible
+"Science Fiction, Fantasy & Horror",Horror,Horror,science_fiction_fantasy__horror,horror,horror,110: Books / New General Trade,130: Books / Used & Collectible
+"Science Fiction, Fantasy & Horror",Science Fiction & Fantasy,Science Fiction & Fantasy,science_fiction_fantasy__horror,science_fiction__fantasy,science_fiction__fantasy,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Apple & Mac Computing,Mac Architecture & Maintenance,science_technology__computing,apple__mac_computing,mac_architecture__maintenance,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Apple & Mac Computing,Mac Applications,science_technology__computing,apple__mac_computing,mac_applications,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Apple & Mac Computing,Mac Operating Systems,science_technology__computing,apple__mac_computing,mac_operating_systems,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Apple & Mac Computing,Mac Programming,science_technology__computing,apple__mac_computing,mac_programming,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Artificial Intelligence,Artificial Intelligence,science_technology__computing,artificial_intelligence,artificial_intelligence,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Astronomy & Space,Astronomy,science_technology__computing,astronomy__space,astronomy,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Astronomy & Space,Extraterrestrial Life,science_technology__computing,astronomy__space,extraterrestrial_life,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Astronomy & Space,Cosmology & Astrophysics,science_technology__computing,astronomy__space,cosmology__astrophysics,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Computer Fundamentals & Hardware,Intro/Ref,science_technology__computing,computer_fundamentals__hardware,introref,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Computer Fundamentals & Hardware,Buying Guides,science_technology__computing,computer_fundamentals__hardware,buying_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Computer Fundamentals & Hardware,Peripherals,science_technology__computing,computer_fundamentals__hardware,peripherals,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Computer Fundamentals & Hardware,Architecture & Maintenance,science_technology__computing,computer_fundamentals__hardware,architecture__maintenance,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Computer Profiles & Culture,Profiles,science_technology__computing,computer_profiles__culture,profiles,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",Electrical Engineering,science_technology__computing,engineering_building__trades,electrical_engineering,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",Building Trades,science_technology__computing,engineering_building__trades,building_trades,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",Communications Engineering,science_technology__computing,engineering_building__trades,communications_engineering,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",Professional Electrical,science_technology__computing,engineering_building__trades,professional_electrical,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",Engineering,science_technology__computing,engineering_building__trades,engineering,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",Professional Plumbing,science_technology__computing,engineering_building__trades,professional_plumbing,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Engineering, Building & Trades",HVAC,science_technology__computing,engineering_building__trades,hvac,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","General Science, Biology & Evolution",General Science,science_technology__computing,general_science_biology__evolution,general_science,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","General Science, Biology & Evolution",Chemistry & Biology,science_technology__computing,general_science_biology__evolution,chemistry__biology,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","General Science, Biology & Evolution",Evolution,science_technology__computing,general_science_biology__evolution,evolution,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","General Science, Biology & Evolution",Paleontology,science_technology__computing,general_science_biology__evolution,paleontology,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Graphics, Multimedia & Virtual Reality",Multimedia,science_technology__computing,graphics_multimedia__virtual_reality,multimedia,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Graphics, Multimedia & Virtual Reality",Virtual Reality,science_technology__computing,graphics_multimedia__virtual_reality,virtual_reality,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Internet, Web & Cybersecurity",Internet,science_technology__computing,internet_web__cybersecurity,internet,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Internet, Web & Cybersecurity",Digital Life,science_technology__computing,internet_web__cybersecurity,digital_life,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Internet, Web & Cybersecurity",World Wide Web & Mosaic,science_technology__computing,internet_web__cybersecurity,world_wide_web__mosaic,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Internet, Web & Cybersecurity",Internet Security,science_technology__computing,internet_web__cybersecurity,internet_security,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Internet, Web & Cybersecurity",Online Services,science_technology__computing,internet_web__cybersecurity,online_services,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Network Applications,science_technology__computing,networks_telecom__enterprise_systems,network_applications,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Telecommunication,science_technology__computing,networks_telecom__enterprise_systems,telecommunication,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Client-Server Technology,science_technology__computing,networks_telecom__enterprise_systems,clientserver_technology,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Networks, Telecom & Enterprise Systems",Mainframe Computer Systems,science_technology__computing,networks_telecom__enterprise_systems,mainframe_computer_systems,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,Windows 95,science_technology__computing,operating_systems__applications,windows_95,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,DOS Manuals,science_technology__computing,operating_systems__applications,dos_manuals,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,Windows NT,science_technology__computing,operating_systems__applications,windows_nt,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,DOS Appl.,science_technology__computing,operating_systems__applications,dos_appl,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,OS/2,science_technology__computing,operating_systems__applications,os2,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,UNIX,science_technology__computing,operating_systems__applications,unix,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,LINUX,science_technology__computing,operating_systems__applications,linux,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,Xwindows,science_technology__computing,operating_systems__applications,xwindows,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,Windows Manl,science_technology__computing,operating_systems__applications,windows_manl,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Operating Systems & Applications,Windows Applications,science_technology__computing,operating_systems__applications,windows_applications,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Physics,science_technology__computing,physics_mathematics__cognitive_science,physics,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Mathematics,science_technology__computing,physics_mathematics__cognitive_science,mathematics,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Statistics & Probability,science_technology__computing,physics_mathematics__cognitive_science,statistics__probability,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Complexity,science_technology__computing,physics_mathematics__cognitive_science,complexity,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Physics, Mathematics & Cognitive Science",Cognitive Science,science_technology__computing,physics_mathematics__cognitive_science,cognitive_science,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Programming Languages,BASIC & Visual Basic,science_technology__computing,programming_languages,basic__visual_basic,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Programming Languages,"C, C++ & Visual C",science_technology__computing,programming_languages,c_c__visual_c,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Programming Languages,Pascal & Turbo Pascal,science_technology__computing,programming_languages,pascal__turbo_pascal,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Software Development & Databases,Database Programming,science_technology__computing,software_development__databases,database_programming,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Software Development & Databases,Advanced Mainframe Programming,science_technology__computing,software_development__databases,advanced_mainframe_programming,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Software Development & Databases,Graphics Programming,science_technology__computing,software_development__databases,graphics_programming,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing",Software Development & Databases,Software Engineering,science_technology__computing,software_development__databases,software_engineering,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Technology, Electronics & Radio",Consumer Electronics,science_technology__computing,technology_electronics__radio,consumer_electronics,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Technology, Electronics & Radio",Technology,science_technology__computing,technology_electronics__radio,technology,110: Books / New General Trade,130: Books / Used & Collectible
+"Science, Technology & Computing","Technology, Electronics & Radio",Amateur Radio,science_technology__computing,technology_electronics__radio,amateur_radio,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Asian Studies,society__cultural_studies,cultural__identity_studies,asian_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Cultural Studies,society__cultural_studies,cultural__identity_studies,cultural_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,African American Studies,society__cultural_studies,cultural__identity_studies,african_american_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Women’s Studies,society__cultural_studies,cultural__identity_studies,womens_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,LGBTQ+ Studies,society__cultural_studies,cultural__identity_studies,lgbtq_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Hispanic Studies,society__cultural_studies,cultural__identity_studies,hispanic_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Gay Fiction,society__cultural_studies,cultural__identity_studies,gay_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Gay Nonfiction,society__cultural_studies,cultural__identity_studies,gay_nonfiction,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Lesbian Fiction,society__cultural_studies,cultural__identity_studies,lesbian_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Lesbian Nonfiction,society__cultural_studies,cultural__identity_studies,lesbian_nonfiction,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,African Studies,society__cultural_studies,cultural__identity_studies,african_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Cultural & Identity Studies,Native American Studies,society__cultural_studies,cultural__identity_studies,native_american_studies,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Social Sciences,Anthropology,society__cultural_studies,social_sciences,anthropology,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Social Sciences,Archaeology,society__cultural_studies,social_sciences,archaeology,110: Books / New General Trade,130: Books / Used & Collectible
+Society & Cultural Studies,Social Sciences,Sociology,society__cultural_studies,social_sciences,sociology,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Travel Foreign,travel_local__regional,international_travel,travel_foreign,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Mexico,travel_local__regional,international_travel,mexico,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Caribbean,travel_local__regional,international_travel,caribbean,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Canada,travel_local__regional,international_travel,canada,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Eastern Europe & Russia,travel_local__regional,international_travel,eastern_europe__russia,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Western Europe,travel_local__regional,international_travel,western_europe,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Great Britain,travel_local__regional,international_travel,great_britain,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Africa & Middle East,travel_local__regional,international_travel,africa__middle_east,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,India & South Asia,travel_local__regional,international_travel,india__south_asia,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Japan,travel_local__regional,international_travel,japan,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,East Asia,travel_local__regional,international_travel,east_asia,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Central America,travel_local__regional,international_travel,central_america,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Ireland,travel_local__regional,international_travel,ireland,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Israel,travel_local__regional,international_travel,israel,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Germany,travel_local__regional,international_travel,germany,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,France,travel_local__regional,international_travel,france,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Paris,travel_local__regional,international_travel,paris,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Italy,travel_local__regional,international_travel,italy,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Spain/Portugal,travel_local__regional,international_travel,spainportugal,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Greece & Mediterranean,travel_local__regional,international_travel,greece__mediterranean,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Benelux,travel_local__regional,international_travel,benelux,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Scandinavia,travel_local__regional,international_travel,scandinavia,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Switzerland & Austria,travel_local__regional,international_travel,switzerland__austria,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,South America,travel_local__regional,international_travel,south_america,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",International Travel,Oceania,travel_local__regional,international_travel,oceania,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Regional General,travel_local__regional,local__regional_interest,regional_general,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Restaurant Guides,travel_local__regional,local__regional_interest,restaurant_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Pictorials,travel_local__regional,local__regional_interest,pictorials,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Humor,travel_local__regional,local__regional_interest,humor,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Local Travel,travel_local__regional,local__regional_interest,local_travel,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Reference,travel_local__regional,local__regional_interest,reference,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,History & Biography,travel_local__regional,local__regional_interest,history__biography,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Transportation,travel_local__regional,local__regional_interest,transportation,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Nature,travel_local__regional,local__regional_interest,nature,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Sports,travel_local__regional,local__regional_interest,sports,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Literature,travel_local__regional,local__regional_interest,literature,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Cooking,travel_local__regional,local__regional_interest,cooking,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Gardening,travel_local__regional,local__regional_interest,gardening,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Business,travel_local__regional,local__regional_interest,business,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Current Affairs,travel_local__regional,local__regional_interest,current_affairs,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Juvenile,travel_local__regional,local__regional_interest,juvenile,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Art & Architecture,travel_local__regional,local__regional_interest,art__architecture,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Native American,travel_local__regional,local__regional_interest,native_american,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Hiking/Camping,travel_local__regional,local__regional_interest,hikingcamping,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Folklore,travel_local__regional,local__regional_interest,folklore,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Holiday,travel_local__regional,local__regional_interest,holiday,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Cowboys,travel_local__regional,local__regional_interest,cowboys,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,General,travel_local__regional,local__regional_interest,general,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Art/Architecture,travel_local__regional,local__regional_interest,artarchitecture,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Local & Regional Interest,Amish/Mennonite,travel_local__regional,local__regional_interest,amishmennonite,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Transportation,Auto Buying Guides,travel_local__regional,transportation,auto_buying_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Transportation,Cars & Trucks,travel_local__regional,transportation,cars__trucks,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Transportation,Ships,travel_local__regional,transportation,ships,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Transportation,Trains,travel_local__regional,transportation,trains,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Transportation,Planes,travel_local__regional,transportation,planes,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Transportation,Auto Repair,travel_local__regional,transportation,auto_repair,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Travel Writing & General Travel,Travel General,travel_local__regional,travel_writing__general_travel,travel_general,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Travel Writing & General Travel,RV & Campground Guides,travel_local__regional,travel_writing__general_travel,rv__campground_guides,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Travel Writing & General Travel,Travel Writing,travel_local__regional,travel_writing__general_travel,travel_writing,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Travel Writing & General Travel,Recreational Travel,travel_local__regional,travel_writing__general_travel,recreational_travel,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",Travel Writing & General Travel,Pictorial Travel,travel_local__regional,travel_writing__general_travel,pictorial_travel,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,United States Travel,travel_local__regional,united_states_travel,united_states_travel,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Road Atlases,travel_local__regional,united_states_travel,road_atlases,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,California,travel_local__regional,united_states_travel,california,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Washington DC,travel_local__regional,united_states_travel,washington_dc,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Alaska,travel_local__regional,united_states_travel,alaska,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Florida,travel_local__regional,united_states_travel,florida,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Great Lakes & Upper Midwest,travel_local__regional,united_states_travel,great_lakes__upper_midwest,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Hawaii,travel_local__regional,united_states_travel,hawaii,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,NYC,travel_local__regional,united_states_travel,nyc,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Texas & South-Central Plains,travel_local__regional,united_states_travel,texas__southcentral_plains,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,South & Southeast,travel_local__regional,united_states_travel,south__southeast,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Southwest & Rocky Mountains,travel_local__regional,united_states_travel,southwest__rocky_mountains,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Mid-Atlantic,travel_local__regional,united_states_travel,midatlantic,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,New England,travel_local__regional,united_states_travel,new_england,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Pacific NW,travel_local__regional,united_states_travel,pacific_nw,110: Books / New General Trade,130: Books / Used & Collectible
+"Travel, Local & Regional",United States Travel,Walt Disney World,travel_local__regional,united_states_travel,walt_disney_world,110: Books / New General Trade,130: Books / Used & Collectible
+Young Adult,Young Adult Books,Young Adult PB,young_adult,young_adult_books,young_adult_pb,110: Books / New General Trade,130: Books / Used & Collectible
+Young Adult,Young Adult Books,Sweet Valley High,young_adult,young_adult_books,sweet_valley_high,110: Books / New General Trade,130: Books / Used & Collectible
+Young Adult,Young Adult Books,YA Romance,young_adult,young_adult_books,ya_romance,110: Books / New General Trade,130: Books / Used & Collectible
+Young Adult,Young Adult Books,YA Non Fiction,young_adult,young_adult_books,ya_non_fiction,110: Books / New General Trade,130: Books / Used & Collectible
+Young Adult,Young Adult Books,Thrillers,young_adult,young_adult_books,thrillers,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Board Books & Toddlers,Board & Shaped Books,childrens_books,board_books__toddlers,board__shaped_books,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Board Books & Toddlers,Peggable & Novelty Books,childrens_books,board_books__toddlers,peggable__novelty_books,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Activities,childrens_books,childrens_activities_workbooks__novelty,childrens_activities,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Workbooks,childrens_books,childrens_activities_workbooks__novelty,childrens_workbooks,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Activities, Workbooks & Novelty",Teacher Resources,childrens_books,childrens_activities_workbooks__novelty,teacher_resources,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Activities, Workbooks & Novelty",Children’s Novelty Books,childrens_books,childrens_activities_workbooks__novelty,childrens_novelty_books,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Biography, History & Culture",Children’s Biography,childrens_books,childrens_biography_history__culture,childrens_biography,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Biography, History & Culture",Children’s History,childrens_books,childrens_biography_history__culture,childrens_history,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Biography, History & Culture",Native American History & Culture,childrens_books,childrens_biography_history__culture,native_american_history__culture,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Children's Classics,Children’s Classics,childrens_books,childrens_classics,childrens_classics,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Children's General Reference & Languages,General Children’s Nonfiction,childrens_books,childrens_general_reference__languages,general_childrens_nonfiction,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Children's General Reference & Languages,Children’s Dictionaries,childrens_books,childrens_general_reference__languages,childrens_dictionaries,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Children's General Reference & Languages,Children’s Language Learning,childrens_books,childrens_general_reference__languages,childrens_language_learning,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Religion, Growing Up & Special Needs",Children’s Religion,childrens_books,childrens_religion_growing_up__special_needs,childrens_religion,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Religion, Growing Up & Special Needs",Growing Up,childrens_books,childrens_religion_growing_up__special_needs,growing_up,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Religion, Growing Up & Special Needs",Children with Special Needs,childrens_books,childrens_religion_growing_up__special_needs,children_with_special_needs,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Science, Nature & Dinosaurs",Children’s Nature,childrens_books,childrens_science_nature__dinosaurs,childrens_nature,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Science, Nature & Dinosaurs",Children’s Science,childrens_books,childrens_science_nature__dinosaurs,childrens_science,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Science, Nature & Dinosaurs",Eyewitness Series,childrens_books,childrens_science_nature__dinosaurs,eyewitness_series,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Science, Nature & Dinosaurs",Dinosaurs,childrens_books,childrens_science_nature__dinosaurs,dinosaurs,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Children's Spanish-Language Books,Libros para Niños,childrens_books,childrens_spanishlanguage_books,libros_para_nios,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Sports,childrens_books,childrens_sports_humor_arts__cooking,childrens_sports,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Humor,childrens_books,childrens_sports_humor_arts__cooking,childrens_humor,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Music & Art,childrens_books,childrens_sports_humor_arts__cooking,childrens_music__art,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,"Children's Sports, Humor, Arts & Cooking",Children’s Cookbooks,childrens_books,childrens_sports_humor_arts__cooking,childrens_cookbooks,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Early Readers,Early Readers — Hardcover,childrens_books,early_readers,early_readers__hardcover,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Early Readers,Early Readers — Paperback,childrens_books,early_readers,early_readers__paperback,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Holidays & Seasonal,Children’s Holidays,childrens_books,holidays__seasonal,childrens_holidays,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Middle Grade Fiction,Middle Grade Fiction — Paperback,childrens_books,middle_grade_fiction,middle_grade_fiction__paperback,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Middle Grade Fiction,Middle Grade Fiction — Hardcover,childrens_books,middle_grade_fiction,middle_grade_fiction__hardcover,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Middle Grade Fiction,Newbery,childrens_books,middle_grade_fiction,newbery,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books,Picture Books — Hardcover,childrens_books,picture_books,picture_books__hardcover,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books,Picture Books — Paperback,childrens_books,picture_books,picture_books__paperback,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books,Caldecott,childrens_books,picture_books,caldecott,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books,Book & Doll Sets,childrens_books,picture_books,book__doll_sets,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Classics,Dr. Seuss,childrens_books,picture_books__classics,dr_seuss,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,Preschool Collections,childrens_books,picture_books__preschool,preschool_collections,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,Preschool Poetry,childrens_books,picture_books__preschool,preschool_poetry,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,Disney Preschool,childrens_books,picture_books__preschool,disney_preschool,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,General Preschool,childrens_books,picture_books__preschool,general_preschool,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,Electronic Preschool Books,childrens_books,picture_books__preschool,electronic_preschool_books,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,Pop-Ups,childrens_books,picture_books__preschool,popups,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Picture Books & Preschool,Interactive Books,childrens_books,picture_books__preschool,interactive_books,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,Popular Children’s Series,childrens_books,series__characters,popular_childrens_series,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,Adventure Series (legacy gendered label),childrens_books,series__characters,adventure_series_legacy_gendered_label,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,Nancy Drew & Hardy Boys,childrens_books,series__characters,nancy_drew__hardy_boys,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,The Baby-Sitters Club,childrens_books,series__characters,the_babysitters_club,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,Early Chapter Book Series,childrens_books,series__characters,early_chapter_book_series,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,Goosebumps,childrens_books,series__characters,goosebumps,110: Books / New General Trade,130: Books / Used & Collectible
+Children's Books,Series & Characters,American Girl,childrens_books,series__characters,american_girl,110: Books / New General Trade,130: Books / Used & Collectible
+Magazines & Newspapers,Magazines,Magazines,magazines__newspapers,magazines,magazines,210: Newsstand & Periodicals / Magazines & Periodicals,
+Magazines & Newspapers,Newspapers,Newspapers,magazines__newspapers,newspapers,newspapers,220: Newsstand & Periodicals / Newspapers,
+Audio & Video,Audiobooks,Nonfiction Audiobooks,audio__video,audiobooks,nonfiction_audiobooks,310: Media / Physical Audiobooks,
+Audio & Video,Audiobooks,Fiction Audiobooks,audio__video,audiobooks,fiction_audiobooks,310: Media / Physical Audiobooks,
+Audio & Video,Audiobooks,Audio Entertainment,audio__video,audiobooks,audio_entertainment,320: Media / Recorded Music,
+Audio & Video,Children's Audio & Video,Children’s Book-and-Audio Sets,audio__video,childrens_audio__video,childrens_bookandaudio_sets,320: Media / Recorded Music,
+Audio & Video,Children's Audio & Video,Children’s Audiobooks,audio__video,childrens_audio__video,childrens_audiobooks,310: Media / Physical Audiobooks,
+Audio & Video,Children's Audio & Video,Children’s Video,audio__video,childrens_audio__video,childrens_video,330: Media / Video,
+Audio & Video,Movies & Video,Movies & Video,audio__video,movies__video,movies__video,330: Media / Video,
+Cards & Correspondence,Cards & Postcards,Single Greeting Cards,cards__correspondence,cards__postcards,single_greeting_cards,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+Cards & Correspondence,Cards & Postcards,Postcards,cards__correspondence,cards__postcards,postcards,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Blank Books & Journals,journals_notebooks__paper_goods,journals__specialty_books,blank_books__journals,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Specialty Books & Diaries,journals_notebooks__paper_goods,journals__specialty_books,specialty_books__diaries,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Locking Diaries,journals_notebooks__paper_goods,journals__specialty_books,locking_diaries,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Photo Albums,journals_notebooks__paper_goods,journals__specialty_books,photo_albums,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Address Books,journals_notebooks__paper_goods,journals__specialty_books,address_books,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods",Journals & Specialty Books,Decorative Endpaper Books,journals_notebooks__paper_goods,journals__specialty_books,decorative_endpaper_books,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods",Postcard Books,Postcard Books,journals_notebooks__paper_goods,postcard_books,postcard_books,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Gift Wrap,journals_notebooks__paper_goods,stationery_wrap__writing_supplies,gift_wrap,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Stationery,journals_notebooks__paper_goods,stationery_wrap__writing_supplies,stationery,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",Writing Supplies,journals_notebooks__paper_goods,stationery_wrap__writing_supplies,writing_supplies,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Journals, Notebooks & Paper Goods","Stationery, Wrap & Writing Supplies",All-Occasion Boxed Cards,journals_notebooks__paper_goods,stationery_wrap__writing_supplies,alloccasion_boxed_cards,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+"Maps, Calendars & Globes",Calendars,Calendars — Returnable,maps_calendars__globes,calendars,calendars__returnable,"430: Gifts, Stationery & Bookish Merchandise / Calendars",
+"Maps, Calendars & Globes",Calendars,Calendars — Nonreturnable,maps_calendars__globes,calendars,calendars__nonreturnable,"430: Gifts, Stationery & Bookish Merchandise / Calendars",
+"Maps, Calendars & Globes",Globes,Globes,maps_calendars__globes,globes,globes,"460: Gifts, Stationery & Bookish Merchandise / Maps & Globes",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Paper Bookmarks,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,paper_bookmarks,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Metal Bookmarks,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,metal_bookmarks,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Other Bookmarks,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,other_bookmarks,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Bookends,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,bookends,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Bookplates,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,bookplates,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Paperweights,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,paperweights,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Boxes/Frames,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,boxesframes,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Other Bookish Gifts,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,other_bookish_gifts,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Premium Bookmarks,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,premium_bookmarks,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Antioch Bookmarks,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,antioch_bookmarks,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,"Bookmarks, Bookends & Desk Gifts",Pomegranate Bookmarks,reading_accessories__bookish_gifts,bookmarks_bookends__desk_gifts,pomegranate_bookmarks,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Reading Aids,Book Holders,reading_accessories__bookish_gifts,reading_aids,book_holders,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Reading Aids,Magnifiers,reading_accessories__bookish_gifts,reading_aids,magnifiers,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Reading Aids,Book Lights,reading_accessories__bookish_gifts,reading_aids,book_lights,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Reading Aids,Book Covers,reading_accessories__bookish_gifts,reading_aids,book_covers,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Reading Aids,Other Reading Aids,reading_accessories__bookish_gifts,reading_aids,other_reading_aids,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Reading Aids,Other Electronic Reading Aids,reading_accessories__bookish_gifts,reading_aids,other_electronic_reading_aids,"450: Gifts, Stationery & Bookish Merchandise / Reading Accessories",
+Reading Accessories & Bookish Gifts,Store-Branded Gifts,Tabletop,reading_accessories__bookish_gifts,storebranded_gifts,tabletop,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Reading Accessories & Bookish Gifts,Store-Branded Gifts,Apparel,reading_accessories__bookish_gifts,storebranded_gifts,apparel,"470: Gifts, Stationery & Bookish Merchandise / Apparel & Bags",
+Reading Accessories & Bookish Gifts,Store-Branded Gifts,Bookbags,reading_accessories__bookish_gifts,storebranded_gifts,bookbags,"470: Gifts, Stationery & Bookish Merchandise / Apparel & Bags",
+Reading Accessories & Bookish Gifts,Store-Branded Gifts,Décor & Other,reading_accessories__bookish_gifts,storebranded_gifts,dcor__other,"470: Gifts, Stationery & Bookish Merchandise / Apparel & Bags",
+Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Boxed Cards,seasonal__holiday_gifts,seasonal_gifts,seasonal_boxed_cards,"410: Gifts, Stationery & Bookish Merchandise / Greeting Cards & Postcards",
+Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Gift Wrap,seasonal__holiday_gifts,seasonal_gifts,seasonal_gift_wrap,"420: Gifts, Stationery & Bookish Merchandise / Stationery, Journals & Paper Goods",
+Seasonal & Holiday Gifts,Seasonal Gifts,Seasonal Ornaments,seasonal__holiday_gifts,seasonal_gifts,seasonal_ornaments,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Seasonal & Holiday Gifts,Seasonal Gifts,Other Seasonal Gifts,seasonal__holiday_gifts,seasonal_gifts,other_seasonal_gifts,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+"Maps, Calendars & Globes",Maps,Maps,maps_calendars__globes,maps,maps,"460: Gifts, Stationery & Bookish Merchandise / Maps & Globes",
+"Maps, Calendars & Globes",Maps,Maps — Nonreturnable,maps_calendars__globes,maps,maps__nonreturnable,"460: Gifts, Stationery & Bookish Merchandise / Maps & Globes",
+"Toys, Games & Activity",Children's Novelty & Non-Book,Children’s Non-Book,toys_games__activity,childrens_novelty__nonbook,childrens_nonbook,"530: Games, Toys & Activity / Toys & Children’s Novelty",
+"Toys, Games & Activity",Tabletop Games,Tabletop Games,toys_games__activity,tabletop_games,tabletop_games,"510: Games, Toys & Activity / Tabletop Games",
+Café & Food Gifts,Coffee & Tea Accessories,Tea Accessories,caf__food_gifts,coffee__tea_accessories,tea_accessories,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Coffee & Tea Accessories,Coffee Accessories,caf__food_gifts,coffee__tea_accessories,coffee_accessories,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Coffee & Tea Accessories,Trivets & Coasters,caf__food_gifts,coffee__tea_accessories,trivets__coasters,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Coffee & Tea Accessories,Electronic & Mechanical Accessories,caf__food_gifts,coffee__tea_accessories,electronic__mechanical_accessories,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Coffee & Tea Accessories,Textiles,caf__food_gifts,coffee__tea_accessories,textiles,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Coffee & Tea Accessories,Other Accessories,caf__food_gifts,coffee__tea_accessories,other_accessories,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Drinkware & Serveware,Coffee Mugs,caf__food_gifts,drinkware__serveware,coffee_mugs,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Drinkware & Serveware,Teacups,caf__food_gifts,drinkware__serveware,teacups,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Drinkware & Serveware,Kettles & Brewing Equipment,caf__food_gifts,drinkware__serveware,kettles__brewing_equipment,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Drinkware & Serveware,Other Serveware,caf__food_gifts,drinkware__serveware,other_serveware,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Packaged Food & Gift Baskets,Gift Baskets,caf__food_gifts,packaged_food__gift_baskets,gift_baskets,"440: Gifts, Stationery & Bookish Merchandise / Gifts, Home & Novelty",
+Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Cookies,caf__food_gifts,packaged_food__gift_baskets,packaged_cookies,680: Café / Café Merchandise,
+Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Beverages,caf__food_gifts,packaged_food__gift_baskets,packaged_beverages,660: Café / Soft Drinks,
+Café & Food Gifts,Packaged Food & Gift Baskets,Packaged Chocolate,caf__food_gifts,packaged_food__gift_baskets,packaged_chocolate,680: Café / Café Merchandise,

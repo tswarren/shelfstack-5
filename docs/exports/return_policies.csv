@@ -1,0 +1,4 @@
+name,code,final_sale,return_window_days
+Standard,standard,FALSE,30
+Clearance,clearance,TRUE,0
+Markdown,markdown,FALSE,7

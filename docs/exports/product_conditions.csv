@@ -1,0 +1,7 @@
+name,code,description,position
+Used - Like New,used_like_new,"Looks unread. Crisp pages, sharp corners, tight binding, no visible flaws.",11
+Used - Very Good,used_very_good,"Minimal wear. Small creases on the spine, light shelf wear on edges, clean pages.",12
+Used - Good,used_good,"Read multiple times. Spine is creased, minor edge tears, slight yellowing, a neat owner's name inside.",13
+Used - Acceptable,used_acceptable,"Well-worn but complete. Clean reading copy, heavy spine creases, scuffed cover, but text is entirely intact.",14
+Used - Ex-Library,used_ex_library,,15
+Used - Book Club Edition,used_book_club,,17

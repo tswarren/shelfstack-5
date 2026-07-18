@@ -1,0 +1,7 @@
+name,code,default_calculation_method,default_rate_bps,default_amount_cents,maximum_rate_bps,requires_approval,resulting_return_policy_id
+Employee,employee,percentage,3000,,3000,TRUE,
+Loyalty,loyalty,percentage,1000,,2500,,
+Educator,educator,educator,2000,,2000,,
+Damaged,damaged,percentage,5000,,9000,TRUE,markdown
+Customer Service,customer_service,,,,10000,TRUE,
+Promo - Free Item,promo_free_item,percentage,10000,,10000,FALSE,
