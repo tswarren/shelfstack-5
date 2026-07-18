@@ -8,7 +8,7 @@ module Administration
 
     def initialize(user:, attributes:, actor:, organization:, store:)
       @user = user
-      @attributes = attributes
+      @attributes = attributes.stringify_keys
       @actor = actor
       @organization = organization
       @store = store
@@ -17,13 +17,16 @@ module Administration
     def call
       ActiveRecord::Base.transaction do
         before = ChangeMetadata.snapshot(@user, TRACKED_ATTRIBUTES)
+        password_changing = password_present?
 
         @user.assign_attributes(@attributes)
+        @user.password_changed_at = Time.current if password_changing
         @user.save!
 
         metadata = {
           "username" => @user.username
         }.merge(ChangeMetadata.diff(before, ChangeMetadata.snapshot(@user, TRACKED_ATTRIBUTES)))
+        metadata["password_changed"] = true if password_changing
 
         RecordAuditEvent.call(
           actor: @actor,
@@ -37,6 +40,13 @@ module Administration
       true
     rescue ActiveRecord::RecordInvalid
       false
+    end
+
+    private
+
+    def password_present?
+      password = @attributes["password"]
+      password.present?
     end
   end
 end

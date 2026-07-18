@@ -14,7 +14,18 @@
   <div><%= form.label :active %> <%= form.check_box :active %></div>
   <div><%= form.label :starts_on %> <%= form.date_field :starts_on %></div>
   <div><%= form.label :ends_on %> <%= form.date_field :ends_on %></div>
-  <div><%= form.label :maximum_discount_rate %> <%= form.number_field :maximum_discount_rate, step: :any %></div>
-  <div><%= form.label :maximum_discount_amount_cents %> <%= form.number_field :maximum_discount_amount_cents %></div>
+
+  <fieldset>
+    <legend>Authority overrides (optional)</legend>
+    <p>Leave blank for unconfigured (deny until set). Rates are decimals from 0 to 1. Money fields are integer cents.</p>
+    <div><%= form.label :maximum_discount_rate %> <%= form.number_field :maximum_discount_rate, step: :any, min: 0, max: 1 %></div>
+    <div><%= form.label :maximum_discount_amount_cents %> <%= form.number_field :maximum_discount_amount_cents, step: 1, min: 0 %></div>
+    <div><%= form.label :maximum_price_override_rate %> <%= form.number_field :maximum_price_override_rate, step: :any, min: 0, max: 1 %></div>
+    <div><%= form.label :maximum_cash_refund_cents %> <%= form.number_field :maximum_cash_refund_cents, step: 1, min: 0 %></div>
+    <div><%= form.label :maximum_no_receipt_return_cents %> <%= form.number_field :maximum_no_receipt_return_cents, step: 1, min: 0 %></div>
+    <div><%= form.label :maximum_paid_out_cents %> <%= form.number_field :maximum_paid_out_cents, step: 1, min: 0 %></div>
+    <div><%= form.label :cash_variance_review_threshold_cents %> <%= form.number_field :cash_variance_review_threshold_cents, step: 1, min: 0 %></div>
+  </fieldset>
+
   <div><%= form.submit %></div>
 <% end %>

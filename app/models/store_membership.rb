@@ -28,7 +28,7 @@ class StoreMembership < ApplicationRecord
 
   def store_local_today
     zone_name = store&.timezone.presence || Time.zone.name
-    Time.find_zone(zone_name)&.today || Date.current
+    Time.find_zone!(zone_name).today
   end
 
   private

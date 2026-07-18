@@ -158,6 +158,12 @@ One ShelfStack installation represents one operating Organization.
 
 The initial architecture does not require general-purpose multi-tenancy within one installation.
 
+Enforcement:
+
+* application validation rejects creating a second Organization;
+* a unique database index on a constant expression allows at most one `organizations` row;
+* `shelfstack:bootstrap` aborts when an Organization already exists under a different code.
+
 ## INV-ORG-002 — Store belongs to one Organization
 
 Every Store belongs to exactly one Organization.

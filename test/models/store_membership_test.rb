@@ -29,22 +29,18 @@ class StoreMembershipTest < ActiveSupport::TestCase
 
 
   test "rejects role from a different organization" do
-    other_org = Organization.create!(
-      code: "other",
-      name: "Other",
-      default_currency_code: "USD",
-      default_timezone: "UTC"
-    )
-    foreign_role = Role.create!(
-      organization: other_org,
+    foreign_role = Role.new(
+      organization_id: organizations(:acme).id + 999_999,
       code: "foreign",
-      name: "Foreign"
+      name: "Foreign",
+      active: true
     )
     membership = store_memberships(:clerk_main_street)
     membership.role = foreign_role
     assert_not membership.valid?
     assert_includes membership.errors[:role], "must belong to the same organization as the store"
   end
+
 
   test "rejects inverted date range and invalid rates" do
     membership = store_memberships(:clerk_main_street)

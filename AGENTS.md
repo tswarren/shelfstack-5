@@ -983,13 +983,19 @@ Seed canonical permission definitions:
 bin/rails db:seed
 ```
 
-Bootstrap an installation organization, store, and administrator (explicit; safe to re-run without reactivating disabled access):
+Bootstrap an installation organization, store, and administrator (explicit; safe to re-run without reactivating disabled access or restoring removed administrator permissions):
 
 ```bash
 bin/rails shelfstack:bootstrap
 ```
 
 Outside development, set `SHELFSTACK_BOOTSTRAP_ORG_CODE`, `SHELFSTACK_BOOTSTRAP_ORG_NAME`, `SHELFSTACK_BOOTSTRAP_STORE_CODE`, `SHELFSTACK_BOOTSTRAP_STORE_NAME`, `SHELFSTACK_BOOTSTRAP_USERNAME`, and `SHELFSTACK_BOOTSTRAP_PASSWORD`. Optional: `SHELFSTACK_BOOTSTRAP_RESET_PASSWORD=1` in development/test to reset the bootstrap user password on re-run.
+
+Bootstrap aborts if an organization already exists under a different code (INV-ORG-001). Administrator catalog permissions are granted only when the administrator role is first created. To re-grant every catalog permission later (audited):
+
+```bash
+bin/rails shelfstack:sync_admin_permissions
+```
 
 `bin/setup` runs `db:seed` and `shelfstack:bootstrap` after preparing the database.
 

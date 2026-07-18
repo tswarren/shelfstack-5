@@ -3,6 +3,7 @@
 # Explicit installation bootstrap. Invoked by `bin/rails shelfstack:bootstrap`.
 # Creates org/store/admin role/user/membership when missing.
 # Never reactivates disabled access or clears lockout counters on existing records.
+# Never re-grants administrator permissions on re-run (use shelfstack:sync_admin_permissions).
 
 load Rails.root.join("db/seeds/phase1_permissions.rb")
 
@@ -34,7 +35,13 @@ bootstrap_password = ENV.fetch("SHELFSTACK_BOOTSTRAP_PASSWORD") do
   "password123"
 end
 
-organization = Organization.find_or_initialize_by(code: org_code)
+existing_organization = Organization.first
+if existing_organization && existing_organization.code != org_code
+  raise "INV-ORG-001: installation already has organization #{existing_organization.code.inspect}; " \
+        "refusing to bootstrap #{org_code.inspect}"
+end
+
+organization = existing_organization || Organization.new(code: org_code)
 if organization.new_record?
   organization.assign_attributes(
     name: org_name,
@@ -59,7 +66,8 @@ if store.new_record?
 end
 
 admin_role = Role.find_or_initialize_by(organization: organization, code: "administrator")
-if admin_role.new_record?
+admin_role_created = admin_role.new_record?
+if admin_role_created
   admin_role.assign_attributes(
     name: "Administrator",
     description: "Bootstrap administrator template",
@@ -67,10 +75,10 @@ if admin_role.new_record?
     active: true
   )
   admin_role.save!
-end
 
-Permission.find_each do |permission|
-  RolePermission.find_or_create_by!(role: admin_role, permission: permission)
+  Permission.find_each do |permission|
+    RolePermission.find_or_create_by!(role: admin_role, permission: permission)
+  end
 end
 
 admin_user = User.find_or_initialize_by(username: bootstrap_username.to_s.strip.downcase)
@@ -82,12 +90,14 @@ if admin_user.new_record?
     last_name: "Admin",
     default_store: store,
     active: true,
-    failed_login_attempts: 0
+    failed_login_attempts: 0,
+    password_changed_at: Time.current
   )
   admin_user.save!
 elsif development_like && ENV["SHELFSTACK_BOOTSTRAP_RESET_PASSWORD"] == "1"
   admin_user.password = bootstrap_password
   admin_user.password_confirmation = bootstrap_password
+  admin_user.password_changed_at = Time.current
   admin_user.save!
 end
 

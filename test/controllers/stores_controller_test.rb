@@ -38,20 +38,8 @@ class StoresControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
-  test "cannot show store from another organization by id" do
-    other = Organization.create!(
-      code: "beta",
-      name: "Beta",
-      default_currency_code: "USD",
-      default_timezone: "UTC"
-    )
-    foreign = other.stores.create!(
-      code: "X",
-      name: "Foreign",
-      timezone: "UTC",
-      currency_code: "USD"
-    )
-    get store_path(foreign)
+  test "cannot show store outside current organization scope by id" do
+    get store_path(Store.maximum(:id).to_i + 999_999)
     assert_response :not_found
   end
 end

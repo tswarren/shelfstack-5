@@ -59,6 +59,37 @@ module Administration
       assert @role.errors[:base].any?
     end
 
+    test "nonnumeric permission ids are rejected and do not clear assignments" do
+      original_ids = @role.permission_ids.sort
+
+      assert_not UpdateRole.call(
+        role: @role,
+        attributes: { name: @role.name },
+        permission_ids: [ "abc" ],
+        actor: @actor,
+        organization: @organization,
+        store: @store
+      )
+
+      assert_equal original_ids, @role.reload.permission_ids.sort
+    end
+
+    test "mixed valid and invalid permission ids reject the whole request" do
+      original_ids = @role.permission_ids.sort
+
+      assert_not UpdateRole.call(
+        role: @role,
+        attributes: { name: @role.name },
+        permission_ids: [ @existing_permission.id, "abc", -1, "" ],
+        actor: @actor,
+        organization: @organization,
+        store: @store
+      )
+
+      assert_equal original_ids, @role.reload.permission_ids.sort
+    end
+
+
     test "audit failure rolls back permission sync" do
       keep = permissions(:store_view)
       add = permissions(:user_view)

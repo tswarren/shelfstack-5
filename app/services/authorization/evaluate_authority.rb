@@ -18,6 +18,7 @@ module Authorization
       return result(:deny, configured_limit: nil, source: :unknown_limit_key, limit_key: normalized_key) unless AuthorityLimits.known?(normalized_key)
 
       @limit_key = normalized_key
+      definition = AuthorityLimits.definition_for(@limit_key)
 
       return result(:deny, configured_limit: nil, source: :inactive_principal) unless @user&.active? && !@user.locked?
       return result(:deny, configured_limit: nil, source: :inactive_principal) unless @store&.active?
@@ -30,13 +31,12 @@ module Authorization
       role = membership.role
       return result(:deny, configured_limit: nil, source: :inactive_role) unless role&.active?
 
-      requested = parse_requested_value
+      requested = parse_requested_value(definition[:type])
       if requested.nil?
         return result(:deny, configured_limit: nil, source: :invalid_requested_value)
       end
 
-      column = AuthorityLimits.definition_for(@limit_key)[:column]
-      configured = membership.public_send(column)
+      configured = membership.public_send(definition[:column])
 
       if configured.nil?
         return result(:deny, configured_limit: nil, source: :unconfigured)
@@ -61,13 +61,22 @@ module Authorization
       nil
     end
 
-    def parse_requested_value
+    def parse_requested_value(type)
       return nil if @requested_value.nil?
       return nil if @requested_value.is_a?(String) && @requested_value.strip.empty?
 
       value = BigDecimal(@requested_value.to_s)
       return nil if value.nan? || value.infinite?
       return nil if value.negative?
+
+      case type
+      when :rate
+        return nil if value > 1
+      when :money
+        return nil unless value.frac.zero?
+      else
+        return nil
+      end
 
       value
     rescue ArgumentError, TypeError

@@ -106,5 +106,28 @@ module Authorization
       assert result.deny?
       assert_equal :invalid_requested_value, result.source
     end
+
+    test "rate above one fails closed" do
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: :maximum_discount_rate,
+        requested_value: 1.5
+      )
+      assert result.deny?
+      assert_equal :invalid_requested_value, result.source
+    end
+
+    test "non-integral money cents fails closed" do
+      store_memberships(:admin_main_street).update!(maximum_cash_refund_cents: 1000)
+      result = EvaluateAuthority.call(
+        user: users(:admin),
+        store: stores(:main_street),
+        limit_key: :maximum_cash_refund_cents,
+        requested_value: 12.5
+      )
+      assert result.deny?
+      assert_equal :invalid_requested_value, result.source
+    end
   end
 end

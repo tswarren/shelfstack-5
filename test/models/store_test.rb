@@ -17,4 +17,11 @@ class StoreTest < ActiveSupport::TestCase
     assert_not duplicate.valid?
     assert_includes duplicate.errors[:code], "has already been taken"
   end
+
+  test "rejects unrecognized timezone" do
+    store = stores(:main_street)
+    store.timezone = "Not/A_Zone"
+    assert_not store.valid?
+    assert_includes store.errors[:timezone], "is not a recognized time zone"
+  end
 end

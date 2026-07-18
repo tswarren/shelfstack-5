@@ -47,9 +47,13 @@ Post-exit review corrections before Phase 2 catalog work:
 - Installation-global user administration under INV-ORG-001.
 - `db:seed` limited to permissions; `bin/rails shelfstack:bootstrap` for install identity (no silent reactivation).
 - Immutable membership `user_id` / `store_id` after create.
-- Fail-closed `EvaluateAuthority` (inactive role, malformed/negative values).
+- Fail-closed `EvaluateAuthority` (inactive role, malformed/negative values; rate/money type checks).
 - Post-login return path preserved across `reset_session` (relative paths only).
 - Membership `effective_on?` defaults to store-local date.
+- INV-ORG-001 enforced (model validation + DB singleton index + bootstrap abort).
+- Bootstrap grants administrator permissions only on role create; `shelfstack:sync_admin_permissions` for explicit audited sync.
+- Strict permission ID parsing; password changes set `password_changed_at` and audit `password_changed`.
+- Organization/store time zones validated; membership form exposes all authority overrides.
 
 ## Out of scope
 

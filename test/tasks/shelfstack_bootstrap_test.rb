@@ -13,15 +13,18 @@ class ShelfstackBootstrapTest < ActiveSupport::TestCase
       SHELFSTACK_BOOTSTRAP_ORG_NAME
       SHELFSTACK_BOOTSTRAP_STORE_CODE
       SHELFSTACK_BOOTSTRAP_STORE_NAME
+      SHELFSTACK_BOOTSTRAP_STORE_NUMBER
       SHELFSTACK_BOOTSTRAP_USERNAME
       SHELFSTACK_BOOTSTRAP_PASSWORD
     ]
     @previous_env = @env_keys.index_with { |key| ENV[key] }
 
-    ENV["SHELFSTACK_BOOTSTRAP_ORG_CODE"] = "bootorg"
-    ENV["SHELFSTACK_BOOTSTRAP_ORG_NAME"] = "Boot Org"
+    # Fixtures already provide organization "acme" (INV-ORG-001 singleton).
+    ENV["SHELFSTACK_BOOTSTRAP_ORG_CODE"] = "acme"
+    ENV["SHELFSTACK_BOOTSTRAP_ORG_NAME"] = "Acme Books"
     ENV["SHELFSTACK_BOOTSTRAP_STORE_CODE"] = "B01"
     ENV["SHELFSTACK_BOOTSTRAP_STORE_NAME"] = "Boot Store"
+    ENV["SHELFSTACK_BOOTSTRAP_STORE_NUMBER"] = "901"
     ENV["SHELFSTACK_BOOTSTRAP_USERNAME"] = "bootadmin"
     ENV["SHELFSTACK_BOOTSTRAP_PASSWORD"] = "password123"
   end
@@ -54,6 +57,31 @@ class ShelfstackBootstrapTest < ActiveSupport::TestCase
     assert_not user.active?
     assert_equal 5, user.failed_login_attempts
     assert_not membership.active?
+  end
+
+  test "bootstrap does not restore removed administrator permissions" do
+    Rake::Task["shelfstack:bootstrap"].invoke
+    Rake::Task["shelfstack:bootstrap"].reenable
+
+    role = roles(:administrator)
+    permission = permissions(:audit_view)
+    RolePermission.find_or_create_by!(role: role, permission: permission)
+    RolePermission.find_by!(role: role, permission: permission).destroy!
+
+    assert_not RolePermission.exists?(role: role, permission: permission)
+
+    Rake::Task["shelfstack:bootstrap"].invoke
+
+    assert_not RolePermission.exists?(role: role, permission: permission)
+  end
+
+  test "bootstrap aborts when a different organization code is supplied" do
+    ENV["SHELFSTACK_BOOTSTRAP_ORG_CODE"] = "otherorg"
+
+    error = assert_raises(RuntimeError) do
+      Rake::Task["shelfstack:bootstrap"].invoke
+    end
+    assert_match(/INV-ORG-001/, error.message)
   end
 
   test "db:seed only upserts permissions and does not create users" do

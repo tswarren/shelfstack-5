@@ -15,7 +15,7 @@ module Administration
 
     def call
       ActiveRecord::Base.transaction do
-        permissions = resolve_permissions!
+        permissions = PermissionIdList.resolve!(@permission_ids, error_target: @role)
         before = ChangeMetadata.snapshot(@role, TRACKED_ATTRIBUTES)
         previous_codes = @role.permissions.pluck(:code).sort
 
@@ -46,17 +46,6 @@ module Administration
     end
 
     private
-
-    def resolve_permissions!
-      selected_ids = Array(@permission_ids).map(&:to_i).uniq.reject(&:zero?)
-      permissions = Permission.where(id: selected_ids).to_a
-      if permissions.size != selected_ids.size
-        @role.errors.add(:base, "One or more permission IDs are invalid")
-        raise ActiveRecord::RecordInvalid, @role
-      end
-
-      permissions
-    end
 
     def sync_permissions!(permissions)
       selected_ids = permissions.map(&:id)
