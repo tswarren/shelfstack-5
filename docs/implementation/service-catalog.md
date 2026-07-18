@@ -23,8 +23,8 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Authorization::EvaluatePermission` | Organization and Authorization | 1 | No | Yes | None | User, store, permission key | allow / deny |
-| `Authorization::EvaluateAuthority` | Organization and Authorization | 1 | No | Yes | None | User, store, limit key, requested value | allow / requires_approval / deny |
+| `Authorization::EvaluatePermission` | Organization and Authorization | 1 | No | Yes | None | User, store, permission key | `:allow` / `:deny` |
+| `Authorization::EvaluateAuthority` | Organization and Authorization | 1 | No | Yes | None | User, store, limit key, requested value | `AuthorityResult` (`:allow` / `:requires_approval` / `:deny`); Phase 1 treats non-allow as do-not-proceed; membership overrides only (OD-013) |
 
 ## Phase 2 — Catalog
 

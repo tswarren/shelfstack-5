@@ -19,6 +19,10 @@ class User < ApplicationRecord
     locked_at.present?
   end
 
+  def can?(permission_key, store:)
+    Authorization::EvaluatePermission.call(user: self, store: store, permission_key: permission_key) == :allow
+  end
+
   private
 
   def normalize_username
