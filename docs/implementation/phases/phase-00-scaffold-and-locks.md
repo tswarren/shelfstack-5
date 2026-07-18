@@ -21,8 +21,26 @@ Make the Rails application a trustworthy empty shell and record delivery locks b
 - [ ] `bin/ci` green on empty schema
 - [ ] Compose/DB naming uses ShelfStack identifiers
 - [ ] Architectural locks documented
-- [ ] Classification-field audit complete or checklist filed with owners
+- [x] Classification-field audit complete or checklist filed with owners
 - [ ] [../current-phase.md](../current-phase.md) points here until Phase 0 exits
+
+## Audit result
+
+**Date:** 2026-07-17  
+**Scope:** `docs/adr/`, `docs/architecture/`, `docs/domains/`, `docs/schema/`, `docs/workflows/`, `docs/implementation/`, `docs/exports/schema/`, `db/schema.rb`, `db/migrate/`  
+**Verdict:** Reconciled proforma is safe as a Phase 1–2 implementation input. No Phase 2-blocking discrepancies remain.
+
+| Check | Outcome |
+| --- | --- |
+| Active `display_categories` / `*_display_category_id` | None in Schema Dictionary or domains. Remaining `display_categor*` hits are prohibition, revision notes, or phase out-of-scope language — allowed. |
+| `special_order_quantity` / `tbo_required` | Absent as active dictionary fields; mentioned only as removed in revision notes / table summary. |
+| Merchandise-class hierarchy | `merchandise_classes.parent_id` + `default_department_id`; products/variants use `merchandise_class_id`. |
+| Store inventory boundary | Architecture docs prohibit area-level ownership; `stock_balances` keyed by `store_id` + `product_variant_id`. |
+| Quantity vocabulary | `stock_balances.reserved` present; inventory commitment does not use `pending`. POS `pending` statuses are line/tender lifecycle only. |
+| Money | Proforma money fields use integer `*_cents`. |
+| Receipt–PO linkage | `receipt_lines.purchase_order_line_id` only; no receipt-header PO FK. |
+| Premature CRM / transfer / RTV / buyback tables | Not present. Deferred-capable enum notes on units/ledger are documentation only. |
+| Planned Phase 1/2 migrations | No migrations exist yet (`db/schema.rb` version `0`); none expect superseded fields. |
 
 ## Out of scope
 
@@ -33,3 +51,4 @@ Make the Rails application a trustworthy empty shell and record delivery locks b
 
 - [../roadmap.md](../roadmap.md)
 - [../../exports/schema/README.md](../../exports/schema/README.md)
+- Issue [#11](https://github.com/tswarren/shelfstack-5/issues/11)
