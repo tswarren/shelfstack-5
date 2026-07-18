@@ -53,6 +53,7 @@ A conflict between implementation and an accepted ADR must be resolved explicitl
 | [ADR-0010](0010-business-days-sessions-and-z-reports.md)         | Distinguish Business Days, Sessions, Devices, Drawers, and Z Reports        | Accepted with open details |
 | [ADR-0011](0011-permissions-authority-and-approvals.md)          | Separate Permissions, Numeric Authority, and Approval Events                | Accepted                   |
 | [ADR-0012](0012-stored-value-ledger.md)                          | Govern Stored Value Through Independent Accounts and an Append-Only Ledger  | Accepted                   |
+| [ADR-0013](0013-govern-quantity-tracked-inventory-cost.md)       | Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance | Accepted with open details |
 
 ---
 
@@ -148,6 +149,9 @@ available = on_hand - reserved - unavailable
 * Inventory records physical ownership.
 * A receipt may contain lines associated with several purchase orders.
 * Only accepted receipt quantity enters inventory.
+* Quantity-tracked inventory uses Store-and-Variant moving weighted-average cost over aggregate inventory value (ADR-0013).
+* Zero or negative On Hand carries no positive inventory asset value; deficit allocation details remain open (OD-014).
+* Missing inventory cost differs from confirmed zero cost; estimated cost retains provenance.
 
 ### Point of sale
 

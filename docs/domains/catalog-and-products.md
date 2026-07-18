@@ -9,6 +9,10 @@
 - [ADR-0002: Use Canonical Identifiers and Separate Restricted-Circulation Namespaces](../adr/0002-canonical-identifiers-and-namespaces.md)
 - [ADR-0003: Use One Merchandise-Class Hierarchy with Department Defaults](../adr/0003-merchandise-classes-and-departments.md)
 
+## Related documentation
+
+- [ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance](../adr/0013-govern-quantity-tracked-inventory-cost.md) — quantity-tracked cost owned by Receiving and Inventory; Catalog supplies tracking mode and regular price
+
 ## Purpose
 
 This domain defines what ShelfStack recognizes as a commercial item and which exact configuration is sold, purchased, received, taxed, or inventoried.
@@ -196,6 +200,8 @@ none
 - `individual`: each exact copy receives an Inventory Unit;
 - `none`: no Reservation or Inventory Movement is created.
 
+Inventory-Tracking Mode determines whether Stock Balances and inventory cost apply (`quantity` and later `individual`). Catalog regular selling price may be used as an input when Inventory posts a Department-based cost estimate. Catalog does not own Stock Balances, ledger posting, or posted inventory valuation. Current Catalog price or classification changes do not rewrite completed cost snapshots.
+
 ## Price resolution
 
 The baseline may keep current regular price on the Variant.
@@ -293,6 +299,7 @@ Audit Product creation, identifier generation and correction, Variant creation, 
 - Individual tracking requires exact Unit identity.
 - Non-inventory Variants create no stock effects.
 - Current Catalog data does not rewrite completed history.
+- Catalog regular price may feed estimated inventory cost; Catalog does not own posted inventory valuation.
 
 ## Open questions
 

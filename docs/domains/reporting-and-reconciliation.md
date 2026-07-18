@@ -12,6 +12,7 @@ The most direct are:
 - [ADR-0008: Keep Completed POS Transactions Immutable and Use Explicit Corrections](../adr/0008-immutable-pos-transactions.md)
 - [ADR-0010: Distinguish Business Days, Sessions, Devices, Drawers, and Z Reports](../adr/0010-business-days-sessions-and-z-reports.md)
 - [ADR-0012: Govern Stored Value Through Independent Accounts and an Append-Only Ledger](../adr/0012-stored-value-ledger.md)
+- [ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance](../adr/0013-govern-quantity-tracked-inventory-cost.md)
 
 ## Purpose
 
@@ -137,6 +138,10 @@ Returns and Post-Voids reverse original cost.
 
 Missing cost remains distinct from confirmed zero cost.
 
+Actual, estimated, mixed, and unknown inventory valuation remain distinguishable. Totals containing estimated value are labeled as containing estimates. Unknown-cost quantity makes valuation incomplete; reports must not present incomplete valuation as complete. Later cost variances (when introduced under OD-014) report in their posting/settlement period. Completed POS cost snapshots are not restated when later supply or corrections arrive.
+
+Accounting journal patterns, clearing accounts, and export batch protocol remain open. See [inventory cost reporting and accounting design note](../implementation/design-notes/inventory-costing/inventory_cost_reporting_accounting_note.md).
+
 ## Inventory and purchasing reporting
 
 Initial reports should include:
@@ -245,6 +250,8 @@ Audit Session and Business-Day close, Reconciliation, reopening where permitted,
 - Received and refunded Tenders remain separately reportable.
 - Corrections report in their completion period.
 - Missing cost differs from zero cost.
+- Inventory valuation provenance (actual / estimated / mixed / unknown) remains reportable.
+- Corrective cost variances report in their own period; historical POS cost is not restated.
 - Reconciliation does not rewrite operations.
 - Session and Business-Day reports remain reproducible.
 

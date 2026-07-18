@@ -7,6 +7,7 @@
 
 - [ADR-0003: Use One Merchandise-Class Hierarchy with Department Defaults](../adr/0003-merchandise-classes-and-departments.md)
 - [ADR-0011: Separate Permissions, Numeric Authority, and Approval Events](../adr/0011-permissions-authority-and-approvals.md)
+- [ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance](../adr/0013-govern-quantity-tracked-inventory-cost.md)
 
 ## Purpose
 
@@ -96,6 +97,7 @@ Suggested attributes:
 - default Tax Category;
 - default Return Policy;
 - maximum merchandise Discount;
+- optional `default_cost_estimation_margin_bps` (Organization-level estimation policy);
 - future accounting mappings;
 - active status;
 - reporting order.
@@ -103,6 +105,47 @@ Suggested attributes:
 Department resolution follows the applicable Catalog precedence. A completed ordinary POS Line Item must resolve one Department.
 
 Department must not determine Inventory-Tracking Mode.
+
+### Cost estimation policy
+
+A Department may define an optional Organization-level default gross-margin assumption for estimating inventory cost when no more authoritative cost is available.
+
+- Express as basis points of gross margin, not markup (`0`–`10_000`).
+- The estimate is Classification policy, not actual acquisition cost.
+- The Department does not own Product-Variant cost.
+- Inventory owns calculation and posting; Classification owns the margin field.
+
+Suggested field (schema when implemented):
+
+```text
+default_cost_estimation_margin_bps   optional integer
+```
+
+Canonical calculation (owned by Receiving and Inventory Domain):
+
+```text
+estimated_unit_cost_cents
+=
+round_half_up(
+  regular_price_cents
+  × (10,000 - margin_bps)
+  / 10,000
+)
+```
+
+Rules enforced at Inventory posting:
+
+- Catalog regular selling price required; temporary discounts/promotions not used;
+- user must explicitly confirm the estimate;
+- price, margin, Department, and result are snapshotted;
+- calculated zero is estimated confirmed-zero, not unknown;
+- missing margin or price means estimate unavailable, not zero;
+- user may leave cost unknown;
+- later Department or Catalog price changes do not recalculate posted estimates.
+
+Store-specific estimation policy may later override the Organization Department default through an effective-dated configuration model. Do not design that table in Phase 3.
+
+Deficit-clearing and cost-variance GL fields remain deferred until Accounting/Reporting design accepts them.
 
 ## Product Types
 
@@ -239,6 +282,7 @@ Audit Merchandise-Class changes, Department changes, default changes, Tax Catego
 - Completed lines snapshot classifications and tax components.
 - Current classification changes do not rewrite history.
 - Tender Type does not define revenue.
+- Department gross-margin defaults are estimation policy only, not actual acquisition cost.
 
 ## Open questions
 

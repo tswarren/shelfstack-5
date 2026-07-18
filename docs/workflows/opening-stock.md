@@ -2,8 +2,8 @@
 
 **Status:** Delivery Phase 3  
 **Type:** Record-level workflow  
-**Governing:** ADR-0004, ADR-0006; [architectural-locks](../implementation/architectural-locks.md); [receiving-and-inventory](../domains/receiving-and-inventory.md)  
-**Open:** [OD-003](../implementation/open-decisions.md) costing formulas for zero/negative on-hand
+**Governing:** ADR-0004, ADR-0006, ADR-0013; [architectural-locks](../implementation/architectural-locks.md); [receiving-and-inventory](../domains/receiving-and-inventory.md)  
+**Open:** [OD-014](../implementation/open-decisions.md) for deficit allocation only (not required for ordinary opening from zero)
 
 ## Purpose
 
@@ -13,8 +13,9 @@ Establish sellable on-hand quantity (and opening valuation) **without** a purcha
 
 - Store and organization active.
 - Product variant exists with `inventory_tracking_mode = quantity`.
-- User has `inventory.adjustment.create` and, for posting, `inventory.adjustment.post`.
-- Cost-correction kind requires elevated permission/authority per policy.
+- User has `inventory.adjustment.create` and, for posting opening/quantity-only, `inventory.adjustment.post`.
+- Cost-correction kind requires `inventory.cost_correction.post`, explicit reason, and full audit.
+- Viewing existing stock valuation requires `inventory.cost.view`; creating an opening draft that captures cost does not.
 
 ## Records read
 
@@ -25,16 +26,16 @@ Establish sellable on-hand quantity (and opening valuation) **without** a purcha
 
 - `inventory_adjustments` / `inventory_adjustment_lines` (draft → posted)
 - `inventory_ledger_entries`
-- `stock_balances.on_hand` (and valuation fields per OD-003)
+- `stock_balances` quantity and valuation fields (`inventory_value_cents`, `moving_average_cost_cents`, `cost_quality`, …)
 - Never edit `on_hand` except through ledger posting services
 
 ## Adjustment kinds
 
 | Kind | Quantity | Cost behavior |
 | --- | --- | --- |
-| Opening inventory | Required | Explicit opening unit cost; initializes/updates value per OD-003 |
-| Quantity-only | Required | Uses **current** moving-average cost; must not arbitrarily rewrite valuation |
-| Cost correction | Usually zero qty | Explicit valuation change; elevated permission + reason |
+| Opening inventory | Required | Actual, estimated (optional Department margin confirm), or unknown; from zero with known cost initializes aggregate value and average |
+| Quantity-only | Required | Uses current moving average when positive and valued; must not arbitrarily rewrite valuation; crossing zero per Inventory Domain Phase 3 rules |
+| Cost correction | Zero qty; requires `on_hand > 0` | Explicit valuation change; `inventory.cost_correction.post` + reason + audit |
 
 ## Transaction boundary
 
@@ -61,8 +62,15 @@ Each posted line produces ledger entry fields at minimum: quantity delta, unit c
 ## Permissions and approvals
 
 - Create draft: `inventory.adjustment.create`
-- Post: `inventory.adjustment.post`
-- Cost correction may require approval when authority insufficient
+- Post opening/quantity-only: `inventory.adjustment.post`
+- Post cost correction: `inventory.cost_correction.post` and `inventory.cost.view`, plus reason and audit
+- No mandatory independent Approval in Phase 3
+
+## Notes
+
+- Unknown opening cost must never be stored or displayed as zero.
+- Department estimate uses Inventory Domain formula; user must confirm; snapshots retained.
+- Positive-balance cost corrections only in Phase 3; deficit-state corrections deferred with OD-014.
 
 ## Failure behavior
 

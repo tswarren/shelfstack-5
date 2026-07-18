@@ -55,9 +55,25 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Inventory::PostAdjustment` | Receiving and Inventory | 3 | Yes | Yes (idempotency key recommended) | `stock_balances` row | Posted adjustment | Ledger entries + balance updates |
+| `Inventory::PostLedgerEntry` | Receiving and Inventory | 3 | Yes | Yes (posting key) | `stock_balances` row | Quantity/value delta, source, cost inputs | Ledger insert + On Hand / valuation-state update |
+| `Inventory::CalculateQuantityCost` | Receiving and Inventory | 3 | No | Yes | None | Balance state, inbound/outbound cost inputs | Allocated value, average, quality, estimate result |
+| `Inventory::PostAdjustment` | Receiving and Inventory | 3 | Yes | Yes (idempotency key recommended) | `stock_balances` row | Posted adjustment | Ledger entries + balance updates via posting service |
 | `Inventory::Reserve` | Receiving and Inventory | 3 | Yes | Yes | Balance and/or reservation rows | Store, variant, qty, source | Active reservation; may warn on negative available |
 | `Inventory::ReleaseReservation` | Receiving and Inventory | 3 | Yes | Yes | Reservation (+ balance) | Reservation | Released reservation; reserved qty restored |
+
+### Phase 3 service notes
+
+- `Inventory::PostLedgerEntry` is the exclusive owner of Stock Balance On Hand and valuation-state changes for quantity-tracked variants. Atomic with ledger insert; idempotent via posting key. Used by adjustment posting and later sale/receipt posting.
+- `Inventory::CalculateQuantityCost` is a pure calculation helper for positive MWA inbound/outbound allocation, first-positive-from-zero initialization, cost-quality aggregation, Department-margin estimate formula, and residual-cent assignment for fully depleted positive balances. Must not persist balances by itself.
+- `Inventory::PostAdjustment` coordinates draft → posted adjustment kinds (`opening_inventory`, `quantity_only`, `cost_correction`) through the posting service with permission checks.
+
+### Phase 3 concurrency test matrix
+
+- concurrent quantity-only posts on same Store × Variant
+- concurrent opening vs quantity-only
+- concurrent cost correction vs quantity-only (positive balance)
+- failed post rolls back ledger and balance together
+- idempotent retry does not duplicate value deltas
 
 ## Later phases (add when implemented)
 

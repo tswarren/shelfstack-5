@@ -27,7 +27,7 @@ superseded
 | --- | --- | --- | --- | --- | --- |
 | OD-001 | Business / reporting-date assignment rule | accepted | Phase 4a | POS | [architectural-locks.md](architectural-locks.md#business--reporting-date-v1-choice) — store `reporting_date` explicitly; v1 rule = date selected at business-day open |
 | OD-002 | Receipt-sequence owner | accepted | Phase 4c | POS | [architectural-locks.md](architectural-locks.md#receipt-sequence-ownership-v1-choice) — next sequence on `stores`, locked at successful completion |
-| OD-003 | Inventory costing (moving average, opening, zero/negative on-hand, cost corrections) | open | Phase 3 | Inventory / Reporting | Needs ADR + Inventory Domain update. Edge cases listed below. Interim adjustment **kinds** locked in [architectural-locks.md](architectural-locks.md#opening-cost-contract) |
+| OD-003 | Inventory costing (positive MWA, zero/negative asset, opening, adjustments, unknown vs zero, immutability) | accepted | Phase 3 | Inventory / Reporting | [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md); Inventory Domain cost sections |
 | OD-004 | Tax residual-cent allocation, compounding, and rounding policy | open | Phase 4b | Classification / POS | Domain updates required; ADR if competing rounding/compounding approaches are selected |
 | OD-005 | Tax calculated per line vs transaction after discount allocation | open | Phase 4b | Classification / POS | Domain specs say tax after discount; finalize aggregation and residual rules |
 | OD-006 | Minimal customer shell shape for Phase 5 | proposed | Phase 5 | Product Requests / future Customer | [architectural-locks.md](architectural-locks.md#customer-identity-before-customer-requests) requires a minimal contact record before `customer_request`; fields and table name TBD. Reconcile with product-requests.md v1 opaque-reference text |
@@ -38,6 +38,7 @@ superseded
 | OD-011 | Identifier generation sequence ownership | accepted | Phase 2 | Catalog | Installation-singleton `identifier_sequences` (namespaces `21`/`27`/`28`/`29`); INV-ORG-001. Issue [#14](https://github.com/tswarren/shelfstack-5/issues/14) |
 | OD-012 | Parent/reporting-only departments (`postable = false`) in first release | accepted | Phase 2 | Classification | Hierarchical departments with `postable`; reporting-only parents in scope |
 | OD-013 | Storage and precedence of role and store authority defaults | deferred | Phase 4b | Organization / Authorization | See [OD-013 notes](#od-013-role-and-store-authority-defaults) |
+| OD-014 | Negative-inventory deficit allocation and settlement representation | open | Phase 4c / Phase 5 | Inventory / Reporting | See [OD-014 notes](#od-014-negative-inventory-deficit-allocation); ADR-0013 accepted with open details |
 
 ## OD-013 role and store authority defaults
 
@@ -56,24 +57,51 @@ The reconciled schema currently has authority columns only on `store_memberships
 
 Do not interpret null as “zero authority.” Do not invent role or store authority columns until this OD is accepted.
 
-## OD-003 costing edge cases (must settle in ADR)
+## OD-003 — closed by ADR-0013
 
-Before Phase 4c, an accepted ADR (or Inventory Domain section with ADR authority) must define deterministic behavior for:
+Accepted behavior:
 
-- on hand zero before receipt or opening stock;
-- on hand negative before receipt;
-- receipt brings negative stock to exactly zero;
-- receipt only partially offsets negative stock;
-- opening adjustment with explicit unit cost;
-- quantity-only adjustment (uses current moving average);
-- cost-only correction;
-- customer return restores original cost snapshot;
-- post-void reverses original cost;
+- positive Store-and-Variant moving weighted average using aggregate inventory value;
+- zero or negative On Hand carries no positive inventory asset value;
+- opening inventory with actual, estimated, or unknown cost;
+- quantity-only adjustments that do not arbitrarily rewrite valuation;
+- explicit positive-balance cost corrections;
 - missing cost versus confirmed zero cost;
-- formula shape for positive on-hand, e.g.  
-  `(existing_inventory_value + incoming_value) / resulting_on_hand`.
+- linked returns restore original cost; post-voids reverse original cost;
+- completed cost snapshots are immutable.
 
-Quantity may sell negative after warning ([architectural-locks](architectural-locks.md#negative-inventory)); costing under that condition remains **open** until OD-003 closes.
+Phase 3 deterministic transition rules live in the Inventory Domain (first positive from zero, cost-quality aggregation, zero-state quality, quantity-only crossing zero).
+
+Quantity may sell negative after warning ([architectural-locks](architectural-locks.md#negative-inventory)). Asset value remains zero when On Hand ≤ 0; deficit allocation and settlement representation remain open under OD-014.
+
+## OD-014 — negative-inventory deficit allocation
+
+**Status:** open  
+**Needed by:** Phase 4c / Phase 5  
+**Governing area:** Inventory / Reporting  
+**Related:** [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md), [inventory cost schema design note](design-notes/inventory-costing/inventory_cost_schema_design_note.md)
+
+ADR-0013 and the closed portion of OD-003 settle positive moving average, zero/negative **asset** treatment, opening inventory, quantity-only and cost-correction kinds, unknown versus zero, and immutable historical costs.
+
+They deliberately leave unresolved how provisional deficit cost is allocated when incoming supply settles negative On Hand. Different algorithms produce different variance timing and Department attribution.
+
+### Must resolve
+
+- aggregate proportional deficit pool versus origin-based settlement;
+- allocation order (if origin-based);
+- partial settlement;
+- exact settlement to zero;
+- incoming stock crossing into positive after deficit settlement;
+- Department attribution for variances;
+- unknown provisional cost and/or unknown settling cost;
+- whether settlement allocations and monetary variances are separate record types;
+- when variance/settlement tables are introduced relative to Phase 4c and Phase 5.
+
+### Non-goals
+
+- Transfer / RTV / count document lifecycles
+- Receipt-correction allocation algorithm (may become a separate OD if substantial)
+- Accounting journal patterns
 
 ## OD-004 / OD-005 tax topics (must settle before Phase 4b)
 

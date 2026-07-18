@@ -11,6 +11,7 @@
 - [ADR-0005: Represent Demand, Supply Allocations, and Inventory Reservations Separately](../adr/0005-demand-allocations-and-reservations.md)
 - [ADR-0006: Use Explicit Inventory Quantities and Reservation Records](../adr/0006-inventory-quantities-and-reservation-records.md)
 - [ADR-0007: Separate Purchasing, Receiving, and Inventory Events](../adr/0007-purchasing-receiving-and-inventory-events.md)
+- [ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance](../adr/0013-govern-quantity-tracked-inventory-cost.md)
 
 ## Purpose
 
@@ -141,6 +142,8 @@ A posted Receipt is not edited to change historical inventory. Corrections use e
 
 One Stock Balance exists per Store and quantity-tracked Product Variant.
 
+It holds current quantity, availability, and current quantity-tracked valuation state.
+
 Suggested attributes:
 
 - Store;
@@ -149,8 +152,45 @@ Suggested attributes:
 - Reserved;
 - Unavailable;
 - optional cached Available;
-- moving weighted-average cost;
+- aggregate inventory value;
+- cached moving weighted-average cost;
+- cost quality;
+- optional last-known unit cost and quality;
+- concurrency / lock version;
 - last received timestamp.
+
+```text
+available = on_hand - reserved - unavailable
+```
+
+Authority:
+
+```text
+Posted Inventory Movements / Inventory Ledger Entries
+→ authoritative history
+
+Stock Balance
+→ authoritative current operational state
+→ reconcilable from history
+```
+
+Aggregate positive inventory value governs current valuation calculations. A cached moving-average unit cost may exist for display and convenience; proportional allocations use aggregate value and positive On Hand.
+
+### State at zero
+
+When On Hand is zero:
+
+```text
+inventory value = 0
+moving-average cost = null
+current cost quality = unknown
+```
+
+Any retained historical rate and quality belong in separate last-known fields, not in current cost quality.
+
+Zero or negative quantity does not create a negative inventory asset. When On Hand is negative, positive inventory asset value remains zero.
+
+When On Hand is positive and cost is unknown, complete valuation is unknown. Later known-cost inventory must not silently assign cost to unresolved unknown-cost quantity. An explicit cost correction may establish complete valuation.
 
 Inventory Ledger Entries and Reservation records explain the balance.
 
@@ -216,38 +256,146 @@ request cancelled or item released → released
 
 ## Inventory Ledger
 
-Only Inventory Movements change On Hand.
+Only posted Inventory Movements change On Hand.
+
+An Inventory Ledger Entry is the persisted record of a posted Inventory Movement. Posted entries form an append-only inventory ledger.
 
 Suggested movement types:
 
 ```text
+opening_inventory
+quantity_adjustment
+cost_correction
 receipt
 sale
 customer_return
-adjustment
+post_void
 transfer_out
 transfer_in
 rtv_shipment
 discard
-post_void
 correction
 ```
 
-Each entry retains Store, Variant, optional Unit, quantity delta, status transition, cost, source, reversal reference, User, time, and reason.
+Listing a type does not establish that workflow’s lifecycle.
+
+Each cost-bearing entry retains enough information to reproduce quantity change, inventory-value change, cost calculation approach, cost quality, source, reversal relationship, resulting balance state, User, time, and reason.
+
+Movement extended cost may differ from the signed change to positive inventory asset value. Example: a sale into negative inventory may carry provisional COGS without creating a negative inventory asset.
+
+When positive inventory valuation is unknown, the inventory-value delta is null (unknown), not zero. Reconciliation must replay ordered value-state transitions using resulting snapshots; it cannot always be implemented as a simple sum of value deltas.
+
+Posting a movement and updating its Stock Balance occur atomically and must be idempotent. Inventory posting services exclusively own value-state changes; controllers and jobs must not edit Stock Balance valuation fields directly.
 
 ## Cost
 
-### Quantity-tracked cost
+Governed by [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md). Phase 3 field notes: [phase-03-inventory-cost-schema.md](../implementation/phase-03-inventory-cost-schema.md). Deficit allocation: [OD-014](../implementation/open-decisions.md#od-014-negative-inventory-deficit-allocation).
 
-Use Store-and-Variant moving weighted-average cost. The exact algorithm under negative inventory remains Open.
+### Costing scope
 
-### Individually tracked cost
+| Tracking mode | Cost model |
+| --- | --- |
+| `quantity` | Store-and-Variant moving weighted average |
+| `individual` | Exact Inventory-Unit acquisition cost |
+| `none` | No stock effects |
 
-Each Inventory Unit retains its own acquisition cost.
+Catalog owns tracking mode and regular price. Inventory owns posted cost and balances.
 
-### Missing cost
+### Provenance
+
+Distinguish calculation approach from evidentiary quality (`actual`, `estimated`, `mixed`, `unknown`). Confirmed zero cost is not missing cost. Unknown must never be treated as zero.
 
 Missing cost normally produces a warning rather than blocking sale. Completed lines distinguish missing cost from confirmed zero cost.
+
+### Cost-quality aggregation
+
+When combining valued positive inventory:
+
+| Existing | Incoming | Result |
+| --- | --- | --- |
+| actual | actual | actual |
+| estimated | estimated | estimated |
+| actual | estimated | mixed |
+| estimated | actual | mixed |
+| mixed | actual or estimated | mixed |
+| any known quality | unknown | unknown |
+| unknown | any cost-bearing addition | unknown until explicit complete correction |
+
+Once a positive balance becomes `mixed`, it remains `mixed` until the balance reaches zero or an explicit cost correction establishes another complete basis.
+
+### First positive quantity from zero
+
+When existing On Hand is zero, incoming quantity is positive, and incoming cost is known:
+
+```text
+resulting inventory value = incoming quantity × incoming unit cost
+resulting moving average = incoming unit cost
+```
+
+Resulting cost quality follows the incoming quality. When incoming cost is unknown, resulting positive inventory remains unknown-valued.
+
+### Positive inbound / outbound
+
+When On Hand is positive and valued:
+
+```text
+resulting quantity = existing quantity + incoming quantity
+resulting inventory value = existing inventory value + incoming value
+resulting moving average = resulting inventory value / resulting quantity
+```
+
+Outbound quantity that does not exceed positive On Hand receives a proportional share of aggregate inventory value (deterministic round-half-up). A movement that consumes the final positive quantity consumes any remaining valuation residual and leaves the zero-state defined under Stock Balance.
+
+### High-level deficit behavior
+
+When an outbound movement crosses below zero:
+
+1. the positive portion consumes remaining positive inventory value;
+2. the excess creates or increases a deficit;
+3. the deficit may carry provisional cost when a defensible retained rate exists, else unknown;
+4. positive inventory asset value becomes zero.
+
+Incoming quantity settles deficit before creating positive inventory. Differences between provisional and settling cost become explicit variance facts that do not change On Hand, do not create inventory asset value, do not rewrite earlier completed activity, and report in the settlement period.
+
+Deficit-allocation algorithm remains open under OD-014. Full provisional-deficit reconciliation is not required for Phase 3.
+
+### Department estimate
+
+When no more authoritative cost is available, Inventory may offer an optional Department gross-margin estimate. Classification owns the margin field; Inventory owns calculation and posting.
+
+```text
+estimated_unit_cost_cents
+=
+round_half_up(
+  regular_price_cents
+  × (10,000 - margin_bps)
+  / 10,000
+)
+```
+
+Rules:
+
+* `margin_bps` must be between `0` and `10_000`;
+* Catalog regular selling price must be available;
+* temporary discounts and promotions are not used;
+* the user must explicitly select or confirm the estimate;
+* price, margin, Department, and result are snapshotted;
+* a calculated result of zero is estimated confirmed-zero cost, not unknown;
+* missing margin or missing applicable regular price means the estimate is unavailable, not zero;
+* the user may leave cost unknown;
+* later Department or price changes do not recalculate posted estimates.
+
+### Returns and post-voids
+
+Linked returns restore original completed-line cost. Post-voids reverse original completed cost. Restored positive quantity participates in the current moving average. Unlinked returns without historical cost use explicit actual, confirmed estimate, or unknown.
+
+### Variance facts
+
+Cost differences that do not change physical quantity are distinct non-quantity facts (not overloaded quantity movements). Exact table shape is deferred under OD-014 until an operational producer exists.
+
+### Rounding
+
+Integer cents. Deterministic round-half-up for proportional allocation and rate-based estimates unless a later ADR specifies otherwise. Fully depleted positive balances and fully settled provisional deficits leave no unexplained residual.
 
 ## Inventory Adjustments
 
@@ -255,10 +403,40 @@ A posted Inventory Adjustment creates Ledger Entries.
 
 Suggested structure:
 
-- adjustment header with Store, status, reason, creator, poster, and timestamps;
+- adjustment header with Store, adjustment kind, status, reason, creator, poster, and timestamps;
 - lines with Variant, optional Unit, quantity or status change, cost, and reason.
 
-Direct unexplained edits to On Hand are prohibited.
+Initial quantity-tracked adjustment kinds:
+
+```text
+opening_inventory
+quantity_only
+cost_correction
+```
+
+`opening_inventory` may establish quantity with actual, estimated, or unknown cost without creating a Receipt. From zero with known cost, use the first-positive-from-zero rule.
+
+### Quantity-only adjustments (Phase 3)
+
+`quantity_only` must not impose an arbitrary replacement rate.
+
+* From a positive valued balance: added quantity uses current moving-average rate; removed quantity receives an allocated share of aggregate value.
+* When an adjustment crosses from positive into deficit: the positive portion consumes remaining aggregate value; excess creates a deficit with no positive asset value; full provisional deficit-cost reconciliation is deferred (OD-014).
+* Quantity added from negative toward zero does not create inventory asset value and is not an acquisition-cost variance.
+* If quantity crosses from negative/zero into positive surplus: Phase 3 treats the positive surplus as unknown-cost inventory unless an implemented retained-cost policy supplies a rate. Do not invent a Department estimate automatically.
+
+### Cost corrections (Phase 3)
+
+```text
+cost corrections require on_hand > 0
+quantity_delta = 0
+```
+
+A positive-balance cost correction may establish previously unknown complete valuation, replace estimated with actual, or correct erroneous aggregate value. Corrections require `inventory.cost_correction.post`, an audit reason, and full audit. They do not rewrite earlier movements or completed POS lines.
+
+Corrections to provisional deficit state remain deferred with OD-014.
+
+Direct unexplained edits to On Hand or valuation are prohibited.
 
 ## Return dispositions
 
@@ -279,24 +457,23 @@ RTV status does not complete the Vendor-return workflow.
 
 ## Permissions
 
+Canonical keys live in [authorization-permissions.md](authorization-permissions.md). Phase 3 inventory keys include:
+
 ```text
-inventory.view_store_stock
-inventory.view_cost
-inventory.receive
-inventory.post_receipt
-inventory.correct_receipt
-inventory.adjust_stock
-inventory.review_reservations
-inventory.release_reservation
-inventory.resolve_inspection
-inventory.resolve_damaged_stock
-inventory.transfer_between_stores
-inventory.discard
+inventory.stock.view
+inventory.cost.view
+inventory.adjustment.create
+inventory.adjustment.post
+inventory.cost_correction.post
+inventory.reservation.view
+inventory.reservation.release
 ```
+
+Later phases add receipt, unit, transfer, RTV, and count permissions when designed.
 
 ## Audit requirements
 
-Audit Receipt posting and corrections, accepted and rejected quantities, cost, Inventory Movements, Reservation lifecycle, Unit creation and status changes, manual Adjustments, inspection and damage resolution, transfer, RTV, discard, and retained negative-inventory warnings.
+Audit Receipt posting and corrections, accepted and rejected quantities, cost approach and quality, estimate inputs, missing versus confirmed-zero cost, aggregate inventory-value changes, Inventory Movements, Reservation lifecycle, Unit creation and status changes, manual Adjustments, cost corrections, provisional deficit creation/settlement and variances when implemented, inspection and damage resolution, transfer, RTV, discard, and retained negative-inventory warnings.
 
 ## Invariants
 
@@ -311,6 +488,23 @@ Audit Receipt posting and corrections, accepted and rejected quantities, cost, I
 - One Unit has at most one active Reservation.
 - Only accepted Receipt quantity enters inventory.
 - Rejected quantity does not enter inventory.
+- Quantity-tracked inventory uses Store-and-Variant moving weighted-average cost.
+- Individually tracked Units retain exact Unit acquisition cost.
+- Aggregate value governs positive quantity-tracked valuation calculations.
+- Ledger history is authoritative; Stock Balance is reconcilable current state.
+- At zero On Hand, current cost quality is unknown; asset value is zero.
+- Zero or negative On Hand does not carry positive inventory asset value.
+- Incoming quantity settles a deficit before creating positive inventory.
+- Missing cost is distinct from confirmed zero cost.
+- Mixed quality persists until zero balance or explicit complete correction.
+- Department-based cost is an estimate, not actual acquisition cost.
+- Quantity-only adjustments do not arbitrarily rewrite valuation.
+- Phase 3 cost corrections require positive On Hand.
+- Cost corrections are explicit, permissioned, and audited.
+- Linked returns and post-voids use original completed cost.
+- Posted cost history is not dynamically recalculated.
+- Unknown cost is never treated as zero.
+- Inventory posting services exclusively own value-state changes.
 - Completed cost snapshots do not change later.
 
 ## Open questions
@@ -320,7 +514,7 @@ Audit Receipt posting and corrections, accepted and rejected quantities, cost, I
 - What is the posted Receipt correction workflow?
 - Is Available stored or calculated?
 - Are unavailable quantities cached by status?
-- How does moving average behave with negative On Hand?
+- Negative-inventory deficit allocation and settlement representation — [OD-014](../implementation/open-decisions.md#od-014-negative-inventory-deficit-allocation).
 - What is the Inventory Count model?
 - What Adjustment thresholds require Approval?
 - What is the inter-Store transfer lifecycle?

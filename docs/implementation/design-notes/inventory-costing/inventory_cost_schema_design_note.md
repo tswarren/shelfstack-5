@@ -1,9 +1,9 @@
 # Design note — inventory cost schema (proposed, not settled)
 
 **Status:** Proposed design exploration  
-**Authority:** Does **not** promote automatically with ADR-0013. Schema documentation owns final columns after acceptance of ADR + domain rules.
+**Authority:** Non-authoritative. The **Phase 3 subset** is authoritative in [phase-03-inventory-cost-schema.md](../../phase-03-inventory-cost-schema.md). Future deficit/variance structures remain exploratory under OD-014.
 
-Related: [ADR-0013 draft](0013-govern-quantity-tracked-inventory-cost.md), [Inventory domain update](receiving_inventory_domain_update.md), [Phase 3 scope](phase_03_costing_scope_note.md).
+Related: [ADR-0013](../../../adr/0013-govern-quantity-tracked-inventory-cost.md), [receiving-and-inventory](../../../domains/receiving-and-inventory.md), [Phase 3 plan](../../phases/phase-03-quantity-inventory-bootstrap.md).
 
 ## Phase 3 candidate fields on `stock_balances`
 
@@ -25,7 +25,11 @@ on_hand <= 0 → inventory_value_cents = 0; moving_average_cost_cents null
 on_hand > 0 and cost_quality = unknown → inventory_value_cents null
 on_hand > 0 and cost_quality != unknown → inventory_value_cents not null
 explicit zero cost: inventory_value_cents = 0 and cost_quality != unknown
+on_hand = 0 → cost_quality = unknown (current); last-known fields may retain history
+unknown valued positive balance → inventory_value_delta_cents null on movements, not 0
 ```
+
+Also add `cost_quality` / method enums and check constraints for the Phase 3 subset to schema docs on promotion. Define an allowed-combination matrix before locking enums.
 
 ## Deferred until a producer exists (not Phase 3 required)
 

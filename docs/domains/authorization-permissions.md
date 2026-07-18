@@ -113,12 +113,27 @@ Legacy names in [organization-and-authorization.md](organization-and-authorizati
 | `inventory.stock.view` | View store stock balances | store | 3 | — | no | no |
 | `inventory.cost.view` | View inventory cost | store | 3 | — | no | no |
 | `inventory.adjustment.create` | Create draft adjustments | store | 3 | — | no | yes |
-| `inventory.adjustment.post` | Post adjustments (opening/quantity/cost) | store | 3 | cost correction may require elevated authority | yes when policy requires | yes |
+| `inventory.adjustment.post` | Post opening and quantity-only adjustments | store | 3 | — | no | yes |
+| `inventory.cost_correction.post` | Post inventory cost corrections | store | 3 | — | no (Phase 3); may require Approval later | yes |
 | `inventory.reservation.view` | Review reservations | store | 3 | — | no | no |
 | `inventory.reservation.release` | Release active reservations | store | 3 | — | no | yes |
 | `inventory.receipt.create` | Create receiving drafts | store | 5 | — | no | yes |
 | `inventory.receipt.post` | Post receipts | store | 5 | — | yes when policy requires | yes |
 | `inventory.unit.manage` | Create/manage inventory units | store | 4d | — | no | yes |
+
+Do not use `inventory.adjustment.post` alone to post cost corrections.
+
+Do **not** add `inventory.cost_correction.approve` or require Approval records in Phase 3. When common Approval infrastructure lands, revisit mandatory Approval for selected correction cases under ADR-0011.
+
+### Phase 3 evaluation
+
+- Create opening/quantity-only draft: `inventory.adjustment.create` (cost entry allowed without `inventory.cost.view`).
+- View existing stock valuation: `inventory.cost.view`.
+- Post opening/quantity-only: `inventory.adjustment.post`.
+- Post cost correction: `inventory.cost_correction.post` **and** `inventory.cost.view` (correction reviews current value), plus explicit reason and full audit.
+- Numeric self-authority limits deferred until OD-009 / OD-013.
+
+After seeding new permissions, existing installs need `bin/rails shelfstack:sync_admin_permissions` (see [bootstrap-and-seed.md](../implementation/bootstrap-and-seed.md)).
 
 Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document permissions, count permissions.
 

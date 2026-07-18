@@ -1,6 +1,6 @@
 # ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance
 
-**Status:** Proposed  
+**Status:** Accepted with open details  
 **Date:** 2026-07-18
 
 ## Context
@@ -17,7 +17,7 @@ A durable model must:
 * allow estimated cost without misrepresenting it as actual acquisition cost;
 * keep completed POS history immutable when later supply or corrections arrive.
 
-Catalog owns Product Variant identity, Inventory-Tracking Mode, and regular selling price. Receiving and Inventory owns Stock Balances, Inventory Movements, and posted cost. Classification may supply optional Department estimation defaults.
+Catalog owns Product Variant identity, Inventory-Tracking Mode, and regular selling price. Receiving and Inventory owns Stock Balances, Inventory Movements, and posted cost. Classification may supply optional Department estimation defaults. Vendors and Purchasing supply later actual and expected acquisition costs.
 
 ## Decision
 
@@ -25,7 +25,7 @@ Catalog owns Product Variant identity, Inventory-Tracking Mode, and regular sell
 
 This ADR governs costing for **quantity-tracked Product Variants at the Store level**.
 
-It does not govern individually tracked Inventory-Unit acquisition cost.
+It does not govern individually tracked Inventory-Unit acquisition cost. A shared schema taxonomy may also represent exact Unit cost, although Unit costing is governed outside this ADR.
 
 It does not establish document lifecycles for Receipts, transfers, RTV, counts, or Receipt corrections. Future workflows must:
 
@@ -33,7 +33,7 @@ It does not establish document lifecycles for Receipts, transfers, RTV, counts, 
 * avoid rewriting completed history;
 * represent discrepancies explicitly.
 
-Their detailed costing and allocation rules remain governed by their domain and workflow designs.
+Their detailed costing and allocation rules remain governed by their domain and workflow designs. Negative-inventory deficit allocation remains [OD-014](../implementation/open-decisions.md#od-014-negative-inventory-deficit-allocation).
 
 ### Positive inventory valuation
 
@@ -60,13 +60,13 @@ An outbound movement that creates or increases a deficit may carry provisional c
 
 Incoming quantity settles an existing deficit before creating positive inventory value. Differences between provisional deficit cost and later settling cost are represented as explicit variance facts that do not change On Hand and do not rewrite completed outbound snapshots.
 
-Exact deficit-allocation algorithms and variance/settlement table shapes are Inventory Domain and schema decisions.
+Exact deficit-allocation algorithms and variance/settlement table shapes are deferred to OD-014.
 
 ### Cost provenance
 
 Posted and snapshotted cost must distinguish at least:
 
-* calculation approach (for example moving average, exact Unit, original snapshot, explicit entry, configured estimate, unknown);
+* calculation approach (for example moving average, original snapshot, explicit entry, configured estimate, retained rate, unknown);
 * evidentiary quality: `actual`, `estimated`, `mixed`, or `unknown`.
 
 Confirmed zero cost is not missing cost. Unknown cost must never be treated as zero.
@@ -83,6 +83,8 @@ Estimated cost may be used when actual acquisition cost is unavailable. A Depart
 * must be snapshotted when posted;
 * must not be recalculated historically when Department, price, or policy changes.
 
+Calculation and validation rules belong in the Receiving and Inventory Domain Specification.
+
 Users may leave cost unknown rather than accept an unsupported estimate.
 
 More authoritative actual or specific estimated cost takes precedence over a Department fallback. Store-specific estimation overrides, if introduced later, remain a Classification configuration concern.
@@ -97,9 +99,9 @@ Retain distinct adjustment kinds:
 
 Opening inventory may establish quantity with actual, estimated, or unknown cost.
 
-Quantity-only adjustments use the applicable current or retained costing basis and must not arbitrarily rewrite valuation.
+Quantity-only adjustments use the applicable current costing basis for positive balances and must not arbitrarily rewrite valuation. Phase-specific behavior for crossing zero is defined in the Inventory Domain and Phase 3 scope.
 
-Cost corrections change cost or valuation explicitly, require audit reason and appropriate authorization, and must not rewrite earlier Inventory Movements or completed POS cost snapshots.
+Cost corrections change cost or valuation explicitly, require elevated permission, audit reason, and must not rewrite earlier Inventory Movements or completed POS cost snapshots. Independent Approval infrastructure may be required later; it is not mandated by this ADR for every correction.
 
 ### Returns and post-voids
 
@@ -129,7 +131,7 @@ Detailed formulas belong in the Receiving and Inventory Domain Specification.
 ### Costs
 
 * Stock Balance and ledger require cost metadata beyond a single average field.
-* Negative inventory requires provisional-cost and later variance handling.
+* Negative inventory requires provisional-cost and later variance handling (OD-014).
 * Some valuation may remain unknown.
 * Reports must distinguish provenance and later variances.
 * Centralized costing services and concurrency tests are required.
@@ -163,7 +165,7 @@ Rejected because completed POS snapshots are immutable.
 ## Governing rules
 
 * Quantity-tracked inventory uses Store-and-Variant moving weighted-average cost.
-* Individually tracked Units retain exact Unit acquisition cost.
+* Individually tracked Units retain exact Unit acquisition cost (outside this ADR’s moving-average rules).
 * Aggregate positive inventory value governs current valuation calculations.
 * Posted Inventory Movements remain authoritative history; Stock Balance is reconcilable current state.
 * Zero or negative On Hand carries no positive inventory asset value.
@@ -175,16 +177,15 @@ Rejected because completed POS snapshots are immutable.
 * Estimate inputs are snapshotted when posted.
 * Opening, quantity-only, and cost-correction adjustments remain distinct.
 * Quantity-only adjustments do not arbitrarily rewrite valuation.
-* Cost corrections are explicit and audited.
+* Cost corrections are explicit, permissioned, and audited.
 * Linked returns and post-voids use original completed cost.
 * Posting is atomic, idempotent, and deterministically rounded.
 
 ## Open details
 
-* Deficit settlement algorithm (for example aggregate proportional pool versus origin-FIFO settlement records).
-* Exact variance and settlement table shapes.
-* Exact persisted field and enum names and allowed combinations.
-* Cost-correction permission and authority model beyond the requirement for explicit, audited correction.
+* Deficit settlement algorithm and settlement/variance record shapes — [OD-014](../implementation/open-decisions.md#od-014-negative-inventory-deficit-allocation).
+* Exact persisted field and enum names and allowed combinations (Phase 3 subset in [phase-03-inventory-cost-schema.md](../implementation/phase-03-inventory-cost-schema.md)).
+* Full cost-correction numeric authority and Approval policy beyond elevated permission + audit reason.
 * Accounting-export journal patterns and GL-account placement.
 * UI presentation details.
 * Store-level estimation override configuration model.
@@ -196,6 +197,7 @@ A posted Receipt correction, when designed, must divide its effect between curre
 
 * Catalog and Products
 * Classification and Configuration
+* Vendors and Purchasing
 * Receiving and Inventory
 * Point of Sale
 * Reporting and Reconciliation
@@ -203,11 +205,11 @@ A posted Receipt correction, when designed, must divide its effect between curre
 
 ## Related ADRs
 
-* [ADR-0001: Separate Product, Product Variant, and Inventory Unit](../adr/0001-product-variant-inventory-unit.md)
-* [ADR-0003: Use One Merchandise-Class Hierarchy with Department Defaults](../adr/0003-merchandise-classes-and-departments.md)
-* [ADR-0004: Treat the Store as the Authoritative Inventory Boundary](../adr/0004-store-level-inventory-boundary.md)
-* [ADR-0006: Use Explicit Inventory Quantities and Reservation Records](../adr/0006-inventory-quantities-and-reservation-records.md)
-* [ADR-0007: Separate Purchasing, Receiving, and Inventory Events](../adr/0007-purchasing-receiving-and-inventory-events.md)
-* [ADR-0008: Keep Completed POS Transactions Immutable and Use Explicit Corrections](../adr/0008-immutable-pos-transactions.md)
-* [ADR-0009: Complete POS Transactions Atomically and Idempotently](../adr/0009-atomic-idempotent-pos-completion.md)
-* [ADR-0011: Separate Permissions, Numeric Authority, and Approval Events](../adr/0011-permissions-authority-and-approvals.md)
+* [ADR-0001: Separate Product, Product Variant, and Inventory Unit](0001-product-variant-inventory-unit.md)
+* [ADR-0003: Use One Merchandise-Class Hierarchy with Department Defaults](0003-merchandise-classes-and-departments.md)
+* [ADR-0004: Treat the Store as the Authoritative Inventory Boundary](0004-store-level-inventory-boundary.md)
+* [ADR-0006: Use Explicit Inventory Quantities and Reservation Records](0006-inventory-quantities-and-reservation-records.md)
+* [ADR-0007: Separate Purchasing, Receiving, and Inventory Events](0007-purchasing-receiving-and-inventory-events.md)
+* [ADR-0008: Keep Completed POS Transactions Immutable and Use Explicit Corrections](0008-immutable-pos-transactions.md)
+* [ADR-0009: Complete POS Transactions Atomically and Idempotently](0009-atomic-idempotent-pos-completion.md)
+* [ADR-0011: Separate Permissions, Numeric Authority, and Approval Events](0011-permissions-authority-and-approvals.md)

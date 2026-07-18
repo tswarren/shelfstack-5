@@ -61,7 +61,9 @@ Ledger entries retain at minimum:
 - user;
 - source record.
 
-**Moving average when on-hand is zero or negative:** still open as [OD-003](open-decisions.md); must be settled by ADR / Inventory Domain update before Phase 4c. Adjustment **kinds** above are locked; formulas for edge cases are not.
+**Quantity-tracked costing (ADR-0013):** Positive On Hand uses moving weighted average over aggregate inventory value. Zero or negative On Hand carries no positive inventory asset value. Opening, quantity-only, and cost-correction kinds remain as locked above. Missing cost differs from confirmed zero. Completed cost snapshots are immutable.
+
+**Deficit allocation:** open as [OD-014](open-decisions.md); required before Phase 4c/5 negative-sale settlement and Receipt deficit settlement produce different attributable variances. Phase 3 keeps asset value at zero when On Hand ≤ 0 without implementing full provisional-deficit reconciliation.
 
 ## Tax before Phase 4b
 
