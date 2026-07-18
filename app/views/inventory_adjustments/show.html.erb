@@ -26,14 +26,14 @@
         <td><%= line.product_variant.sku %></td>
         <td><%= line.quantity_delta %></td>
         <td>
-          <% if @can_view_cost || @inventory_adjustment.draft? %>
+          <% if @can_view_cost %>
             <%= line.input_unit_cost_cents.nil? ? "—" : inventory_money(line.input_unit_cost_cents) %>
           <% else %>
             —
           <% end %>
         </td>
         <td>
-          <% if (@can_view_cost || @inventory_adjustment.draft?) && line.corrected_inventory_value_cents %>
+          <% if @can_view_cost && line.corrected_inventory_value_cents %>
             <%= inventory_money(line.corrected_inventory_value_cents) %>
           <% else %>
             —

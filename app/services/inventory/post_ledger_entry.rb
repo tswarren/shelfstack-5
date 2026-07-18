@@ -58,7 +58,7 @@ module Inventory
       return replay_or_conflict!(existing) if existing
 
       ActiveRecord::Base.transaction do
-        balance = find_or_create_and_lock_balance!
+        balance = FindOrCreateStockBalance.call(store: @store, product_variant: @product_variant)
 
         calc = CalculateQuantityCost.call(
           prior_on_hand: balance.on_hand,
@@ -102,6 +102,8 @@ module Inventory
         apply_balance!(balance, calc)
         Result.new(ledger_entry: entry, stock_balance: balance, replayed: false)
       end
+    rescue ArgumentError => e
+      raise Error, e.message
     rescue ActiveRecord::RecordNotUnique
       existing = InventoryLedgerEntry.find_by!(posting_key: @posting_key)
       replay_or_conflict!(existing)
@@ -131,28 +133,6 @@ module Inventory
       end
     end
 
-    def find_or_create_and_lock_balance!
-      balance = StockBalance.find_by(store_id: @store.id, product_variant_id: @product_variant.id)
-      unless balance
-        begin
-          balance = StockBalance.create!(
-            store: @store,
-            product_variant: @product_variant,
-            on_hand: 0,
-            reserved: 0,
-            unavailable: 0,
-            inventory_value_cents: 0,
-            moving_average_cost_cents: nil,
-            cost_quality: "unknown"
-          )
-        rescue ActiveRecord::RecordNotUnique
-          balance = StockBalance.find_by!(store_id: @store.id, product_variant_id: @product_variant.id)
-        end
-      end
-      balance.lock!
-      balance
-    end
-
     def apply_balance!(balance, calc)
       attrs = {
         on_hand: calc.resulting_on_hand,
@@ -161,14 +141,13 @@ module Inventory
         cost_quality: calc.resulting_cost_quality
       }
 
-      if calc.update_last_known && calc.unit_cost_cents
-        attrs[:last_known_unit_cost_cents] = calc.unit_cost_cents
-        attrs[:last_known_cost_quality] = calc.cost_quality
-      elsif calc.resulting_on_hand.zero? && balance.last_known_unit_cost_cents.present?
-        # retain last_known at zero; current quality already unknown via calc
+      if calc.update_last_known &&
+         calc.resulting_moving_average_cost_cents &&
+         CalculateQuantityCost::KNOWN_QUALITIES.include?(calc.resulting_cost_quality)
+        attrs[:last_known_unit_cost_cents] = calc.resulting_moving_average_cost_cents
+        attrs[:last_known_cost_quality] = calc.resulting_cost_quality
       end
 
-      # Never overwrite last_known with unknown
       balance.update!(attrs)
     end
 
@@ -187,7 +166,42 @@ module Inventory
         existing.movement_type == @movement_type &&
         existing.quantity_delta == @quantity_delta &&
         existing.source_type == @source.class.name &&
-        existing.source_id == @source.id
+        existing.source_id == @source.id &&
+        existing.reason_code.to_s == @reason_code.to_s &&
+        existing.reason_note.to_s == @reason_note.to_s &&
+        existing.estimate_department_id == @estimate_department&.id &&
+        existing.estimate_regular_price_cents == @estimate_regular_price_cents &&
+        existing.estimate_margin_bps == @estimate_margin_bps &&
+        existing.estimate_unit_cost_cents == @estimate_unit_cost_cents &&
+        financial_inputs_match?(existing)
+    end
+
+    def financial_inputs_match?(existing)
+      case @movement_kind
+      when :cost_correction
+        existing.resulting_inventory_value_cents == @corrected_inventory_value_cents.to_i &&
+          existing.cost_method == (@incoming_cost_method.presence || "explicit").to_s &&
+          existing.cost_quality == (@incoming_cost_quality.presence || "actual").to_s
+      when :opening_inventory
+        opening_inputs_match?(existing)
+      when :quantity_only
+        true
+      else
+        false
+      end
+    end
+
+    def opening_inputs_match?(existing)
+      if @incoming_unit_cost_cents.nil?
+        return existing.unit_cost_cents.nil?
+      end
+
+      method = (@incoming_cost_method.presence || "explicit").to_s
+      quality = (@incoming_cost_quality.presence || "actual").to_s
+
+      existing.unit_cost_cents == @incoming_unit_cost_cents.to_i &&
+        existing.cost_method == method &&
+        existing.cost_quality == quality
     end
   end
 end

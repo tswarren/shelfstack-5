@@ -16,6 +16,7 @@ class InventoryAdjustment < ApplicationRecord
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :inventory_adjustment_reason, presence: true
   validate :reason_matches_kind_and_organization
+  validate :reason_active_when_draft
   validate :note_required_when_posted_and_reason_requires_note
 
   scope :draft, -> { where(status: "draft") }
@@ -50,6 +51,14 @@ class InventoryAdjustment < ApplicationRecord
     if inventory_adjustment_reason.adjustment_kind != kind
       errors.add(:inventory_adjustment_reason, "must match the adjustment kind")
     end
+  end
+
+  def reason_active_when_draft
+    return unless draft?
+    return if inventory_adjustment_reason.blank?
+    return if inventory_adjustment_reason.active?
+
+    errors.add(:inventory_adjustment_reason, "must be active")
   end
 
   def note_required_when_posted_and_reason_requires_note

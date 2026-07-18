@@ -38,13 +38,23 @@ class InventoryAdjustmentLine < ApplicationRecord
     return if inventory_adjustment.blank?
 
     case inventory_adjustment.kind
-    when "cost_correction"
-      if quantity_delta != 0
-        errors.add(:quantity_delta, "must be zero for cost corrections")
+    when "opening_inventory"
+      errors.add(:quantity_delta, "must be positive for opening inventory") unless quantity_delta.to_i.positive?
+      if corrected_inventory_value_cents.present?
+        errors.add(:corrected_inventory_value_cents, "must be blank for opening inventory")
       end
     when "quantity_only"
+      errors.add(:quantity_delta, "must be non-zero for quantity-only adjustments") if quantity_delta.to_i.zero?
       if corrected_inventory_value_cents.present?
         errors.add(:corrected_inventory_value_cents, "must be blank for quantity-only adjustments")
+      end
+      if input_unit_cost_cents.present? || input_cost_method.present? || input_cost_quality.present?
+        errors.add(:base, "quantity-only lines cannot include cost inputs")
+      end
+    when "cost_correction"
+      errors.add(:quantity_delta, "must be zero for cost corrections") unless quantity_delta.to_i.zero?
+      if input_unit_cost_cents.present?
+        errors.add(:input_unit_cost_cents, "must be blank for cost corrections; use corrected aggregate value")
       end
     end
   end

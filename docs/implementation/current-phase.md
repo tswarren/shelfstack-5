@@ -1,16 +1,17 @@
 # Current Phase
 
-**Active delivery phase:** Phase 4a — POS foundation  
-**Status:** Not started  
-**Plan document:** [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)
+**Active delivery phase:** Phase 3 — Quantity inventory bootstrap (hardening)  
+**Status:** In review  
+**Plan document:** [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md)
 
 ## Immediate next work
 
-1. Begin Phase 4a from the roadmap: business days, POS sessions, devices/drawers operational use, open/suspend transaction shell.
-2. Phase 3 quantity inventory bootstrap is complete (balances, ledger, adjustments, reservations, Department estimate margin, tracking-mode guard). Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
-3. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+1. Finish Phase 3 hardening from the reopened review gate (concurrency coverage remaining: first-balance creation, reserve vs release, reserve vs post).
+2. Do not begin Phase 4a until Phase 3 exit criteria are re-closed.
+3. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
+4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
-Phase 3 exit criteria are complete. See [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md).
+Phase 3 structure is landed; review-gate hardening is in progress. See [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md).
 
 Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md).
 

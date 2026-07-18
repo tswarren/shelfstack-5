@@ -1,4 +1,5 @@
-<%= form_with model: inventory_adjustment do |form| %>
+<%= form_with model: inventory_adjustment,
+      data: { controller: "inventory-adjustment-form" } do |form| %>
   <% if flash[:alert].present? %>
     <p><%= flash[:alert] %></p>
   <% end %>
@@ -12,13 +13,27 @@
 
   <div>
     <%= form.label :kind %>
-    <%= form.select :kind, InventoryAdjustment::KINDS %>
+    <%= form.select :kind, InventoryAdjustment::KINDS,
+          {},
+          data: {
+            inventory_adjustment_form_target: "kind",
+            action: "change->inventory-adjustment-form#refresh"
+          } %>
   </div>
   <div>
     <%= form.label :inventory_adjustment_reason_id, "Reason" %>
-    <%= form.collection_select :inventory_adjustment_reason_id,
-          reasons.select { |r| r.adjustment_kind == inventory_adjustment.kind || inventory_adjustment.kind.blank? },
-          :id, :name %>
+    <select name="inventory_adjustment[inventory_adjustment_reason_id]"
+            id="inventory_adjustment_inventory_adjustment_reason_id"
+            data-inventory-adjustment-form-target="reason">
+      <% reasons.each do |reason| %>
+        <option value="<%= reason.id %>"
+                data-inventory-adjustment-form-target="reasonOption"
+                data-adjustment-kind="<%= reason.adjustment_kind %>"
+                <%= "selected" if reason.id == inventory_adjustment.inventory_adjustment_reason_id %>>
+          <%= reason.name %>
+        </option>
+      <% end %>
+    </select>
   </div>
   <div>
     <%= form.label :note %>
@@ -28,32 +43,49 @@
 
   <h2>Lines</h2>
   <% lines = inventory_adjustment.inventory_adjustment_lines.to_a
-     lines = [ inventory_adjustment.inventory_adjustment_lines.build ] if lines.empty? %>
+     lines = [ inventory_adjustment.inventory_adjustment_lines.build(quantity_delta: 1) ] if lines.empty? %>
   <%= form.fields_for :inventory_adjustment_lines, lines do |line_form| %>
     <fieldset>
       <div>
         <%= line_form.label :product_variant_id, "Variant" %>
         <%= line_form.collection_select :product_variant_id, variants, :id, :sku %>
       </div>
-      <div>
+      <div data-inventory-adjustment-form-target="lineFields"
+           data-for-kinds="opening_inventory,quantity_only">
         <%= line_form.label :quantity_delta %>
         <%= line_form.number_field :quantity_delta %>
       </div>
-      <div>
+      <div data-inventory-adjustment-form-target="lineFields"
+           data-for-kinds="opening_inventory">
         <%= line_form.label :input_unit_cost_cents, "Input unit cost (cents)" %>
         <%= line_form.number_field :input_unit_cost_cents %>
+        <p class="hint">Opening aggregate value is computed at post from quantity × unit cost (or estimate/unknown).</p>
       </div>
-      <div>
+      <div data-inventory-adjustment-form-target="lineFields"
+           data-for-kinds="opening_inventory">
         <%= line_form.label :input_cost_method %>
-        <%= line_form.select :input_cost_method, InventoryAdjustmentLine::COST_METHODS, include_blank: true %>
+        <%= line_form.select :input_cost_method,
+              InventoryAdjustmentLine::COST_METHODS - %w[moving_average],
+              include_blank: true %>
       </div>
-      <div>
+      <div data-inventory-adjustment-form-target="lineFields"
+           data-for-kinds="opening_inventory">
         <%= line_form.label :input_cost_quality %>
-        <%= line_form.select :input_cost_quality, InventoryAdjustmentLine::COST_QUALITIES, include_blank: true %>
+        <%= line_form.select :input_cost_quality,
+              InventoryAdjustmentLine::COST_QUALITIES - %w[mixed],
+              include_blank: true %>
       </div>
-      <div>
+      <div data-inventory-adjustment-form-target="lineFields"
+           data-for-kinds="cost_correction">
         <%= line_form.label :corrected_inventory_value_cents, "Corrected inventory value (cents)" %>
         <%= line_form.number_field :corrected_inventory_value_cents %>
+      </div>
+      <div data-inventory-adjustment-form-target="lineFields"
+           data-for-kinds="cost_correction">
+        <%= line_form.label :input_cost_quality, "Corrected cost quality" %>
+        <%= line_form.select :input_cost_quality,
+              %w[actual estimated],
+              include_blank: true %>
       </div>
       <%= line_form.hidden_field :position, value: line_form.index || 0 %>
     </fieldset>

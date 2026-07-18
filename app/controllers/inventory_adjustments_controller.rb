@@ -10,7 +10,7 @@ class InventoryAdjustmentsController < ApplicationController
   end
 
   def show
-    @can_view_cost = Current.user.can?("inventory.cost.view", store: Current.store)
+    @can_view_cost = can_view_adjustment_cost?
   end
 
   def new
@@ -18,7 +18,7 @@ class InventoryAdjustmentsController < ApplicationController
       kind: params[:kind].presence || "opening_inventory",
       status: "draft"
     )
-    @inventory_adjustment.inventory_adjustment_lines.build(quantity_delta: 0, position: 0)
+    @inventory_adjustment.inventory_adjustment_lines.build(quantity_delta: 1, position: 0)
     load_form_collections
   end
 
@@ -95,6 +95,14 @@ class InventoryAdjustmentsController < ApplicationController
     @inventory_adjustment = Current.store.inventory_adjustments.find(params[:id])
   end
 
+  def can_view_adjustment_cost?
+    return true if Current.user.can?("inventory.cost.view", store: Current.store)
+    return true if Current.user.can?("inventory.adjustment.create", store: Current.store)
+    return true if @inventory_adjustment.draft? && @inventory_adjustment.created_by_user_id == Current.user.id
+
+    false
+  end
+
   def load_form_collections
     @reasons = Current.organization.inventory_adjustment_reasons.active.ordered
     @variants = ProductVariant.joins(:product)
@@ -130,4 +138,3 @@ class InventoryAdjustmentsController < ApplicationController
     attrs
   end
 end
-

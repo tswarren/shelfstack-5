@@ -17,6 +17,10 @@ module Inventory
         return Result.new(adjustment: @adjustment, success?: false, error: "only draft adjustments can be updated")
       end
 
+      unless @adjustment.store_id == @store.id
+        return Result.new(adjustment: @adjustment, success?: false, error: "adjustment store mismatch")
+      end
+
       unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "inventory.adjustment.create") == :allow
         return Result.new(adjustment: @adjustment, success?: false, error: "not permitted")
       end

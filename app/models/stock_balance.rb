@@ -11,7 +11,8 @@ class StockBalance < ApplicationRecord
   validates :unavailable, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :cost_quality, presence: true, inclusion: { in: COST_QUALITIES }
   validates :last_known_cost_quality, inclusion: { in: COST_QUALITIES }, allow_nil: true
-  validates :product_variant_id, uniqueness: { scope: :store_id }
+  # Uniqueness is enforced by the database unique index so create_or_find_by! can
+  # rely on RecordNotUnique + savepoint under concurrent first-create.
   validate :store_and_variant_same_organization
   validate :quantity_tracked_variant
 

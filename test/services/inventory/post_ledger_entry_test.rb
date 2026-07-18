@@ -112,5 +112,99 @@ module Inventory
         )
       end
     end
+
+    test "same key with different unit cost conflicts" do
+      PostLedgerEntry.call(
+        store: @store,
+        product_variant: @variant,
+        movement_type: "opening_inventory",
+        quantity_delta: 2,
+        incoming_unit_cost_cents: 500,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual",
+        source: @line,
+        posting_key: "test-open-cost",
+        posted_by_user: @user
+      )
+
+      assert_raises(PostLedgerEntry::IdempotencyConflictError) do
+        PostLedgerEntry.call(
+          store: @store,
+          product_variant: @variant,
+          movement_type: "opening_inventory",
+          quantity_delta: 2,
+          incoming_unit_cost_cents: 600,
+          incoming_cost_method: "explicit",
+          incoming_cost_quality: "actual",
+          source: @line,
+          posting_key: "test-open-cost",
+          posted_by_user: @user
+        )
+      end
+    end
+
+    test "last_known stores resulting average not inbound unit" do
+      PostLedgerEntry.call(
+        store: @store,
+        product_variant: @variant,
+        movement_type: "opening_inventory",
+        quantity_delta: 2,
+        incoming_unit_cost_cents: 100,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual",
+        source: @line,
+        posting_key: "test-avg-1",
+        posted_by_user: @user
+      )
+
+      adjustment2 = InventoryAdjustment.create!(
+        store: @store,
+        kind: "opening_inventory",
+        status: "draft",
+        inventory_adjustment_reason: @reason,
+        created_by_user: @user
+      )
+      line2 = InventoryAdjustmentLine.create!(
+        inventory_adjustment: adjustment2,
+        product_variant: @variant,
+        position: 0,
+        quantity_delta: 2,
+        input_unit_cost_cents: 300,
+        input_cost_method: "explicit",
+        input_cost_quality: "actual"
+      )
+
+      result = PostLedgerEntry.call(
+        store: @store,
+        product_variant: @variant,
+        movement_type: "opening_inventory",
+        quantity_delta: 2,
+        incoming_unit_cost_cents: 300,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual",
+        source: line2,
+        posting_key: "test-avg-2",
+        posted_by_user: @user
+      )
+
+      assert_equal 200, result.stock_balance.moving_average_cost_cents
+      assert_equal 200, result.stock_balance.last_known_unit_cost_cents
+      assert_equal "actual", result.stock_balance.last_known_cost_quality
+    end
+
+    test "zero quantity movement returns service error not 500" do
+      error = assert_raises(PostLedgerEntry::Error) do
+        PostLedgerEntry.call(
+          store: @store,
+          product_variant: @variant,
+          movement_type: "quantity_adjustment",
+          quantity_delta: 0,
+          source: @line,
+          posting_key: "test-zero",
+          posted_by_user: @user
+        )
+      end
+      assert_match(/non-zero/i, error.message)
+    end
   end
 end

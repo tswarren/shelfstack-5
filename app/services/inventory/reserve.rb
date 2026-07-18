@@ -22,7 +22,8 @@ module Inventory
       warnings = []
 
       ActiveRecord::Base.transaction do
-        balance = find_or_create_and_lock_balance!
+        # Lock order: stock balance → reservation (must match ReleaseReservation).
+        balance = FindOrCreateStockBalance.call(store: @store, product_variant: @product_variant)
         reservation = InventoryReservation.active.lock.find_by(
           store_id: @store.id,
           product_variant_id: @product_variant.id,
@@ -61,29 +62,6 @@ module Inventory
       end
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(reservation: nil, stock_balance: nil, success?: false, error: e.message, warnings: [])
-    end
-
-    private
-
-    def find_or_create_and_lock_balance!
-      balance = StockBalance.find_by(store_id: @store.id, product_variant_id: @product_variant.id)
-      unless balance
-        begin
-          balance = StockBalance.create!(
-            store: @store,
-            product_variant: @product_variant,
-            on_hand: 0,
-            reserved: 0,
-            unavailable: 0,
-            inventory_value_cents: 0,
-            cost_quality: "unknown"
-          )
-        rescue ActiveRecord::RecordNotUnique
-          balance = StockBalance.find_by!(store_id: @store.id, product_variant_id: @product_variant.id)
-        end
-      end
-      balance.lock!
-      balance
     end
   end
 end

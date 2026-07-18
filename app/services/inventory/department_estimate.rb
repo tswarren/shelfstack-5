@@ -42,7 +42,7 @@ module Inventory
 
     def resolve_department
       product = @product_variant.product
-      merchandise_class = @product_variant.merchandise_class
+      merchandise_class = @product_variant.merchandise_class || product.merchandise_class
 
       @product_variant.department ||
         product.default_department ||

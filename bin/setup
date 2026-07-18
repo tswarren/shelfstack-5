@@ -27,8 +27,12 @@ FileUtils.chdir APP_ROOT do
   puts "\n== Seeding permissions, bootstrap, and reference data =="
   system! "bin/rails db:seed"
   system! "bin/rails shelfstack:bootstrap"
-  system! "bin/rails shelfstack:sync_admin_permissions"
   system! "bin/rails shelfstack:seed_reference_data"
+  if ARGV.include?("--reset")
+    puts "\n== Syncing administrator permissions (reset/new install) =="
+    system! "bin/rails shelfstack:sync_admin_permissions"
+  end
+
 
   puts "\n== Removing old logs and tempfiles =="
   system! "bin/rails log:clear tmp:clear"

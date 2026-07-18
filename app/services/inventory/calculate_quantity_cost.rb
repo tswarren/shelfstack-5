@@ -65,11 +65,16 @@ module Inventory
       corrected = @corrected_inventory_value_cents.to_i
       raise ArgumentError, "corrected_inventory_value_cents must be >= 0" if corrected.negative?
 
-      prior_value = valued_prior_inventory_value
-      delta = corrected - prior_value
       quality = (@incoming_cost_quality.presence || "actual").to_s
       method = (@incoming_cost_method.presence || "explicit").to_s
       average = corrected.zero? ? 0 : Rounding.round_half_up(corrected, @prior_on_hand)
+
+      # Prior unknown valuation → delta is unknown (null), not "corrected - 0".
+      delta = if prior_valuation_unknown?
+        nil
+      else
+        corrected - @prior_inventory_value_cents.to_i
+      end
 
       Result.new(
         resulting_on_hand: @prior_on_hand,
@@ -110,20 +115,16 @@ module Inventory
 
       if @prior_on_hand <= 0
         if resulting_on_hand <= 0
-          # Still non-positive after inbound (partial deficit settle without surplus).
           return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
                                                      unit_cost_cents: nil, movement_cost_cents: nil,
                                                      inventory_value_delta_cents: 0)
         end
 
-        # Crossing into positive surplus from negative/zero without retained-rate policy → unknown,
-        # unless opening supplies known cost from a zero prior (first-positive-from-zero).
         if @prior_on_hand.negative?
-          return unknown_positive_result(resulting_on_hand)
+          return unknown_positive_result(resulting_on_hand, incoming_provenance: incoming_provenance_when_known)
         end
 
-        # prior_on_hand == 0
-        return unknown_positive_result(resulting_on_hand) if unknown
+        return unknown_positive_result(resulting_on_hand, incoming_provenance: incoming_provenance_when_known) if unknown
 
         unit = @incoming_unit_cost_cents.to_i
         value = Rounding.multiply_round_half_up(unit, resulting_on_hand)
@@ -142,15 +143,13 @@ module Inventory
           cost_quality: quality,
           update_last_known: KNOWN_QUALITIES.include?(quality)
         )
+      elsif prior_valuation_unknown? || unknown
+        # Balance remains unknown; still record documented incoming cost provenance on the movement.
+        unknown_positive_result(resulting_on_hand, incoming_provenance: incoming_provenance_when_known)
       else
-        # Positive prior + opening inbound: treat like valued inbound using explicit cost or unknown.
-        if unknown || @prior_cost_quality == "unknown"
-          return unknown_positive_result(resulting_on_hand, preserve_unknown_delta: true)
-        end
-
         unit = @incoming_unit_cost_cents.to_i
         incoming_value = Rounding.multiply_round_half_up(unit, @quantity_delta)
-        prior_value = valued_prior_inventory_value
+        prior_value = @prior_inventory_value_cents.to_i
         resulting_value = prior_value + incoming_value
         average = Rounding.round_half_up(resulting_value, resulting_on_hand)
         quality = aggregate_quality(@prior_cost_quality, @incoming_cost_quality.to_s)
@@ -166,7 +165,7 @@ module Inventory
           movement_cost_cents: incoming_value,
           cost_method: method,
           cost_quality: @incoming_cost_quality.to_s,
-          update_last_known: KNOWN_QUALITIES.include?(@incoming_cost_quality.to_s)
+          update_last_known: KNOWN_QUALITIES.include?(quality)
         )
       end
     end
@@ -178,7 +177,6 @@ module Inventory
                                                      unit_cost_cents: nil, movement_cost_cents: nil,
                                                      inventory_value_delta_cents: 0)
         end
-        # Surplus after deficit → unknown in Phase 3
         return unknown_positive_result(resulting_on_hand)
       end
 
@@ -186,16 +184,16 @@ module Inventory
         return unknown_positive_result(resulting_on_hand)
       end
 
-      # Positive prior
-      if @prior_cost_quality == "unknown" || @prior_inventory_value_cents.nil?
-        return unknown_positive_result(resulting_on_hand, preserve_unknown_delta: true)
+      if prior_valuation_unknown?
+        return unknown_positive_result(resulting_on_hand)
       end
 
-      unit = @prior_moving_average_cost_cents
-      unit = Rounding.round_half_up(@prior_inventory_value_cents, @prior_on_hand) if unit.nil?
-      incoming_value = Rounding.multiply_round_half_up(unit, @quantity_delta)
-      resulting_value = @prior_inventory_value_cents + incoming_value
+      prior_value = @prior_inventory_value_cents.to_i
+      # Aggregate-authoritative share of current value for the added quantity.
+      incoming_value = Rounding.round_half_up(prior_value * @quantity_delta, @prior_on_hand)
+      resulting_value = prior_value + incoming_value
       average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+      unit = Rounding.round_half_up(incoming_value, @quantity_delta)
 
       Result.new(
         resulting_on_hand: resulting_on_hand,
@@ -215,13 +213,12 @@ module Inventory
       removed = -@quantity_delta
 
       if @prior_on_hand <= 0
-        # Already in deficit / zero: no positive asset to consume.
         return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
                                                    unit_cost_cents: nil, movement_cost_cents: nil,
                                                    inventory_value_delta_cents: 0)
       end
 
-      if @prior_cost_quality == "unknown" || @prior_inventory_value_cents.nil?
+      if prior_valuation_unknown?
         if resulting_on_hand <= 0
           return zero_asset_result(resulting_on_hand, cost_method: "unknown", cost_quality: "unknown",
                                                      unit_cost_cents: nil, movement_cost_cents: nil,
@@ -264,7 +261,6 @@ module Inventory
           update_last_known: false
         )
       else
-        # Fully deplete positive value (consume residual); excess deficit has no asset value.
         Result.new(
           resulting_on_hand: resulting_on_hand,
           resulting_inventory_value_cents: 0,
@@ -286,10 +282,19 @@ module Inventory
         @incoming_unit_cost_cents.nil?
     end
 
-    def valued_prior_inventory_value
-      return 0 if @prior_inventory_value_cents.nil?
+    def prior_valuation_unknown?
+      @prior_cost_quality == "unknown" || @prior_inventory_value_cents.nil?
+    end
 
-      @prior_inventory_value_cents.to_i
+    def incoming_provenance_when_known
+      return nil if unknown_incoming?
+
+      {
+        unit_cost_cents: @incoming_unit_cost_cents.to_i,
+        movement_cost_cents: Rounding.multiply_round_half_up(@incoming_unit_cost_cents, @quantity_delta),
+        cost_method: (@incoming_cost_method.presence || "explicit").to_s,
+        cost_quality: @incoming_cost_quality.to_s
+      }
     end
 
     def aggregate_quality(existing, incoming)
@@ -300,17 +305,17 @@ module Inventory
       "mixed"
     end
 
-    def unknown_positive_result(resulting_on_hand, preserve_unknown_delta: false)
+    def unknown_positive_result(resulting_on_hand, incoming_provenance: nil)
       Result.new(
         resulting_on_hand: resulting_on_hand,
         resulting_inventory_value_cents: nil,
         resulting_moving_average_cost_cents: nil,
         resulting_cost_quality: "unknown",
-        inventory_value_delta_cents: preserve_unknown_delta ? nil : nil,
-        unit_cost_cents: nil,
-        movement_cost_cents: nil,
-        cost_method: "unknown",
-        cost_quality: "unknown",
+        inventory_value_delta_cents: nil,
+        unit_cost_cents: incoming_provenance&.dig(:unit_cost_cents),
+        movement_cost_cents: incoming_provenance&.dig(:movement_cost_cents),
+        cost_method: incoming_provenance&.dig(:cost_method) || "unknown",
+        cost_quality: incoming_provenance&.dig(:cost_quality) || "unknown",
         update_last_known: false
       )
     end

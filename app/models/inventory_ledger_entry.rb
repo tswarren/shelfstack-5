@@ -12,8 +12,6 @@ class InventoryLedgerEntry < ApplicationRecord
   belongs_to :estimate_department, class_name: "Department", optional: true
   belongs_to :source, polymorphic: true
 
-  attr_readonly :posting_key, :quantity_delta, :inventory_value_delta_cents, :movement_type
-
   validates :movement_type, presence: true, inclusion: { in: MOVEMENT_TYPES }
   validates :quantity_delta, presence: true, numericality: { only_integer: true }
   validates :cost_method, presence: true, inclusion: { in: COST_METHODS }
@@ -23,7 +21,12 @@ class InventoryLedgerEntry < ApplicationRecord
   validates :posted_at, presence: true
   validate :store_and_variant_same_organization
 
-  before_destroy :prevent_destroy
+  before_destroy :prevent_mutation
+  before_update :prevent_mutation
+
+  def readonly?
+    !new_record?
+  end
 
   private
 
@@ -34,7 +37,7 @@ class InventoryLedgerEntry < ApplicationRecord
     errors.add(:base, "store and product variant must belong to the same organization")
   end
 
-  def prevent_destroy
+  def prevent_mutation
     errors.add(:base, "inventory ledger entries are append-only")
     throw(:abort)
   end

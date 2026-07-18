@@ -62,7 +62,7 @@ module Inventory
 
         Result.new(adjustment: @adjustment, success?: true, error: nil, replayed: false)
       end
-    rescue Error, PostLedgerEntry::Error => e
+    rescue Error, PostLedgerEntry::Error, ArgumentError => e
       Result.new(adjustment: @adjustment, success?: false, error: e.message, replayed: false)
     rescue ActiveRecord::RecordInvalid => e
       Result.new(adjustment: @adjustment, success?: false, error: e.record.errors.full_messages.to_sentence, replayed: false)
@@ -101,6 +101,26 @@ module Inventory
 
     def validate_lines!
       raise Error, "adjustment must have at least one line" if @adjustment.inventory_adjustment_lines.empty?
+
+      @adjustment.inventory_adjustment_lines.each do |line|
+        raise Error, line.errors.full_messages.to_sentence unless line.valid?
+
+        case @adjustment.kind
+        when "opening_inventory"
+          raise Error, "opening inventory quantity must be positive" unless line.quantity_delta.positive?
+        when "quantity_only"
+          raise Error, "quantity_delta must be non-zero" if line.quantity_delta.zero?
+        when "cost_correction"
+          raise Error, "quantity_delta must be zero for cost corrections" unless line.quantity_delta.zero?
+          raise Error, "corrected_inventory_value_cents is required" if line.corrected_inventory_value_cents.nil?
+          raise Error, "corrected_inventory_value_cents must be >= 0" if line.corrected_inventory_value_cents.negative?
+
+          balance = StockBalance.find_by(store_id: @store.id, product_variant_id: line.product_variant_id)
+          unless balance&.on_hand.to_i.positive?
+            raise Error, "cost correction requires positive on-hand for #{line.product_variant.sku}"
+          end
+        end
+      end
     end
 
     def post_line!(line)
@@ -169,8 +189,6 @@ module Inventory
     end
 
     def post_quantity_only!(line)
-      raise Error, "quantity_delta must be non-zero" if line.quantity_delta.zero?
-
       PostLedgerEntry.call(
         store: @store,
         product_variant: line.product_variant,
@@ -186,9 +204,6 @@ module Inventory
     end
 
     def post_cost_correction!(line)
-      raise Error, "corrected_inventory_value_cents is required" if line.corrected_inventory_value_cents.nil?
-      raise Error, "quantity_delta must be zero" unless line.quantity_delta.zero?
-
       PostLedgerEntry.call(
         store: @store,
         product_variant: line.product_variant,

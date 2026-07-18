@@ -145,5 +145,60 @@ module Inventory
     test "department estimate formula round half up" do
       assert_equal 750, Rounding.round_half_up(1000 * (10_000 - 2500), 10_000)
     end
+
+    test "quantity-only inbound uses aggregate share not rounded unit times qty" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: 3,
+        prior_inventory_value_cents: 100,
+        prior_moving_average_cost_cents: 33,
+        prior_cost_quality: "actual",
+        quantity_delta: 3,
+        movement_kind: :quantity_only
+      )
+
+      assert_equal 6, result.resulting_on_hand
+      assert_equal 100, result.inventory_value_delta_cents
+      assert_equal 200, result.resulting_inventory_value_cents
+    end
+
+    test "cost correction from unknown prior records null value delta" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: 3,
+        prior_inventory_value_cents: nil,
+        prior_moving_average_cost_cents: nil,
+        prior_cost_quality: "unknown",
+        quantity_delta: 0,
+        movement_kind: :cost_correction,
+        corrected_inventory_value_cents: 1000,
+        incoming_cost_quality: "actual",
+        incoming_cost_method: "explicit"
+      )
+
+      assert_nil result.inventory_value_delta_cents
+      assert_equal 1000, result.resulting_inventory_value_cents
+      assert_equal "actual", result.resulting_cost_quality
+    end
+
+    test "known opening into unknown balance keeps unknown value but records provenance" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: 2,
+        prior_inventory_value_cents: nil,
+        prior_moving_average_cost_cents: nil,
+        prior_cost_quality: "unknown",
+        quantity_delta: 1,
+        movement_kind: :opening_inventory,
+        incoming_unit_cost_cents: 500,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual"
+      )
+
+      assert_nil result.resulting_inventory_value_cents
+      assert_nil result.inventory_value_delta_cents
+      assert_equal "unknown", result.resulting_cost_quality
+      assert_equal 500, result.unit_cost_cents
+      assert_equal 500, result.movement_cost_cents
+      assert_equal "explicit", result.cost_method
+      assert_equal "actual", result.cost_quality
+    end
   end
 end

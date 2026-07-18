@@ -1,6 +1,7 @@
 # Phase 3 — Quantity Inventory Bootstrap
 
-**Status:** Complete  
+**Status:** In review (hardening)  
+
 
 **Depends on:** Phase 2  
 **Unlocks:** Phase 4a  
@@ -95,10 +96,13 @@ Phase 3 remains intentionally narrow: balances, ledger posting, reservations, ad
 - [x] Positive cost correction posts only via cost-correction permission + reason + audit
 - [x] Negative / zero On Hand keeps inventory asset value at zero; zero balance quality is unknown
 - [x] Unknown cost is never treated as zero
-- [x] Concurrent reservation tests pass
+- [x] Concurrent reservation tests pass (reserve vs release)
 - [x] Concurrent posting tests cover balance lock + value-state updates
+- [x] Concurrent first Stock Balance creation covered
 - [x] Negative available with warning behaves per lock
 - [x] No receipt tables in schema
+
+Hardening follow-up (reopened review gate): first-balance `create_or_find_by!`, financial idempotency compare, aggregate inbound rounding, posting ArgumentError rescue, draft cost permission, remove routine `sync_admin_permissions` from `bin/setup`, unknown-delta/null semantics, `last_known` from resulting average, reservation lock order, ledger immutability, Department estimate precedence, store-mismatch guards.
 
 ## Out of scope
 
