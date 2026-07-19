@@ -1,19 +1,10 @@
 # frozen_string_literal: true
 
 module Pos
-  # Owns provisional recalculation order for an editable Transaction (domain
-  # "Recalculation ownership"): resolve prices -> allocate discounts -> calculate tax
-  # -> calculate transaction totals. Persists pending `pos_line_item_taxes` for pending
-  # lines and returns totals for display; does not mutate cached totals on
-  # `pos_transactions` (Phase 4b introduces no such columns — see
-  # docs/implementation/phase-04-tax-schema.md).
-  #
-  # Line prices are already resolved on `pos_line_items.unit_price_cents` by the
-  # mutating service that triggered recalculation (AddLine, OverridePrice, ...); this
-  # service does not re-fetch catalog prices. Discount allocations are likewise read
-  # as already persisted by Pos::ApplyDiscount; this service does not re-run
-  # allocation, only tax against the currently allocated taxable base. Every pending
-  # line is treated as direction "sale" — linked returns are Phase 4e.
+  # Owns provisional recalculation: prices (already on lines) -> discounts (already
+  # allocated) -> tax -> totals. Sale lines use Tax::CalculateTransaction. Linked
+  # return lines reverse stored original tax components (ADR-0014) rather than
+  # recalculating current rules.
   class RecalculateTransaction < ApplicationService
     Result = Data.define(:success?, :blockers, :warnings, :subtotal_cents, :discount_total_cents,
                           :tax_total_cents, :net_total_cents, :tax_exempt?)
@@ -26,46 +17,97 @@ module Pos
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         lines = transaction.pos_line_items.pending.order(:position).to_a
+        sale_lines = lines.select { |line| line.direction == "sale" }
+        return_lines = lines.select { |line| line.direction == "return" }
 
-        # Clear tax rows for every non-completed line (including just-removed lines),
-        # not only currently pending ones, so a removal leaves no stale tax snapshot.
         PosLineItemTax.where(pos_line_item_id: transaction.pos_line_items.where.not(status: "completed").select(:id)).delete_all
 
-        subtotal_cents = lines.sum(&:extended_price_cents)
-        discount_total_cents = PosDiscountAllocation
-          .joins(:pos_discount)
-          .where(pos_line_item_id: lines.map(&:id))
-          .sum(:allocated_amount_cents)
+        sale_subtotal = sale_lines.sum(&:extended_price_cents)
+        return_subtotal = return_lines.sum(&:extended_price_cents)
+        sale_discounts = discount_total_for(sale_lines)
+        return_discounts = discount_total_for(return_lines)
 
         if transaction.tax_exempt?
-          Result.new(success?: true, blockers: [], warnings: [], subtotal_cents: subtotal_cents,
-                     discount_total_cents: discount_total_cents, tax_total_cents: 0,
-                     net_total_cents: subtotal_cents - discount_total_cents, tax_exempt?: true)
-        else
-          calculate_and_persist_tax(transaction, lines, subtotal_cents, discount_total_cents)
+          net = (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts)
+          return Result.new(success?: true, blockers: [], warnings: [],
+                            subtotal_cents: sale_subtotal - return_subtotal,
+                            discount_total_cents: sale_discounts - return_discounts,
+                            tax_total_cents: 0, net_total_cents: net, tax_exempt?: true)
         end
+
+        sale_tax_result = calculate_sale_tax(transaction, sale_lines)
+        if sale_tax_result[:blockers].any?
+          return Result.new(success?: false, blockers: sale_tax_result[:blockers],
+                            warnings: sale_tax_result[:warnings],
+                            subtotal_cents: sale_subtotal - return_subtotal,
+                            discount_total_cents: sale_discounts - return_discounts,
+                            tax_total_cents: 0,
+                            net_total_cents: (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts),
+                            tax_exempt?: false)
+        end
+
+        return_tax_cents = persist_return_tax!(return_lines)
+        sale_tax_cents = sale_tax_result[:tax_cents]
+        tax_total = sale_tax_cents - return_tax_cents
+        net = (sale_subtotal - sale_discounts + sale_tax_cents) - (return_subtotal - return_discounts + return_tax_cents)
+
+        Result.new(success?: true, blockers: [], warnings: sale_tax_result[:warnings],
+                   subtotal_cents: sale_subtotal - return_subtotal,
+                   discount_total_cents: sale_discounts - return_discounts,
+                   tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: false)
       end
     end
 
     private
 
-    def calculate_and_persist_tax(transaction, lines, subtotal_cents, discount_total_cents)
-      tax_lines = lines.map { |line| tax_input_line(line) }
-      calculation = Tax::CalculateTransaction.call(store: transaction.store, lines: tax_lines)
+    def discount_total_for(lines)
+      return 0 if lines.empty?
 
-      if calculation.blockers.any?
-        return Result.new(success?: false, blockers: calculation.blockers, warnings: calculation.warnings,
-                           subtotal_cents: subtotal_cents, discount_total_cents: discount_total_cents,
-                           tax_total_cents: 0, net_total_cents: subtotal_cents - discount_total_cents,
-                           tax_exempt?: false)
-      end
+      PosDiscountAllocation.joins(:pos_discount).where(pos_line_item_id: lines.map(&:id)).sum(:allocated_amount_cents)
+    end
+
+    def calculate_sale_tax(transaction, sale_lines)
+      return { tax_cents: 0, blockers: [], warnings: [] } if sale_lines.empty?
+
+      tax_lines = sale_lines.map { |line| tax_input_line(line) }
+      calculation = Tax::CalculateTransaction.call(store: transaction.store, lines: tax_lines)
+      return { tax_cents: 0, blockers: calculation.blockers, warnings: calculation.warnings } if calculation.blockers.any?
 
       persist_tax_components(calculation.lines)
-      tax_total_cents = calculation.total_tax_cents_by_direction.fetch("sale", 0)
+      { tax_cents: calculation.total_tax_cents_by_direction.fetch("sale", 0), blockers: [], warnings: calculation.warnings }
+    end
 
-      Result.new(success?: true, blockers: [], warnings: calculation.warnings, subtotal_cents: subtotal_cents,
-                 discount_total_cents: discount_total_cents, tax_total_cents: tax_total_cents,
-                 net_total_cents: subtotal_cents - discount_total_cents + tax_total_cents, tax_exempt?: false)
+    def persist_return_tax!(return_lines)
+      total = 0
+      return_lines.each do |line|
+        original = line.original_pos_line_item
+        next if original.blank?
+
+        originals = original.pos_line_item_taxes.order(:position).to_a
+        originals.each do |tax|
+          amount = proportional_cents(tax.amount_cents, original.quantity, line.quantity)
+          taxable = tax.taxable_amount_cents && proportional_cents(tax.taxable_amount_cents, original.quantity, line.quantity)
+          line.pos_line_item_taxes.create!(
+            store_tax_rule_id: tax.store_tax_rule_id,
+            store_tax_rate_id: tax.store_tax_rate_id,
+            tax_category_id: tax.tax_category_id,
+            treatment_snapshot: tax.treatment_snapshot,
+            receipt_code_snapshot: tax.receipt_code_snapshot,
+            position: tax.position,
+            taxable_amount_cents: taxable || 0,
+            taxable_fraction_snapshot: tax.taxable_fraction_snapshot,
+            rate: tax.rate,
+            compounds_on_prior_tax_snapshot: tax.compounds_on_prior_tax_snapshot,
+            amount_cents: amount
+          )
+          total += amount
+        end
+      end
+      total
+    end
+
+    def proportional_cents(total, original_qty, return_qty)
+      ((BigDecimal(total) * return_qty) / original_qty).round(0, BigDecimal::ROUND_HALF_UP).to_i
     end
 
     def tax_input_line(line)
@@ -107,9 +149,6 @@ module Pos
           )
         end
 
-        # Exempt rules collect no tax and form no calculation component, but the
-        # snapshot is still persisted so receipts/audits can show which rule exempted
-        # the line rather than silently omitting the category (ADR-0014).
         line_result.exempt_components.each_with_index do |exempt, index|
           rule = StoreTaxRule.find(exempt.store_tax_rule_id)
           PosLineItemTax.create!(

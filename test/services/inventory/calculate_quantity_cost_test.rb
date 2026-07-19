@@ -24,6 +24,46 @@ module Inventory
       assert_equal 1000, result.inventory_value_delta_cents
     end
 
+    test "customer_return blends restored original cost into the moving average" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: 4,
+        prior_inventory_value_cents: 1000,
+        prior_moving_average_cost_cents: 250,
+        prior_cost_quality: "actual",
+        quantity_delta: 1,
+        movement_kind: :customer_return,
+        incoming_unit_cost_cents: 250,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual"
+      )
+
+      assert_equal 5, result.resulting_on_hand
+      assert_equal 1250, result.resulting_inventory_value_cents
+      assert_equal 250, result.resulting_moving_average_cost_cents
+      assert_equal "actual", result.resulting_cost_quality
+      assert_equal 250, result.inventory_value_delta_cents
+      assert_equal 250, result.unit_cost_cents
+    end
+
+    test "customer_return into a zero balance initializes value from the returned cost" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: 0,
+        prior_inventory_value_cents: 0,
+        prior_moving_average_cost_cents: nil,
+        prior_cost_quality: "unknown",
+        quantity_delta: 1,
+        movement_kind: :customer_return,
+        incoming_unit_cost_cents: 500,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual"
+      )
+
+      assert_equal 1, result.resulting_on_hand
+      assert_equal 500, result.resulting_inventory_value_cents
+      assert_equal 500, result.resulting_moving_average_cost_cents
+      assert_equal "actual", result.resulting_cost_quality
+    end
+
     test "unknown opening from zero leaves unknown positive value" do
       result = CalculateQuantityCost.call(
         prior_on_hand: 0,

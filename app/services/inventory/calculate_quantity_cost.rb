@@ -52,7 +52,7 @@ module Inventory
         calculate_cost_correction
       when :sale
         calculate_sale
-      when :opening_inventory, :quantity_only
+      when :opening_inventory, :quantity_only, :customer_return
         calculate_quantity_movement
       else
         raise ArgumentError, "unsupported movement_kind: #{@movement_kind}"

@@ -23,6 +23,7 @@ module Pos
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
       raise Error, "tax category is required" if @tax_category.blank?
       raise Error, "override reason is required" if @reason.blank?
+      raise Error, "cannot override tax category on a linked return line" if @pos_line_item.return?
 
       store = @pos_line_item.pos_transaction.store
       unless @tax_category.organization_id == store.organization_id

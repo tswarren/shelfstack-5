@@ -32,6 +32,28 @@
   </div>
 <% end %>
 
+<% if @pos_transaction.editable? && Current.user.can?("pos.return.create", store: Current.store) %>
+  <div class="pos-panel">
+    <h2>Linked return</h2>
+    <p class="muted">Look up the completed line ID from the original transaction's receipt or history to link the return.</p>
+    <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+      <%= form.label :original_pos_line_item_id, "Original completed line ID" %>
+      <%= form.number_field :original_pos_line_item_id, min: 1, required: true %>
+      <%= form.number_field :quantity, value: 1, min: 1, style: "width:5em" %>
+      <%= form.collection_select :return_reason_id, @return_reasons, :id, :name %>
+      <%= form.select :return_disposition, [
+            [ "Return to stock", "return_to_stock" ],
+            [ "Inspection required", "inspection_required" ],
+            [ "Damaged", "damaged" ],
+            [ "Return to vendor", "return_to_vendor" ],
+            [ "Discard", "discard" ],
+            [ "Non-inventory", "non_inventory" ]
+          ] %>
+      <%= form.submit "Add return line", class: "button button-outline" %>
+    <% end %>
+  </div>
+<% end %>
+
 <% if @pos_transaction.editable? %>
   <div class="pos-panel">
     <h2>Scan / search</h2>
@@ -63,13 +85,21 @@
 <table>
   <thead>
     <tr>
-      <th>Kind</th><th>Description</th><th>Qty</th><th>Price</th><th>Extended</th><th>Discount</th><th>Tax</th><th>Net</th><th></th>
+      <th>Kind</th><th>Direction</th><th>Description</th><th>Qty</th><th>Price</th><th>Extended</th><th>Discount</th><th>Tax</th><th>Net</th><th></th>
     </tr>
   </thead>
   <tbody>
     <% @pos_line_items.each do |line| %>
-      <tr>
+      <tr class="<%= "pos-line-return" if line.return? %>">
         <td><%= line.line_kind %></td>
+        <td>
+          <% if line.return? %>
+            <strong>Return</strong>
+            <br><span class="muted">of line #<%= line.original_pos_line_item_id %> · <%= line.return_reason&.name %> · <%= line.return_disposition&.humanize %></span>
+          <% else %>
+            Sale
+          <% end %>
+        </td>
         <td>
           <%= line.effective_description %>
           <% if line.inventory_unit.present? %>
@@ -97,10 +127,10 @@
           <% end %>
         </td>
       </tr>
-      <% if @pos_transaction.editable? %>
+      <% if @pos_transaction.editable? && line.sale? %>
         <tr>
           <td></td>
-          <td colspan="8">
+          <td colspan="9">
             <% if line.tax_category_overridden? %>
               <p class="muted">Tax category overridden from <%= line.original_tax_category&.name %> to <%= line.tax_category&.name %> — <%= line.tax_category_override_reason %></p>
             <% end %>
@@ -211,6 +241,20 @@
       <%= form.submit "Add card tender", class: "button button-outline" %>
     <% end %>
   </div>
+
+  <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.cash", store: Current.store) %>
+    <div class="pos-panel">
+      <h3>Cash refund</h3>
+      <p class="muted">Transaction balance is negative (net return) — issue a cash refund to settle it.</p>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
+        <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name %>
+        <%= form.label :amount_cents, "Refund amount (cents)" %>
+        <%= form.number_field :amount_cents, min: 1, value: -@balance_due_cents, style: "width:8em" %>
+        <%= form.submit "Add cash refund", class: "button button-outline" %>
+      <% end %>
+    </div>
+  <% end %>
 
   <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
     <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post do |form| %>

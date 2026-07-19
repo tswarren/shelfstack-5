@@ -106,6 +106,10 @@
   padding: 0.5rem 0;
 }
 
+.pos-line-return {
+  background: var(--surface-warning, #fff8e1);
+}
+
 .pos-totals p {
   margin: 0.15rem 0;
 }

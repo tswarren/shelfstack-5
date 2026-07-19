@@ -25,6 +25,7 @@ module Pos
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
       raise Error, "price must not be negative" if @requested_unit_price_cents.negative?
       raise Error, "price override applies only to product lines" unless @pos_line_item.line_kind == "product"
+      raise Error, "cannot override price on a linked return line" if @pos_line_item.return?
 
       regular_price_cents = @pos_line_item.product_variant.regular_price_cents
       raise Error, "product variant has no regular price to override" if regular_price_cents.blank?

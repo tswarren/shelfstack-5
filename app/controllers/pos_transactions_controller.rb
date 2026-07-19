@@ -20,16 +20,28 @@ class PosTransactionsController < ApplicationController
     @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
     @discount_reasons = Current.organization.discount_reasons.where(active: true).order(:name)
 
-    @subtotal_cents = @pos_line_items.sum(&:extended_price_cents)
-    @discount_total_cents = @pos_line_items.sum(&:discount_amount_cents)
-    @tax_total_cents = @pos_line_items.sum(&:tax_amount_cents)
-    @net_total_cents = @subtotal_cents - @discount_total_cents + @tax_total_cents
+    if @pos_transaction.open?
+      totals = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
+      @subtotal_cents = totals.subtotal_cents
+      @discount_total_cents = totals.discount_total_cents
+      @tax_total_cents = totals.tax_total_cents
+      @net_total_cents = totals.net_total_cents
+    else
+      @subtotal_cents = @pos_transaction.subtotal_cents || 0
+      @discount_total_cents = @pos_transaction.discount_total_cents || 0
+      @tax_total_cents = @pos_transaction.tax_total_cents || 0
+      @net_total_cents = @pos_transaction.net_total_cents || 0
+    end
+    @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
 
     @tender_types = Current.organization.tender_types.where(active: true).order(:name)
     @pos_tenders = @pos_transaction.pos_tenders.where.not(status: "removed").order(:created_at)
-    @tendered_total_cents = @pos_transaction.pos_tenders.unresolved.where(direction: "received").sum(:amount_cents) +
-      @pos_transaction.pos_tenders.settled.where(direction: "received").sum(:amount_cents)
-    @balance_due_cents = [ @net_total_cents - @tendered_total_cents, 0 ].max
+    received = @pos_transaction.pos_tenders.unresolved.where(direction: "received").sum(:amount_cents) +
+      @pos_transaction.pos_tenders.where(status: "completed", direction: "received").sum(:amount_cents)
+    refunded = @pos_transaction.pos_tenders.unresolved.where(direction: "refunded").sum(:amount_cents) +
+      @pos_transaction.pos_tenders.where(status: "completed", direction: "refunded").sum(:amount_cents)
+    @tendered_total_cents = received - refunded
+    @balance_due_cents = @net_total_cents - @tendered_total_cents
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid

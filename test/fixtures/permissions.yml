@@ -345,3 +345,10 @@ inventory_unit_manage:
   name: Create/manage inventory units
   permission_group: inventory
   active: true
+
+pos_return_create:
+  code: pos.return.create
+  name: Create return lines
+  permission_group: pos
+  active: true
+

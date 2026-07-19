@@ -113,10 +113,11 @@ module Pos
         raise Error, "line is required for line-scoped discounts" if @pos_line_item.blank?
         raise Error, "line does not belong to this transaction" unless @pos_line_item.pos_transaction_id == @pos_transaction.id
         raise Error, "line is not pending" unless @pos_line_item.pending?
+        raise Error, "cannot discount a linked return line" if @pos_line_item.return?
 
         [ @pos_line_item ]
       when "transaction"
-        @pos_transaction.pos_line_items.pending.order(:position).to_a
+        @pos_transaction.pos_line_items.pending.sales.order(:position).to_a
       else
         []
       end

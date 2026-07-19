@@ -104,7 +104,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 ### Phase 4a notes
 
 - `Pos::AddLine` / `Pos::AddOpenRingLine` resolve Department and Tax Category using the same variant-override → product-default → merchandise-class-default (→ department-default for tax) order as `Catalog::SaleEligibility`.
-- Individually tracked variants (`inventory_tracking_mode: individual`) are rejected by `Pos::AddLine` until Phase 4d.
+- Individually tracked variants (`inventory_tracking_mode: individual`) are accepted by `Pos::AddLine` when an exact `InventoryUnit` is supplied (Phase 4d).
 - No service in this list sets `pos_transactions.status` or `pos_line_items.status` to `completed`; that is reserved for `Pos::CompleteTransaction` (Phase 4c).
 
 ## Phase 4b — Price, tax persistence, discounts, approvals
@@ -146,7 +146,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - **Tender-state lock:** `PosTransaction#editable?` is `open? && !unresolved_tenders?` (`pending`/`authorized` Tenders lock lines, prices, discounts, tax category, and exemptions). Every 4a/4b commercial-editing service re-checks `editable?`/line status *after* acquiring its row lock (`Pos::RemoveLine`, `Pos::UpdateLineQty`, `Pos::OverridePrice`, `Pos::OverrideTaxCategory`), and `Pos::AddLine`/`Pos::AddOpenRingLine` lock the Transaction itself before inserting a new Line, so none of them can slip a commercial mutation past a Transaction that `Pos::CompleteTransaction` is concurrently completing.
 - `Pos::SuspendTransaction` and `Pos::CancelTransaction` are hardened against Tenders: Suspend is blocked outright while an unresolved Tender exists (domain: "Suspension ... requires no unresolved Tender activity"); Cancel resolves (removes/voids) any unresolved Tenders itself before cancelling, so no completed Tender can survive a cancelled Transaction (ADR-0008).
 - `Pos::CloseSession`'s pre-existing "blocks while it controls an open Transaction" guard already enforces "Session close blocked by unresolved Tenders," because an unresolved Tender can only exist on a still-`open` Transaction (Suspend's guard above rules out the alternative).
-- `Pos::CompleteTransaction` scope matches phase-04: Product-line tracking modes `quantity` and `none` only; individual units and Stored Value are out of scope (4d/6). Departments are re-checked (`active?`/`postable?`) directly off the persisted Line at completion, independent of `Catalog::SaleEligibility`, since a Department can be deactivated after a Line was added.
+- `Pos::CompleteTransaction` supports Product-line tracking modes `quantity`, `none`, and `individual` (4d); Stored Value remains out of scope (Phase 6). Departments are re-checked (`active?`/`postable?`) directly off the persisted Line at completion, independent of `Catalog::SaleEligibility`, since a Department can be deactivated after a Line was added.
 - Receipt Number format (v1, not architecturally locked beyond OD-002's sequence ownership): `"#{store.code}-#{receipt_sequence.to_s.rjust(6, '0')}"`.
 
 ## Phase 4d — Individually tracked inventory
@@ -166,6 +166,22 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - `Pos::ResolveScan` resolves a scanned generated `27` identifier directly to its `InventoryUnit` (and from there to its variant), ahead of the ordinary product/variant lookup path.
 - `inventory.unit.manage` gates direct unit creation (`InventoryUnitsController`); there is no receiving workflow yet (Phase 5), so this remains the only creation path.
 - `acquisition_source_type`/`acquisition_source_id` is a label pair only (`receipt_line`/`return_line`/`buyback`/`adjustment`/`other`), not a real polymorphic association — none of those source records exist yet, and `buyback` in particular names an explicitly deferred capability (see the phase-04 4d "Open follow-up" note).
+
+## Phase 4e — Simple linked returns
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::AddLinkedReturnLine` | Point of Sale | 4e | Yes | No | Transaction (`lock`) + original line (`lock`); requires `pos.return.create` | Open Transaction, completed original sale line, quantity, Return Reason, disposition, actor | Pending `direction: return` line copying original commercial/cost snapshots; proportional historical Discount allocations (INV-RET-004); tax components reversed from original snapshots via `Pos::RecalculateTransaction`; never mutates the original sale line |
+| `Pos::AddCashRefundTender` | Point of Sale | 4e | Yes | No | Transaction (`lock`) | Transaction with negative net, cash Tender Type, refund amount, actor | `pending` `PosTender` with `direction: refunded` capped at refund due |
+| `Inventory::PostCustomerReturn` | Receiving and Inventory | 4e | Yes | Yes (posting key / unit status) | Balance via `PostLedgerEntry`, or `InventoryUnit` (`lock`) for individual | Completed return product line, posted-by actor | `return_to_stock`: inbound `customer_return` ledger (quantity) or unit restored to `available` (individual); other dispositions succeed with a warning and do not restore sellable stock |
+| `Pos::RecalculateTransaction` (return branch) | Point of Sale | 4e | Yes | No | Transaction (`lock`) | Transaction with pending sale and/or return lines | Sale lines use `Tax::CalculateTransaction`; return lines reverse stored original tax components exactly (proportional for partial quantity); net may be negative |
+| `Pos::CompleteTransaction` (return branch) | Point of Sale | 4e | Yes | Yes | Same as 4c, plus `PostCustomerReturn` for return lines | Same as 4c | Return product lines post via `PostCustomerReturn` instead of `ConvertReservation`; tender settlement treats `refunded` as negative of `received` |
+
+### Phase 4e notes
+
+- Original completed sale lines remain immutable (ADR-0008); returns are new linked lines on a separate open Transaction.
+- Remaining returnable quantity is `original.quantity − sum(pending/completed linked returns)`.
+- Free-text cancellation/removal/override reasons remain free text; Return Reasons are organization master data (`docs/exports/return_reasons.csv`).
 
 ## Later phases (add when implemented)
 

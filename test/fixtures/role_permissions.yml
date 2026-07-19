@@ -230,6 +230,10 @@ admin_inventory_unit_manage:
   role: administrator
   permission: inventory_unit_manage
 
+admin_pos_return_create:
+  role: administrator
+  permission: pos_return_create
+
 clerk_pos_access:
   role: associate
   permission: pos_access

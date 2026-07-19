@@ -63,11 +63,15 @@ module Pos
 
         warnings = recalculation.warnings.dup
         lines.each do |line|
-          next unless inventory_tracked_product_line?(line)
-
-          conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
-          raise Error, conversion.error unless conversion.success?
-          warnings.concat(conversion.warnings)
+          if line.direction == "return" && line.line_kind == "product"
+            posted = Inventory::PostCustomerReturn.call(pos_line_item: line, posted_by_user: @actor)
+            raise Error, posted.error unless posted.success?
+            warnings.concat(posted.warnings)
+          elsif inventory_tracked_product_line?(line)
+            conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
+            raise Error, conversion.error unless conversion.success?
+            warnings.concat(conversion.warnings)
+          end
         end
 
         now = Time.current
@@ -101,7 +105,7 @@ module Pos
         Result.new(pos_transaction: transaction, success?: true, error: nil, warnings: warnings.uniq, replayed: false)
       end
     rescue Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique,
-           Inventory::ConvertReservation::Error => e
+           Inventory::ConvertReservation::Error, Inventory::PostCustomerReturn::Error => e
       Result.new(pos_transaction: nil, success?: false, error: e.message, warnings: [], replayed: false)
     end
 

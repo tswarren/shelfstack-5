@@ -9,7 +9,12 @@ class PosTendersController < ApplicationController
   def create
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
 
-    result = if tender_type.tender_category == "cash"
+    result = if tender_type.tender_category == "cash" && params[:refund].present?
+      Pos::AddCashRefundTender.call(
+        pos_transaction: @pos_transaction, tender_type: tender_type,
+        amount_cents: params[:amount_cents], actor: Current.user
+      )
+    elsif tender_type.tender_category == "cash"
       Pos::AddCashTender.call(
         pos_transaction: @pos_transaction, tender_type: tender_type,
         amount_tendered_cents: params[:amount_tendered_cents], actor: Current.user

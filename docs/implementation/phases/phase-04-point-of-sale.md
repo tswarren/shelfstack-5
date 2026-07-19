@@ -1,9 +1,9 @@
 # Phase 4 — Point of Sale
 
-**Status:** Not started (Phase 3 complete; UX readiness gate before 4a)  
+**Status:** Implemented on `phase/p4-point-of-sale` (4a–4e); not merged to `main` pending manual testing  
 **Depends on:** Phase 3 (complete); [UX readiness gate](../../design/README.md) before 4a coding; store tax rates/rules before 4b  
 
-**Unlocks:** Phase 5 (after 4c minimum; 4d/4e recommended before broad supply fulfilment)  
+**Unlocks:** Phase 5 foundational purchasing after 4c; complete 4d before individual-item Phase 5 work; 4e recommended before return-oriented fulfilment (see [roadmap.md](../roadmap.md))  
 **Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011, [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md); [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md); [phase-04-tax-schema.md](../phase-04-tax-schema.md); [pos-register-ui](../../design/pos-register-ui.md); [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
 
 ## Goal
@@ -229,17 +229,19 @@ Double-submit of the same completion request must not duplicate postings.
 
 ## Phase 4e — Simple linked returns
 
+**Landed** on `phase/p4-point-of-sale` (working tree / phase branch): return `direction` + original-line link + reason/disposition on `pos_line_items`; `pos.return.create`; `Pos::AddLinkedReturnLine` (historical price/discount/tax/cost; INV-RET-004), `Pos::AddCashRefundTender`, `Inventory::PostCustomerReturn`; recalculate/complete return branches; register UI.
+
 ### Behavior
 
 - Return lines linked to original completed sale lines.
-- Use original completed commercial values.
-- Return reason and disposition; inventory effects per disposition.
+- Use original completed commercial values (price, Discount allocations, tax components, Department, cost).
+- Return reason and disposition; inventory effects per disposition (`return_to_stock` restores sellable stock; others warn without On Hand restore — OD-010 buckets deferred).
 - Only after 4c is stable.
 
 ### Exit
 
-- [ ] Linked return completes without mutating the original sale line
-- [ ] Inventory disposition posts through ledger services
+- [x] Linked return completes without mutating the original sale line (`test/services/pos/linked_return_test.rb`)
+- [x] Inventory disposition posts through ledger services (`Inventory::PostCustomerReturn` → `customer_return` movement via `PostLedgerEntry` for `return_to_stock`; other dispositions warn and do not restore sellable stock)
 
 ---
 

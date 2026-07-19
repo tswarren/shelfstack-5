@@ -1,0 +1,13 @@
+defective:
+  organization: acme
+  code: defective
+  name: Defective / damaged
+  default_return_disposition: inspection_required
+  active: true
+
+unwanted:
+  organization: acme
+  code: unwanted
+  name: Changed mind / unwanted
+  default_return_disposition: return_to_stock
+  active: true

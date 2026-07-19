@@ -37,13 +37,20 @@ flowchart TD
   P4c[Phase4c_TenderCompletion]
   P4d[Phase4d_IndividualUnits]
   P4e[Phase4e_LinkedReturns]
-  P5[Phase5_SupplyAndDemand]
+  P5f[Phase5_FoundationalPurchasing]
+  P5u[Phase5_UnitDependentFulfilment]
   P6[Phase6_CorrectionsStoredValue]
   P7[Phase7_Reporting]
   P8[Phase8_Deferred]
 
   P0 --> P1 --> P2 --> P3 --> P4a --> P4b --> P4c
-  P4c --> P4d --> P4e --> P5 --> P6 --> P7 --> P8
+  P4c --> P4d
+  P4c --> P4e
+  P4c --> P5f
+  P4d --> P5u
+  P5f --> P5u
+  P5u --> P6 --> P7 --> P8
+  P4e --> P6
 ```
 
 | Phase | Name | Status | Document |
@@ -52,9 +59,8 @@ flowchart TD
 | 1 | Organization and authorization | Complete | [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) |
 | 2 | Configuration and catalog | Complete | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
-| 4 | Point of sale (4a–4e) | In progress (4a–4c implemented on `phase/p4-point-of-sale`) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
-
-| 5 | Supply and demand | Not started | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
+| 4 | Point of sale (4a–4e) | Implemented on `phase/p4-point-of-sale` (not merged to `main` pending manual testing) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
+| 5 | Supply and demand | Not started — foundational purchasing may start after 4c; complete 4d before individual-item fulfilment | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
@@ -87,13 +93,14 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–3 (scaffold, org/auth, config/catalog, quantity inventory bootstrap).
+Completed: Phases 0–3; Phase 4a–4e implemented on `phase/p4-point-of-sale` (merge to `main` only after manual testing).
 
-1. UX readiness gate ([../design/](../design/README.md); tokens/shell in Rails)  
-2. Store tax rates/rules (`treatment` on rules) + ADR-0014 fixtures (∥ with 4a; OD-004/005 accepted) → Phase 4a → 4b → 4c (first completed sale)  
-3. Phase 4d individual units; Phase 4e linked returns  
-4. Phase 5 purchasing, receiving, minimal customer, requests — then first app-wide UX consolidation  
-5. Phases 6–7 as separate epics  
+**Phase 5 unlock (Option B):** Phase 5 *foundational* purchasing (vendors, POs, quantity receiving, requests/allocations against quantity inventory) may begin after **4c**. Complete **4d before any individual-item Phase 5 work** (unit-backed receiving, unit-linked request fulfilment, exact-copy supply). Phase 4e is recommended before broad return/refund-oriented fulfilment but is not a hard gate for foundational purchasing.
+
+1. Manually accept Phase 4 on `phase/p4-point-of-sale` before merge to `main`  
+2. Phase 5 foundational purchasing / receiving / requests (may proceed while 4d/4e were finishing; 4d is now available for unit-dependent paths)  
+3. First app-wide UX consolidation during or after early Phase 5  
+4. Phases 6–7 as separate epics  
 
 
 
