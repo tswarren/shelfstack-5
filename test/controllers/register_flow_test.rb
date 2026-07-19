@@ -20,7 +20,12 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_equal "open", business_day.status
 
     post pos_sessions_path, params: {
-      pos_session: { business_day_id: business_day.id, pos_device_id: @device.id, cash_drawer_id: @drawer.id }
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
     }
     assert_redirected_to register_path
     session = PosSession.order(:id).last
