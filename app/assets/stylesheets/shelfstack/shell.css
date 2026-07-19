@@ -92,3 +92,20 @@
   gap: 0.5rem;
   margin-top: 1rem;
 }
+
+.pos-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.pos-totals {
+  margin: 0.5rem 0 1rem;
+  padding: 0.5rem 0;
+}
+
+.pos-totals p {
+  margin: 0.15rem 0;
+}

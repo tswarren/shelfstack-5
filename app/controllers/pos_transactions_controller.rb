@@ -16,6 +16,13 @@ class PosTransactionsController < ApplicationController
     @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position)
     @removed_line_items = @pos_transaction.pos_line_items.where(status: "removed").order(:position)
     @departments = Current.organization.departments.where(active: true, postable: true).order(:name)
+    @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
+    @discount_reasons = Current.organization.discount_reasons.where(active: true).order(:name)
+
+    @subtotal_cents = @pos_line_items.sum(&:extended_price_cents)
+    @discount_total_cents = @pos_line_items.sum(&:discount_amount_cents)
+    @tax_total_cents = @pos_line_items.sum(&:tax_amount_cents)
+    @net_total_cents = @subtotal_cents - @discount_total_cents + @tax_total_cents
   end
 
   def create

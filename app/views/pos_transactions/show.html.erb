@@ -6,6 +6,9 @@
   Status <strong><%= @pos_transaction.status %></strong> ·
   Store <strong><%= Current.store.name %></strong> ·
   Cashier <strong><%= @pos_transaction.cashier_user.username %></strong>
+  <% if @pos_transaction.tax_exempt? %>
+    · <strong>Tax exempt</strong>
+  <% end %>
 </p>
 
 <% if flash[:alert].present? %>
@@ -46,7 +49,7 @@
 <table>
   <thead>
     <tr>
-      <th>Kind</th><th>Description</th><th>Qty</th><th>Price</th><th>Extended</th><th></th>
+      <th>Kind</th><th>Description</th><th>Qty</th><th>Price</th><th>Extended</th><th>Discount</th><th>Tax</th><th>Net</th><th></th>
     </tr>
   </thead>
   <tbody>
@@ -66,17 +69,72 @@
         </td>
         <td><%= pos_money(line.unit_price_cents) %></td>
         <td><%= pos_money(line.extended_price_cents) %></td>
+        <td><%= pos_money(line.discount_amount_cents) %></td>
+        <td><%= pos_money(line.tax_amount_cents) %></td>
+        <td><%= pos_money(line.extended_price_cents - line.discount_amount_cents + line.tax_amount_cents) %></td>
         <td>
           <% if @pos_transaction.editable? && Current.user.can?("pos.line.remove", store: Current.store) %>
             <%= button_to "Remove", pos_transaction_pos_line_item_path(@pos_transaction, line), method: :delete, class: "button button-small button-danger" %>
           <% end %>
         </td>
       </tr>
+      <% if @pos_transaction.editable? %>
+        <tr>
+          <td></td>
+          <td colspan="8">
+            <% if line.tax_category_overridden? %>
+              <p class="muted">Tax category overridden from <%= line.original_tax_category&.name %> to <%= line.tax_category&.name %> — <%= line.tax_category_override_reason %></p>
+            <% end %>
+            <details>
+              <summary>Line actions</summary>
+
+              <% if line.line_kind == "product" %>
+                <%= form_with url: override_price_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>
+                  <%= form.label :requested_unit_price_cents, "Override price (cents)" %>
+                  <%= form.number_field :requested_unit_price_cents, min: 0, style: "width:6em" %>
+                  <%= form.text_field :reason, placeholder: "Reason" %>
+                  <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
+                  <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
+                  <%= form.submit "Override price", class: "button button-small button-outline" %>
+                <% end %>
+              <% end %>
+
+              <%= form_with url: override_tax_category_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>
+                <%= form.label :tax_category_id, "Override tax category" %>
+                <%= form.collection_select :tax_category_id, @tax_categories, :id, :name, { selected: line.tax_category_id } %>
+                <%= form.text_field :reason, placeholder: "Reason (required)" %>
+                <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
+                <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
+                <%= form.submit "Override tax category", class: "button button-small button-outline" %>
+              <% end %>
+
+              <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+                <%= hidden_field_tag :scope, "line" %>
+                <%= hidden_field_tag :pos_line_item_id, line.id %>
+                <%= form.label :method, "Line discount" %>
+                <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ], [ "Fixed price", "fixed_price" ] ] %>
+                <%= form.number_field :rate_bps, placeholder: "Rate (bps)", min: 0, max: 10_000, style: "width:5em" %>
+                <%= form.number_field :amount_cents, placeholder: "Amount/target price (cents)", min: 0, style: "width:8em" %>
+                <%= form.collection_select :discount_reason_id, @discount_reasons, :id, :name, { include_blank: "No reason" } %>
+                <%= form.text_field :reason, placeholder: "Reason" %>
+                <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
+                <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
+                <%= form.submit "Apply line discount", class: "button button-small button-outline" %>
+              <% end %>
+            </details>
+          </td>
+        </tr>
+      <% end %>
     <% end %>
   </tbody>
 </table>
 
-<p><strong>Subtotal:</strong> <%= pos_money(@pos_line_items.sum(&:extended_price_cents)) %></p>
+<div class="pos-totals">
+  <p><strong>Subtotal:</strong> <%= pos_money(@subtotal_cents) %></p>
+  <p><strong>Discount:</strong> <%= pos_money(@discount_total_cents) %></p>
+  <p><strong>Tax:</strong> <%= pos_money(@tax_total_cents) %></p>
+  <p><strong>Net total:</strong> <%= pos_money(@net_total_cents) %></p>
+</div>
 
 <% if @removed_line_items.any? %>
   <h2>Removed lines</h2>
@@ -85,6 +143,42 @@
       <li><%= line.effective_description %> — removed <%= line.removed_at&.strftime("%Y-%m-%d %H:%M") %></li>
     <% end %>
   </ul>
+<% end %>
+
+<% if @pos_transaction.editable? %>
+  <div class="pos-panel">
+    <h2>Transaction-wide discount</h2>
+    <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post do |form| %>
+      <%= hidden_field_tag :scope, "transaction" %>
+      <%= form.label :method, "Method" %>
+      <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ] ] %>
+      <%= form.number_field :rate_bps, placeholder: "Rate (bps)", min: 0, max: 10_000, style: "width:5em" %>
+      <%= form.number_field :amount_cents, placeholder: "Amount (cents)", min: 0, style: "width:8em" %>
+      <%= form.collection_select :discount_reason_id, @discount_reasons, :id, :name, { include_blank: "No reason" } %>
+      <%= form.text_field :reason, placeholder: "Reason" %>
+      <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
+      <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
+      <%= form.submit "Apply discount", class: "button button-outline" %>
+    <% end %>
+  </div>
+
+  <% unless @pos_transaction.tax_exempt? %>
+    <div class="pos-panel">
+      <h2>Tax exemption</h2>
+      <%= form_with url: pos_transaction_pos_tax_exemption_path(@pos_transaction), method: :post do |form| %>
+        <%= form.label :exemption_type, "Exemption type" %>
+        <%= form.text_field :exemption_type, placeholder: "e.g. resale_certificate" %>
+        <%= form.text_field :notes, placeholder: "Notes" %>
+        <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
+        <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
+        <%= form.submit "Apply whole-transaction exemption", class: "button button-outline" %>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="muted">
+      Exempt: <%= @pos_transaction.pos_tax_exemptions.first&.exemption_type %>
+    </p>
+  <% end %>
 <% end %>
 
 <% if @pos_transaction.open? %>

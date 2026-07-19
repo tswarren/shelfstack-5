@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 class PosLineItemsController < ApplicationController
-  before_action -> { require_permission!("pos.access") }, only: %i[create update]
+  before_action -> { require_permission!("pos.access") }, only: %i[create update override_price override_tax_category]
   before_action -> { require_permission!("pos.line.remove") }, only: %i[destroy]
   before_action :set_transaction
-  before_action :set_line_item, only: %i[update destroy]
+  before_action :set_line_item, only: %i[update destroy override_price override_tax_category]
 
   def create
     if params[:kind] == "open_ring"
@@ -33,7 +33,50 @@ class PosLineItemsController < ApplicationController
     end
   end
 
+  def override_price
+    result = Pos::OverridePrice.call(
+      pos_line_item: @line_item,
+      requested_unit_price_cents: params[:requested_unit_price_cents],
+      actor: Current.user,
+      reason: params[:reason],
+      **approver_params
+    )
+    if result.success?
+      redirect_to pos_transaction_path(@pos_transaction), notice: "Price overridden."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
+  def override_tax_category
+    tax_category = Current.organization.tax_categories.find_by(id: params[:tax_category_id])
+    if tax_category.blank?
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a tax category."
+      return
+    end
+
+    result = Pos::OverrideTaxCategory.call(
+      pos_line_item: @line_item,
+      tax_category: tax_category,
+      reason: params[:reason],
+      actor: Current.user,
+      **approver_params
+    )
+    if result.success?
+      redirect_to pos_transaction_path(@pos_transaction), notice: "Tax category overridden."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
   private
+
+  def approver_params
+    {
+      approver: params[:approver_username].presence && User.find_by(username: params[:approver_username]),
+      approver_pin: params[:approver_pin]
+    }
+  end
 
   def create_product_line
     resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)

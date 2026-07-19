@@ -58,7 +58,14 @@ Rails.application.routes.draw do
       post :recall
       post :cancel
     end
-    resources :pos_line_items, only: %i[create update destroy]
+    resources :pos_line_items, only: %i[create update destroy] do
+      member do
+        patch :override_price
+        patch :override_tax_category
+      end
+    end
+    resources :pos_discounts, only: %i[create]
+    resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
   end
 
   root "homes#show"
