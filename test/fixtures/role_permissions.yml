@@ -218,6 +218,10 @@ admin_pos_tender_card_standalone:
   role: administrator
   permission: pos_tender_card_standalone
 
+admin_pos_tender_card_void:
+  role: administrator
+  permission: pos_tender_card_void
+
 admin_pos_cash_movement_create:
   role: administrator
   permission: pos_cash_movement_create

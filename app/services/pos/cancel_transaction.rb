@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 module Pos
-  # Cancellation releases provisional reservations and creates no completed sale,
-  # inventory, tax, or tender effect.
+  # Cancellation releases provisional reservations, soft-removes pending lines
+  # (so cancelled return lines do not consume returnable quantity), resolves
+  # provisional Tender activity, and creates no completed sale/inventory/tax effect.
   class CancelTransaction < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_transaction, :success?, :error)
@@ -20,6 +21,13 @@ module Pos
           raise Error, "only open or suspended transactions may be cancelled"
         end
 
+        if transaction.pos_tenders.unresolved.joins(:tender_type)
+                      .where(status: "authorized", tender_types: { tender_category: "card" }).exists?
+          raise Error,
+                "cannot cancel while an authorized card tender remains unresolved; " \
+                "confirm the external terminal void first"
+        end
+
         transaction.pos_line_items.pending.where(line_kind: "product").find_each do |line|
           reservation = InventoryReservation.active.find_by(source_type: "pos_line_item", source_id: line.id)
           next if reservation.blank?
@@ -30,6 +38,18 @@ module Pos
             release_reason: @reason || "transaction cancelled"
           )
           raise Error, released.error unless released.success?
+        end
+
+        # Soft-remove pending lines so cancelled linked returns no longer consume
+        # remaining_returnable_quantity on the original sale line.
+        now = Time.current
+        transaction.pos_line_items.pending.find_each do |line|
+          line.update!(
+            status: "removed",
+            removed_at: now,
+            removed_by_user: @actor,
+            remove_reason: @reason || "transaction cancelled"
+          )
         end
 
         # ADR-0008: cancellation resolves provisional Tender activity (no completed

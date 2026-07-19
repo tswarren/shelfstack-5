@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+
 module Pos
   # Creates a linked return line that copies original completed commercial values
-  # and reverses stored tax components exactly (proportional when returning a
-  # partial remaining quantity). Never mutates the original sale line.
+  # and reverses stored tax components exactly (using a cumulative residual policy
+  # for partial returns). Never mutates the original sale line.
   class AddLinkedReturnLine < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_line_item, :success?, :error, :warnings)
@@ -63,15 +65,14 @@ module Pos
           return_source: "linked_sale",
           created_by_user: @actor,
           cost_unit_cost_cents: original.cost_unit_cost_cents,
-          cost_extended_cents: proportional_cents(original.cost_extended_cents, original.quantity, @quantity),
+          cost_extended_cents: cumulative_reversal_cents(original.cost_extended_cents, original.quantity, prior_qty_for_cost(original), @quantity),
           cost_method_snapshot: original.cost_method_snapshot,
           cost_quality_snapshot: original.cost_quality_snapshot
         )
 
-        # INV-RET-004: reverse historical Discount allocations proportionally onto
-        # the return line (fixed-amount mirrors of the original share). Tax still
-        # comes from stored original components in RecalculateTransaction — do not
-        # re-run current discount/tax rules against the return.
+        # INV-RET-004: reverse historical Discount allocations onto the return line
+        # using the cumulative residual policy so partial returns exactly exhaust
+        # the original allocations without overshooting.
         reverse_historical_discounts!(transaction, original, line)
 
         recalc = Pos::RecalculateTransaction.call(pos_transaction: transaction)
@@ -85,13 +86,15 @@ module Pos
     private
 
     def reverse_historical_discounts!(transaction, original, return_line)
+      prior_qty = prior_return_quantity(original, excluding: return_line)
+
       original.pos_discount_allocations.includes(:pos_discount).find_each do |allocation|
-        amount = proportional_cents(allocation.allocated_amount_cents, original.quantity, @quantity)
+        amount = cumulative_reversal_cents(allocation.allocated_amount_cents, original.quantity, prior_qty, @quantity)
         next if amount.nil? || amount.zero?
 
         source = allocation.pos_discount
         eligible = allocation.eligible_amount_cents &&
-          proportional_cents(allocation.eligible_amount_cents, original.quantity, @quantity)
+          cumulative_reversal_cents(allocation.eligible_amount_cents, original.quantity, prior_qty, @quantity)
 
         discount = PosDiscount.create!(
           pos_transaction: transaction,
@@ -115,10 +118,38 @@ module Pos
       end
     end
 
-    def proportional_cents(total, original_qty, return_qty)
-      return nil if total.nil?
+    def cumulative_reversal_cents(original_amount, original_qty, prior_qty, this_qty)
+      return 0 if original_amount.nil? || original_qty.to_i <= 0
 
-      ((BigDecimal(total) * return_qty) / original_qty).round(0, BigDecimal::ROUND_HALF_UP).to_i
+      target_after = ((BigDecimal(original_amount) * (prior_qty + this_qty)) / original_qty)
+                      .round(0, BigDecimal::ROUND_HALF_UP).to_i
+      target_before = ((BigDecimal(original_amount) * prior_qty) / original_qty)
+                       .round(0, BigDecimal::ROUND_HALF_UP).to_i
+      target_after - target_before
+    end
+
+    def prior_return_quantity(original, excluding:)
+      PosLineItem
+        .joins(:pos_transaction)
+        .where(original_pos_line_item_id: original.id)
+        .where.not(id: excluding.id)
+        .where(
+          "(pos_line_items.status = 'completed') OR " \
+          "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
+        )
+        .sum(:quantity)
+    end
+
+    def prior_qty_for_cost(original)
+      # Line is not persisted yet when cost is snapshotted; count existing returns only.
+      PosLineItem
+        .joins(:pos_transaction)
+        .where(original_pos_line_item_id: original.id)
+        .where(
+          "(pos_line_items.status = 'completed') OR " \
+          "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
+        )
+        .sum(:quantity)
     end
   end
 end

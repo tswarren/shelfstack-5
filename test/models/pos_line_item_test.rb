@@ -121,6 +121,27 @@ class PosLineItemTest < ActiveSupport::TestCase
     assert_equal 2, original.remaining_returnable_quantity
   end
 
+  test "remaining_returnable_quantity ignores pending returns on cancelled transactions" do
+    original = PosLineItem.create!(
+      pos_transaction: @transaction, line_kind: "product", status: "completed",
+      product_variant: @variant, department: @department, quantity: 5,
+      unit_price_cents: 100, created_by_user: @admin
+    )
+    return_txn = Pos::OpenTransaction.call(pos_session: @transaction.origin_pos_session, actor: @admin).pos_transaction
+    PosLineItem.create!(
+      pos_transaction: return_txn, line_kind: "product", status: "pending",
+      product_variant: @variant, department: @department, quantity: 2,
+      unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      original_pos_line_item: original, return_reason: return_reasons(:unwanted),
+      return_disposition: "return_to_stock"
+    )
+    assert_equal 3, original.remaining_returnable_quantity
+
+    cancel = Pos::CancelTransaction.call(pos_transaction: return_txn, actor: @admin, reason: "abandoned")
+    assert cancel.success?, cancel.error
+    assert_equal 5, original.remaining_returnable_quantity
+  end
+
   test "remaining_returnable_quantity is zero for a return line" do
     original = PosLineItem.create!(
       pos_transaction: @transaction, line_kind: "product", status: "completed",

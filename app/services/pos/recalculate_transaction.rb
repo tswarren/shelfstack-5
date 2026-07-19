@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+
 module Pos
   # Owns provisional recalculation: prices (already on lines) -> discounts (already
   # allocated) -> tax -> totals. Sale lines use Tax::CalculateTransaction. Linked
@@ -26,12 +28,28 @@ module Pos
         return_discounts = discount_total_for(return_lines)
         provisional_net = (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts)
 
+        if sale_discounts > sale_subtotal || return_discounts > return_subtotal
+          return Result.new(success?: false,
+                            blockers: [ "discount allocations exceed merchandise gross for one or more lines" ],
+                            warnings: [],
+                            subtotal_cents: sale_subtotal - return_subtotal,
+                            discount_total_cents: sale_discounts - return_discounts,
+                            tax_total_cents: pending_tax_total_cents(transaction),
+                            net_total_cents: provisional_net,
+                            tax_exempt?: false)
+        end
+
         if transaction.tax_exempt?
           clear_pending_tax_rows!(transaction)
+          return_tax_cents = persist_return_tax!(return_lines)
+          # Whole-transaction exemption suppresses sale tax only. Linked returns
+          # still reverse historically stored components so the customer is refunded.
+          tax_total = -return_tax_cents
+          net = provisional_net - return_tax_cents
           return Result.new(success?: true, blockers: [], warnings: [],
                             subtotal_cents: sale_subtotal - return_subtotal,
                             discount_total_cents: sale_discounts - return_discounts,
-                            tax_total_cents: 0, net_total_cents: provisional_net, tax_exempt?: true)
+                            tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: true)
         end
 
         sale_tax_result = calculate_sale_tax(transaction, sale_lines, persist: false)
@@ -101,10 +119,12 @@ module Pos
         original = line.original_pos_line_item
         next if original.blank?
 
+        prior_qty = prior_return_quantity(original, excluding: line)
         originals = original.pos_line_item_taxes.order(:position).to_a
         originals.each do |tax|
-          amount = proportional_cents(tax.amount_cents, original.quantity, line.quantity)
-          taxable = tax.taxable_amount_cents && proportional_cents(tax.taxable_amount_cents, original.quantity, line.quantity)
+          amount = cumulative_reversal_cents(tax.amount_cents, original.quantity, prior_qty, line.quantity)
+          taxable = tax.taxable_amount_cents &&
+            cumulative_reversal_cents(tax.taxable_amount_cents, original.quantity, prior_qty, line.quantity)
           line.pos_line_item_taxes.create!(
             store_tax_rule_id: tax.store_tax_rule_id,
             store_tax_rate_id: tax.store_tax_rate_id,
@@ -122,6 +142,31 @@ module Pos
         end
       end
       total
+    end
+
+    # Cumulative-target residual policy: each partial return receives
+    # round(original × cumulative_qty / original_qty) − already_reversed, so the
+    # final unit absorbs any leftover cent and the sum never exceeds the original.
+    def cumulative_reversal_cents(original_amount, original_qty, prior_qty, this_qty)
+      return 0 if original_amount.nil? || original_qty.to_i <= 0
+
+      target_after = ((BigDecimal(original_amount) * (prior_qty + this_qty)) / original_qty)
+                      .round(0, BigDecimal::ROUND_HALF_UP).to_i
+      target_before = ((BigDecimal(original_amount) * prior_qty) / original_qty)
+                       .round(0, BigDecimal::ROUND_HALF_UP).to_i
+      target_after - target_before
+    end
+
+    def prior_return_quantity(original, excluding:)
+      PosLineItem
+        .joins(:pos_transaction)
+        .where(original_pos_line_item_id: original.id)
+        .where.not(id: excluding.id)
+        .where(
+          "(pos_line_items.status = 'completed') OR " \
+          "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
+        )
+        .sum(:quantity)
     end
 
     def proportional_cents(total, original_qty, return_qty)

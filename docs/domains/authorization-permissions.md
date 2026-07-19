@@ -163,6 +163,7 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_cents` | yes | yes |
 | `pos.tender.cash` | Accept cash tenders | store | 4c | — | no | no |
 | `pos.tender.card_standalone` | Record standalone card tenders | store | 4c | — | no | yes |
+| `pos.tender.card_void` | Confirm external card tender voids | store | 4c | — | no | yes |
 | `pos.cash_movement.create` | Paid-in / paid-out / drops | store | 4c | `maximum_paid_out_cents` | yes | yes |
 | `pos.receipt.reprint` | Reprint receipts | store | 4c | — | no | yes |
 | `pos.post_void.create` | Create post-void corrections | store | 6 | — | yes | yes |

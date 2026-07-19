@@ -37,7 +37,11 @@ module Pos
       eligible_lines = resolve_eligible_lines
       raise Error, "no eligible pending lines to discount" if eligible_lines.empty?
 
-      base_amount_cents = eligible_lines.sum(&:extended_price_cents)
+      remaining_by_line = remaining_discountable_cents_by_line(eligible_lines)
+      eligible_lines = eligible_lines.select { |line| remaining_by_line.fetch(line.id).positive? }
+      raise Error, "no remaining discountable amount on eligible lines" if eligible_lines.empty?
+
+      base_amount_cents = eligible_lines.sum { |line| remaining_by_line.fetch(line.id) }
       raise Error, "nothing to discount" unless base_amount_cents.positive?
 
       applied_amount_cents = compute_applied_amount_cents(base_amount_cents)
@@ -80,7 +84,7 @@ module Pos
           created_at: Time.current
         )
 
-        allocate!(discount, eligible_lines, applied_amount_cents)
+        allocate!(discount, eligible_lines, applied_amount_cents, remaining_by_line)
 
         Administration::RecordAuditEvent.call(
           actor: @actor,
@@ -163,16 +167,17 @@ module Pos
       (transaction.pos_discounts.maximum(:position) || -1) + 1
     end
 
-    # Largest-remainder allocation proportional to each eligible line's gross amount
-    # (single-line scope allocates the full amount trivially). Tie-break: remainder
+    # Largest-remainder allocation proportional to each eligible line's *remaining*
+    # discountable amount (gross − prior allocations). Tie-break: remainder
     # descending, then line position ascending, then line id ascending (ADR-0014 family).
-    def allocate!(discount, eligible_lines, applied_amount_cents)
-      total_eligible = eligible_lines.sum(&:extended_price_cents)
+    def allocate!(discount, eligible_lines, applied_amount_cents, remaining_by_line)
+      total_eligible = eligible_lines.sum { |line| remaining_by_line.fetch(line.id) }
       now = Time.current
 
       shares = eligible_lines.map do |line|
-        exact = total_eligible.zero? ? BigDecimal(0) : BigDecimal(applied_amount_cents) * BigDecimal(line.extended_price_cents) / BigDecimal(total_eligible)
-        { line: line, exact: exact, floor: exact.floor.to_i }
+        remaining = remaining_by_line.fetch(line.id)
+        exact = total_eligible.zero? ? BigDecimal(0) : BigDecimal(applied_amount_cents) * BigDecimal(remaining) / BigDecimal(total_eligible)
+        { line: line, remaining: remaining, exact: exact, floor: exact.floor.to_i }
       end
 
       allocated_floor_total = shares.sum { |s| s[:floor] }
@@ -182,13 +187,24 @@ module Pos
       ordered.first(residual).each { |s| s[:floor] += 1 } if residual.positive?
 
       shares.each do |s|
+        raise Error, "discount allocation exceeds remaining capacity for a line" if s[:floor] > s[:remaining]
+
         PosDiscountAllocation.create!(
           pos_discount: discount,
           pos_line_item: s[:line],
-          eligible_amount_cents: s[:line].extended_price_cents,
+          eligible_amount_cents: s[:remaining],
           allocated_amount_cents: s[:floor],
           created_at: now
         )
+      end
+    end
+
+    def remaining_discountable_cents_by_line(lines)
+      already = PosDiscountAllocation.where(pos_line_item_id: lines.map(&:id))
+                                     .group(:pos_line_item_id)
+                                     .sum(:allocated_amount_cents)
+      lines.each_with_object({}) do |line, hash|
+        hash[line.id] = [ line.extended_price_cents - already.fetch(line.id, 0), 0 ].max
       end
     end
 

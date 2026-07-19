@@ -328,6 +328,12 @@ pos_tender_card_standalone:
   permission_group: pos
   active: true
 
+pos_tender_card_void:
+  code: pos.tender.card_void
+  name: Confirm external card tender voids
+  permission_group: pos
+  active: true
+
 pos_cash_movement_create:
   code: pos.cash_movement.create
   name: Paid-in / paid-out / drops

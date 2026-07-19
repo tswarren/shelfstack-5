@@ -21,9 +21,11 @@ Refund merchandise linked to a completed sale line without mutating the original
 2. `Pos::RecalculateTransaction` — reverses original tax components proportionally (does not recalculate current rules for return lines); net uses reversed discounts.
 3. `Pos::AddCashRefundTender` when net is negative (`direction: refunded`).
 4. `Pos::CompleteTransaction` → `Inventory::PostCustomerReturn`:
-   - `return_to_stock` + quantity tracking → inbound `customer_return` ledger
+   - `return_to_stock` + quantity tracking → inbound `customer_return` ledger (sellable)
+   - `inspection_required` / `damaged` / `return_to_vendor` → inbound `customer_return` plus `unavailable` increase (individual units move to matching status)
+   - `discard` → inbound return then outbound `quantity_adjustment`
+   - `non_inventory` → no inventory effect when original tracking mode is `none`
    - `return_to_stock` + individual → unit restored to `available`
-   - other dispositions → no sellable stock restore (warning)
 
 ## Invariants
 

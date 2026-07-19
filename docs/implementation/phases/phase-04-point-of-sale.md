@@ -235,7 +235,11 @@ Double-submit of the same completion request must not duplicate postings.
 
 - Return lines linked to original completed sale lines.
 - Use original completed commercial values (price, Discount allocations, tax components, Department, cost).
-- Return reason and disposition; inventory effects per disposition (`return_to_stock` restores sellable stock; others warn without On Hand restore — OD-010 buckets deferred).
+- Return reason and disposition; inventory effects per disposition:
+  - `return_to_stock` → on_hand + qty (sellable)
+  - `inspection_required` / `damaged` / `return_to_vendor` → on_hand + qty and unavailable + qty (OD-010 still open for per-status buckets; aggregate `unavailable` is used)
+  - `discard` → customer_return inbound then quantity_adjustment outbound
+  - `non_inventory` → no stock effect when tracking mode is `none`
 - Only after 4c is stable.
 
 ### Exit

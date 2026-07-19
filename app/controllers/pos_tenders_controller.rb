@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 class PosTendersController < ApplicationController
-  before_action -> { require_permission!(create_permission) }, only: %i[create]
-  before_action -> { require_permission!("pos.access") }, only: %i[destroy]
   before_action :set_transaction
   before_action :set_tender, only: %i[destroy]
+  before_action -> { require_permission!(create_permission) }, only: %i[create]
+  before_action -> { require_permission!(destroy_permission) }, only: %i[destroy]
 
   def create
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
@@ -36,7 +36,13 @@ class PosTendersController < ApplicationController
   end
 
   def destroy
-    result = Pos::RemoveTender.call(pos_tender: @tender, actor: Current.user, reason: params[:reason])
+    result = Pos::RemoveTender.call(
+      pos_tender: @tender,
+      actor: Current.user,
+      reason: params[:reason],
+      external_void_confirmed: params[:external_void_confirmed],
+      external_void_reference: params[:external_void_reference]
+    )
     if result.success?
       redirect_to pos_transaction_path(@pos_transaction), notice: "Tender removed."
     else
@@ -60,5 +66,13 @@ class PosTendersController < ApplicationController
   def create_permission
     tender_type = params[:tender_type_id].presence && Current.organization.tender_types.find_by(id: params[:tender_type_id])
     tender_type&.tender_category == "card" ? "pos.tender.card_standalone" : "pos.tender.cash"
+  end
+
+  def destroy_permission
+    if @tender&.authorized? && @tender.tender_type.tender_category == "card"
+      "pos.tender.card_void"
+    else
+      "pos.access"
+    end
   end
 end

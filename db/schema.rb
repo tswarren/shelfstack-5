@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_021001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -588,6 +588,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021001) do
     t.datetime "created_at", null: false
     t.bigint "created_by_user_id", null: false
     t.string "direction", default: "received", null: false
+    t.datetime "external_void_confirmed_at"
+    t.bigint "external_void_confirmed_by_user_id"
+    t.string "external_void_reference"
     t.bigint "pos_transaction_id", null: false
     t.text "remove_reason"
     t.datetime "removed_at"
@@ -602,6 +605,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021001) do
     t.datetime "voided_at"
     t.bigint "voided_by_user_id"
     t.index ["created_by_user_id"], name: "index_pos_tenders_on_created_by_user_id"
+    t.index ["external_void_confirmed_by_user_id"], name: "index_pos_tenders_on_external_void_confirmed_by_user_id"
     t.index ["pos_transaction_id", "status"], name: "index_pos_tenders_on_pos_transaction_id_and_status"
     t.index ["pos_transaction_id"], name: "index_pos_tenders_on_pos_transaction_id"
     t.index ["removed_by_user_id"], name: "index_pos_tenders_on_removed_by_user_id"
@@ -1085,6 +1089,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021001) do
   add_foreign_key "pos_tenders", "stores", on_delete: :restrict
   add_foreign_key "pos_tenders", "tender_types", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "users", column: "external_void_confirmed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "removed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "voided_by_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "active_pos_session_id", on_delete: :restrict

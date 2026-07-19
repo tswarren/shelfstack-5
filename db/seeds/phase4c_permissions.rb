@@ -13,6 +13,8 @@ unless defined?(PHASE4C_PERMISSIONS)
       description: "Accept cash tenders" },
     { code: "pos.tender.card_standalone", name: "Record standalone card tenders", permission_group: "pos",
       description: "Record standalone card tenders" },
+    { code: "pos.tender.card_void", name: "Confirm external card tender voids", permission_group: "pos",
+      description: "Confirm external terminal void for authorized card tenders" },
     { code: "pos.cash_movement.create", name: "Paid-in / paid-out / drops", permission_group: "pos",
       description: "Paid-in / paid-out / drops" },
     { code: "pos.receipt.reprint", name: "Reprint receipts", permission_group: "pos",

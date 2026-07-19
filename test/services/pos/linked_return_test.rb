@@ -133,7 +133,7 @@ module Pos
       assert_equal(-sale_net, return_net)
     end
 
-    test "non-stock disposition completes without restoring on_hand" do
+    test "non-stock disposition restores on_hand as unavailable" do
       ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       result = AddLinkedReturnLine.call(
         pos_transaction: ret_txn, original_pos_line_item: @sale_line, quantity: 1,
@@ -146,10 +146,77 @@ module Pos
         pos_transaction: ret_txn, pos_session: @session, actor: @admin, completion_idempotency_key: "ret-damaged"
       )
       assert complete.success?, complete.error
-      assert complete.warnings.any? { |w| w.include?("does not restore sellable stock") }
 
       balance = StockBalance.find_by!(store: @store, product_variant: @variant)
-      assert_equal 0, balance.on_hand
+      assert_equal 1, balance.on_hand
+      assert_equal 1, balance.unavailable
+      assert_equal 0, balance.available
+    end
+
+    test "cancelling a return transaction restores returnable quantity" do
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: @sale_line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      assert_equal 1, @sale_line.remaining_returnable_quantity
+
+      cancel = CancelTransaction.call(pos_transaction: ret_txn, actor: @admin, reason: "customer changed mind")
+      assert cancel.success?, cancel.error
+      assert_equal "removed", ret_txn.pos_line_items.first.reload.status
+      assert_equal 2, @sale_line.remaining_returnable_quantity
+    end
+
+    test "tax exemption on a mixed transaction still refunds linked return tax" do
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: @sale_line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      AddOpenRingLine.call(
+        pos_transaction: ret_txn, department: departments(:books_new), unit_price_cents: 500, actor: @admin
+      )
+      ApplyTaxExemption.call(pos_transaction: ret_txn, exemption_type: "nonprofit", actor: @admin)
+
+      totals = RecalculateTransaction.call(pos_transaction: ret_txn)
+      assert totals.tax_exempt?
+      assert totals.tax_total_cents.negative?, "expected refunded original tax to remain after exemption"
+      return_line = ret_txn.pos_line_items.returns.pending.first
+      assert return_line.pos_line_item_taxes.sum(:amount_cents).positive?
+    end
+
+    test "partial returns exactly exhaust original tax cents" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      # Force a awkward tax amount via open-ring style is hard; use existing calc then assert residual policy.
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin, completion_idempotency_key: "sale-partial-tax"
+      )
+      line.reload
+      original_tax = line.pos_line_item_taxes.sum(:amount_cents)
+      skip "need positive tax for residual test" if original_tax <= 0
+
+      refunded = 0
+      3.times do |i|
+        ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+        result = AddLinkedReturnLine.call(
+          pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        )
+        assert result.success?, result.error
+        refunded += result.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
+        net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
+        AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+        CompleteTransaction.call(
+          pos_transaction: ret_txn, pos_session: @session, actor: @admin,
+          completion_idempotency_key: "ret-partial-#{i}"
+        )
+      end
+
+      assert_equal original_tax, refunded
     end
 
     private

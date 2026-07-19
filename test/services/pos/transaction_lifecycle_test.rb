@@ -121,6 +121,7 @@ module Pos
       assert result.success?
       transaction.reload
       assert transaction.cancelled?
+      assert_equal "removed", line.reload.status
 
       balance = StockBalance.find_by(store: @store, product_variant: @variant)
       assert_equal 0, balance.reserved

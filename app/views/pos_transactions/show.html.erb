@@ -201,7 +201,18 @@
           <td><%= tender.authorization_code || tender.terminal_reference %></td>
           <td>
             <% if @pos_transaction.open? && tender.unresolved? %>
-              <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
+              <% if tender.authorized? && tender.tender_type.tender_category == "card" %>
+                <%= form_with url: pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "pos-inline-form" do |form| %>
+                  <%= form.label :external_void_reference, "External void ref" %>
+                  <%= form.text_field :external_void_reference, style: "width:8em" %>
+                  <%= form.check_box :external_void_confirmed, {}, "true", "false" %>
+                  <%= form.label :external_void_confirmed, "External void confirmed" %>
+                  <%= form.submit "Void card", class: "button button-small button-danger",
+                        data: { turbo_confirm: "Confirm the card was voided on the external terminal before continuing." } %>
+                <% end %>
+              <% else %>
+                <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
+              <% end %>
             <% end %>
           </td>
         </tr>

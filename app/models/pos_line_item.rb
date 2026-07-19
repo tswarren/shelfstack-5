@@ -94,13 +94,20 @@ class PosLineItem < ApplicationRecord
   end
 
   # Domain invariant "Linked Returns do not exceed remaining quantity": counts
-  # pending (not only completed) linked return lines against this original sale
-  # line so a second concurrent return cannot be added past the remaining
-  # balance before the first one completes.
+  # completed linked returns and pending linked returns only while their owning
+  # transaction is still open or suspended. Cancelled transactions soft-remove
+  # pending lines; this join is a safety net if a pending line somehow remains.
   def remaining_returnable_quantity
     return 0 unless sale?
 
-    already_returned = PosLineItem.where(original_pos_line_item_id: id, status: %w[pending completed]).sum(:quantity)
+    already_returned = PosLineItem
+      .joins(:pos_transaction)
+      .where(original_pos_line_item_id: id)
+      .where(
+        "(pos_line_items.status = 'completed') OR " \
+        "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
+      )
+      .sum(:quantity)
     quantity - already_returned
   end
 

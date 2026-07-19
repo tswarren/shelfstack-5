@@ -107,6 +107,28 @@ module Pos
       assert_equal "discount_apply", approved.pos_approval.action_type
     end
 
+    test "stacked discounts cannot exceed remaining line gross" do
+      line = add_open_ring_line(1000)
+
+      first = ApplyDiscount.call(
+        pos_transaction: @transaction, scope: "line", pos_line_item: line, method: "fixed_amount",
+        amount_cents: 600, actor: @admin
+      )
+      assert first.success?
+
+      second = ApplyDiscount.call(
+        pos_transaction: @transaction, scope: "line", pos_line_item: line, method: "fixed_amount",
+        amount_cents: 600, actor: @admin
+      )
+      assert second.success?
+      assert_equal 400, second.pos_discount.applied_amount_cents
+      assert_equal 1000, PosDiscountAllocation.where(pos_line_item: line).sum(:allocated_amount_cents)
+
+      totals = RecalculateTransaction.call(pos_transaction: @transaction)
+      assert totals.success?
+      assert totals.net_total_cents >= 0
+    end
+
     private
 
     def add_open_ring_line(unit_price_cents)

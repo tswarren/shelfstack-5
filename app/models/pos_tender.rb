@@ -12,6 +12,7 @@ class PosTender < ApplicationRecord
   belongs_to :created_by_user, class_name: "User"
   belongs_to :voided_by_user, class_name: "User", optional: true
   belongs_to :removed_by_user, class_name: "User", optional: true
+  belongs_to :external_void_confirmed_by_user, class_name: "User", optional: true
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
   validates :status, presence: true, inclusion: { in: STATUSES }
