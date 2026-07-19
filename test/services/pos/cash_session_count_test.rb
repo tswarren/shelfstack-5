@@ -55,14 +55,54 @@ module Pos
       expected = CalculateExpectedCash.call(pos_session: session).expected_cash_cents
       assert_equal 5000 + net, expected
 
-      assert RecordClosingCashCount.call(pos_session: session, counted_cash_cents: expected + 25, actor: @admin).success?
-      closed = CloseSession.call(pos_session: session, actor: @admin)
+      closed = CloseSession.call(pos_session: session, actor: @admin, counted_cash_cents: expected + 25)
       assert closed.success?, closed.error
       session.reload
       assert session.closed?
       assert_equal expected, session.expected_cash_cents
       assert_equal expected + 25, session.counted_cash_cents
       assert_equal 25, session.cash_variance_cents
+      assert PosSessionCashCount.exists?(pos_session_id: session.id, count_type: "closing")
+    end
+
+    test "failed close with open transaction does not record a closing cash count" do
+      session = OpenSession.call(
+        business_day: @day, store: @store, pos_device: @device, cash_drawer: @drawer,
+        opening_cash_cents: 1000, cashier: @admin, actor: @admin
+      ).pos_session
+      OpenTransaction.call(pos_session: session, actor: @admin)
+
+      result = CloseSession.call(pos_session: session, actor: @admin, counted_cash_cents: 1000)
+      refute result.success?
+      assert_match(/open transaction/, result.error)
+      refute PosSessionCashCount.exists?(pos_session_id: session.id, count_type: "closing")
+      assert session.reload.open?
+    end
+
+    test "close accepts a manager recount when expected cash changed after a prior count" do
+      session = OpenSession.call(
+        business_day: @day, store: @store, pos_device: @device, cash_drawer: @drawer,
+        opening_cash_cents: 2000, cashier: @admin, actor: @admin
+      ).pos_session
+
+      # Pre-record a closing count (legacy path), then cash activity changes expected.
+      assert RecordClosingCashCount.call(pos_session: session, counted_cash_cents: 2000, actor: @admin).success?
+
+      txn = OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
+      net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+      AddCashTender.call(pos_transaction: txn, tender_type: @cash, amount_tendered_cents: net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: txn, pos_session: session, actor: @admin, completion_idempotency_key: "cash-recount-1"
+      )
+
+      expected = CalculateExpectedCash.call(pos_session: session).expected_cash_cents
+      closed = CloseSession.call(pos_session: session, actor: @admin, counted_cash_cents: expected)
+      assert closed.success?, closed.error
+      session.reload
+      assert_equal expected, session.counted_cash_cents
+      assert_equal 0, session.cash_variance_cents
+      assert PosSessionCashCount.exists?(pos_session_id: session.id, count_type: "manager_recount")
     end
 
     test "card-only sessions close without cash counts" do

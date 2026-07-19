@@ -23,7 +23,6 @@ module Pos
     end
 
     def call
-      raise Error, "session is not open" unless @pos_session.open?
       raise Error, "amount must be positive" unless @amount_cents.positive?
       raise Error, "reference is required" if @cash_movement_type.requires_reference && @reference.blank?
 
@@ -44,8 +43,11 @@ module Pos
       return unauthorized_result(authorization) unless authorization.allowed?
 
       ActiveRecord::Base.transaction do
+        session = PosSession.lock.find(@pos_session.id)
+        raise Error, "session is not open" unless session.open?
+
         movement = PosCashMovement.create!(
-          store: store, pos_session: @pos_session, cash_movement_type: @cash_movement_type,
+          store: store, pos_session: session, cash_movement_type: @cash_movement_type,
           amount_cents: @amount_cents, reason: @reason, reference: @reference,
           created_by_user: @actor, approved_by_user: authorization.pos_approval&.approved_by_user,
           pos_approval: authorization.pos_approval, created_at: Time.current

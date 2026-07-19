@@ -75,7 +75,19 @@ class PosTransactionsController < ApplicationController
 
     result = Pos::RecallTransaction.call(pos_transaction: @pos_transaction, pos_session: session, actor: Current.user)
     if result.success?
-      redirect_to pos_transaction_path(result.pos_transaction)
+      notices = []
+      alerts = []
+      if result.changes.any?
+        notices << "Recall refreshed commercial values: " + result.changes.map { |c|
+          "line #{c.pos_line_item_id} #{c.field} #{c.from} → #{c.to}"
+        }.join("; ")
+      end
+      notices.concat(result.warnings) if result.warnings.any?
+      alerts.concat(result.blockers.map { |b| "Eligibility blocker: #{b}" }) if result.blockers.any?
+
+      redirect_opts = { notice: notices.presence&.join(" | ") || (alerts.empty? ? "Transaction recalled." : nil) }
+      redirect_opts[:alert] = alerts.join(" | ") if alerts.any?
+      redirect_to pos_transaction_path(result.pos_transaction), redirect_opts.compact
     else
       redirect_to register_path, alert: result.error
     end

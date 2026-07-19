@@ -303,6 +303,36 @@ module Pos
       assert_equal original_tax, refunded
     end
 
+    test "multiple same-transaction return lines exactly reverse uneven extended cost" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-cost-residual"
+      )
+      line.reload
+      # Force a non-divisible extended cost so residual ownership matters.
+      line.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
+      assert_equal 100, line.cost_extended_cents
+      assert_equal 3, line.quantity
+
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      3.times do
+        result = AddLinkedReturnLine.call(
+          pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        )
+        assert result.success?, result.error
+      end
+
+      reversed = ret_txn.pos_line_items.returns.pending.sum(:cost_extended_cents)
+      assert_equal 100, reversed
+      assert_equal [ 33, 34, 33 ], ret_txn.pos_line_items.returns.pending.order(:position, :id).pluck(:cost_extended_cents)
+    end
+
     test "discard disposition leaves pre-existing inventory valuation unchanged" do
       # Sale setup left on_hand at 0 with historical sale cost 500. Restock at a
       # different cost so discard must not blend the returned unit into survivors.

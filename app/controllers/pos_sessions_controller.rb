@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosSessionsController < ApplicationController
+  include PosHelper
+
   before_action -> { require_permission!("pos.session.open") }, only: %i[new create]
   before_action -> { require_permission!("pos.session.close") }, only: %i[close close_form]
   before_action :set_session, only: %i[close close_form]
@@ -41,28 +43,23 @@ class PosSessionsController < ApplicationController
     end
 
     @expected_cash_cents = Pos::CalculateExpectedCash.call(pos_session: @session).expected_cash_cents
-    @closing_count = PosSessionCashCount.find_by(pos_session_id: @session.id, count_type: "closing")
+    @closing_count = PosSessionCashCount
+      .where(pos_session_id: @session.id, count_type: %w[closing manager_recount])
+      .order(:id)
+      .last
   end
 
   def close
-    if @session.cash_enabled? && params[:counted_cash_cents].present?
-      counted = Pos::RecordClosingCashCount.call(
-        pos_session: @session,
-        counted_cash_cents: params[:counted_cash_cents],
-        actor: Current.user
-      )
-      unless counted.success?
-        redirect_to close_form_pos_session_path(@session), alert: counted.error
-        return
-      end
-    end
-
-    result = Pos::CloseSession.call(pos_session: @session, actor: Current.user)
+    result = Pos::CloseSession.call(
+      pos_session: @session,
+      actor: Current.user,
+      counted_cash_cents: params[:counted_cash_cents]
+    )
     if result.success?
       notice = if result.replayed
         "Session already closed."
       elsif @session.reload.cash_enabled?
-        "Session closed. Variance: #{@session.cash_variance_cents}¢."
+        "Session closed. Variance: #{pos_money(@session.cash_variance_cents)}."
       else
         "Session closed."
       end

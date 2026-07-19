@@ -138,9 +138,7 @@ module Pos
       assert transaction.suspended?
       assert_nil transaction.active_pos_session_id
 
-      assert RecordClosingCashCount.call(pos_session: @session_a, counted_cash_cents: 0, actor: @admin).success?
-      close_result = CloseSession.call(pos_session: @session_a, actor: @admin)
-      assert close_result.success?
+      assert CloseSession.call(pos_session: @session_a, actor: @admin, counted_cash_cents: 0).success?
 
       session_b = OpenSession.call(
         business_day: @day, store: @store, pos_device: @device_b, cashier: @admin, actor: @admin

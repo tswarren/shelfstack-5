@@ -10,6 +10,7 @@ module Pos
     self.use_transactional_tests = false
 
     setup do
+      PosCashMovement.delete_all
       PosTender.delete_all
       PosLineItemTax.delete_all
       PosLineItem.delete_all
@@ -29,6 +30,7 @@ module Pos
     end
 
     teardown do
+      PosCashMovement.delete_all
       PosTender.delete_all
       PosLineItemTax.delete_all
       PosLineItem.delete_all
@@ -150,6 +152,59 @@ module Pos
         assert suspended.suspended?
         assert_nil suspended.active_pos_session_id
       end
+    end
+
+    test "concurrent cash movement versus close session never posts on a closed session" do
+      drawer = cash_drawers(:drawer_1)
+      movement_type = cash_movement_types(:additional_float)
+      day = OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = OpenSession.call(
+        business_day: day, store: @store, pos_device: @device, cash_drawer: drawer,
+        opening_cash_cents: 5000, cashier: @admin, actor: @admin
+      ).pos_session
+      results = {}
+
+      threads = [
+        Thread.new do
+          ActiveRecord::Base.connection_pool.with_connection do
+            results[:movement] = CreateCashMovement.call(
+              pos_session: session,
+              cash_movement_type: movement_type,
+              amount_cents: 100,
+              actor: @admin,
+              reason: "race"
+            )
+          end
+        end,
+        Thread.new do
+          ActiveRecord::Base.connection_pool.with_connection do
+            results[:close] = CloseSession.call(
+              pos_session: session, actor: @admin, counted_cash_cents: 5000
+            )
+          end
+        end
+      ]
+      threads.each(&:join)
+
+      session.reload
+      movements = PosCashMovement.where(pos_session_id: session.id)
+      if results[:movement].success?
+        assert_equal 1, movements.count
+        if results[:close].success?
+          assert session.closed?
+          # Movement committed first; expected cash at close includes it.
+          assert_equal 5100, session.expected_cash_cents
+        else
+          assert session.open?
+        end
+      else
+        assert session.closed?
+        assert results[:close].success?
+        assert_match(/not open/, results[:movement].error)
+        assert_equal 0, movements.count
+      end
+    ensure
+      PosCashMovement.where(pos_session_id: session&.id).delete_all if session
     end
   end
 end

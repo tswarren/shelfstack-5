@@ -6,6 +6,13 @@
   Signed in as <strong><%= Current.user.username %></strong>
 </p>
 
+<% if flash[:alert].present? %>
+  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
+<% end %>
+<% if flash[:notice].present? %>
+  <div class="ss-alert ss-alert-info"><p><%= flash[:notice] %></p></div>
+<% end %>
+
 <% if @business_day.blank? %>
   <div class="ss-alert ss-alert-info">
     <p>No business day is open for this store.</p>
@@ -53,17 +60,39 @@
     <% if Current.user.can?("pos.cash_movement.create", store: Current.store) %>
       <div class="pos-panel">
         <h2>Cash movement</h2>
+        <% if @open_session.pos_cash_movements.any? %>
+          <table>
+            <thead>
+              <tr><th>Type</th><th>Direction</th><th>Amount</th><th>Reference</th></tr>
+            </thead>
+            <tbody>
+              <% @open_session.pos_cash_movements.includes(:cash_movement_type).order(:id).each do |movement| %>
+                <tr>
+                  <td><%= movement.cash_movement_type.name %></td>
+                  <td><%= movement.cash_movement_type.direction.humanize %></td>
+                  <td><%= pos_money(movement.amount_cents) %></td>
+                  <td><%= movement.reference.presence || "—" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        <% end %>
         <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "pos-inline-form" do |form| %>
           <%= form.label :cash_movement_type_id, "Type" %>
           <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name %>
           <%= form.label :amount_cents, "Amount (cents)" %>
-          <%= form.number_field :amount_cents, min: 1, style: "width:8em" %>
+          <%= form.number_field :amount_cents, min: 1, style: "width:8em", required: true %>
           <%= form.text_field :reason, placeholder: "Reason" %>
-          <%= form.text_field :reference, placeholder: "Reference (if required)" %>
+          <%= form.text_field :reference, placeholder: "Reference (required for paid in/out and safe drop)" %>
           <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
           <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
           <%= form.submit "Record cash movement", class: "button button-outline" %>
         <% end %>
+        <p class="muted">
+          Additional float needs only amount.
+          Paid in, paid out, and safe drop require a reference.
+          Paid in/out also require approval when the amount exceeds your paid-out authority.
+        </p>
       </div>
     <% end %>
 

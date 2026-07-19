@@ -65,7 +65,9 @@ module Pos
           return_source: "linked_sale",
           created_by_user: @actor,
           cost_unit_cost_cents: original.cost_unit_cost_cents,
-          cost_extended_cents: cumulative_reversal_cents(original.cost_extended_cents, original.quantity, prior_qty_for_cost(original), @quantity),
+          cost_extended_cents: cumulative_reversal_cents(
+            original.cost_extended_cents, original.quantity, prior_qty_for_cost(original, transaction), @quantity
+          ),
           cost_method_snapshot: original.cost_method_snapshot,
           cost_quality_snapshot: original.cost_quality_snapshot
         )
@@ -152,11 +154,24 @@ module Pos
       completed + earlier_same_txn
     end
 
-    # Before the return line exists, only completed returns claim residual.
-    def prior_qty_for_cost(original)
-      PosLineItem
+    # Completed prior returns plus earlier pending return lines already on this
+    # transaction (the new line is not inserted yet, so all same-txn pending
+    # returns are earlier). Matches tax/discount residual ownership.
+    def prior_qty_for_cost(original, transaction)
+      completed = PosLineItem
         .where(original_pos_line_item_id: original.id, status: "completed", direction: "return")
         .sum(:quantity)
+
+      earlier_same_txn = PosLineItem
+        .where(
+          pos_transaction_id: transaction.id,
+          original_pos_line_item_id: original.id,
+          status: "pending",
+          direction: "return"
+        )
+        .sum(:quantity)
+
+      completed + earlier_same_txn
     end
   end
 end

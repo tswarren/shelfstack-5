@@ -105,5 +105,19 @@ module Pos
       refute result.allowed?
       assert_match(/authority is also insufficient/, result.error)
     end
+
+    test "missing requester permission cannot be bypassed by a valid approver" do
+      result = AuthorizeAction.call(
+        store: @store, requester: @catalog_editor, permission_key: "pos.price.override",
+        action_type: "price_override", reason: "manager cover",
+        limit_key: :maximum_price_override_rate, requested_value: 0.1,
+        approver: @admin, approver_pin: "1234"
+      )
+
+      refute result.allowed?
+      assert_equal :denied, result.status
+      assert_match(/missing permission pos\.price\.override/, result.error)
+      assert_nil result.pos_approval
+    end
   end
 end

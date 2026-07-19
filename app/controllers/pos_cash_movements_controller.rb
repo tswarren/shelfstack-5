@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class PosCashMovementsController < ApplicationController
-  before_action -> { require_permission!("pos.access") }, only: %i[create]
+  before_action -> { require_permission!("pos.cash_movement.create") }, only: %i[create]
   before_action :set_session
 
   def create

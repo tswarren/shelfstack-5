@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 module Pos
-  # Records the closing counted cash for a cash-enabled Session. Append-only;
-  # CloseSession requires this count before closing the Session.
+  # Records a closing counted-cash observation for a cash-enabled Session.
+  # Prefer `Pos::CloseSession(counted_cash_cents:)` so the count and close commit
+  # atomically after close guards pass. This service remains for callers that need
+  # to persist a count independently; CloseSession will reuse it or append a
+  # manager_recount when a different amount is supplied at close.
   class RecordClosingCashCount < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_session_cash_count, :success?, :error)

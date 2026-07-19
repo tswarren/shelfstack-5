@@ -5,11 +5,11 @@ module Pos
   # discount apply, tax exemption, tax category override). Separates permission,
   # numeric authority, and approval per ADR-0011:
   #
-  # * the requester must hold `permission_key` to attempt the action at all;
+  # * the requester must hold `permission_key` to attempt the action at all —
+  #   missing permission is a hard deny and cannot be bypassed by an approver;
   # * when `limit_key` is present, the requester's own numeric authority governs
   #   whether they may proceed directly or must escalate to an approver;
-  # * when `limit_key` is absent, holding `permission_key` is itself sufficient —
-  #   escalation is required only when the requester lacks it;
+  # * when `limit_key` is absent, holding `permission_key` is itself sufficient;
   # * an approver must authenticate with their own credentials, hold
   #   `approver_permission_key` (defaults to `permission_key`), and (for numeric
   #   actions) have their own authority cover the requested value.
@@ -43,7 +43,9 @@ module Pos
     end
 
     def call
-      return escalate_with_approver unless requester_permitted?
+      unless requester_permitted?
+        return denied("missing permission #{@permission_key}")
+      end
 
       if @limit_key.nil?
         allowed
