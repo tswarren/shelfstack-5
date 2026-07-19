@@ -107,26 +107,34 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Individually tracked variants (`inventory_tracking_mode: individual`) are rejected by `Pos::AddLine` until Phase 4d.
 - No service in this list sets `pos_transactions.status` or `pos_line_items.status` to `completed`; that is reserved for `Pos::CompleteTransaction` (Phase 4c).
 
-## Phase 4b (partial) — Store tax configuration and Tax::CalculateTransaction
+## Phase 4b — Price, tax persistence, discounts, approvals
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `Classification::CreateStoreTaxRate` / `UpdateStoreTaxRate` | Classification and Configuration | 4b | Yes | No | Store Tax Rate | Store, rate attrs (code immutable on update) | Persisted Store Tax Rate + audit |
 | `Classification::CreateStoreTaxRule` / `UpdateStoreTaxRule` | Classification and Configuration | 4b | Yes | No | Store Tax Rule | Store, Tax Category, optional Store Tax Rate, treatment, fraction, order, compounding, effective dates | Persisted Store Tax Rule + audit; overlap and treatment/rate consistency validated on the model |
 | `Tax::CalculateTransaction` | Point of Sale / Classification and Configuration | 4b | No (read-only rule resolution) | Yes | None | Store, completion date, duck-typed lines (`id`, `tax_category_id`, `direction`, `taxable_merchandise_amount_cents`, `position`) | Per-line component results (taxable base, amount, snapshots), warnings, blockers; missing effective rule is a blocker, never an exemption |
+| `Pos::AuthorizeAction` | Point of Sale / Organization and Authorization | 4b | Yes (only when creating a `PosApproval`) | No | None | Store, requester, permission key, optional authority `limit_key`/requested value, optional approver + approver PIN | `:allowed` / `:approved` (with `PosApproval`) / `:requires_approval` / `:denied`; requester lacking permission or authority escalates to an independent approver rather than a flat deny |
+| `Pos::OverridePrice` | Point of Sale | 4b | Yes | No | Line (`lock`) | Line, requested unit price, actor, optional reason/approver | Overridden `unit_price_cents`; audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::ApplyDiscount` | Point of Sale | 4b | Yes | No | Transaction (`lock`) | Transaction, scope (`line`/`transaction`), method, rate/amount, `tax_treatment` (defaults `reduces_taxable_base`), actor, optional discount reason/approver | `PosDiscount` + largest-remainder `PosDiscountAllocation`s; audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::OverrideTaxCategory` | Point of Sale | 4b | Yes | No | Line (`lock`) | Line, Tax Category, required reason, actor, optional approver | Overridden line Tax Category; retains first pre-override category/actor/timestamp/reason; audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::ApplyTaxExemption` | Point of Sale | 4b | Yes | No | Transaction (`lock`) | Transaction, exemption type, actor, optional notes/approver | `PosTaxExemption` (`coverage: whole_transaction` only; one per Transaction, re-applying is a no-op success); audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::RecalculateTransaction` | Point of Sale | 4b | Yes | Yes (same inputs reproduce the same persisted rows) | Transaction (`lock`) | Transaction | Deletes and re-persists `pos_line_item_taxes` for non-completed lines from `Tax::CalculateTransaction` against the currently allocated taxable base; returns subtotal/discount/tax/net totals and blockers/warnings for display; does not write cached totals onto `pos_transactions` |
 
 ### Phase 4b tax notes
 
-- `Tax::CalculateTransaction` is the pure ADR-0014 hybrid calculation: taxability/base resolved per line, one round-half-up aggregation per transaction component (`store_tax_rate_id` + `calculation_order` + `compounds_on_prior_tax`) and line direction, largest-remainder cent allocation (tie-break: remainder desc, then position asc, then id asc), and ascending-`calculation_order` compounding using already-finalized (allocated) prior tax amounts on the line.
-- `exempt` treatment produces no `pos_line_item_taxes`-shaped component row (no collectible tax); `zero_rated` produces an explicit zero-amount component so the base still reports.
-- It does not persist anything. `Pos::RecalculateTransaction` (persist pending discounts/tax/totals) and `Pos::CompleteTransaction` (blocker enforcement at completion) remain open Phase 4b/4c work.
+- `Tax::CalculateTransaction` is the pure ADR-0014 hybrid calculation: taxability/base resolved per line, one round-half-up aggregation per transaction component (`store_tax_rate_id` + `calculation_order` + `compounds_on_prior_tax`) and line direction, largest-remainder cent allocation (tie-break: remainder desc, then position asc, then id asc), and ascending-`calculation_order` compounding using already-finalized (allocated) prior tax amounts on the line. It does not persist anything.
+- `exempt` treatment produces no `Tax::CalculateTransaction` *component* result (no collectible tax to allocate); `zero_rated` produces an explicit zero-amount component so the base still reports. `Pos::RecalculateTransaction` still persists a zero-amount `pos_line_item_taxes` row with `treatment_snapshot: "exempt"` for exempt rules, so receipts/audits can show which rule exempted the line rather than silently omitting the category.
 - Effective Store Tax Rules are resolved by the **store-local calendar date at completion**, not the Business Day `reporting_date` (ADR-0014).
+- `Pos::RecalculateTransaction` runs after every 4a/4b line- or transaction-mutating service (`AddLine`, `AddOpenRingLine`, `UpdateLineQty`, `RemoveLine`, `OverridePrice`, `ApplyDiscount`, `OverrideTaxCategory`, `ApplyTaxExemption`); a missing effective Store Tax Rule surfaces as a blocker in that service's `warnings`, never an implicit exemption.
+- `Pos::AuthorizeAction` centralizes ADR-0011 permission/authority/approval evaluation for all restricted 4b actions: the requester's own numeric authority (`EvaluateAuthority`, membership-override columns per OD-013 interim) is checked first when a `limit_key` is given; an approver must differ from the requester, authenticate with their own PIN (`authenticate_pin`, not the requester's), hold the approving permission, and (for numeric actions) independently have authority covering the requested value.
+- Completion-time blocker revalidation under a Transaction lock (`Pos::CompleteTransaction`) is Phase 4c work.
 
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 4b–4c: `Pos::RecalculateTransaction`, `Pos::CompleteTransaction`, discount/tender helpers
+- Phase 4c: `Pos::CompleteTransaction`, tender helpers
 - Phase 5: receipt posting, PO placement, allocation services
 - Phase 6: stored-value posting, post-void
 

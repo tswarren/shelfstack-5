@@ -102,7 +102,7 @@ Individual tracking is added in 4d. Stored-value line kind is reserved for Phase
 
 Store tax rates and store tax rules with `treatment`, denormalized `store_id`, effective dates, taxable fraction, calculation order, compounding, component labels, overlap validation, and hybrid transaction-component rounding per [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md) and [phase-04-tax-schema.md](../phase-04-tax-schema.md). OD-004 / OD-005 are accepted.
 
-**Landed** on `phase/p4-point-of-sale`: `store_tax_rates` / `store_tax_rules` schema and overlap/treatment validations, minimal admin CRUD under `classification.store_tax_rule.manage`, the pure `Tax::CalculateTransaction` calculation service, ADR-0014 fixtures/tests, and demo `GST13` seed data (see [service-catalog.md](../service-catalog.md)). Persisting calculated tax onto `pos_line_item_taxes` (`Pos::RecalculateTransaction`) and wiring completion blockers remain open 4b work.
+**Landed** on `phase/p4-point-of-sale`: `store_tax_rates` / `store_tax_rules` schema and overlap/treatment validations, minimal admin CRUD under `classification.store_tax_rule.manage`, the pure `Tax::CalculateTransaction` calculation service, ADR-0014 fixtures/tests, demo `GST13` seed data, and now the full 4b persistence/authorization slice: `pos_discounts`/`pos_discount_allocations`/`pos_line_item_taxes`/`pos_tax_exemptions`/`pos_approvals` schema; `pos.price.override`, `pos.discount.apply`, `pos.discount.approve`, `pos.tax.exempt`, `pos.tax_category.override` permissions; `Pos::AuthorizeAction`, `Pos::OverridePrice`, `Pos::ApplyDiscount`, `Pos::OverrideTaxCategory`, `Pos::ApplyTaxExemption`, `Pos::RecalculateTransaction`; recalculation wired into `AddLine`/`AddOpenRingLine`/`UpdateLineQty`/`RemoveLine`; and register UI for price override, discount apply, tax category override, and whole-transaction exemption (see [service-catalog.md](../service-catalog.md)). Completion-time revalidation of these blockers under a Transaction lock is 4c work.
 
 ### Tables / records
 
@@ -127,17 +127,17 @@ Store tax rates and store tax rules with `treatment`, denormalized `store_id`, e
 ### Exit
 
 - [x] Tax fixtures prove aggregation residual allocation, compounding, taxable fraction, and rule treatments (ADR-0014)
-- [ ] Discount allocation totals match line caches
-- [ ] Missing store tax rule for a line’s Tax Category blocks completion
-- [ ] `pos.tax_category.override` permission-denied path tested
-- [ ] Insufficient authority requires independent approver credentials
+- [x] Discount allocation totals match line caches (`Pos::ApplyDiscount` largest-remainder allocation; `test/services/pos/apply_discount_test.rb`)
+- [x] Missing store tax rule for a line's Tax Category blocks recalculation instead of implicit exemption (`Pos::RecalculateTransaction` blockers; `test/services/pos/recalculate_transaction_test.rb`). Completion-time revalidation under a Transaction lock is 4c.
+- [x] `pos.tax_category.override` permission-denied path tested (`test/services/pos/override_tax_category_test.rb`)
+- [x] Insufficient authority requires independent approver credentials (`Pos::AuthorizeAction`; `test/services/pos/authorize_action_test.rb`)
 
 ### UX acceptance (4b)
 
-- [ ] Price, discount, and tax components displayed from server-resolved values (not title-based tax)
-- [ ] Approval UI supports independent approver credentials and retains requester/approver context
-- [ ] Snapshot-facing labels use merchandise class and tax category terminology
-- [ ] Tax Category override is distinct from ordinary line editing
+- [x] Price, discount, and tax components displayed from server-resolved values (not title-based tax) — transaction show page reads persisted `pos_discount_allocations` / `pos_line_item_taxes`, not client math
+- [x] Approval UI supports independent approver credentials and retains requester/approver context — plain approver-username/PIN fields on each restricted-action form; `pos_approvals` retains requester/approver identity (a modal/drawer treatment per [pos-register-ui](../../design/pos-register-ui.md) is deferred polish, not a functional gap)
+- [x] Snapshot-facing labels use merchandise class and tax category terminology
+- [x] Tax Category override is distinct from ordinary line editing (`pos.tax_category.override`, dedicated action, audited)
 
 ---
 

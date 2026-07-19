@@ -1,17 +1,18 @@
 # Current Phase
 
-**Active delivery phase:** Phase 4a — Editable POS  
-**Status:** 4a implemented on `phase/p4-point-of-sale` (business days, sessions, transactions, product/open-ring lines, suspend/recall/cancel, permissions, minimal register UI); not merged to `main` pending manual testing per the Phase 4 delivery plan's merge gate  
+**Active delivery phase:** Phase 4b — Price, tax, discounts, approvals  
+**Status:** 4a and 4b implemented on `phase/p4-point-of-sale`; not merged to `main` pending manual testing per the Phase 4 delivery plan's merge gate  
 **Design docs:** [../design/README.md](../design/README.md)  
 **Plan document:** [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)
 
 ## Immediate next work
 
-1. Manually test Phase 4a on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
+1. Manually test Phase 4a and 4b on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
 2. ~~Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b~~ — done on `phase/p4-point-of-sale`: `store_tax_rates` / `store_tax_rules` schema, admin CRUD, the pure `Tax::CalculateTransaction` service, ADR-0014 fixtures/tests, and demo seed data. See [phase-04-tax-schema.md](phase-04-tax-schema.md), [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md), and [service-catalog.md](service-catalog.md).
-3. Begin the remainder of Phase 4b (discount allocation, `Pos::RecalculateTransaction` persisting `pos_line_item_taxes`, approvals) now that store tax rates/rules and `Tax::CalculateTransaction` have landed.
-4. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
-5. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+3. ~~Begin the remainder of Phase 4b (discount allocation, `Pos::RecalculateTransaction` persisting `pos_line_item_taxes`, approvals)~~ — done on `phase/p4-point-of-sale`: `pos_discounts`/`pos_discount_allocations`/`pos_line_item_taxes`/`pos_tax_exemptions`/`pos_approvals` schema; the five 4b permission keys; `Pos::AuthorizeAction`, `Pos::OverridePrice`, `Pos::ApplyDiscount`, `Pos::OverrideTaxCategory`, `Pos::ApplyTaxExemption`, `Pos::RecalculateTransaction`; recalculation wired into every line-mutating 4a service; and register UI for price/discount/tax-category-override/exemption with approver deny paths. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4b exit criteria and [service-catalog.md](service-catalog.md).
+4. Begin Phase 4c (tender and atomic completion) — the first demo milestone.
+5. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
+6. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
 ### UX readiness gate (complete)
 
