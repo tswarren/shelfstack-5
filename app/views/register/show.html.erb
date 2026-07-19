@@ -46,6 +46,23 @@
       <%= button_to "New sale", pos_transactions_path, class: "button button-primary" %>
     <% end %>
 
+    <% if Current.user.can?("pos.cash_movement.create", store: Current.store) %>
+      <div class="pos-panel">
+        <h2>Cash movement</h2>
+        <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "pos-inline-form" do |form| %>
+          <%= form.label :cash_movement_type_id, "Type" %>
+          <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name %>
+          <%= form.label :amount_cents, "Amount (cents)" %>
+          <%= form.number_field :amount_cents, min: 1, style: "width:8em" %>
+          <%= form.text_field :reason, placeholder: "Reason" %>
+          <%= form.text_field :reference, placeholder: "Reference (if required)" %>
+          <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
+          <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
+          <%= form.submit "Record cash movement", class: "button button-outline" %>
+        <% end %>
+      </div>
+    <% end %>
+
     <h2>Suspended transactions</h2>
     <% if @suspended_transactions.empty? %>
       <p class="muted">None.</p>

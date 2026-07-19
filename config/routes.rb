@@ -51,12 +51,14 @@ Rails.application.routes.draw do
     member do
       post :close
     end
+    resources :pos_cash_movements, only: %i[create]
   end
   resources :pos_transactions, only: %i[index show create] do
     member do
       post :suspend
       post :recall
       post :cancel
+      post :complete
     end
     resources :pos_line_items, only: %i[create update destroy] do
       member do
@@ -66,6 +68,7 @@ Rails.application.routes.draw do
     end
     resources :pos_discounts, only: %i[create]
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
+    resources :pos_tenders, only: %i[create destroy]
   end
 
   root "homes#show"

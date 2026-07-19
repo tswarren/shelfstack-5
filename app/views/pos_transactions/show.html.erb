@@ -18,6 +18,20 @@
   <div class="ss-alert ss-alert-info"><p><%= flash[:notice] %></p></div>
 <% end %>
 
+<% if @pos_transaction.completed? %>
+  <div class="ss-alert ss-alert-info">
+    <p>
+      <strong>Receipt <%= @pos_transaction.receipt_number %></strong> ·
+      completed <%= @pos_transaction.completed_at&.strftime("%Y-%m-%d %H:%M") %> ·
+      net <%= pos_money(@pos_transaction.net_total_cents) %>
+    </p>
+  </div>
+<% elsif @pos_transaction.open? && !@pos_transaction.editable? %>
+  <div class="ss-alert ss-alert-warning">
+    <p>Commercial fields (lines, prices, discounts, tax category, exemptions) are locked while a Tender is pending or authorized. Remove or void the Tender below to resume editing.</p>
+  </div>
+<% end %>
+
 <% if @pos_transaction.editable? %>
   <div class="pos-panel">
     <h2>Scan / search</h2>
@@ -136,6 +150,71 @@
   <p><strong>Net total:</strong> <%= pos_money(@net_total_cents) %></p>
 </div>
 
+<h2>Tenders</h2>
+<% if @pos_tenders.any? %>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Direction</th><th>Status</th><th>Amount</th><th>Reference</th><th></th></tr>
+    </thead>
+    <tbody>
+      <% @pos_tenders.each do |tender| %>
+        <tr>
+          <td><%= tender.tender_type.name %></td>
+          <td><%= tender.direction %></td>
+          <td><%= tender.status %></td>
+          <td><%= pos_money(tender.amount_cents) %></td>
+          <td><%= tender.authorization_code || tender.terminal_reference %></td>
+          <td>
+            <% if @pos_transaction.open? && tender.unresolved? %>
+              <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="muted">No tenders recorded.</p>
+<% end %>
+
+<% if @pos_transaction.open? %>
+  <p><strong>Balance due:</strong> <%= pos_money(@balance_due_cents) %></p>
+
+  <div class="pos-panel">
+    <h3>Cash tender</h3>
+    <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+      <%= form.label :tender_type_id, "Tender type" %>
+      <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name %>
+      <%= form.label :amount_tendered_cents, "Amount tendered (cents)" %>
+      <%= form.number_field :amount_tendered_cents, min: 1, value: @balance_due_cents, style: "width:8em" %>
+      <%= form.submit "Add cash tender", class: "button button-outline" %>
+    <% end %>
+  </div>
+
+  <div class="pos-panel">
+    <h3>Standalone card tender</h3>
+    <p class="muted">Confirm approval on the external terminal first; record the result here.</p>
+    <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+      <%= form.label :tender_type_id, "Tender type" %>
+      <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name %>
+      <%= form.label :amount_cents, "Amount (cents)" %>
+      <%= form.number_field :amount_cents, min: 1, value: @balance_due_cents, style: "width:8em" %>
+      <%= form.label :authorization_code, "Authorization code" %>
+      <%= form.text_field :authorization_code %>
+      <%= form.label :terminal_reference, "Terminal reference (optional)" %>
+      <%= form.text_field :terminal_reference %>
+      <%= form.submit "Add card tender", class: "button button-outline" %>
+    <% end %>
+  </div>
+
+  <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
+    <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post do |form| %>
+      <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
+      <%= form.submit "Complete transaction", class: "button button-primary" %>
+    <% end %>
+  <% end %>
+<% end %>
+
 <% if @removed_line_items.any? %>
   <h2>Removed lines</h2>
   <ul>
@@ -183,7 +262,7 @@
 
 <% if @pos_transaction.open? %>
   <div class="pos-actions">
-    <% if Current.user.can?("pos.transaction.suspend", store: Current.store) %>
+    <% if @pos_transaction.editable? && Current.user.can?("pos.transaction.suspend", store: Current.store) %>
       <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction), class: "button button-outline" %>
     <% end %>
     <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>

@@ -12,5 +12,6 @@ class RegisterController < ApplicationController
     @suspended_transactions = @business_day ? Current.store.pos_transactions.suspended.order(suspended_at: :desc) : PosTransaction.none
     @devices = Current.store.pos_devices.where(active: true).order(:code)
     @drawers = Current.store.cash_drawers.where(active: true).order(:code)
+    @cash_movement_types = Current.organization.cash_movement_types.where(active: true).order(:name)
   end
 end
