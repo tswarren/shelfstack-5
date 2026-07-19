@@ -200,5 +200,28 @@ module Tax
 
       refute result.success?
     end
+
+    test "inactive store tax rate on an active rule is a blocker, not silent collection" do
+      category = tax_categories(:physical_book)
+      store_tax_rates(:gst_13).update!(active: false)
+
+      lines = [ { id: 1, tax_category_id: category.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 0 } ]
+      result = CalculateTransaction.call(store: @store, lines: lines, completion_date: @completion_date)
+
+      refute result.success?
+      assert result.blockers.any? { |b| b.match?(/inactive or outside effective period/i) }
+      assert_equal 0, result.lines.first.tax_amount_cents
+    end
+
+    test "expired store tax rate on an active rule is a blocker" do
+      category = tax_categories(:physical_book)
+      store_tax_rates(:gst_13).update!(effective_to: Date.new(2026, 7, 1))
+
+      lines = [ { id: 1, tax_category_id: category.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 0 } ]
+      result = CalculateTransaction.call(store: @store, lines: lines, completion_date: @completion_date)
+
+      refute result.success?
+      assert result.blockers.any? { |b| b.match?(/inactive or outside effective period/i) }
+    end
   end
 end

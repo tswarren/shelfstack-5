@@ -34,39 +34,52 @@ module Pos
       raise Error, "unsupported method" unless PosDiscount::METHODS.include?(@method)
       raise Error, "unsupported tax treatment" unless PosDiscount::TAX_TREATMENTS.include?(@tax_treatment)
 
-      eligible_lines = resolve_eligible_lines
-      raise Error, "no eligible pending lines to discount" if eligible_lines.empty?
-
-      remaining_by_line = remaining_discountable_cents_by_line(eligible_lines)
-      eligible_lines = eligible_lines.select { |line| remaining_by_line.fetch(line.id).positive? }
-      raise Error, "no remaining discountable amount on eligible lines" if eligible_lines.empty?
-
-      base_amount_cents = eligible_lines.sum { |line| remaining_by_line.fetch(line.id) }
-      raise Error, "nothing to discount" unless base_amount_cents.positive?
-
-      applied_amount_cents = compute_applied_amount_cents(base_amount_cents)
-
       store = @pos_transaction.store
-      authorization = Pos::AuthorizeAction.call(
-        store: store,
-        requester: @actor,
-        permission_key: "pos.discount.apply",
-        approver_permission_key: "pos.discount.approve",
-        action_type: "discount_apply",
-        limit_key: authority_limit_key,
-        requested_value: authority_requested_value(applied_amount_cents),
-        reason: @reason,
-        approver: @approver,
-        approver_pin: @approver_pin,
-        pos_transaction: @pos_transaction,
-        pos_line_item: @scope == "line" ? @pos_line_item : nil,
-        pos_session: @pos_transaction.active_pos_session
-      )
-      return unauthorized_result(authorization) unless authorization.allowed?
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open for editing" unless transaction.editable?
+
+        # Canonical order: transaction lock first, then affected lines.
+        if @scope == "line"
+          raise Error, "line is required for line-scoped discounts" if @pos_line_item.blank?
+          locked_line = PosLineItem.lock.find(@pos_line_item.id)
+          raise Error, "line does not belong to this transaction" unless locked_line.pos_transaction_id == transaction.id
+          @pos_line_item = locked_line
+        else
+          transaction.pos_line_items.pending.sales.lock.order(:position, :id).load
+        end
+
+        eligible_lines = resolve_eligible_lines(transaction)
+        raise Error, "no eligible pending lines to discount" if eligible_lines.empty?
+
+        remaining_by_line = remaining_discountable_cents_by_line(eligible_lines)
+        eligible_lines = eligible_lines.select { |line| remaining_by_line.fetch(line.id).positive? }
+        raise Error, "no remaining discountable amount on eligible lines" if eligible_lines.empty?
+
+        base_amount_cents = eligible_lines.sum { |line| remaining_by_line.fetch(line.id) }
+        raise Error, "nothing to discount" unless base_amount_cents.positive?
+
+        applied_amount_cents = compute_applied_amount_cents(base_amount_cents)
+
+        authorization = Pos::AuthorizeAction.call(
+          store: store,
+          requester: @actor,
+          permission_key: "pos.discount.apply",
+          approver_permission_key: "pos.discount.approve",
+          action_type: "discount_apply",
+          limit_key: authority_limit_key,
+          requested_value: authority_requested_value(applied_amount_cents),
+          reason: @reason,
+          approver: @approver,
+          approver_pin: @approver_pin,
+          pos_transaction: transaction,
+          pos_line_item: @scope == "line" ? @pos_line_item : nil,
+          pos_session: transaction.active_pos_session
+        )
+        unless authorization.allowed?
+          raise Error, unauthorized_message(authorization)
+        end
 
         discount = PosDiscount.create!(
           pos_transaction: transaction,
@@ -111,17 +124,17 @@ module Pos
 
     private
 
-    def resolve_eligible_lines
+    def resolve_eligible_lines(transaction = @pos_transaction)
       case @scope
       when "line"
         raise Error, "line is required for line-scoped discounts" if @pos_line_item.blank?
-        raise Error, "line does not belong to this transaction" unless @pos_line_item.pos_transaction_id == @pos_transaction.id
+        raise Error, "line does not belong to this transaction" unless @pos_line_item.pos_transaction_id == transaction.id
         raise Error, "line is not pending" unless @pos_line_item.pending?
         raise Error, "cannot discount a linked return line" if @pos_line_item.return?
 
         [ @pos_line_item ]
       when "transaction"
-        @pos_transaction.pos_line_items.pending.sales.order(:position).to_a
+        transaction.pos_line_items.pending.sales.order(:position, :id).to_a
       else
         []
       end
@@ -208,12 +221,16 @@ module Pos
       end
     end
 
-    def unauthorized_result(authorization)
-      error = case authorization.status
+    def unauthorized_message(authorization)
+      case authorization.status
       when :requires_approval then "discount exceeds authority and requires approval"
       else authorization.error || "discount denied"
       end
-      Result.new(pos_discount: nil, success?: false, error: error, warnings: [], pos_approval: nil)
+    end
+
+    def unauthorized_result(authorization)
+      Result.new(pos_discount: nil, success?: false, error: unauthorized_message(authorization),
+                 warnings: [], pos_approval: nil)
     end
   end
 end

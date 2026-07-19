@@ -22,13 +22,17 @@ module Pos
       warnings = []
 
       ActiveRecord::Base.transaction do
+        # Canonical order: transaction before line (matches completion lock order).
+        transaction = PosTransaction.lock.find(@pos_line_item.pos_transaction_id)
+        raise Error, "transaction is not open for editing" unless transaction.editable?
+
         line = PosLineItem.lock.find(@pos_line_item.id)
         raise Error, "line is not pending" unless line.pending?
-        raise Error, "transaction is not open for editing" unless line.pos_transaction.editable?
+        raise Error, "line does not belong to the locked transaction" unless line.pos_transaction_id == transaction.id
 
         if line.line_kind == "product" && line.product_variant.inventory_tracking_mode == "quantity"
           reservation = Inventory::Reserve.call(
-            store: line.pos_transaction.store,
+            store: transaction.store,
             product_variant: line.product_variant,
             quantity: @quantity,
             source_type: "pos_line_item",
@@ -42,7 +46,7 @@ module Pos
 
         line.update!(quantity: @quantity)
 
-        recalculation = Pos::RecalculateTransaction.call(pos_transaction: line.pos_transaction)
+        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
         warnings.concat(recalculation.blockers).concat(recalculation.warnings)
 
         Result.new(pos_line_item: line, success?: true, error: nil, warnings: warnings.uniq)

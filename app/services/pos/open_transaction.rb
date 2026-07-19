@@ -12,18 +12,23 @@ module Pos
     end
 
     def call
-      raise Error, "session must be open" unless @pos_session.open?
+      ActiveRecord::Base.transaction do
+        # Lock parent Session and recheck status under the lock before creating
+        # a child Transaction (prevents open-on-closed race with CloseSession).
+        session = PosSession.lock.find(@pos_session.id)
+        raise Error, "session must be open" unless session.open?
 
-      transaction = PosTransaction.create!(
-        store: @pos_session.store,
-        origin_pos_session: @pos_session,
-        active_pos_session: @pos_session,
-        cashier_user: @cashier,
-        status: "open",
-        opened_at: Time.current
-      )
+        transaction = PosTransaction.create!(
+          store: session.store,
+          origin_pos_session: session,
+          active_pos_session: session,
+          cashier_user: @cashier,
+          status: "open",
+          opened_at: Time.current
+        )
 
-      Result.new(pos_transaction: transaction, success?: true, error: nil)
+        Result.new(pos_transaction: transaction, success?: true, error: nil)
+      end
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_transaction: nil, success?: false, error: e.message)
     end

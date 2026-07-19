@@ -52,6 +52,8 @@ module Inventory
         calculate_cost_correction
       when :sale
         calculate_sale
+      when :customer_return_discard
+        calculate_customer_return_discard
       when :opening_inventory, :quantity_only, :customer_return
         calculate_quantity_movement
       else
@@ -60,6 +62,68 @@ module Inventory
     end
 
     private
+
+    # Linked-return discard: remove the exact historical cost that the preceding
+    # customer_return inbound introduced so pre-existing stock valuation is unchanged.
+    def calculate_customer_return_discard
+      raise ArgumentError, "quantity_delta must be negative for customer_return_discard" unless @quantity_delta.negative?
+      if @incoming_unit_cost_cents.nil?
+        raise ArgumentError, "incoming_unit_cost_cents is required for customer_return_discard"
+      end
+
+      removed = -@quantity_delta
+      resulting_on_hand = @prior_on_hand + @quantity_delta
+      unit = @incoming_unit_cost_cents.to_i
+      raise ArgumentError, "incoming_unit_cost_cents must be >= 0" if unit.negative?
+
+      movement_cost = unit * removed
+      method = (@incoming_cost_method.presence || "explicit").to_s
+      quality = (@incoming_cost_quality.presence || "actual").to_s
+
+      if @prior_on_hand <= 0 || prior_valuation_unknown?
+        return zero_asset_result(
+          resulting_on_hand,
+          cost_method: method,
+          cost_quality: quality,
+          unit_cost_cents: unit,
+          movement_cost_cents: movement_cost,
+          inventory_value_delta_cents: -movement_cost
+        )
+      end
+
+      prior_value = @prior_inventory_value_cents.to_i
+      resulting_value = prior_value - movement_cost
+      raise ArgumentError, "discard would drive inventory value negative" if resulting_value.negative?
+
+      if resulting_on_hand.positive?
+        average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: resulting_value,
+          resulting_moving_average_cost_cents: average,
+          resulting_cost_quality: @prior_cost_quality,
+          inventory_value_delta_cents: -movement_cost,
+          unit_cost_cents: unit,
+          movement_cost_cents: movement_cost,
+          cost_method: method,
+          cost_quality: quality,
+          update_last_known: false
+        )
+      else
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: 0,
+          resulting_moving_average_cost_cents: nil,
+          resulting_cost_quality: "unknown",
+          inventory_value_delta_cents: -prior_value,
+          unit_cost_cents: unit,
+          movement_cost_cents: movement_cost,
+          cost_method: method,
+          cost_quality: quality,
+          update_last_known: false
+        )
+      end
+    end
 
     def calculate_cost_correction
       raise ArgumentError, "quantity_delta must be zero for cost correction" unless @quantity_delta.zero?

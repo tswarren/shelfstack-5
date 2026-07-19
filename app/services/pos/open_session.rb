@@ -15,7 +15,6 @@ module Pos
     end
 
     def call
-      raise Error, "business day must be open" unless @business_day.open?
       raise Error, "business day must belong to the store" unless @business_day.store_id == @store.id
       raise Error, "device must belong to the store" unless @pos_device.store_id == @store.id
       if @cash_drawer.present? && @cash_drawer.store_id != @store.id
@@ -23,6 +22,12 @@ module Pos
       end
 
       ActiveRecord::Base.transaction do
+        # Lock parent Business Day and recheck status under the lock before creating
+        # a child Session (prevents open-on-closed race with CloseBusinessDay).
+        day = BusinessDay.lock.find(@business_day.id)
+        raise Error, "business day must be open" unless day.open?
+        raise Error, "business day must belong to the store" unless day.store_id == @store.id
+
         if PosSession.where(pos_device_id: @pos_device.id, status: "open").lock.exists?
           raise Error, "device already has an open session"
         end
@@ -31,7 +36,7 @@ module Pos
         end
 
         session = PosSession.create!(
-          business_day: @business_day,
+          business_day: day,
           store: @store,
           pos_device: @pos_device,
           cash_drawer: @cash_drawer,

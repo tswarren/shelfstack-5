@@ -219,6 +219,124 @@ module Pos
       assert_equal original_tax, refunded
     end
 
+    test "pending return in another transaction does not claim tax residual cents" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin, completion_idempotency_key: "sale-pending-residual"
+      )
+      line.reload
+      original_tax = line.pos_line_item_taxes.sum(:amount_cents)
+      skip "need positive tax for residual test" if original_tax <= 0
+
+      pending_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      pending = AddLinkedReturnLine.call(
+        pos_transaction: pending_txn, original_pos_line_item: line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      assert pending.success?, pending.error
+
+      completed_refund = 0
+      2.times do |i|
+        ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+        result = AddLinkedReturnLine.call(
+          pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        )
+        assert result.success?, result.error
+        completed_refund += result.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
+        net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
+        AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+        CompleteTransaction.call(
+          pos_transaction: ret_txn, pos_session: @session, actor: @admin,
+          completion_idempotency_key: "ret-pending-residual-#{i}"
+        )
+      end
+
+      CancelTransaction.call(pos_transaction: pending_txn, actor: @admin, reason: "abandoned")
+
+      final_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      final = AddLinkedReturnLine.call(
+        pos_transaction: final_txn, original_pos_line_item: line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      assert final.success?, final.error
+      completed_refund += final.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
+
+      assert_equal original_tax, completed_refund
+    end
+
+    test "two pending return lines in one transaction allocate residual by line order" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin, completion_idempotency_key: "sale-multi-line-residual"
+      )
+      line.reload
+      original_tax = line.pos_line_item_taxes.sum(:amount_cents)
+      skip "need positive tax for residual test" if original_tax <= 0
+
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      first = AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      second = AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      third = AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      assert first.success? && second.success? && third.success?
+
+      recalc = RecalculateTransaction.call(pos_transaction: ret_txn)
+      assert recalc.success?, recalc.blockers.inspect
+      refunded = ret_txn.pos_line_items.returns.pending.sum { |l| l.pos_line_item_taxes.sum(:amount_cents) }
+      assert_equal original_tax, refunded
+    end
+
+    test "discard disposition leaves pre-existing inventory valuation unchanged" do
+      # Sale setup left on_hand at 0 with historical sale cost 500. Restock at a
+      # different cost so discard must not blend the returned unit into survivors.
+      open_inventory(@variant, quantity: 10, unit_cost_cents: 1000)
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_equal 10, balance.on_hand
+      assert_equal 10_000, balance.inventory_value_cents
+
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      result = AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: @sale_line, quantity: 1,
+        return_reason: @reason, return_disposition: "discard", actor: @admin
+      )
+      assert result.success?, result.error
+      net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
+      AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+      complete = CompleteTransaction.call(
+        pos_transaction: ret_txn, pos_session: @session, actor: @admin, completion_idempotency_key: "ret-discard-val"
+      )
+      assert complete.success?, complete.error
+
+      balance.reload
+      assert_equal 10, balance.on_hand
+      assert_equal 10_000, balance.inventory_value_cents
+      assert_equal 1000, balance.moving_average_cost_cents
+
+      discard_entry = InventoryLedgerEntry.find_by!(
+        posting_key: Inventory::PostCustomerReturn.discard_posting_key(result.pos_line_item)
+      )
+      assert_equal(-1, discard_entry.quantity_delta)
+      assert_equal 500, discard_entry.unit_cost_cents
+      assert_equal(-500, discard_entry.inventory_value_delta_cents)
+    end
+
     private
 
     def open_inventory(variant, quantity:, unit_cost_cents:)

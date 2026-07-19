@@ -189,7 +189,7 @@ module Inventory
         existing.resulting_inventory_value_cents == @corrected_inventory_value_cents.to_i &&
           existing.cost_method == (@incoming_cost_method.presence || "explicit").to_s &&
           existing.cost_quality == (@incoming_cost_quality.presence || "actual").to_s
-      when :opening_inventory, :customer_return
+      when :opening_inventory, :customer_return, :customer_return_discard
         opening_inputs_match?(existing)
       when :quantity_only, :sale
         true

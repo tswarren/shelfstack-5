@@ -32,6 +32,11 @@ module Pos
       raise Error, "completion_idempotency_key is required" if @completion_idempotency_key.blank?
 
       ActiveRecord::Base.transaction do
+        # Canonical lock order: Session (parent) before Transaction (child).
+        session = PosSession.lock.find(@pos_session.id)
+        raise Error, "completion session is not open" unless session.open?
+        raise Error, "business day is not open" unless session.business_day.open?
+
         transaction = PosTransaction.lock.find(@pos_transaction.id)
 
         if transaction.completed?
@@ -43,18 +48,14 @@ module Pos
         end
 
         raise Error, "transaction is not open" unless transaction.open?
-
-        session = PosSession.lock.find(@pos_session.id)
-        raise Error, "completion session is not open" unless session.open?
         unless transaction.active_pos_session_id == session.id
           raise Error, "completion session does not control this transaction"
         end
-        raise Error, "business day is not open" unless session.business_day.open?
 
         recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
         raise Error, recalculation.blockers.join(", ") if recalculation.blockers.any?
 
-        lines = transaction.pos_line_items.lock.pending.order(:position).to_a
+        lines = transaction.pos_line_items.lock.pending.order(:position, :id).to_a
         raise Error, "transaction has no lines to complete" if lines.empty?
         validate_departments!(lines)
 
@@ -86,6 +87,7 @@ module Pos
           status: "completed",
           completed_at: now,
           completed_by_user: @actor,
+          cashier_user: @actor,
           completed_pos_session: session,
           receipt_number: format_receipt_number(store, sequence),
           receipt_sequence: sequence,

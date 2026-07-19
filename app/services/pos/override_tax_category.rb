@@ -46,9 +46,13 @@ module Pos
       return unauthorized_result(authorization) unless authorization.allowed?
 
       ActiveRecord::Base.transaction do
+        # Canonical order: transaction before line (matches completion lock order).
+        transaction = PosTransaction.lock.find(@pos_line_item.pos_transaction_id)
+        raise Error, "transaction is not open for editing" unless transaction.editable?
+
         line = PosLineItem.lock.find(@pos_line_item.id)
         raise Error, "line is not pending" unless line.pending?
-        raise Error, "transaction is not open for editing" unless line.pos_transaction.editable?
+        raise Error, "line does not belong to the locked transaction" unless line.pos_transaction_id == transaction.id
 
         original_tax_category_id = line.original_tax_category_id || line.tax_category_id
         line.update!(
@@ -73,7 +77,7 @@ module Pos
           }
         )
 
-        recalculation = Pos::RecalculateTransaction.call(pos_transaction: line.pos_transaction)
+        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
 
         Result.new(pos_line_item: line, success?: true, error: nil, warnings: recalculation.blockers + recalculation.warnings,
                    pos_approval: authorization.pos_approval)

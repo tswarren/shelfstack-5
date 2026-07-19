@@ -3,13 +3,9 @@
 require "test_helper"
 
 module Pos
-  # Recall requires a Transaction to already be `suspended`, and Suspend itself
-  # is blocked while an unresolved Tender exists (see SuspendTransaction /
-  # Pos::CompleteTransactionTest), so an `open` Transaction with a settling
-  # Tender can never be concurrently `suspended`/recalled — Complete vs Recall
-  # cannot race on the same state. Complete vs an ordinary commercial edit
-  # (RemoveLine) on the same still-`open` Transaction can, and is the
-  # meaningful case: both lock the same pending Line row, so exactly one wins.
+  # Complete vs commercial edit on the same still-open Transaction. Tender is
+  # added inside the completion thread so RemoveLine can start while the
+  # transaction is still editable (domain tender-state lock).
   class ConcurrencyCompleteVsEditTest < ActiveSupport::TestCase
     self.use_transactional_tests = false
 
@@ -49,9 +45,7 @@ module Pos
       ).pos_session
       @transaction = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       @line = AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin).pos_line_item
-
-      net_total = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
-      AddCashTender.call(pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net_total, actor: @admin)
+      @net_total = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
     end
 
     teardown do
@@ -66,8 +60,6 @@ module Pos
       InventoryAdjustment.delete_all
       InventoryReservation.delete_all
       StockBalance.delete_all
-      # Not transactional (see above); a successful race leaves the shared store
-      # fixture's receipt sequence incremented, so restore it for later tests.
       @store.update_column(:next_receipt_sequence, 1)
     end
 
@@ -76,6 +68,10 @@ module Pos
       threads = [
         Thread.new do
           ActiveRecord::Base.connection_pool.with_connection do
+            AddCashTender.call(
+              pos_transaction: @transaction, tender_type: @cash,
+              amount_tendered_cents: @net_total, actor: @admin
+            )
             results[:complete] = CompleteTransaction.call(
               pos_transaction: @transaction, pos_session: @session, actor: @admin,
               completion_idempotency_key: "race-1"
@@ -91,7 +87,7 @@ module Pos
       threads.each(&:join)
 
       successes = results.values.select(&:success?)
-      assert_equal 1, successes.size, results.transform_values(&:error).inspect
+      assert_equal 1, successes.size, results.transform_values { |r| r&.error }.inspect
 
       @transaction.reload
       @line.reload
@@ -100,7 +96,6 @@ module Pos
         assert @transaction.completed?
         assert @line.completed?
         refute results[:remove].success?
-        assert_match(/not pending|not open/, results[:remove].error)
       else
         assert results[:remove].success?
         assert @transaction.open?

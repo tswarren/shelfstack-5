@@ -98,11 +98,19 @@ module Tax
       rules_by_line = {}
       direction_lines.each do |line|
         rules = effective_rules_for(line.tax_category_id)
-        if rules.empty?
+        invalid_rates = rules.select { |rule| collecting_rule_with_unusable_rate?(rule) }
+        if invalid_rates.any?
+          codes = invalid_rates.map { |r| r.store_tax_rate&.code || r.component_code }.uniq.join(", ")
+          blockers << "Store tax rate inactive or outside effective period for " \
+                      "tax_category_id=#{line.tax_category_id} (#{codes}; line #{line.id}, #{direction})"
+        end
+
+        usable = rules.reject { |rule| invalid_rates.include?(rule) }
+        if usable.empty?
           blockers << "No effective store tax rule for tax_category_id=#{line.tax_category_id} " \
                       "(line #{line.id}, #{direction})"
         end
-        rules_by_line[line.id] = rules
+        rules_by_line[line.id] = usable
       end
 
       component_groups = build_component_groups(direction_lines, rules_by_line)
@@ -215,6 +223,19 @@ module Tax
         .where("effective_to IS NULL OR effective_to >= ?", @completion_date)
         .includes(:store_tax_rate)
         .to_a
+    end
+
+    def collecting_rule_with_unusable_rate?(rule)
+      return false unless COMPONENT_TREATMENTS.include?(rule.treatment)
+
+      !usable_store_tax_rate?(rule.store_tax_rate)
+    end
+
+    def usable_store_tax_rate?(rate)
+      return false if rate.blank? || !rate.active?
+
+      (rate.effective_from.nil? || rate.effective_from <= @completion_date) &&
+        (rate.effective_to.nil? || rate.effective_to >= @completion_date)
     end
 
     def sum_exact(items)

@@ -129,26 +129,33 @@ module Pos
     end
 
     def prior_return_quantity(original, excluding:)
-      PosLineItem
-        .joins(:pos_transaction)
-        .where(original_pos_line_item_id: original.id)
+      completed = PosLineItem
+        .where(original_pos_line_item_id: original.id, status: "completed", direction: "return")
+        .sum(:quantity)
+
+      return completed unless excluding&.persisted? && excluding.pos_transaction_id.present?
+
+      earlier_same_txn = PosLineItem
+        .where(
+          pos_transaction_id: excluding.pos_transaction_id,
+          original_pos_line_item_id: original.id,
+          status: "pending",
+          direction: "return"
+        )
         .where.not(id: excluding.id)
         .where(
-          "(pos_line_items.status = 'completed') OR " \
-          "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
+          "(position < ?) OR (position = ? AND id < ?)",
+          excluding.position, excluding.position, excluding.id
         )
         .sum(:quantity)
+
+      completed + earlier_same_txn
     end
 
+    # Before the return line exists, only completed returns claim residual.
     def prior_qty_for_cost(original)
-      # Line is not persisted yet when cost is snapshotted; count existing returns only.
       PosLineItem
-        .joins(:pos_transaction)
-        .where(original_pos_line_item_id: original.id)
-        .where(
-          "(pos_line_items.status = 'completed') OR " \
-          "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
-        )
+        .where(original_pos_line_item_id: original.id, status: "completed", direction: "return")
         .sum(:quantity)
     end
   end

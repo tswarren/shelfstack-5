@@ -94,10 +94,14 @@ module Inventory
           product_variant: variant,
           quantity_delta: -line.quantity,
           movement_type: "quantity_adjustment",
+          movement_kind: :customer_return_discard,
           posting_key: self.class.discard_posting_key(line),
           source: line,
           posted_by_user: @posted_by_user,
           posted_at: @posted_at,
+          incoming_unit_cost_cents: line.cost_unit_cost_cents || 0,
+          incoming_cost_method: line.cost_method_snapshot.presence || "explicit",
+          incoming_cost_quality: line.cost_quality_snapshot.presence || "actual",
           reason_code: "customer_return_discard",
           reason_note: "Discarded after linked customer return"
         )

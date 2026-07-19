@@ -3,7 +3,8 @@
 module Pos
   # Recall is exclusive: one register at a time. Row-level locking makes a
   # concurrent double recall of the same suspended transaction fail safely for
-  # every caller after the first.
+  # every caller after the first. Parent Session is locked and rechecked before
+  # the Transaction so recall cannot attach to a Session closed concurrently.
   class RecallTransaction < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_transaction, :success?, :error)
@@ -15,16 +16,18 @@ module Pos
     end
 
     def call
-      raise Error, "session must be open" unless @pos_session.open?
-
       ActiveRecord::Base.transaction do
+        # Canonical parent-before-child lock order: Session, then Transaction.
+        session = PosSession.lock.find(@pos_session.id)
+        raise Error, "session must be open" unless session.open?
+
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "only suspended transactions may be recalled" unless transaction.suspended?
-        raise Error, "transaction belongs to a different store" unless transaction.store_id == @pos_session.store_id
+        raise Error, "transaction belongs to a different store" unless transaction.store_id == session.store_id
 
         transaction.update!(
           status: "open",
-          active_pos_session: @pos_session,
+          active_pos_session: session,
           recalled_at: Time.current
         )
 

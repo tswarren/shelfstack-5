@@ -157,16 +157,31 @@ module Pos
       target_after - target_before
     end
 
+    # Completed prior returns plus earlier pending return lines in *this* transaction
+    # only. Unrelated open/suspended pending returns may reserve quantity but must not
+    # claim financial residual cents (cancelled pending txns would otherwise skew allocation).
     def prior_return_quantity(original, excluding:)
-      PosLineItem
-        .joins(:pos_transaction)
-        .where(original_pos_line_item_id: original.id)
+      completed = PosLineItem
+        .where(original_pos_line_item_id: original.id, status: "completed", direction: "return")
+        .sum(:quantity)
+
+      return completed unless excluding&.persisted? && excluding.pos_transaction_id.present?
+
+      earlier_same_txn = PosLineItem
+        .where(
+          pos_transaction_id: excluding.pos_transaction_id,
+          original_pos_line_item_id: original.id,
+          status: "pending",
+          direction: "return"
+        )
         .where.not(id: excluding.id)
         .where(
-          "(pos_line_items.status = 'completed') OR " \
-          "(pos_line_items.status = 'pending' AND pos_transactions.status IN ('open', 'suspended'))"
+          "(position < ?) OR (position = ? AND id < ?)",
+          excluding.position, excluding.position, excluding.id
         )
         .sum(:quantity)
+
+      completed + earlier_same_txn
     end
 
     def proportional_cents(total, original_qty, return_qty)
