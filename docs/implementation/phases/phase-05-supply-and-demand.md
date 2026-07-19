@@ -2,6 +2,7 @@
 
 **Status:** Not started  
 **Depends on:** Phase 4c (first completed sale) for foundational purchasing; Phase 4d before individual-item supply fulfilment; Phase 4e recommended before return-oriented fulfilment paths  
+**Phase 4 gate status:** On `phase/p4-point-of-sale`, 4c/4d/4e are implemented — foundational and unit-dependent Phase 5 paths are unblocked once Phase 4 is manually accepted and merged ([roadmap Option B](../roadmap.md)).  
 **Unlocks:** richer ops reporting in Phase 7; request fulfilment against POS  
 **Governing docs:** ADR-0005, ADR-0007; [vendors-and-purchasing](../../domains/vendors-and-purchasing.md); [product-requests](../../domains/product-requests.md); [architectural-locks](../architectural-locks.md)
 

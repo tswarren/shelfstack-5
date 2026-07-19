@@ -60,7 +60,7 @@ flowchart TD
 | 2 | Configuration and catalog | Complete | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
 | 4 | Point of sale (4a–4e) | Implemented on `phase/p4-point-of-sale` (not merged to `main` pending manual testing) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
-| 5 | Supply and demand | Not started — foundational purchasing may start after 4c; complete 4d before individual-item fulfilment | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
+| 5 | Supply and demand | Not started — **Option B unlock:** foundational purchasing after 4c; unit-dependent fulfilment after 4d (both gates satisfied on the Phase 4 branch) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
@@ -95,10 +95,18 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–3; Phase 4a–4e implemented on `phase/p4-point-of-sale` (merge to `main` only after manual testing).
 
-**Phase 5 unlock (Option B):** Phase 5 *foundational* purchasing (vendors, POs, quantity receiving, requests/allocations against quantity inventory) may begin after **4c**. Complete **4d before any individual-item Phase 5 work** (unit-backed receiving, unit-linked request fulfilment, exact-copy supply). Phase 4e is recommended before broad return/refund-oriented fulfilment but is not a hard gate for foundational purchasing.
+**Phase 5 unlock (Option B — accepted):**
+
+| Phase 5 work | Gate | Status on `phase/p4-point-of-sale` |
+| --- | --- | --- |
+| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** | Satisfied |
+| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** | Satisfied |
+| Return/refund-oriented fulfilment paths | **4e** recommended | Satisfied |
+
+Do not start unit-dependent Phase 5 paths before 4d is merged with Phase 4. Foundational purchasing must not wait for 4d/4e.
 
 1. Manually accept Phase 4 on `phase/p4-point-of-sale` before merge to `main`  
-2. Phase 5 foundational purchasing / receiving / requests (may proceed while 4d/4e were finishing; 4d is now available for unit-dependent paths)  
+2. Begin Phase 5 foundational purchasing / receiving / requests (diagram: `P4c → P5f`; `P4d → P5u`)  
 3. First app-wide UX consolidation during or after early Phase 5  
 4. Phases 6–7 as separate epics  
 

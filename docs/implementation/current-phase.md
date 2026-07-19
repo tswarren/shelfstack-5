@@ -33,10 +33,10 @@ Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phas
 
 ## Do not start yet
 
+- Merge Phase 4 to `main` without manual gate acceptance.
 - Full redesign of Phase 1–3 admin CRUD to match mockups.
-- Closing [OD-014](open-decisions.md) by inventing ad hoc formulas in code.
-- Implementing Phase 4b tax with a residual policy other than [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md).
-- Closing [OD-013](open-decisions.md) role/store authority defaults before Phase 4b needs them.
+- Inventing Phase 5 deficit settlement tables beyond the accepted OD-014 interim (settlement/variance remains Phase 5 design).
+- Closing [OD-013](open-decisions.md) role/store authority defaults without an accepted decision.
 - Deferred capabilities listed in [deferred-capabilities.md](deferred-capabilities.md).
 - PWA / offline POS as adopted architecture.
 
