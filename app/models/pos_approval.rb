@@ -5,7 +5,7 @@
 # are retained. Created by Pos::AuthorizeAction when a requester's authority or
 # permission is insufficient and an approver satisfies the action on their behalf.
 class PosApproval < ApplicationRecord
-  ACTION_TYPES = %w[price_override discount_apply tax_exemption tax_category_override].freeze
+  ACTION_TYPES = %w[price_override discount_apply tax_exemption tax_category_override cash_movement].freeze
 
   belongs_to :store
   belongs_to :pos_session, optional: true

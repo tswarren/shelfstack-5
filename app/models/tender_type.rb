@@ -5,6 +5,7 @@ class TenderType < ApplicationRecord
   REFERENCE_REQUIREMENTS = %w[none optional required].freeze
 
   belongs_to :organization
+  has_many :pos_tenders, dependent: :restrict_with_exception
 
   attr_readonly :code
 

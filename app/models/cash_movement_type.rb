@@ -4,6 +4,7 @@ class CashMovementType < ApplicationRecord
   DIRECTIONS = %w[cash_in cash_out].freeze
 
   belongs_to :organization
+  has_many :pos_cash_movements, dependent: :restrict_with_exception
 
   attr_readonly :code
 

@@ -309,3 +309,33 @@ pos_tax_category_override:
   name: Override effective Tax Category on a POS line
   permission_group: pos
   active: true
+
+pos_transaction_complete:
+  code: pos.transaction.complete
+  name: Complete transactions
+  permission_group: pos
+  active: true
+
+pos_tender_cash:
+  code: pos.tender.cash
+  name: Accept cash tenders
+  permission_group: pos
+  active: true
+
+pos_tender_card_standalone:
+  code: pos.tender.card_standalone
+  name: Record standalone card tenders
+  permission_group: pos
+  active: true
+
+pos_cash_movement_create:
+  code: pos.cash_movement.create
+  name: Paid-in / paid-out / drops
+  permission_group: pos
+  active: true
+
+pos_receipt_reprint:
+  code: pos.receipt.reprint
+  name: Reprint receipts
+  permission_group: pos
+  active: true

@@ -206,6 +206,26 @@ admin_pos_tax_category_override:
   role: administrator
   permission: pos_tax_category_override
 
+admin_pos_transaction_complete:
+  role: administrator
+  permission: pos_transaction_complete
+
+admin_pos_tender_cash:
+  role: administrator
+  permission: pos_tender_cash
+
+admin_pos_tender_card_standalone:
+  role: administrator
+  permission: pos_tender_card_standalone
+
+admin_pos_cash_movement_create:
+  role: administrator
+  permission: pos_cash_movement_create
+
+admin_pos_receipt_reprint:
+  role: administrator
+  permission: pos_receipt_reprint
+
 clerk_pos_access:
   role: associate
   permission: pos_access

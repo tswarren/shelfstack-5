@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -240,10 +240,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
     t.index ["source_type", "source_id"], name: "index_inventory_ledger_entries_on_source_type_and_source_id"
     t.index ["store_id", "product_variant_id", "posted_at"], name: "idx_on_store_id_product_variant_id_posted_at_3e7a285cee"
     t.index ["store_id"], name: "index_inventory_ledger_entries_on_store_id"
-    t.check_constraint "cost_method::text = ANY (ARRAY['explicit'::character varying, 'configured_estimate'::character varying, 'moving_average'::character varying, 'unknown'::character varying]::text[])", name: "inv_ledger_cost_method"
+    t.check_constraint "cost_method::text = ANY (ARRAY['explicit'::character varying, 'configured_estimate'::character varying, 'moving_average'::character varying, 'last_known'::character varying, 'unknown'::character varying]::text[])", name: "inv_ledger_cost_method"
     t.check_constraint "cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[])", name: "inv_ledger_cost_quality"
     t.check_constraint "movement_cost_cents IS NULL OR movement_cost_cents >= 0", name: "inv_ledger_movement_cost_nonneg"
-    t.check_constraint "movement_type::text = ANY (ARRAY['opening_inventory'::character varying, 'quantity_adjustment'::character varying, 'cost_correction'::character varying]::text[])", name: "inv_ledger_movement_type"
+    t.check_constraint "movement_type::text = ANY (ARRAY['opening_inventory'::character varying, 'quantity_adjustment'::character varying, 'cost_correction'::character varying, 'sale'::character varying]::text[])", name: "inv_ledger_movement_type"
     t.check_constraint "resulting_cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[])", name: "inv_ledger_resulting_cost_quality"
     t.check_constraint "unit_cost_cents IS NULL OR unit_cost_cents >= 0", name: "inv_ledger_unit_cost_nonneg"
   end
@@ -344,7 +344,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
     t.index ["pos_transaction_id"], name: "index_pos_approvals_on_pos_transaction_id"
     t.index ["requested_by_user_id"], name: "index_pos_approvals_on_requested_by_user_id"
     t.index ["store_id"], name: "index_pos_approvals_on_store_id"
-    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying, 'discount_apply'::character varying, 'tax_exemption'::character varying, 'tax_category_override'::character varying]::text[])", name: "pos_approvals_action_type_check"
+    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying, 'discount_apply'::character varying, 'tax_exemption'::character varying, 'tax_category_override'::character varying, 'cash_movement'::character varying]::text[])", name: "pos_approvals_action_type_check"
+  end
+
+  create_table "pos_cash_movements", force: :cascade do |t|
+    t.integer "amount_cents", null: false
+    t.bigint "approved_by_user_id"
+    t.bigint "cash_movement_type_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.bigint "pos_approval_id"
+    t.bigint "pos_session_id", null: false
+    t.text "reason"
+    t.string "reference"
+    t.bigint "store_id", null: false
+    t.index ["approved_by_user_id"], name: "index_pos_cash_movements_on_approved_by_user_id"
+    t.index ["cash_movement_type_id"], name: "index_pos_cash_movements_on_cash_movement_type_id"
+    t.index ["created_by_user_id"], name: "index_pos_cash_movements_on_created_by_user_id"
+    t.index ["pos_approval_id"], name: "index_pos_cash_movements_on_pos_approval_id"
+    t.index ["pos_session_id"], name: "index_pos_cash_movements_on_pos_session_id"
+    t.index ["store_id"], name: "index_pos_cash_movements_on_store_id"
+    t.check_constraint "amount_cents > 0", name: "pos_cash_movements_amount_positive"
   end
 
   create_table "pos_devices", force: :cascade do |t|
@@ -425,6 +445,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
   end
 
   create_table "pos_line_items", force: :cascade do |t|
+    t.datetime "completed_at"
+    t.integer "cost_extended_cents"
+    t.string "cost_method_snapshot"
+    t.string "cost_quality_snapshot"
+    t.integer "cost_unit_cost_cents"
     t.datetime "created_at", null: false
     t.bigint "created_by_user_id", null: false
     t.bigint "department_id", null: false
@@ -453,6 +478,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
     t.index ["removed_by_user_id"], name: "index_pos_line_items_on_removed_by_user_id"
     t.index ["tax_category_id"], name: "index_pos_line_items_on_tax_category_id"
     t.index ["tax_category_overridden_by_user_id"], name: "index_pos_line_items_on_tax_category_overridden_by_user_id"
+    t.check_constraint "cost_extended_cents IS NULL OR cost_extended_cents >= 0", name: "pos_line_items_cost_extended_non_negative"
+    t.check_constraint "cost_method_snapshot IS NULL OR (cost_method_snapshot::text = ANY (ARRAY['explicit'::character varying, 'configured_estimate'::character varying, 'moving_average'::character varying, 'last_known'::character varying, 'unknown'::character varying]::text[]))", name: "pos_line_items_cost_method_snapshot_check"
+    t.check_constraint "cost_quality_snapshot IS NULL OR (cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[]))", name: "pos_line_items_cost_quality_snapshot_check"
+    t.check_constraint "cost_unit_cost_cents IS NULL OR cost_unit_cost_cents >= 0", name: "pos_line_items_cost_unit_cost_non_negative"
     t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL", name: "pos_line_items_product_variant_matches_kind"
     t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying, 'open_ring'::character varying]::text[])", name: "pos_line_items_line_kind_check"
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
@@ -499,27 +528,80 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
     t.check_constraint "coverage::text = 'whole_transaction'::text", name: "pos_tax_exemptions_coverage_check"
   end
 
+  create_table "pos_tenders", force: :cascade do |t|
+    t.integer "amount_cents", null: false
+    t.integer "amount_tendered_cents"
+    t.string "authorization_code"
+    t.datetime "authorized_at"
+    t.integer "change_due_cents"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.string "direction", default: "received", null: false
+    t.bigint "pos_transaction_id", null: false
+    t.text "remove_reason"
+    t.datetime "removed_at"
+    t.bigint "removed_by_user_id"
+    t.boolean "requires_reconciliation", default: false, null: false
+    t.string "status", default: "pending", null: false
+    t.bigint "store_id", null: false
+    t.bigint "tender_type_id", null: false
+    t.string "terminal_reference"
+    t.datetime "updated_at", null: false
+    t.text "void_reason"
+    t.datetime "voided_at"
+    t.bigint "voided_by_user_id"
+    t.index ["created_by_user_id"], name: "index_pos_tenders_on_created_by_user_id"
+    t.index ["pos_transaction_id", "status"], name: "index_pos_tenders_on_pos_transaction_id_and_status"
+    t.index ["pos_transaction_id"], name: "index_pos_tenders_on_pos_transaction_id"
+    t.index ["removed_by_user_id"], name: "index_pos_tenders_on_removed_by_user_id"
+    t.index ["store_id"], name: "index_pos_tenders_on_store_id"
+    t.index ["tender_type_id"], name: "index_pos_tenders_on_tender_type_id"
+    t.index ["voided_by_user_id"], name: "index_pos_tenders_on_voided_by_user_id"
+    t.check_constraint "amount_cents >= 0", name: "pos_tenders_amount_non_negative"
+    t.check_constraint "amount_tendered_cents IS NULL OR amount_tendered_cents >= 0", name: "pos_tenders_amount_tendered_non_negative"
+    t.check_constraint "change_due_cents IS NULL OR change_due_cents >= 0", name: "pos_tenders_change_due_non_negative"
+    t.check_constraint "direction::text = ANY (ARRAY['received'::character varying, 'refunded'::character varying]::text[])", name: "pos_tenders_direction_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying, 'authorized'::character varying, 'completed'::character varying, 'voided'::character varying, 'removed'::character varying]::text[])", name: "pos_tenders_status_check"
+  end
+
   create_table "pos_transactions", force: :cascade do |t|
     t.bigint "active_pos_session_id"
     t.text "cancel_reason"
     t.datetime "cancelled_at"
     t.bigint "cancelled_by_user_id"
     t.bigint "cashier_user_id", null: false
+    t.datetime "completed_at"
+    t.bigint "completed_by_user_id"
+    t.bigint "completed_pos_session_id"
+    t.string "completion_idempotency_key"
     t.datetime "created_at", null: false
+    t.bigint "discount_total_cents"
+    t.bigint "net_total_cents"
     t.datetime "opened_at", null: false
     t.bigint "origin_pos_session_id", null: false
     t.string "public_id", null: false
     t.datetime "recalled_at"
+    t.string "receipt_number"
+    t.bigint "receipt_sequence"
     t.string "status", default: "open", null: false
     t.bigint "store_id", null: false
+    t.bigint "subtotal_cents"
     t.datetime "suspended_at"
+    t.bigint "tax_total_cents"
     t.datetime "updated_at", null: false
     t.index ["active_pos_session_id"], name: "index_pos_transactions_on_active_pos_session_id"
     t.index ["cancelled_by_user_id"], name: "index_pos_transactions_on_cancelled_by_user_id"
     t.index ["cashier_user_id"], name: "index_pos_transactions_on_cashier_user_id"
+    t.index ["completed_by_user_id"], name: "index_pos_transactions_on_completed_by_user_id"
+    t.index ["completed_pos_session_id"], name: "index_pos_transactions_on_completed_pos_session_id"
+    t.index ["completion_idempotency_key"], name: "index_pos_transactions_on_completion_idempotency_key", unique: true, where: "(completion_idempotency_key IS NOT NULL)"
     t.index ["origin_pos_session_id"], name: "index_pos_transactions_on_origin_pos_session_id"
     t.index ["public_id"], name: "index_pos_transactions_on_public_id", unique: true
+    t.index ["store_id", "receipt_number"], name: "index_pos_transactions_on_store_and_receipt_number", unique: true, where: "(receipt_number IS NOT NULL)"
+    t.index ["store_id", "receipt_sequence"], name: "index_pos_transactions_on_store_and_receipt_sequence", unique: true, where: "(receipt_sequence IS NOT NULL)"
     t.index ["store_id"], name: "index_pos_transactions_on_store_id"
+    t.check_constraint "status::text <> 'completed'::text OR receipt_number IS NOT NULL AND completed_at IS NOT NULL", name: "pos_transactions_completed_requires_receipt"
     t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'suspended'::character varying, 'completed'::character varying, 'cancelled'::character varying]::text[])", name: "pos_transactions_status_check"
   end
 
@@ -789,6 +871,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
     t.string "email"
     t.string "legal_name"
     t.string "name", null: false
+    t.bigint "next_receipt_sequence", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone", limit: 30
     t.string "postal_code", limit: 12
@@ -802,6 +885,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
     t.index ["organization_id", "code"], name: "index_stores_on_organization_id_and_code", unique: true
     t.index ["organization_id", "store_number"], name: "index_stores_on_organization_id_and_store_number", unique: true, where: "(store_number IS NOT NULL)"
     t.index ["organization_id"], name: "index_stores_on_organization_id"
+    t.check_constraint "next_receipt_sequence >= 1", name: "stores_next_receipt_sequence_positive"
   end
 
   create_table "tax_categories", force: :cascade do |t|
@@ -904,6 +988,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
   add_foreign_key "pos_approvals", "stores", on_delete: :restrict
   add_foreign_key "pos_approvals", "users", column: "approved_by_user_id", on_delete: :restrict
   add_foreign_key "pos_approvals", "users", column: "requested_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_cash_movements", "cash_movement_types", on_delete: :restrict
+  add_foreign_key "pos_cash_movements", "pos_approvals", on_delete: :restrict
+  add_foreign_key "pos_cash_movements", "pos_sessions", on_delete: :restrict
+  add_foreign_key "pos_cash_movements", "stores", on_delete: :restrict
+  add_foreign_key "pos_cash_movements", "users", column: "approved_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_cash_movements", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_devices", "stores", on_delete: :restrict
   add_foreign_key "pos_discount_allocations", "pos_discounts", on_delete: :restrict
   add_foreign_key "pos_discount_allocations", "pos_line_items", on_delete: :restrict
@@ -932,11 +1022,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
   add_foreign_key "pos_sessions", "users", column: "opened_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_tenders", "stores", on_delete: :restrict
+  add_foreign_key "pos_tenders", "tender_types", on_delete: :restrict
+  add_foreign_key "pos_tenders", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "users", column: "removed_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "users", column: "voided_by_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "active_pos_session_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "pos_sessions", column: "completed_pos_session_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "origin_pos_session_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "stores", on_delete: :restrict
   add_foreign_key "pos_transactions", "users", column: "cancelled_by_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "users", column: "cashier_user_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "users", column: "completed_by_user_id", on_delete: :restrict
   add_foreign_key "product_conditions", "organizations"
   add_foreign_key "product_formats", "organizations"
   add_foreign_key "product_variants", "departments"

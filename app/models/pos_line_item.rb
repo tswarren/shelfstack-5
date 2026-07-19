@@ -34,6 +34,10 @@ class PosLineItem < ApplicationRecord
     status == "removed"
   end
 
+  def completed?
+    status == "completed"
+  end
+
   def tax_category_overridden?
     tax_category_overridden_at.present?
   end
