@@ -149,3 +149,63 @@
 .workspace-card {
   padding: 1.1rem;
 }
+
+/* Pagination */
+
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.pagination-info {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.pagination-nav .pagy-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.pagination-nav .pagy-nav a,
+.pagination-nav .pagy-nav .page {
+  display: inline-flex;
+  align-items: center;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  justify-content: center;
+  padding: 0 0.6rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.pagination-nav .pagy-nav a:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-200);
+}
+
+.pagination-nav .pagy-nav .page.current,
+.pagination-nav .pagy-nav a[aria-current="page"] {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+.pagination-nav .pagy-nav .page.disabled,
+.pagination-nav .pagy-nav .gap {
+  color: var(--text-disabled);
+  background: var(--surface-disabled);
+  cursor: not-allowed;
+}

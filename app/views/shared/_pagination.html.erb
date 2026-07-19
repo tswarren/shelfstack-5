@@ -1,0 +1,18 @@
+<%# locals: pagy:, item_name: "result" %>
+<% if pagy.present? %>
+  <nav class="pagination-bar" aria-label="Pagination">
+    <p class="pagination-info">
+      <% if pagy.count.zero? %>
+        No <%= item_name.to_s.pluralize %> found.
+      <% else %>
+        Showing <%= pagy.from %>&ndash;<%= pagy.to %> of
+        <%= pagy.count %> <%= item_name.to_s.pluralize(pagy.count) %>.
+      <% end %>
+    </p>
+    <% if pagy.pages > 1 %>
+      <div class="pagination-nav">
+        <%== pagy_nav(pagy) %>
+      </div>
+    <% end %>
+  </nav>
+<% end %>

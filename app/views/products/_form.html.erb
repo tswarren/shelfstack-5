@@ -1,57 +1,150 @@
-<%= form_with url: product.persisted? ? product_path(product) : products_path, method: product.persisted? ? :patch : :post do |form| %>
-  <% if product.errors.any? %>
-    <ul>
-      <% product.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
+<%= form_with url: product.persisted? ? product_path(product) : products_path,
+      method: product.persisted? ? :patch : :post, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: product %>
+  <% if variant.present? && variant.errors.any? %>
+    <%= render "shared/form_errors", object: variant %>
   <% end %>
 
-  <% unless product.persisted? %>
-    <div>
-      <label for="identifier">Identifier (leave blank to generate)</label>
-      <input type="text" name="identifier" id="identifier" value="<%= params[:identifier] %>">
-    </div>
-    <div>
-      <label for="accept_identifier_warning">
-        <input type="checkbox" name="accept_identifier_warning" id="accept_identifier_warning" value="1"
-          <%= "checked" if params[:accept_identifier_warning] == "1" %>>
-        Accept identifier warning
-      </label>
-    </div>
-  <% else %>
-    <div><strong>Identifier:</strong> <%= product.identifier %></div>
-  <% end %>
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <% unless product.persisted? %>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="identifier">Identifier</label>
+          <input type="text" name="identifier" id="identifier" class="input"
+                 value="<%= params[:identifier] %>">
+          <p class="field-hint">Leave blank to generate a namespace 29 identifier.</p>
+        </div>
+      </div>
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" name="accept_identifier_warning" id="accept_identifier_warning" value="1"
+            <%= "checked" if params[:accept_identifier_warning] == "1" %>>
+          Accept identifier warning (save despite an invalid check digit)
+        </label>
+      </div>
+    <% else %>
+      <%= render "shared/record_summary", rows: [ [ "Identifier", tag.code(product.identifier) ] ] %>
+    <% end %>
+
+    <%= fields_for :product, product do |product_form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= product_form.label :name, class: "field-label" %>
+          <%= product_form.text_field :name, class: "input", required: true %>
+        </div>
+        <div class="field">
+          <%= product_form.label :subtitle, class: "field-label" %>
+          <%= product_form.text_field :subtitle, class: "input" %>
+        </div>
+        <div class="field">
+          <%= product_form.label :alternate_identifier, class: "field-label" %>
+          <%= product_form.text_field :alternate_identifier, class: "input" %>
+        </div>
+        <div class="field">
+          <%= product_form.label :product_type, class: "field-label" %>
+          <%= product_form.select :product_type, Product::PRODUCT_TYPES.map { |t| [ t.titleize, t ] } %>
+        </div>
+        <div class="field">
+          <%= product_form.label :publisher_or_manufacturer_name, "Publisher / manufacturer", class: "field-label" %>
+          <%= product_form.text_field :publisher_or_manufacturer_name, class: "input" %>
+        </div>
+        <div class="field">
+          <%= product_form.label :imprint_or_brand_name, "Imprint / brand", class: "field-label" %>
+          <%= product_form.text_field :imprint_or_brand_name, class: "input" %>
+        </div>
+      </div>
+    <% end %>
+  </section>
 
   <%= fields_for :product, product do |product_form| %>
-    <div><%= product_form.label :name %> <%= product_form.text_field :name %></div>
-    <div><%= product_form.label :subtitle %> <%= product_form.text_field :subtitle %></div>
-    <div><%= product_form.label :description %> <%= product_form.text_area :description %></div>
-    <div><%= product_form.label :product_type %>
-      <%= product_form.select :product_type, Product::PRODUCT_TYPES %></div>
-    <div><%= product_form.label :product_format_id, "Format" %>
-      <%= product_form.collection_select :product_format_id, Current.organization.product_formats.order(:name), :id, :name %></div>
-    <div><%= product_form.label :merchandise_class_id, "Merchandise class" %>
-      <%= product_form.collection_select :merchandise_class_id, Current.organization.merchandise_classes.order(:code), :id, :name, include_blank: true %></div>
-    <div><%= product_form.label :default_department_id, "Default department" %>
-      <%= product_form.collection_select :default_department_id, Current.organization.departments.order(:code), :id, :name, include_blank: true %></div>
-    <div><%= product_form.label :default_tax_category_id, "Default tax category" %>
-      <%= product_form.collection_select :default_tax_category_id, Current.organization.tax_categories.order(:code), :id, :name, include_blank: true %></div>
-    <div><%= product_form.label :list_price_cents, "List price (cents)" %> <%= product_form.number_field :list_price_cents %></div>
-    <div><%= product_form.label :alternate_identifier %> <%= product_form.text_field :alternate_identifier %></div>
-    <div><%= product_form.label :status %> <%= product_form.select :status, Product::STATUSES %></div>
-    <div><%= product_form.label :sellable %> <%= product_form.check_box :sellable %></div>
+    <section class="form-section">
+      <h2 class="form-section-title">Description</h2>
+      <div class="field">
+        <%= product_form.label :description, class: "field-label" %>
+        <%= product_form.text_area :description, class: "input", rows: 4 %>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="form-section-title">Classification</h2>
+      <div class="form-grid">
+        <div class="field">
+          <%= product_form.label :product_format_id, "Format", class: "field-label" %>
+          <%= product_form.collection_select :product_format_id, Current.organization.product_formats.order(:name), :id, :name, include_blank: true %>
+        </div>
+        <div class="field">
+          <%= product_form.label :merchandise_class_id, "Merchandise class", class: "field-label" %>
+          <%= product_form.collection_select :merchandise_class_id, Current.organization.merchandise_classes.order(:code), :id, :name, include_blank: true %>
+        </div>
+        <div class="field">
+          <%= product_form.label :default_department_id, "Default department", class: "field-label" %>
+          <%= product_form.collection_select :default_department_id, Current.organization.departments.order(:code), :id, :name, include_blank: true %>
+        </div>
+        <div class="field">
+          <%= product_form.label :default_tax_category_id, "Default tax category", class: "field-label" %>
+          <%= product_form.collection_select :default_tax_category_id, Current.organization.tax_categories.order(:code), :id, :name, include_blank: true %>
+        </div>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h2 class="form-section-title">Pricing &amp; availability</h2>
+      <div class="form-grid">
+        <%= render "shared/money_field", name: "product[list_price]", label: "List price",
+              value_cents: product.list_price_cents, id: "product_list_price",
+              hint: "Manufacturer list price. Enter dollars, e.g. 24.95." %>
+        <div class="field">
+          <%= product_form.label :available_from, class: "field-label" %>
+          <%= product_form.date_field :available_from, class: "input input-date" %>
+        </div>
+        <div class="field">
+          <%= product_form.label :available_until, class: "field-label" %>
+          <%= product_form.date_field :available_until, class: "input input-date" %>
+        </div>
+      </div>
+    </section>
   <% end %>
 
-  <%= fields_for :product_variant, variant do |variant_form| %>
-    <h2>Standard variant</h2>
-    <div><%= variant_form.label :inventory_tracking_mode, "Tracking mode" %>
-      <%= variant_form.select :inventory_tracking_mode, ProductVariant::INVENTORY_TRACKING_MODES %></div>
-    <div><%= variant_form.label :regular_price_cents, "Regular price (cents)" %>
-      <%= variant_form.number_field :regular_price_cents %></div>
-    <div><%= variant_form.label :sellable %> <%= variant_form.check_box :sellable %></div>
-    <div><%= variant_form.label :status %> <%= variant_form.select :status, ProductVariant::STATUSES %></div>
-  <% end %>
+  <section class="form-section">
+    <h2 class="form-section-title">Standard variant</h2>
+    <%= fields_for :product_variant, variant do |variant_form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= variant_form.label :inventory_tracking_mode, "Tracking mode", class: "field-label" %>
+          <%= variant_form.select :inventory_tracking_mode, ProductVariant::INVENTORY_TRACKING_MODES.map { |m| [ m.titleize, m ] } %>
+        </div>
+        <%= render "shared/money_field", name: "product_variant[regular_price]", label: "Regular price",
+              value_cents: variant.regular_price_cents, id: "product_variant_regular_price",
+              hint: "Required when the variant is sellable. Enter dollars, e.g. 12.95." %>
+        <div class="field">
+          <%= variant_form.label :status, class: "field-label" %>
+          <%= variant_form.select :status, ProductVariant::STATUSES.map { |s| [ s.titleize, s ] } %>
+        </div>
+      </div>
+      <div class="checkbox-group">
+        <label><%= variant_form.check_box :sellable %> Variant is sellable</label>
+      </div>
+    <% end %>
+  </section>
 
-  <div><%= form.submit product.persisted? ? "Update product" : "Create product" %></div>
+  <section class="form-section">
+    <h2 class="form-section-title">Status</h2>
+    <%= fields_for :product, product do |product_form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= product_form.label :status, class: "field-label" %>
+          <%= product_form.select :status, Product::STATUSES.map { |s| [ s.titleize, s ] } %>
+        </div>
+      </div>
+      <div class="checkbox-group">
+        <label><%= product_form.check_box :sellable %> Product is sellable</label>
+      </div>
+    <% end %>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit product.persisted? ? "Update product" : "Create product", class: "button button-primary" %>
+    <%= link_to "Cancel", product.persisted? ? product_path(product) : products_path, class: "button button-outline" %>
+  </div>
 <% end %>

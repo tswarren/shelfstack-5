@@ -6,7 +6,10 @@ class InventoryAdjustmentsController < ApplicationController
   before_action :set_adjustment, only: %i[show edit update post cancel]
 
   def index
-    @inventory_adjustments = Current.store.inventory_adjustments.order(created_at: :desc)
+    scope = Current.store.inventory_adjustments
+      .includes(:inventory_adjustment_reason)
+      .order(created_at: :desc)
+    @pagy, @inventory_adjustments = pagy(scope, limit: pagy_limit)
   end
 
   def show
@@ -120,7 +123,8 @@ class InventoryAdjustmentsController < ApplicationController
       inventory_adjustment_lines_attributes: [
         :id, :product_variant_id, :position, :quantity_delta,
         :input_unit_cost_cents, :input_cost_method, :input_cost_quality,
-        :corrected_inventory_value_cents
+        :corrected_inventory_value_cents,
+        :input_unit_cost, :corrected_inventory_value
       ]
     )[:inventory_adjustment_lines_attributes]
     return [] if raw.blank?
@@ -129,7 +133,19 @@ class InventoryAdjustmentsController < ApplicationController
     values.map { |attrs| normalize_line_attrs(attrs.to_h.symbolize_keys) }
   end
 
+  # Cost/value fields are entered as decimal dollars in the UI and converted to
+  # integer cents before the service contract runs. Direct `_cents` input (tests)
+  # keeps working when the decimal field is absent.
   def normalize_line_attrs(attrs)
+    if attrs.key?(:input_unit_cost)
+      value = attrs.delete(:input_unit_cost)
+      attrs[:input_unit_cost_cents] = value.blank? ? nil : helpers.parse_money_to_cents(value)
+    end
+    if attrs.key?(:corrected_inventory_value)
+      value = attrs.delete(:corrected_inventory_value)
+      attrs[:corrected_inventory_value_cents] = value.blank? ? nil : helpers.parse_money_to_cents(value)
+    end
+
     %i[
       input_unit_cost_cents input_cost_method input_cost_quality
       corrected_inventory_value_cents

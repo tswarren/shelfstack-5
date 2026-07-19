@@ -1,7 +1,6 @@
 <% content_for :title, "New product" %>
 
-<h1>New product</h1>
+<%= render "shared/page_header", title: "New product",
+      breadcrumbs: [ { label: "Products", path: products_path }, { label: "New product" } ] %>
 
 <%= render "form", product: @product, variant: @variant %>
-
-<p><%= link_to "Back", products_path %></p>

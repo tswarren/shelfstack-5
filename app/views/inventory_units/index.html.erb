@@ -1,23 +1,39 @@
-<h1>Inventory units</h1>
-<p><%= link_to "New unit", new_inventory_unit_path %></p>
-<table>
-  <thead>
-    <tr>
-      <th>Unit identifier</th>
-      <th>Variant</th>
-      <th>Status</th>
-      <th>Acquisition cost</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @inventory_units.each do |unit| %>
-      <tr>
-        <td><%= link_to unit.unit_identifier, unit %></td>
-        <td><%= unit.product_variant.sku %> — <%= unit.product_variant.name %></td>
-        <td><%= unit.status %></td>
-        <td><%= unit.acquisition_cost_cents.nil? ? "—" : inventory_money(unit.acquisition_cost_cents) %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<p><%= link_to "Home", root_path %></p>
+<% content_for :title, "Inventory units" %>
+
+<%= render "shared/page_header", title: "Inventory units",
+      subtitle: "Individually tracked copies for #{Current.store.name}.",
+      actions: capture {
+        concat link_to("New unit", new_inventory_unit_path, class: "button button-primary")
+      } %>
+
+<% if @inventory_units.empty? %>
+  <%= render "shared/empty_state", title: "No inventory units yet",
+        body: "Create a unit for an individually tracked variant to get started.",
+        actions: capture { concat link_to("New unit", new_inventory_unit_path, class: "button button-primary") } %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Inventory units</caption>
+      <thead>
+        <tr>
+          <th scope="col">Unit identifier</th>
+          <th scope="col">Variant</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="num">Acquisition cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @inventory_units.each do |unit| %>
+          <tr>
+            <td><%= link_to tag.code(unit.unit_identifier), inventory_unit_path(unit) %></td>
+            <td><%= unit.product_variant.sku %> — <%= unit.product_variant.name %></td>
+            <td><%= status_badge unit.status.titleize, variant: inventory_unit_status_variant(unit.status) %></td>
+            <td class="num"><%= unit.acquisition_cost_cents.nil? ? "—" : inventory_money(unit.acquisition_cost_cents) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= render "shared/pagination", pagy: @pagy, item_name: "inventory unit" %>
+<% end %>

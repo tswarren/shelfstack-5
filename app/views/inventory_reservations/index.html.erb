@@ -1,30 +1,70 @@
-<h1>Inventory reservations</h1>
-<table>
-  <thead>
-    <tr>
-      <th>SKU</th>
-      <th>Source</th>
-      <th>Qty</th>
-      <th>Status</th>
-      <th>Reserved at</th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @inventory_reservations.each do |reservation| %>
-      <tr>
-        <td><%= reservation.product_variant.sku %></td>
-        <td><%= reservation.source_type %> #<%= reservation.source_id %></td>
-        <td><%= reservation.quantity %></td>
-        <td><%= reservation.status %></td>
-        <td><%= reservation.reserved_at %></td>
-        <td>
-          <% if reservation.active? && Current.user.can?("inventory.reservation.release", store: Current.store) %>
-            <%= button_to "Release", release_inventory_reservation_path(reservation), method: :post, params: { release_reason: "Released from admin UI" } %>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<p><%= link_to "Home", root_path %></p>
+<% content_for :title, "Inventory reservations" %>
+
+<%= render "shared/page_header", title: "Inventory reservations",
+      subtitle: "Committed availability against physically present stock for #{Current.store.name}." %>
+
+<% can_release = Current.user.can?("inventory.reservation.release", store: Current.store) %>
+
+<nav class="toolbar" aria-label="Filter reservations">
+  <%= link_to "All", inventory_reservations_path,
+        class: "button button-small #{@status.nil? ? "button-primary" : "button-outline"}" %>
+  <%= link_to "Active", inventory_reservations_path(status: "active"),
+        class: "button button-small #{@status == "active" ? "button-primary" : "button-outline"}" %>
+  <%= link_to "Released", inventory_reservations_path(status: "released"),
+        class: "button button-small #{@status == "released" ? "button-primary" : "button-outline"}" %>
+</nav>
+
+<% if @inventory_reservations.empty? %>
+  <%= render "shared/empty_state",
+        title: @status ? "No #{@status} reservations" : "No reservations",
+        body: "Reservations commit physically present stock to a sale or product request." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Inventory reservations</caption>
+      <thead>
+        <tr>
+          <th scope="col">SKU</th>
+          <th scope="col">Product</th>
+          <th scope="col">Source</th>
+          <th scope="col" class="num">Qty</th>
+          <th scope="col">Status</th>
+          <th scope="col">Age</th>
+          <% if can_release %><th scope="col"><span class="sr-only">Release</span></th><% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% @inventory_reservations.each do |reservation| %>
+          <tr class="<%= "is-inactive" unless reservation.active? %>">
+            <td><code><%= reservation.product_variant.sku %></code></td>
+            <td><%= reservation.product_variant.product.name %> — <%= reservation.product_variant.name %></td>
+            <td><%= reservation.source_type.titleize %> #<%= reservation.source_id %></td>
+            <td class="num"><%= reservation.quantity %></td>
+            <td><%= status_badge reservation.status.titleize, variant: reservation_status_variant(reservation.status) %></td>
+            <td title="<%= reservation.reserved_at&.strftime("%Y-%m-%d %H:%M") %>">
+              <%= reservation.reserved_at ? "#{time_ago_in_words(reservation.reserved_at)} ago" : "—" %>
+            </td>
+            <% if can_release %>
+              <td class="row-actions">
+                <% if reservation.active? %>
+                  <%= form_with url: release_inventory_reservation_path(reservation), method: :post,
+                        class: "pos-inline-form",
+                        data: { turbo_confirm: "Release this reservation and return #{reservation.quantity} to available stock?" } do |form| %>
+                    <label class="sr-only" for="release_reason_<%= reservation.id %>">Release reason</label>
+                    <input type="text" id="release_reason_<%= reservation.id %>" name="release_reason"
+                           class="input" placeholder="Release reason" required>
+                    <%= form.submit "Release", class: "button button-small button-danger" %>
+                  <% end %>
+                <% else %>
+                  <span class="muted"><%= reservation.release_reason.presence || "—" %></span>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= render "shared/pagination", pagy: @pagy, item_name: "reservation" %>
+<% end %>

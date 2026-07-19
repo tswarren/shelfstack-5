@@ -8,20 +8,26 @@ class ProductsController < ApplicationController
 
   def index
     @query = params[:q].to_s.strip
-    @products = Current.organization.products.includes(:product_variants).order(:name)
+    scope = Current.organization.products
+      .includes(:product_variants, :product_format, :merchandise_class)
+      .order(:name)
     if @query.present?
       result = Catalog::Lookup.call(organization: Current.organization, query: @query)
-      @products = if result.empty?
-        filter_products_by_name(@products, @query)
+      scope = if result.empty?
+        filter_products_by_name(scope, @query)
       else
-        @products.where(id: result.products.map(&:id))
+        scope.where(id: result.products.map(&:id))
       end
       @lookup_ambiguous = result.ambiguous?
     end
+    @pagy, @products = pagy(scope, limit: pagy_limit)
   end
 
   def show
     @variants = @product.product_variants.order(:name)
+    @stock_balances = Current.store.stock_balances
+      .where(product_variant_id: @variants.map(&:id))
+      .index_by(&:product_variant_id)
   end
 
   def new
@@ -157,19 +163,30 @@ class ProductsController < ApplicationController
   end
 
   def product_params
-    params.require(:product).permit(
+    attrs = params.require(:product).permit(
       :name, :subtitle, :description, :product_type, :product_format_id, :merchandise_class_id,
       :default_department_id, :default_tax_category_id, :list_price_cents, :status, :sellable,
       :available_from, :available_until, :publisher_or_manufacturer_name, :imprint_or_brand_name,
       :alternate_identifier
     )
+    # Prices are entered as decimal dollars (`12.95`) in the UI and converted
+    # to integer cents before the service contract sees them. Direct `_cents`
+    # input (API/tests) still works when the decimal field is absent.
+    if params[:product].key?(:list_price)
+      attrs[:list_price_cents] = helpers.parse_money_to_cents(params[:product][:list_price])
+    end
+    attrs
   end
 
   def variant_params
-    params.require(:product_variant).permit(
+    attrs = params.require(:product_variant).permit(
       :name, :description, :inventory_tracking_mode, :default_product_condition_id,
       :regular_price_cents, :department_id, :tax_category_id, :merchandise_class_id,
       :status, :sellable, :purchasable, :available_from, :available_until
     )
+    if params[:product_variant].key?(:regular_price)
+      attrs[:regular_price_cents] = helpers.parse_money_to_cents(params[:product_variant][:regular_price])
+    end
+    attrs
   end
 end

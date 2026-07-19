@@ -1,0 +1,21 @@
+<%# locals: name:, label:, value_cents: nil, id: nil, hint: nil, required: false, describedby: nil %>
+<%
+  field_id = local_assigns[:id].presence || "mf_#{name.to_s.gsub(/\W+/, "_")}"
+  value = format_cents_as_decimal(local_assigns[:value_cents])
+%>
+<div class="field">
+  <label class="field-label" for="<%= field_id %>"><%= label %></label>
+  <div class="input-affix">
+    <span class="affix" aria-hidden="true">$</span>
+    <input id="<%= field_id %>" type="text" inputmode="decimal" autocomplete="off"
+           class="input"
+           name="<%= name %>"
+           value="<%= value %>"
+           placeholder="0.00"
+           <%= "required" if local_assigns[:required] %>
+           <%= "aria-describedby=\"#{local_assigns[:describedby]}\"".html_safe if local_assigns[:describedby].present? %>>
+  </div>
+  <% if local_assigns[:hint].present? %>
+    <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
+  <% end %>
+</div>

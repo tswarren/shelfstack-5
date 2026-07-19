@@ -5,7 +5,8 @@ class InventoryUnitsController < ApplicationController
   before_action :set_inventory_unit, only: %i[show]
 
   def index
-    @inventory_units = Current.store.inventory_units.order(created_at: :desc)
+    scope = Current.store.inventory_units.includes(product_variant: :product).order(created_at: :desc)
+    @pagy, @inventory_units = pagy(scope, limit: pagy_limit)
   end
 
   def show; end
@@ -63,9 +64,20 @@ class InventoryUnitsController < ApplicationController
   end
 
   def unit_params
-    params.require(:inventory_unit).permit(
+    attrs = params.require(:inventory_unit).permit(
       :product_variant_id, :acquisition_cost_cents, :unit_price_cents,
-      :product_condition_id, :acquisition_source_type, :description, :internal_notes
+      :product_condition_id, :acquisition_source_type, :description, :internal_notes,
+      :acquisition_cost, :unit_price
     )
+    # Costs are entered as decimal dollars in the UI and converted to integer
+    # cents before the service contract runs. Direct `_cents` input (tests) still
+    # works when the decimal field is absent.
+    if params[:inventory_unit].key?(:acquisition_cost)
+      attrs[:acquisition_cost_cents] = helpers.parse_money_to_cents(params[:inventory_unit][:acquisition_cost])
+    end
+    if params[:inventory_unit].key?(:unit_price)
+      attrs[:unit_price_cents] = helpers.parse_money_to_cents(params[:inventory_unit][:unit_price])
+    end
+    attrs.except(:acquisition_cost, :unit_price)
   end
 end

@@ -1,37 +1,85 @@
-<h1>Stock balances</h1>
-<p><%= link_to "New adjustment", new_inventory_adjustment_path if Current.user.can?("inventory.adjustment.create", store: Current.store) %></p>
-<table>
-  <thead>
-    <tr>
-      <th>SKU</th>
-      <th>Variant</th>
-      <th>On hand</th>
-      <th>Reserved</th>
-      <th>Unavailable</th>
-      <th>Available</th>
-      <% if @can_view_cost %>
-        <th>Value</th>
-        <th>Avg cost</th>
-        <th>Quality</th>
+<% content_for :title, "Stock balances" %>
+
+<%= render "shared/page_header", title: "Stock balances",
+      subtitle: "Quantity-tracked inventory for #{Current.store.name}.",
+      actions: capture {
+        if Current.user.can?("inventory.adjustment.create", store: Current.store)
+          concat link_to("New adjustment", new_inventory_adjustment_path, class: "button button-primary")
+        end
+      } %>
+
+<form class="toolbar" role="search" action="<%= stock_balances_path %>" method="get">
+  <div class="field">
+    <label class="field-label" for="q">Search SKU or product</label>
+    <input type="search" name="q" id="q" value="<%= @query %>" class="input" placeholder="SKU or name">
+  </div>
+  <div class="field">
+    <label class="field-label" for="availability">Availability</label>
+    <select name="availability" id="availability">
+      <option value="">All</option>
+      <option value="in_stock" <%= "selected" if @availability == "in_stock" %>>Available in stock</option>
+      <option value="out_of_stock" <%= "selected" if @availability == "out_of_stock" %>>Out of stock</option>
+      <option value="negative" <%= "selected" if @availability == "negative" %>>Negative on hand</option>
+    </select>
+  </div>
+  <div class="field">
+    <span class="field-label" aria-hidden="true">&nbsp;</span>
+    <div class="action-group">
+      <button type="submit" class="button button-primary">Apply</button>
+      <% if @query.present? || @availability.present? %>
+        <%= link_to "Clear", stock_balances_path, class: "button button-outline" %>
       <% end %>
-    </tr>
-  </thead>
-  <tbody>
-    <% @stock_balances.each do |balance| %>
-      <tr>
-        <td><%= link_to balance.product_variant.sku, balance %></td>
-        <td><%= balance.product_variant.name %></td>
-        <td><%= balance.on_hand %></td>
-        <td><%= balance.reserved %></td>
-        <td><%= balance.unavailable %></td>
-        <td><%= balance.available %></td>
-        <% if @can_view_cost %>
-          <td><%= inventory_money(balance.inventory_value_cents, quality: balance.cost_quality) %></td>
-          <td><%= inventory_money(balance.moving_average_cost_cents, quality: balance.cost_quality) %></td>
-          <td><%= balance.cost_quality %></td>
+    </div>
+  </div>
+</form>
+
+<% if @stock_balances.empty? %>
+  <%= render "shared/empty_state",
+        title: (@query.present? || @availability.present?) ? "No stock balances match your filters" : "No stock balances yet",
+        body: "Post an inventory adjustment to establish opening quantities." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Stock balances</caption>
+      <thead>
+        <tr>
+          <th scope="col">SKU</th>
+          <th scope="col">Variant</th>
+          <th scope="col" class="num">On hand</th>
+          <th scope="col" class="num">Reserved</th>
+          <th scope="col" class="num">Unavailable</th>
+          <th scope="col" class="num">Available</th>
+          <% if @can_view_cost %>
+            <th scope="col" class="num">Value</th>
+            <th scope="col" class="num">Avg cost</th>
+            <th scope="col">Cost quality</th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% @stock_balances.each do |balance| %>
+          <tr class="<%= "is-warning" if balance.on_hand.negative? %>">
+            <td><%= link_to balance.product_variant.sku, stock_balance_path(balance) %></td>
+            <td>
+              <%= balance.product_variant.name %>
+              <% if balance.on_hand.negative? %>
+                <%= status_badge "Negative", variant: :danger %>
+              <% end %>
+            </td>
+            <td class="num"><%= balance.on_hand %></td>
+            <td class="num"><%= balance.reserved %></td>
+            <td class="num"><%= balance.unavailable %></td>
+            <td class="num"><%= balance.available %></td>
+            <% if @can_view_cost %>
+              <td class="num"><%= inventory_money(balance.inventory_value_cents, quality: balance.cost_quality) %></td>
+              <td class="num"><%= inventory_money(balance.moving_average_cost_cents, quality: balance.cost_quality) %></td>
+              <td><%= status_badge balance.cost_quality.titleize, variant: cost_quality_variant(balance.cost_quality) %></td>
+            <% end %>
+          </tr>
         <% end %>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<p><%= link_to "Home", root_path %></p>
+      </tbody>
+    </table>
+  </div>
+
+  <%= render "shared/pagination", pagy: @pagy, item_name: "stock balance" %>
+<% end %>

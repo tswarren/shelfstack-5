@@ -1,63 +1,89 @@
-<h1>Adjustment #<%= @inventory_adjustment.id %></h1>
-<ul>
-  <li>Kind: <%= @inventory_adjustment.kind %></li>
-  <li>Status: <%= @inventory_adjustment.status %></li>
-  <li>Reason: <%= @inventory_adjustment.reason_name_snapshot || @inventory_adjustment.inventory_adjustment_reason.name %></li>
-  <li>Note: <%= @inventory_adjustment.note.presence || "(none)" %></li>
+<% content_for :title, "Adjustment ##{@inventory_adjustment.id}" %>
+
+<%= render "shared/page_header",
+      title: "Adjustment ##{@inventory_adjustment.id}",
+      subtitle: @inventory_adjustment.kind.titleize,
+      breadcrumbs: [ { label: "Inventory adjustments", path: inventory_adjustments_path }, { label: "##{@inventory_adjustment.id}" } ],
+      actions: capture {
+        if @inventory_adjustment.draft? && Current.user.can?("inventory.adjustment.create", store: Current.store)
+          concat link_to("Edit draft", edit_inventory_adjustment_path(@inventory_adjustment), class: "button button-outline")
+        end
+        concat link_to("Back to adjustments", inventory_adjustments_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Document</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Status", status_badge(@inventory_adjustment.status.titleize, variant: adjustment_status_variant(@inventory_adjustment.status)) ],
+    [ "Kind", @inventory_adjustment.kind.titleize ],
+    [ "Reason", @inventory_adjustment.reason_name_snapshot || @inventory_adjustment.inventory_adjustment_reason.name ],
+    [ "Note", @inventory_adjustment.note.presence || "—" ]
+  ] %>
   <% if @inventory_adjustment.posted? %>
-    <li>Qualified reason: <%= @inventory_adjustment.qualified_reason_code %></li>
-    <li>Posted at: <%= @inventory_adjustment.posted_at %></li>
+    <%= render "shared/record_summary", rows: [
+      [ "Qualified reason", @inventory_adjustment.qualified_reason_code ],
+      [ "Posted at", @inventory_adjustment.posted_at&.strftime("%Y-%m-%d %H:%M") ]
+    ] %>
   <% end %>
-</ul>
+</section>
 
-<h2>Lines</h2>
-<table>
-  <thead>
-    <tr>
-      <th>SKU</th>
-      <th>Qty Δ</th>
-      <th>Input unit cost</th>
-      <th>Corrected value</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @inventory_adjustment.inventory_adjustment_lines.each do |line| %>
-      <tr>
-        <td><%= line.product_variant.sku %></td>
-        <td><%= line.quantity_delta %></td>
-        <td>
-          <% if @can_view_cost %>
-            <%= line.input_unit_cost_cents.nil? ? "—" : inventory_money(line.input_unit_cost_cents) %>
-          <% else %>
-            —
-          <% end %>
-        </td>
-        <td>
-          <% if @can_view_cost && line.corrected_inventory_value_cents %>
-            <%= inventory_money(line.corrected_inventory_value_cents) %>
-          <% else %>
-            —
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<section class="record-section">
+  <h2>Lines</h2>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Adjustment lines</caption>
+      <thead>
+        <tr>
+          <th scope="col">SKU</th>
+          <th scope="col" class="num">Quantity Δ</th>
+          <th scope="col" class="num">Input unit cost</th>
+          <th scope="col" class="num">Corrected value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @inventory_adjustment.inventory_adjustment_lines.order(:position).each do |line| %>
+          <tr>
+            <td><code><%= line.product_variant.sku %></code></td>
+            <td class="num"><%= line.quantity_delta %></td>
+            <td class="num">
+              <% if @can_view_cost %>
+                <%= line.input_unit_cost_cents.nil? ? "—" : inventory_money(line.input_unit_cost_cents) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td class="num">
+              <% if @can_view_cost && line.corrected_inventory_value_cents %>
+                <%= inventory_money(line.corrected_inventory_value_cents) %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>
 
-<% if @inventory_adjustment.draft? %>
-  <p>
-    <%= link_to "Edit", edit_inventory_adjustment_path(@inventory_adjustment) if Current.user.can?("inventory.adjustment.create", store: Current.store) %>
-  </p>
-  <p>
-    <%= button_to "Post adjustment", post_inventory_adjustment_path(@inventory_adjustment), method: :post %>
-  </p>
-  <%= form_with url: cancel_inventory_adjustment_path(@inventory_adjustment), method: :post do %>
-    <div>
-      <label for="inventory_adjustment_cancel_note">Cancel note</label>
-      <input type="text" name="inventory_adjustment[cancel_note]" id="inventory_adjustment_cancel_note">
+<% if @inventory_adjustment.draft? && Current.user.can?("inventory.adjustment.create", store: Current.store) %>
+  <section class="record-section">
+    <h2>Finalize</h2>
+    <div class="action-group">
+      <%= button_to "Post adjustment", post_inventory_adjustment_path(@inventory_adjustment),
+            method: :post, class: "button button-primary",
+            form: { data: { turbo_confirm: "Post this adjustment? Posting commits inventory and cannot be undone." } } %>
     </div>
-    <%= submit_tag "Cancel adjustment" %>
-  <% end %>
-<% end %>
 
-<p><%= link_to "Adjustments", inventory_adjustments_path %></p>
+    <%= form_with url: cancel_inventory_adjustment_path(@inventory_adjustment), method: :post, class: "form",
+          data: { turbo_confirm: "Cancel this draft adjustment?" } do |form| %>
+      <div class="field">
+        <label class="field-label" for="inventory_adjustment_cancel_note">Cancel note</label>
+        <input type="text" name="inventory_adjustment[cancel_note]" id="inventory_adjustment_cancel_note" class="input">
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Cancel adjustment", class: "button button-danger" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>

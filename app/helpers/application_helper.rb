@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module ApplicationHelper
+  include Pagy::Frontend
+
   def page_title(title, browser_title: nil)
     content_for(:title, browser_title.presence || title)
     tag.h1(title)
@@ -42,6 +44,50 @@ module ApplicationHelper
       status_badge(true_label, variant: :success)
     else
       status_badge(false_label, variant: :inactive)
+    end
+  end
+
+  # active/inactive/discontinued lifecycle used by catalog products and variants.
+  def product_status_variant(status)
+    case status.to_s
+    when "active" then :success
+    when "discontinued" then :warning
+    else :inactive
+    end
+  end
+
+  def adjustment_status_variant(status)
+    case status.to_s
+    when "posted" then :success
+    when "cancelled" then :danger
+    else :info
+    end
+  end
+
+  def reservation_status_variant(status)
+    case status.to_s
+    when "active" then :info
+    when "converted" then :success
+    else :neutral
+    end
+  end
+
+  def inventory_unit_status_variant(status)
+    case status.to_s
+    when "available" then :success
+    when "reserved" then :info
+    when "sold" then :neutral
+    when "damaged", "discarded" then :danger
+    else :warning
+    end
+  end
+
+  def cost_quality_variant(quality)
+    case quality.to_s
+    when "actual" then :success
+    when "estimated" then :warning
+    when "unknown" then :danger
+    else :neutral
     end
   end
 

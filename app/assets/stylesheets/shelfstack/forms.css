@@ -14,6 +14,12 @@
   background: var(--surface-primary);
 }
 
+.form-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
 .form-grid {
   display: grid;
   gap: 1rem;
@@ -126,4 +132,27 @@
 
 .input-affix .input {
   border-radius: 0;
+}
+
+/* Repeating document lines (inventory adjustments) */
+
+.adjustment-line {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-100);
+}
+
+.adjustment-line-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.adjustment-line-title {
+  font-weight: 650;
+  color: var(--text-secondary);
 }
