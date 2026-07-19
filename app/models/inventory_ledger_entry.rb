@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 class InventoryLedgerEntry < ApplicationRecord
-  MOVEMENT_TYPES = %w[opening_inventory quantity_adjustment cost_correction].freeze
-  COST_METHODS = %w[explicit configured_estimate moving_average unknown].freeze
+  MOVEMENT_TYPES = %w[opening_inventory quantity_adjustment cost_correction sale customer_return].freeze
+  COST_METHODS = %w[explicit configured_estimate moving_average last_known unknown].freeze
   COST_QUALITIES = %w[actual estimated mixed unknown].freeze
 
   belongs_to :store

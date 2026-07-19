@@ -1,7 +1,8 @@
 # Phase 5 — Supply and Demand
 
 **Status:** Not started  
-**Depends on:** Phase 4c (first completed sale); 4d/4e recommended before broad fulfilment  
+**Depends on:** Phase 4c (first completed sale) for foundational purchasing; Phase 4d before individual-item supply fulfilment; Phase 4e recommended before return-oriented fulfilment paths  
+**Phase 4 gate status:** On `phase/p4-point-of-sale`, 4c/4d/4e are implemented — foundational and unit-dependent Phase 5 paths are unblocked once Phase 4 is manually accepted and merged ([roadmap Option B](../roadmap.md)).  
 **Unlocks:** richer ops reporting in Phase 7; request fulfilment against POS  
 **Governing docs:** ADR-0005, ADR-0007; [vendors-and-purchasing](../../domains/vendors-and-purchasing.md); [product-requests](../../domains/product-requests.md); [architectural-locks](../architectural-locks.md)
 
@@ -11,11 +12,11 @@ Reconnect normal replenishment and customer demand after POS completion works: v
 
 ## Build order inside this phase
 
-1. Vendors and variant–vendor sources  
-2. Purchase orders and lines; derived `on_order`  
-3. Receipt posting with PO-line linkage and receipt-based costing  
+1. Vendors and variant–vendor sources *(foundational; may start after 4c)*  
+2. Purchase orders and lines; derived `on_order` *(foundational)*  
+3. Receipt posting with PO-line linkage and receipt-based costing *(quantity first; unit-backed receipt lines require 4d)*  
 4. Minimal customer/contact shell  
-5. Product requests and purchase-order allocations  
+5. Product requests and purchase-order allocations *(quantity paths after 4c; exact-unit fulfilment after 4d)*  
 6. In-house request reservation (physical confirm) and allocation coverage  
 
 ## Principal tables

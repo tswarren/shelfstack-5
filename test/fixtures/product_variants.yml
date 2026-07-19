@@ -17,3 +17,23 @@ upc_product_standard:
   status: active
   sellable: true
   purchasable: true
+
+signed_book_standard:
+  product: signed_book
+  sku: "2800000000042"
+  name: Standard
+  inventory_tracking_mode: individual
+  regular_price_cents: 4500
+  status: active
+  sellable: true
+  purchasable: true
+
+gift_wrap_service_standard:
+  product: gift_wrap_service
+  sku: "2800000000035"
+  name: Standard
+  inventory_tracking_mode: none
+  regular_price_cents: 300
+  status: active
+  sellable: true
+  purchasable: false

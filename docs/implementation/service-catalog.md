@@ -83,13 +83,118 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - failed post rolls back ledger and balance together
 - idempotent retry does not duplicate value deltas
 
+## Phase 4a — Editable POS
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::OpenBusinessDay` | Point of Sale | 4a | Yes | No | `business_days` (lock query) | Store, actor, optional reporting date | Open Business Day; rejects a second open day per store |
+| `Pos::CloseBusinessDay` | Point of Sale | 4a | Yes | Yes | Business Day (`lock`) | Business Day, actor | Closed Business Day; blocks while a Session is open |
+| `Pos::OpenSession` | Point of Sale | 4a | Yes | No | Business Day (`lock`), then device/drawer open-session checks | Business Day, store, device, cashier, optional drawer, `opening_cash_cents` when drawer present | Open Session; day status rechecked under lock; opening cash count for cash-enabled sessions |
+| `Pos::CloseSession` | Point of Sale | 4a | Yes | Yes | Session (`lock`) | Session, actor | Closed Session; cash-enabled sessions require a closing cash count and snapshot expected/counted/variance; blocks while controlling an open Transaction; leaves Suspended Transactions untouched |
+| `Pos::OpenTransaction` | Point of Sale | 4a | Yes | No | Session (`lock`) | Session, actor, optional cashier | Open Transaction with generated `public_id`; Session status rechecked under lock; origin/active session set |
+| `Pos::ResolveScan` | Point of Sale | 4a | No | Yes | None | Organization, scan/search query, store | `Pos::ResolveScanResult` (variant, ambiguity, blockers/warnings via `Catalog::SaleEligibility`) |
+| `Pos::AddLine` | Point of Sale | 4a | Yes | No | Reservation via `Inventory::Reserve` | Transaction, variant, quantity, actor | Pending product line; reserves only `quantity`-tracked variants |
+| `Pos::AddOpenRingLine` | Point of Sale | 4a | Caller | No | None | Transaction, department, price, optional description, actor | Pending open-ring line; no Variant/Reservation; blank description snapshots to Department name |
+| `Pos::UpdateLineQty` | Point of Sale | 4a | Yes | No | Transaction then Line (`lock`); reservation via `Inventory::Reserve` | Line, quantity, actor | Updated quantity; re-reserves in place for quantity-tracked lines |
+| `Pos::RemoveLine` | Point of Sale | 4a | Yes | No | Transaction then Line (`lock`); reservation via `Inventory::ReleaseReservation` | Line, actor, optional reason | Soft-removed line (`status: removed`); releases any active reservation; row retained |
+| `Pos::SuspendTransaction` | Point of Sale | 4a | Yes | No | Transaction (`lock`) | Transaction, actor | Suspended Transaction; retains Reservations; clears active-session control |
+| `Pos::RecallTransaction` | Point of Sale | 4a | Yes | No | Session then Transaction (`lock`) | Transaction, session, actor | Reopened Transaction bound to the recalling Session; refreshes catalog price/classification/eligibility via `RefreshRecalledTransaction`; concurrent recall has exactly one winner |
+| `Pos::CancelTransaction` | Point of Sale | 4a | Yes | No | Transaction (`lock`); reservations via `Inventory::ReleaseReservation` | Transaction, actor, optional reason | Cancelled Transaction; releases all pending-line Reservations; no ledger/receipt effect |
+| `Pos::RefreshRecalledTransaction` | Point of Sale | 4a | Yes | No | Transaction then Lines (`lock`) | Open Transaction | Refreshes pending sale product prices/tax/department from catalog (preserving price and tax-category overrides); returns eligibility blockers and material change list |
+
+### Phase 4a notes
+
+- `Pos::AddLine` / `Pos::AddOpenRingLine` resolve Department and Tax Category using the same variant-override → product-default → merchandise-class-default (→ department-default for tax) order as `Catalog::SaleEligibility`.
+- Individually tracked variants (`inventory_tracking_mode: individual`) are accepted by `Pos::AddLine` when an exact `InventoryUnit` is supplied (Phase 4d).
+- No service in this list sets `pos_transactions.status` or `pos_line_items.status` to `completed`; that is reserved for `Pos::CompleteTransaction` (Phase 4c).
+
+## Phase 4b — Price, tax persistence, discounts, approvals
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Classification::CreateStoreTaxRate` / `UpdateStoreTaxRate` | Classification and Configuration | 4b | Yes | No | Store Tax Rate | Store, rate attrs (code immutable on update) | Persisted Store Tax Rate + audit |
+| `Classification::CreateStoreTaxRule` / `UpdateStoreTaxRule` | Classification and Configuration | 4b | Yes | No | Store Tax Rule | Store, Tax Category, optional Store Tax Rate, treatment, fraction, order, compounding, effective dates | Persisted Store Tax Rule + audit; overlap and treatment/rate consistency validated on the model |
+| `Tax::CalculateTransaction` | Point of Sale / Classification and Configuration | 4b | No (read-only rule resolution) | Yes | None | Store, completion date, duck-typed lines (`id`, `tax_category_id`, `direction`, `taxable_merchandise_amount_cents`, `position`) | Per-line component results (taxable base, amount, snapshots), warnings, blockers; missing effective rule is a blocker, never an exemption; collecting rules whose Store Tax Rate is inactive or outside its effective window are blockers |
+| `Pos::AuthorizeAction` | Point of Sale / Organization and Authorization | 4b | Yes (only when creating a `PosApproval`) | No | None | Store, requester, permission key, optional authority `limit_key`/requested value, optional approver + approver PIN | `:allowed` / `:approved` (with `PosApproval`) / `:requires_approval` / `:denied`; requester lacking permission or authority escalates to an independent approver rather than a flat deny |
+| `Pos::OverridePrice` | Point of Sale | 4b | Yes | No | Transaction then Line (`lock`) | Line, requested unit price, actor, optional reason/approver | Overridden `unit_price_cents` with `price_overridden_at` snapshot; audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::ApplyDiscount` | Point of Sale | 4b | Yes | No | Transaction then affected Lines (`lock`); capacity computed after lock | Transaction, scope (`line`/`transaction`), method, rate/amount, `tax_treatment` (defaults `reduces_taxable_base`), actor, optional discount reason/approver | `PosDiscount` + largest-remainder `PosDiscountAllocation`s; audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::OverrideTaxCategory` | Point of Sale | 4b | Yes | No | Transaction then Line (`lock`) | Line, Tax Category, required reason, actor, optional approver | Overridden line Tax Category; retains first pre-override category/actor/timestamp/reason; audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::ApplyTaxExemption` | Point of Sale | 4b | Yes | No | Transaction (`lock`) | Transaction, exemption type, actor, optional notes/approver | `PosTaxExemption` (`coverage: whole_transaction` only; one per Transaction, re-applying is a no-op success); audit event; triggers `Pos::RecalculateTransaction` |
+| `Pos::RecalculateTransaction` | Point of Sale | 4b | Yes | Yes (same inputs reproduce the same persisted rows) | Transaction (`lock`) | Transaction | Deletes and re-persists `pos_line_item_taxes` for non-completed lines from `Tax::CalculateTransaction` against the currently allocated taxable base; returns subtotal/discount/tax/net totals and blockers/warnings for display; does not write cached totals onto `pos_transactions` |
+
+### Phase 4b tax notes
+
+- `Tax::CalculateTransaction` is the pure ADR-0014 hybrid calculation: taxability/base resolved per line, one round-half-up aggregation per transaction component (`store_tax_rate_id` + `calculation_order` + `compounds_on_prior_tax`) and line direction, largest-remainder cent allocation (tie-break: remainder desc, then position asc, then id asc), and ascending-`calculation_order` compounding using already-finalized (allocated) prior tax amounts on the line. It does not persist anything.
+- `exempt` and `not_applicable` treatments produce no `Tax::CalculateTransaction` *component* result (no collectible tax to allocate); `zero_rated` produces an explicit zero-amount component so the base still reports. `Pos::RecalculateTransaction` still persists zero-amount `pos_line_item_taxes` rows with the matching `treatment_snapshot` for those non-collecting rules, so receipts/audits can show *why* no tax was collected rather than silently omitting the category.
+- Effective Store Tax Rules are resolved by the **store-local calendar date at completion**, not the Business Day `reporting_date` (ADR-0014). Collecting treatments also require the referenced Store Tax Rate to be active and effective on that same date; an invalid rate is a configuration blocker, not silent omission.
+- `Pos::RecalculateTransaction` runs after every 4a/4b line- or transaction-mutating service (`AddLine`, `AddOpenRingLine`, `UpdateLineQty`, `RemoveLine`, `OverridePrice`, `ApplyDiscount`, `OverrideTaxCategory`, `ApplyTaxExemption`); a missing effective Store Tax Rule surfaces as a blocker in that service's `warnings`, never an implicit exemption.
+- Commercial POS mutations use canonical lock order `PosSession` (when creating/attaching) → `PosTransaction` → affected `PosLineItem`s → discount/tax rows → inventory. Eligibility and discount capacity are computed after the transaction lock is held.
+- `Pos::AuthorizeAction` centralizes ADR-0011 permission/authority/approval evaluation for all restricted 4b actions: the requester's own numeric authority (`EvaluateAuthority`, membership-override columns per OD-013 interim) is checked first when a `limit_key` is given; an approver must differ from the requester, authenticate with their own PIN (`authenticate_pin`, not the requester's), hold the approving permission, and (for numeric actions) independently have authority covering the requested value.
+- Completion-time blocker revalidation under a Transaction lock (`Pos::CompleteTransaction`) is Phase 4c work.
+
+## Phase 4c — Inventory sale bridge, tender, and atomic completion
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Inventory::ConvertReservation` | Receiving and Inventory | 4c | Yes | Yes (posting key) | Balance, then Reservation (Reserve/ReleaseReservation order) | POS line, posted-by actor | Posts an outbound `sale` via `PostLedgerEntry`; decrements `reserved`; marks Reservation `converted`; snapshots `cost_unit_cost_cents`/`cost_extended_cents`/`cost_method_snapshot`/`cost_quality_snapshot` on the line; warns on negative resulting `available` |
+| `Pos::AddCashTender` | Point of Sale | 4c | Yes | No | Transaction (`lock`) | Transaction, cash Tender Type, amount tendered, actor | `pending` `PosTender` capped at balance due; enforces active/`payment_enabled`/over-tender flags; fails when recalculation has blockers |
+| `Pos::AddCardTender` | Point of Sale | 4c | Yes | No | Transaction (`lock`) | Transaction, card Tender Type, amount, authorization code, optional terminal reference, actor | `authorized` `PosTender`; enforces remaining balance unless `requires_reconciliation`; fails when recalculation has blockers |
+| `Pos::RemoveTender` | Point of Sale | 4c | Yes | No | Tender (`lock`) | Tender, actor, optional reason | `pending` → `removed`; `authorized` → `voided`; restores `PosTransaction#editable?` |
+| `Pos::CreateCashMovement` | Point of Sale | 4c | Yes | No | None (session-scoped, not Transaction-scoped) | Session, Cash Movement Type, amount, actor, optional reason/reference/approver | `PosCashMovement`; escalates through `Pos::AuthorizeAction` (`maximum_paid_out_cents`) when the type `requires_approval` |
+| `Pos::RecordClosingCashCount` | Point of Sale | 4c | Yes | No | Session (`lock`) | Cash-enabled Session, counted cents, actor | Append-only `closing` `PosSessionCashCount` |
+| `Pos::CalculateExpectedCash` | Point of Sale | 4c | No | Yes | None | Session | Expected drawer cash from opening + completed cash tenders/change + cash movements (INV-CASH-001) |
+| `Pos::CompleteTransaction` | Point of Sale | 4c | Yes | Yes (`completion_idempotency_key`) | Session then Transaction, pending Lines, unresolved Tenders (all `lock`); Balance/Reservation via `Inventory::ConvertReservation`; Store (`lock`, receipt sequence) | Transaction, completing Session, actor, idempotency key | Revalidates tax and sale eligibility under lock (blockers fail completion); converts Reservations / posts sale movements; finalizes Lines and Tenders; assigns `receipt_number`/`receipt_sequence` only on success; marks Transaction `completed`; sets `cashier_user` to completing actor |
+
+### Phase 4c notes
+
+- **Tender-state lock:** `PosTransaction#editable?` is `open? && !unresolved_tenders?` (`pending`/`authorized` Tenders lock lines, prices, discounts, tax category, and exemptions). Every 4a/4b commercial-editing service re-checks `editable?`/line status *after* acquiring its row lock (`Pos::RemoveLine`, `Pos::UpdateLineQty`, `Pos::OverridePrice`, `Pos::OverrideTaxCategory`), and `Pos::AddLine`/`Pos::AddOpenRingLine` lock the Transaction itself before inserting a new Line, so none of them can slip a commercial mutation past a Transaction that `Pos::CompleteTransaction` is concurrently completing.
+- `Pos::SuspendTransaction` and `Pos::CancelTransaction` are hardened against Tenders: Suspend is blocked outright while an unresolved Tender exists (domain: "Suspension ... requires no unresolved Tender activity"); Cancel resolves (removes/voids) any unresolved Tenders itself before cancelling, so no completed Tender can survive a cancelled Transaction (ADR-0008).
+- `Pos::CloseSession`'s pre-existing "blocks while it controls an open Transaction" guard already enforces "Session close blocked by unresolved Tenders," because an unresolved Tender can only exist on a still-`open` Transaction (Suspend's guard above rules out the alternative).
+- `Pos::CompleteTransaction` supports Product-line tracking modes `quantity`, `none`, and `individual` (4d); Stored Value remains out of scope (Phase 6). Departments are re-checked (`active?`/`postable?`) directly off the persisted Line at completion, and pending sale product lines also re-run `Catalog::SaleEligibility`.
+- Cash-enabled Sessions require opening cash at open and a closing cash count before close; card-only Sessions skip the count contract. Session Z numbering and reconciliation remain Phase 7.
+- Check Tender Types are seeded inactive; controller dispatch supports only `cash` and `card` until a check service exists.
+- Receipt Number format (v1, not architecturally locked beyond OD-002's sequence ownership): `"#{store.code}-#{receipt_sequence.to_s.rjust(6, '0')}"`.
+
+## Phase 4d — Individually tracked inventory
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Inventory::CreateInventoryUnit` | Receiving and Inventory | 4d | Yes | No | `identifier_sequences` row via `Identifiers::Generate`; requires `inventory.unit.manage` | Store, variant, actor, acquisition cost, optional condition/price/acquisition-source-type+id/description/internal-notes | Persisted `InventoryUnit` (`available`, generated `27` identifier) + audit; bootstrap mechanism parallel to Phase 3's opening-inventory-adjustment, since receiving is not implemented until Phase 5 |
+| `Inventory::Reserve` (individual branch) | Receiving and Inventory | 4d | Yes | Yes (unit status is the single source of truth) | `InventoryUnit` (`lock!`) | Store, variant, quantity (always 1), source, `inventory_unit` | Active reservation on the exact unit; unit `status: reserved`; fails safely (no oversell) when the unit is not `available` |
+| `Inventory::ReleaseReservation` (individual branch) | Receiving and Inventory | 4d | Yes | Yes | `InventoryUnit` (`lock!`) + Reservation | Reservation | Released reservation; unit `status: available` |
+| `Inventory::ConvertReservation` (individual branch) | Receiving and Inventory | 4d | Yes | Yes (reservation-status replay) | `InventoryUnit` (`lock`), then Reservation | POS line (with `inventory_unit_id`), posted-by actor | Unit `status: sold` + `sold_at` + `sold_pos_line_item_id`; Reservation `converted`; line cost snapshot set from the unit's exact `acquisition_cost_cents` (`cost_method_snapshot: "explicit"`) |
+| `Pos::AddLine` (individual branch) | Point of Sale | 4d | Yes | No | Reservation via `Inventory::Reserve` | Transaction, variant, `inventory_unit`, actor | Pending product line pinned to the exact unit (`quantity: 1`, `inventory_unit_id` set); rejects a missing/already-reserved unit instead of falling back to aggregate stock |
+
+### Phase 4d notes
+
+- `InventoryUnit#status` (`available` / `reserved` / `sold`, plus inert `inspection`/`damaged`/`discarded`/`rtv`/`in_transfer` values with no service setting them yet) is authoritative; `Inventory::Reserve` locks the unit row and rechecks `available?` after acquiring the lock, so two concurrent reservation attempts for the same unit always leave exactly one winner and one safe failure (`test/services/inventory/concurrency_reserve_unit_test.rb`).
+- Unlike quantity-tracked lines, an individually tracked line always reserves quantity `1` against one exact unit; `Pos::UpdateLineQty` rejects any quantity change on a unit-backed line rather than trying to re-resolve a different unit.
+- `Pos::ResolveScan` resolves a scanned generated `27` identifier directly to its `InventoryUnit` (and from there to its variant), ahead of the ordinary product/variant lookup path.
+- `inventory.unit.manage` gates direct unit creation (`InventoryUnitsController`); there is no receiving workflow yet (Phase 5), so this remains the only creation path.
+- `acquisition_source_type`/`acquisition_source_id` is a label pair only (`receipt_line`/`return_line`/`buyback`/`adjustment`/`other`), not a real polymorphic association — none of those source records exist yet, and `buyback` in particular names an explicitly deferred capability (see the phase-04 4d "Open follow-up" note).
+
+## Phase 4e — Simple linked returns
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::AddLinkedReturnLine` | Point of Sale | 4e | Yes | No | Transaction (`lock`) + original line (`lock`); requires `pos.return.create` | Open Transaction, completed original sale line, quantity, Return Reason, disposition, actor | Pending `direction: return` line copying original commercial/cost snapshots; proportional historical Discount allocations (INV-RET-004); tax components reversed from original snapshots via `Pos::RecalculateTransaction`; never mutates the original sale line |
+| `Pos::AddCashRefundTender` | Point of Sale | 4e | Yes | No | Transaction (`lock`) | Transaction with negative net, cash Tender Type, refund amount, actor | `pending` `PosTender` with `direction: refunded` capped at refund due |
+| `Inventory::PostCustomerReturn` | Receiving and Inventory | 4e | Yes | Yes (posting key / unit status) | Balance via `PostLedgerEntry` (+ `unavailable` bump when disposition holds stock), or `InventoryUnit` (`lock`) for individual | Completed return product line, posted-by actor | `return_to_stock`: sellable restore; `inspection`/`damaged`/`rtv`: on_hand + unavailable (or unit status); `discard`: inbound return then outbound adjustment; `non_inventory`: no effect for tracking `none` |
+| `Pos::RecalculateTransaction` (return branch) | Point of Sale | 4e | Yes | No | Transaction (`lock`) | Transaction with pending sale and/or return lines | Sale lines use `Tax::CalculateTransaction`; return lines reverse stored original tax components exactly (proportional for partial quantity); net may be negative |
+| `Pos::CompleteTransaction` (return branch) | Point of Sale | 4e | Yes | Yes | Same as 4c, plus `PostCustomerReturn` for return lines | Same as 4c | Return product lines post via `PostCustomerReturn` instead of `ConvertReservation`; tender settlement treats `refunded` as negative of `received` |
+
+### Phase 4e notes
+
+- Original completed sale lines remain immutable (ADR-0008); returns are new linked lines on a separate open Transaction.
+- Remaining returnable quantity is `original.quantity − sum(pending/completed linked returns)`.
+- Free-text cancellation/removal/override reasons remain free text; Return Reasons are organization master data (`docs/exports/return_reasons.csv`).
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 4a–4c: session/day services, `Pos::CompleteTransaction`, discount/tax helpers  
-- Phase 5: receipt posting, PO placement, allocation services  
-- Phase 6: stored-value posting, post-void  
+- Phase 5: receipt posting, PO placement, allocation services
+- Phase 6: stored-value posting, post-void
 
 ## Related
 

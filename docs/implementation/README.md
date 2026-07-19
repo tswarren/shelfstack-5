@@ -20,6 +20,7 @@
 | [service-catalog.md](service-catalog.md) | Introduced application services as they land |
 | [phases/](phases/) | Per-phase goals, tables, services, exit criteria, and out-of-scope |
 | [phase-03-inventory-cost-schema.md](phase-03-inventory-cost-schema.md) | Authoritative Phase 3 quantity-cost fields and constraints (ADR-0013) |
+| [phase-04-tax-schema.md](phase-04-tax-schema.md) | Authoritative Phase 4 tax/POS commercial schema deltas (ADR-0014) |
 | [design-notes/inventory-costing/](design-notes/inventory-costing/) | Non-authoritative inventory-costing exploration notes |
 | [schema-reconciliation-display-categories-and-demand-allocation.md](schema-reconciliation-display-categories-and-demand-allocation.md) | Pre-scaffolding schema decisions (merchandise classes, requests, allocations) |
 

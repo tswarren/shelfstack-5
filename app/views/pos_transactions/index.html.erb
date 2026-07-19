@@ -1,0 +1,22 @@
+<% content_for :title, "Suspended transactions" %>
+
+<h1>Suspended transactions</h1>
+<table>
+  <thead>
+    <tr><th>Public ID</th><th>Suspended at</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% @suspended_transactions.each do |transaction| %>
+      <tr>
+        <td><%= link_to transaction.public_id, pos_transaction_path(transaction) %></td>
+        <td><%= transaction.suspended_at&.strftime("%Y-%m-%d %H:%M") %></td>
+        <td>
+          <% if Current.user.can?("pos.transaction.recall", store: Current.store) %>
+            <%= button_to "Recall", recall_pos_transaction_path(transaction), class: "button button-small button-outline" %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Back to register", register_path %></p>

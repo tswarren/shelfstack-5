@@ -5,6 +5,12 @@
 
 <nav aria-label="Primary">
   <ul>
+    <% if Current.user.can?("pos.access", store: Current.store) %>
+      <li><%= link_to "Register", register_path %></li>
+    <% end %>
+    <% if Current.user.can?("pos.access", store: Current.store) %>
+      <li><%= link_to "Business days", business_days_path %></li>
+    <% end %>
     <% if Current.user.can?("catalog.product.view", store: Current.store) %>
       <li><%= link_to "Products", products_path %></li>
     <% end %>
@@ -14,6 +20,9 @@
     <% end %>
     <% if Current.user.can?("inventory.reservation.view", store: Current.store) %>
       <li><%= link_to "Reservations", inventory_reservations_path %></li>
+    <% end %>
+    <% if Current.user.can?("inventory.unit.manage", store: Current.store) %>
+      <li><%= link_to "Inventory units", inventory_units_path %></li>
     <% end %>
     <% if Current.user.can?("classification.view", store: Current.store) %>
       <li><%= link_to "Inventory adjustment reasons", inventory_adjustment_reasons_path %></li>
@@ -44,6 +53,8 @@
     <% end %>
     <% if Current.user.can?("classification.view", store: Current.store) %>
       <li><%= link_to "Tax categories", tax_categories_path %></li>
+      <li><%= link_to "Store tax rates", store_tax_rates_path %></li>
+      <li><%= link_to "Store tax rules", store_tax_rules_path %></li>
       <li><%= link_to "Return policies", return_policies_path %></li>
       <li><%= link_to "Return reasons", return_reasons_path %></li>
       <li><%= link_to "Discount reasons", discount_reasons_path %></li>

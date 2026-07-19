@@ -1,0 +1,5 @@
+code,name,direction,requires_approval,requires_reference,active
+additional_float,Additional float,cash_in,FALSE,FALSE,TRUE
+paid_in,Paid in,cash_in,TRUE,TRUE,TRUE
+paid_out,Paid out,cash_out,TRUE,TRUE,TRUE
+safe_drop,Safe drop,cash_out,FALSE,TRUE,TRUE

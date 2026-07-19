@@ -1,0 +1,19 @@
+<% content_for :title, "Business days" %>
+
+<h1>Business days</h1>
+<table>
+  <thead>
+    <tr><th>Reporting date</th><th>Status</th><th>Opened</th><th>Closed</th></tr>
+  </thead>
+  <tbody>
+    <% @business_days.each do |day| %>
+      <tr>
+        <td><%= day.reporting_date %></td>
+        <td><%= day.status %></td>
+        <td><%= day.opened_at.strftime("%Y-%m-%d %H:%M") %></td>
+        <td><%= day.closed_at&.strftime("%Y-%m-%d %H:%M") %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Register", register_path %></p>

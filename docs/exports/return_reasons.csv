@@ -1,6 +1,6 @@
-code,name,active
-defective,Defective / damaged,TRUE
-unwanted,Changed mind / unwanted,TRUE
-wrong_item,Wrong item,TRUE
-duplicate,Duplicate purchase,TRUE
-other,Other,TRUE
+code,name,default_return_disposition,active
+defective,Defective / damaged,inspection_required,TRUE
+unwanted,Changed mind / unwanted,return_to_stock,TRUE
+wrong_item,Wrong item,return_to_stock,TRUE
+duplicate,Duplicate purchase,return_to_stock,TRUE
+other,Other,inspection_required,TRUE

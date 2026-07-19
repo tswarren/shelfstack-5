@@ -1,0 +1,47 @@
+<% content_for :title, "Close session" %>
+
+<h1>Close cash session</h1>
+
+<% if flash[:alert].present? %>
+  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
+<% end %>
+
+<p>Opening cash: <%= pos_money(@session.opening_cash_cents) %></p>
+<p>Expected cash: <%= pos_money(@expected_cash_cents) %></p>
+
+<% if @session.pos_cash_movements.any? %>
+  <h2>Cash movements this session</h2>
+  <table>
+    <thead>
+      <tr><th>Type</th><th>Direction</th><th>Amount</th><th>Reference</th></tr>
+    </thead>
+    <tbody>
+      <% @session.pos_cash_movements.includes(:cash_movement_type).order(:id).each do |movement| %>
+        <tr>
+          <td><%= movement.cash_movement_type.name %></td>
+          <td><%= movement.cash_movement_type.direction.humanize %></td>
+          <td><%= pos_money(movement.amount_cents) %></td>
+          <td><%= movement.reference.presence || "—" %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<% if @closing_count %>
+  <p>Last recorded count: <%= pos_money(@closing_count.total_cents) %> (<%= @closing_count.count_type.humanize %>)</p>
+<% end %>
+
+<%= form_with url: close_pos_session_path(@session), method: :post do |form| %>
+  <div>
+    <%= form.label :counted_cash_cents, "Counted cash (cents)" %>
+    <%= form.number_field :counted_cash_cents, min: 0, step: 1,
+          value: (@closing_count&.total_cents || @expected_cash_cents), required: true %>
+    <% if @closing_count %>
+      <p class="muted">Submitting a different amount records a manager recount, then closes.</p>
+    <% end %>
+  </div>
+  <div><%= form.submit @closing_count ? "Close session" : "Record count and close", class: "button button-primary" %></div>
+<% end %>
+
+<p><%= link_to "Back to register", register_path %></p>

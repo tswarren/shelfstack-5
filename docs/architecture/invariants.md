@@ -276,6 +276,12 @@ A Cash Drawer may have at most one active cash-enabled POS Session.
 
 A card-only POS Session may have no Cash Drawer.
 
+## INV-AUTH-013 — One open POS Session per POS Device
+
+A POS Device may have at most one open POS Session.
+
+This is independent of the Drawer constraint: the Drawer rule prevents two tills from sharing one drawer; the Device rule prevents one register from operating two active session contexts simultaneously.
+
 ---
 
 # 6. Product and Catalog invariants
@@ -519,15 +525,19 @@ Temporary merchandising placement must not change:
 
 Every completed ordinary merchandise or service POS Line Item must have one resolved Department.
 
-## INV-CLS-008 — Completed taxable or exempt lines resolve a Tax Category
+## INV-CLS-007a — Completed lines require a postable Department
 
-Every completed taxable or exempt POS Line Item must have one resolved Tax Category.
+Completion must block when the resolved Department on a contributing Product or Open-Ring line is missing, inactive, or non-postable (`postable = false`).
 
-## INV-CLS-009 — Tax Category is distinct from Tax Rate
+## INV-CLS-008 — Completed lines that participate in tax resolve a Tax Category
 
-Tax Category describes what is sold.
+Every completed Product or Open-Ring POS Line Item that participates in merchandise tax resolution must have one resolved Tax Category.
 
-Tax Rate and Tax Rule determine the Store- and date-specific calculation.
+## INV-CLS-009 — Tax Category is distinct from Tax Rate and Rule treatment
+
+Tax Category describes what is sold at the Organization level.
+
+Store Tax Rate and Store Tax Rule (including `treatment`) determine the Store- and date-specific calculation.
 
 ## INV-CLS-010 — Current classification does not rewrite history
 
@@ -908,14 +918,18 @@ An individually tracked Product line must identify one Inventory Unit before Com
 
 ## INV-POS-010 — Open-Ring Line is explicit
 
-An Open-Ring Line must explicitly identify:
+An Open-Ring Line must identify:
 
-* description;
-* Department;
+* an effective description;
+* a postable Department;
 * Tax Category;
 * price.
 
-It must not masquerade as an ordinary Product Variant.
+User-entered description may be blank during entry; effective description defaults to the Department name and must be snapshotted before Completion. The line must not masquerade as an ordinary Product Variant and must not reference a Product Variant.
+
+## INV-POS-010a — Line kind is distinct from inventory-tracking mode
+
+POS `line_kind` values are `product`, `open_ring`, and (later) `stored_value`. Inventory-tracking mode (`quantity`, `none`, `individual`) belongs to the Product Variant and must not be modeled as a POS line kind.
 
 ## INV-POS-011 — Stored-Value Line is not ordinary merchandise
 
@@ -966,6 +980,10 @@ All required internal Completion effects must commit together or none must commi
 ## INV-POS-020 — Transaction totals reconcile
 
 The stored completed transaction totals must reconcile to completed line, Discount, tax, and Tender records.
+
+## INV-POS-021 — Completion locks out concurrent commercial mutation
+
+While Completion holds the Transaction lock, concurrent recall, edit, or recalculation of the same Transaction must fail. Completion must not finalize stale tax or Tender totals.
 
 ---
 
@@ -1025,7 +1043,7 @@ Completed tax reporting must use stored tax components and snapshots, not curren
 
 ## INV-TAX-004 — Tax exemption is snapshotted
 
-A Completed Transaction using a Tax Exemption must retain the exemption evidence and scope used at Completion. A missing Store Tax Rule for a taxable Tax Category is not an exemption.
+A Completed Transaction using a Tax Exemption must retain the exemption evidence and coverage used at Completion. Initial coverage is `whole_transaction` only. A missing Store Tax Rule for a line’s Tax Category is not an exemption.
 
 ## INV-TAX-005 — Tax and revenue remain separate
 
@@ -1038,6 +1056,18 @@ Taxability and taxable base are resolved per line. Each transaction tax componen
 ## INV-TAX-007 — Tax rule effective date at Completion
 
 Final tax rules are selected using the store-local calendar date at Transaction Completion, not the Business Day reporting date.
+
+## INV-TAX-008 — Store Tax Rule treatment owns statutory handling
+
+Tax Category does not carry global taxable / zero-rated / exempt status. Store Tax Rule `treatment` determines collectible tax behavior. Missing effective rules for a line’s Tax Category block Completion.
+
+## INV-TAX-009 — Store Tax Rule periods do not overlap
+
+For a given `(store_id, tax_category_id, component_code)`, Store Tax Rule effective periods must not overlap. `component_code` equals the Store Tax Rate `code` when a rate is present.
+
+## INV-TAX-010 — Tax Category override is audited
+
+Changing the effective Tax Category on a POS line requires `pos.tax_category.override` and retains original Tax Category, reason, actor, and timestamp. It is not ordinary line editing.
 
 ---
 
@@ -1061,6 +1091,10 @@ refunded
 ## INV-TND-003 — Only completed Tenders settle a Transaction
 
 Pending, declined, failed, removed, or otherwise incomplete Tenders must not count toward settlement.
+
+## INV-TND-003a — Pending or authorized Tender locks commercial editing
+
+While a pending or authorized Tender exists on a Transaction, commercial fields are locked: line add/remove/quantity, prices, Discounts, Tax Categories, exemptions, and other tax-affecting values. Editing may resume only after those Tenders are removed or externally voided as required.
 
 ## INV-TND-004 — Completed Tender net equals Transaction net
 

@@ -63,7 +63,7 @@ Ledger entries retain at minimum:
 
 **Quantity-tracked costing (ADR-0013):** Positive On Hand uses moving weighted average over aggregate inventory value. Zero or negative On Hand carries no positive inventory asset value. Opening, quantity-only, and cost-correction kinds remain as locked above. Missing cost differs from confirmed zero. Completed cost snapshots are immutable.
 
-**Deficit allocation:** open as [OD-014](open-decisions.md); required before Phase 4c/5 negative-sale settlement and Receipt deficit settlement produce different attributable variances. Phase 3 keeps asset value at zero when On Hand ≤ 0 without implementing full provisional-deficit reconciliation.
+**Deficit allocation (OD-014):** Phase 4c interim accepted — provisional outbound cost on negative-sale posting; **no settlement/variance tables** until Phase 5 Receipt settlement. Asset value remains zero when On Hand ≤ 0. See [open-decisions.md](open-decisions.md#od-014-negative-inventory-deficit-allocation).
 
 ## Tax before Phase 4b
 
@@ -74,15 +74,16 @@ A tax category alone is not enough for transaction tax.
 Before Phase 4b code begins, implement at least:
 
 - store tax rates;
-- store tax rules linking tax category to rate;
-- effective dates;
+- store tax rules linking tax category to store (and rate when applicable);
+- Store Tax Rule `treatment` (`taxable` / `zero_rated` / `exempt` / `not_applicable`) — not a global Tax Category status;
+- denormalized `store_id` on store tax rules;
+- effective dates with non-overlapping periods per `(store_id, tax_category_id, component code)`;
 - taxable fraction;
 - calculation order;
 - compounding flag;
 - component label / receipt code;
-- Tax Category status (`taxable` / `zero_rated` / `exempt`);
 - hybrid transaction-component rounding with largest-remainder residual allocation per ADR-0014;
-- fixtures that prove aggregation, residual allocation, compounding, and taxable fraction.
+- fixtures that prove aggregation, residual allocation, compounding, taxable fraction, and treatments.
 
 Do not invent an alternate residual policy (including “last line gets the residual”) in Phase 4b.
 

@@ -28,7 +28,9 @@ module Inventory
       incoming_unit_cost_cents: nil,
       incoming_cost_method: nil,
       incoming_cost_quality: nil,
-      corrected_inventory_value_cents: nil
+      corrected_inventory_value_cents: nil,
+      prior_last_known_unit_cost_cents: nil,
+      prior_last_known_cost_quality: nil
     )
       @prior_on_hand = prior_on_hand.to_i
       @prior_inventory_value_cents = prior_inventory_value_cents
@@ -40,13 +42,19 @@ module Inventory
       @incoming_cost_method = incoming_cost_method
       @incoming_cost_quality = incoming_cost_quality
       @corrected_inventory_value_cents = corrected_inventory_value_cents
+      @prior_last_known_unit_cost_cents = prior_last_known_unit_cost_cents
+      @prior_last_known_cost_quality = prior_last_known_cost_quality
     end
 
     def call
       case @movement_kind
       when :cost_correction
         calculate_cost_correction
-      when :opening_inventory, :quantity_only
+      when :sale
+        calculate_sale
+      when :customer_return_discard
+        calculate_customer_return_discard
+      when :opening_inventory, :quantity_only, :customer_return
         calculate_quantity_movement
       else
         raise ArgumentError, "unsupported movement_kind: #{@movement_kind}"
@@ -54,6 +62,68 @@ module Inventory
     end
 
     private
+
+    # Linked-return discard: remove the exact historical cost that the preceding
+    # customer_return inbound introduced so pre-existing stock valuation is unchanged.
+    def calculate_customer_return_discard
+      raise ArgumentError, "quantity_delta must be negative for customer_return_discard" unless @quantity_delta.negative?
+      if @incoming_unit_cost_cents.nil?
+        raise ArgumentError, "incoming_unit_cost_cents is required for customer_return_discard"
+      end
+
+      removed = -@quantity_delta
+      resulting_on_hand = @prior_on_hand + @quantity_delta
+      unit = @incoming_unit_cost_cents.to_i
+      raise ArgumentError, "incoming_unit_cost_cents must be >= 0" if unit.negative?
+
+      movement_cost = unit * removed
+      method = (@incoming_cost_method.presence || "explicit").to_s
+      quality = (@incoming_cost_quality.presence || "actual").to_s
+
+      if @prior_on_hand <= 0 || prior_valuation_unknown?
+        return zero_asset_result(
+          resulting_on_hand,
+          cost_method: method,
+          cost_quality: quality,
+          unit_cost_cents: unit,
+          movement_cost_cents: movement_cost,
+          inventory_value_delta_cents: -movement_cost
+        )
+      end
+
+      prior_value = @prior_inventory_value_cents.to_i
+      resulting_value = prior_value - movement_cost
+      raise ArgumentError, "discard would drive inventory value negative" if resulting_value.negative?
+
+      if resulting_on_hand.positive?
+        average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: resulting_value,
+          resulting_moving_average_cost_cents: average,
+          resulting_cost_quality: @prior_cost_quality,
+          inventory_value_delta_cents: -movement_cost,
+          unit_cost_cents: unit,
+          movement_cost_cents: movement_cost,
+          cost_method: method,
+          cost_quality: quality,
+          update_last_known: false
+        )
+      else
+        Result.new(
+          resulting_on_hand: resulting_on_hand,
+          resulting_inventory_value_cents: 0,
+          resulting_moving_average_cost_cents: nil,
+          resulting_cost_quality: "unknown",
+          inventory_value_delta_cents: -prior_value,
+          unit_cost_cents: unit,
+          movement_cost_cents: movement_cost,
+          cost_method: method,
+          cost_quality: quality,
+          update_last_known: false
+        )
+      end
+    end
 
     def calculate_cost_correction
       raise ArgumentError, "quantity_delta must be zero for cost correction" unless @quantity_delta.zero?
@@ -274,6 +344,96 @@ module Inventory
           update_last_known: false
         )
       end
+    end
+
+    # OD-014 Phase 4c interim: an outbound sale carries a *provisional* unit cost
+    # (current moving average, else last-known positive carrying rate, else unknown)
+    # on the ledger/line cost snapshot even when the balance's own resulting asset
+    # value must stay zero (ADR-0013 zero/negative On Hand rule). Sale never crosses
+    # zero and back positive in one movement (quantity_delta is always outbound), so
+    # a sale beyond On Hand may leave On Hand negative with no settlement performed
+    # here (Phase 5 concern).
+    def calculate_sale
+      raise ArgumentError, "quantity_delta must be negative for a sale" unless @quantity_delta.negative?
+
+      removed = -@quantity_delta
+      resulting_on_hand = @prior_on_hand + @quantity_delta
+      source = resolve_sale_cost_source(removed)
+
+      if resulting_on_hand.positive?
+        calculate_sale_resulting_positive(resulting_on_hand, removed, source)
+      else
+        calculate_sale_resulting_nonpositive(resulting_on_hand, source)
+      end
+    end
+
+    def calculate_sale_resulting_positive(resulting_on_hand, removed, source)
+      unless source[:from_current_average]
+        return Result.new(
+          resulting_on_hand: resulting_on_hand, resulting_inventory_value_cents: nil,
+          resulting_moving_average_cost_cents: nil, resulting_cost_quality: "unknown",
+          inventory_value_delta_cents: nil, unit_cost_cents: source[:unit_cost_cents],
+          movement_cost_cents: source[:movement_cost_cents], cost_method: source[:cost_method],
+          cost_quality: source[:cost_quality], update_last_known: false
+        )
+      end
+
+      prior_value = @prior_inventory_value_cents.to_i
+      allocated = Rounding.round_half_up(prior_value * removed, @prior_on_hand)
+      resulting_value = prior_value - allocated
+      average = Rounding.round_half_up(resulting_value, resulting_on_hand)
+
+      Result.new(
+        resulting_on_hand: resulting_on_hand, resulting_inventory_value_cents: resulting_value,
+        resulting_moving_average_cost_cents: average, resulting_cost_quality: @prior_cost_quality,
+        inventory_value_delta_cents: -allocated, unit_cost_cents: source[:unit_cost_cents],
+        movement_cost_cents: source[:movement_cost_cents], cost_method: source[:cost_method],
+        cost_quality: source[:cost_quality], update_last_known: false
+      )
+    end
+
+    def calculate_sale_resulting_nonpositive(resulting_on_hand, source)
+      delta = if @prior_on_hand.positive? && source[:from_current_average]
+        -@prior_inventory_value_cents.to_i
+      elsif @prior_on_hand.positive?
+        nil
+      else
+        0
+      end
+
+      Result.new(
+        resulting_on_hand: resulting_on_hand, resulting_inventory_value_cents: 0,
+        resulting_moving_average_cost_cents: nil, resulting_cost_quality: "unknown",
+        inventory_value_delta_cents: delta, unit_cost_cents: source[:unit_cost_cents],
+        movement_cost_cents: source[:movement_cost_cents], cost_method: source[:cost_method],
+        cost_quality: source[:cost_quality], update_last_known: false
+      )
+    end
+
+    # Resolves the provisional per-unit sale cost: current aggregate moving average
+    # when a known positive balance exists; otherwise the last documented positive
+    # carrying rate; otherwise unknown (OD-014).
+    def resolve_sale_cost_source(removed)
+      if @prior_on_hand.positive? && !prior_valuation_unknown?
+        unit = @prior_moving_average_cost_cents
+        return {
+          from_current_average: true, unit_cost_cents: unit,
+          movement_cost_cents: Rounding.multiply_round_half_up(unit, removed),
+          cost_method: "moving_average", cost_quality: @prior_cost_quality
+        }
+      end
+
+      if @prior_last_known_unit_cost_cents.present? && KNOWN_QUALITIES.include?(@prior_last_known_cost_quality.to_s)
+        unit = @prior_last_known_unit_cost_cents
+        return {
+          from_current_average: false, unit_cost_cents: unit,
+          movement_cost_cents: Rounding.multiply_round_half_up(unit, removed),
+          cost_method: "last_known", cost_quality: @prior_last_known_cost_quality.to_s
+        }
+      end
+
+      { from_current_average: false, unit_cost_cents: nil, movement_cost_cents: nil,
+        cost_method: "unknown", cost_quality: "unknown" }
     end
 
     def unknown_incoming?

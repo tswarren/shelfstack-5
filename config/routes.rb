@@ -16,6 +16,8 @@ Rails.application.routes.draw do
   resources :pos_devices, except: %i[show destroy]
   resources :cash_drawers, except: %i[show destroy]
   resources :tax_categories, except: %i[destroy]
+  resources :store_tax_rates, except: %i[show destroy]
+  resources :store_tax_rules, except: %i[show destroy]
   resources :return_policies, except: %i[destroy]
   resources :return_reasons, except: %i[destroy]
   resources :discount_reasons, except: %i[destroy]
@@ -36,6 +38,40 @@ Rails.application.routes.draw do
     member do
       post :release
     end
+  end
+  resources :inventory_units, only: %i[index show new create]
+
+  get "register", to: "register#show", as: :register
+
+  resources :business_days, only: %i[index new create] do
+    member do
+      post :close
+    end
+  end
+  resources :pos_sessions, only: %i[new create] do
+    member do
+      get :close_form
+      post :close
+    end
+    resources :pos_cash_movements, only: %i[create]
+  end
+  resources :pos_transactions, only: %i[index show create] do
+    member do
+      post :suspend
+      post :recall
+      post :cancel
+      post :complete
+    end
+    resources :pos_line_items, only: %i[create update destroy] do
+      member do
+        patch :override_price
+        patch :override_tax_category
+      end
+    end
+    resources :pos_return_lines, only: %i[create]
+    resources :pos_discounts, only: %i[create]
+    resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
+    resources :pos_tenders, only: %i[create destroy]
   end
 
   root "homes#show"

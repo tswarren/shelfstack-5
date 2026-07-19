@@ -12,7 +12,15 @@ class Store < ApplicationRecord
   has_many :stock_balances, dependent: :restrict_with_exception
   has_many :inventory_ledger_entries, dependent: :restrict_with_exception
   has_many :inventory_reservations, dependent: :restrict_with_exception
+  has_many :inventory_units, dependent: :restrict_with_exception
   has_many :inventory_adjustments, dependent: :restrict_with_exception
+  has_many :business_days, dependent: :restrict_with_exception
+  has_many :pos_sessions, dependent: :restrict_with_exception
+  has_many :pos_transactions, dependent: :restrict_with_exception
+  has_many :pos_tenders, dependent: :restrict_with_exception
+  has_many :pos_cash_movements, dependent: :restrict_with_exception
+  has_many :store_tax_rates, dependent: :restrict_with_exception
+  has_many :store_tax_rules, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true
@@ -25,4 +33,5 @@ class Store < ApplicationRecord
   validates :country_code, length: { is: 2 }, allow_nil: true
   validates :phone, length: { maximum: 30 }, allow_nil: true
   validates :san_number, length: { maximum: 8 }, allow_nil: true
+  validates :next_receipt_sequence, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
 end

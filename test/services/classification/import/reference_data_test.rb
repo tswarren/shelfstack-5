@@ -12,7 +12,9 @@ module Classification
       test "imports tax categories and departments from export CSVs" do
         Classification::Import::ReferenceData.call(organization: @organization)
 
-        assert_equal 20, @organization.tax_categories.count
+        # 19 imported from tax_categories.csv + fixtures (physical_book, stationery, digital_service,
+        # mixed_use_item, imported_gift, unconfigured_category) used by ADR-0014 tax fixtures/tests.
+        assert_equal 25, @organization.tax_categories.count
 
         department_rows = CSV.read(Rails.root.join("docs/exports/departments.csv"), headers: true)
         imported_codes = @organization.departments.where(code: department_rows.map { |row| row["code"] }).pluck(:code)

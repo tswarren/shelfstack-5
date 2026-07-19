@@ -219,3 +219,142 @@ inventory_reservation_release:
   name: Release active reservations
   permission_group: inventory
   active: true
+
+pos_access:
+  code: pos.access
+  name: Operate POS workspace
+  permission_group: pos
+  active: true
+
+pos_business_day_open:
+  code: pos.business_day.open
+  name: Open business day
+  permission_group: pos
+  active: true
+
+pos_business_day_close:
+  code: pos.business_day.close
+  name: Close business day
+  permission_group: pos
+  active: true
+
+pos_session_open:
+  code: pos.session.open
+  name: Open POS session
+  permission_group: pos
+  active: true
+
+pos_session_close:
+  code: pos.session.close
+  name: Close POS session
+  permission_group: pos
+  active: true
+
+pos_transaction_open:
+  code: pos.transaction.open
+  name: Open transactions
+  permission_group: pos
+  active: true
+
+pos_transaction_suspend:
+  code: pos.transaction.suspend
+  name: Suspend transactions
+  permission_group: pos
+  active: true
+
+pos_transaction_recall:
+  code: pos.transaction.recall
+  name: Recall suspended transactions
+  permission_group: pos
+  active: true
+
+pos_transaction_cancel:
+  code: pos.transaction.cancel
+  name: Cancel open/suspended transactions
+  permission_group: pos
+  active: true
+
+pos_line_remove:
+  code: pos.line.remove
+  name: Remove pending lines
+  permission_group: pos
+  active: true
+
+pos_price_override:
+  code: pos.price.override
+  name: Override selling price
+  permission_group: pos
+  active: true
+
+pos_discount_apply:
+  code: pos.discount.apply
+  name: Apply discounts
+  permission_group: pos
+  active: true
+
+pos_discount_approve:
+  code: pos.discount.approve
+  name: Approve discounts beyond requester authority
+  permission_group: pos
+  active: true
+
+pos_tax_exempt:
+  code: pos.tax.exempt
+  name: Apply whole-transaction tax exemption
+  permission_group: pos
+  active: true
+
+pos_tax_category_override:
+  code: pos.tax_category.override
+  name: Override effective Tax Category on a POS line
+  permission_group: pos
+  active: true
+
+pos_transaction_complete:
+  code: pos.transaction.complete
+  name: Complete transactions
+  permission_group: pos
+  active: true
+
+pos_tender_cash:
+  code: pos.tender.cash
+  name: Accept cash tenders
+  permission_group: pos
+  active: true
+
+pos_tender_card_standalone:
+  code: pos.tender.card_standalone
+  name: Record standalone card tenders
+  permission_group: pos
+  active: true
+
+pos_tender_card_void:
+  code: pos.tender.card_void
+  name: Confirm external card tender voids
+  permission_group: pos
+  active: true
+
+pos_cash_movement_create:
+  code: pos.cash_movement.create
+  name: Paid-in / paid-out / drops
+  permission_group: pos
+  active: true
+
+pos_receipt_reprint:
+  code: pos.receipt.reprint
+  name: Reprint receipts
+  permission_group: pos
+  active: true
+
+inventory_unit_manage:
+  code: inventory.unit.manage
+  name: Create/manage inventory units
+  permission_group: inventory
+  active: true
+
+pos_return_create:
+  code: pos.return.create
+  name: Create return lines
+  permission_group: pos
+  active: true
+

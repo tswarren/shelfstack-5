@@ -16,6 +16,8 @@ class ProductVariant < ApplicationRecord
   has_many :inventory_ledger_entries, dependent: :restrict_with_exception
   has_many :inventory_reservations, dependent: :restrict_with_exception
   has_many :inventory_adjustment_lines, dependent: :restrict_with_exception
+  has_many :inventory_units, dependent: :restrict_with_exception
+  has_many :pos_line_items, dependent: :restrict_with_exception
 
   attr_readonly :sku
 

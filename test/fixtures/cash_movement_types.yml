@@ -1,0 +1,17 @@
+additional_float:
+  organization: acme
+  code: additional_float
+  name: Additional float
+  direction: cash_in
+  requires_approval: false
+  requires_reference: false
+  active: true
+
+paid_out:
+  organization: acme
+  code: paid_out
+  name: Paid out
+  direction: cash_out
+  requires_approval: true
+  requires_reference: true
+  active: true

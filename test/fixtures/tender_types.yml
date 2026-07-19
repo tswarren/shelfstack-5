@@ -1,0 +1,29 @@
+cash:
+  organization: acme
+  code: cash
+  name: Cash
+  tender_category: cash
+  shortcut: "1"
+  payment_enabled: true
+  refund_enabled: true
+  allows_over_tender: true
+  provides_change: true
+  reference_1_requirement: none
+  reference_2_requirement: none
+  active: true
+
+card_standalone:
+  organization: acme
+  code: card_standalone
+  name: Card (standalone)
+  tender_category: card
+  shortcut: "2"
+  payment_enabled: true
+  refund_enabled: true
+  allows_over_tender: false
+  provides_change: false
+  reference_1_requirement: required
+  reference_1_label: Auth code
+  reference_2_requirement: optional
+  reference_2_label: Terminal ref
+  active: true

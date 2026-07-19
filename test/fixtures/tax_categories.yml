@@ -3,3 +3,33 @@ physical_book:
   code: physical_book
   name: Physical Book
   active: true
+
+stationery:
+  organization: acme
+  code: stationery
+  name: Stationery
+  active: true
+
+digital_service:
+  organization: acme
+  code: digital_service
+  name: Digital Service
+  active: true
+
+mixed_use_item:
+  organization: acme
+  code: mixed_use_item
+  name: Mixed-Use Item
+  active: true
+
+imported_gift:
+  organization: acme
+  code: imported_gift
+  name: Imported Gift
+  active: true
+
+unconfigured_category:
+  organization: acme
+  code: unconfigured_category
+  name: Unconfigured Category
+  active: true

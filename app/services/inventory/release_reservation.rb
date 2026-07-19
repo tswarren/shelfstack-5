@@ -11,6 +11,20 @@ module Inventory
     end
 
     def call
+      # inventory_unit_id is immutable once set (ADR-0006), so it is safe to
+      # branch on the caller-supplied (possibly unlocked) reservation here.
+      if @reservation.inventory_unit_id.present?
+        release_unit
+      else
+        release_balance
+      end
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound => e
+      Result.new(reservation: @reservation, stock_balance: nil, success?: false, error: e.message, replayed: false)
+    end
+
+    private
+
+    def release_balance
       ActiveRecord::Base.transaction do
         # Lock order: stock balance → reservation (must match Reserve).
         balance = StockBalance.lock.find_by(
@@ -29,17 +43,36 @@ module Inventory
         raise ActiveRecord::RecordInvalid, balance if new_reserved.negative?
 
         balance.update!(reserved: new_reserved)
-        reservation.update!(
-          status: "released",
-          released_at: Time.current,
-          released_by_user: @actor,
-          release_reason: @release_reason
-        )
+        finalize_release(reservation)
 
         Result.new(reservation: reservation, stock_balance: balance, success?: true, error: nil, replayed: false)
       end
-    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotFound => e
-      Result.new(reservation: @reservation, stock_balance: nil, success?: false, error: e.message, replayed: false)
+    end
+
+    def release_unit
+      ActiveRecord::Base.transaction do
+        # Lock order: unit → reservation (parallel to balance → reservation above).
+        unit = InventoryUnit.lock.find(@reservation.inventory_unit_id)
+        reservation = InventoryReservation.lock.find(@reservation.id)
+
+        if reservation.status != "active"
+          return Result.new(reservation: reservation, stock_balance: nil, success?: true, error: nil, replayed: true)
+        end
+
+        unit.update!(status: "available")
+        finalize_release(reservation)
+
+        Result.new(reservation: reservation, stock_balance: nil, success?: true, error: nil, replayed: false)
+      end
+    end
+
+    def finalize_release(reservation)
+      reservation.update!(
+        status: "released",
+        released_at: Time.current,
+        released_by_user: @actor,
+        release_reason: @release_reason
+      )
     end
   end
 end

@@ -173,33 +173,43 @@ POS tax calculation, rounding, residual allocation, compounding, and effective-d
 
 ### Tax Category
 
-Describes what is being sold for tax purposes.
+Describes what is being sold for tax purposes at the Organization level.
 
-Examples may include printed books, periodicals, prepared food, packaged food, general merchandise, services, exempt merchandise, and Stored-Value issuance.
+Examples may include printed books, periodicals, prepared food, packaged food, general merchandise, services, and Stored-Value issuance.
 
-Each Tax Category has an explicit status such as:
+A Tax Category does **not** carry a global taxable / zero-rated / exempt status. The same category (for example printed books) may be taxable in one Store jurisdiction, zero-rated in another, and exempt elsewhere. Jurisdiction- and date-specific treatment belongs on Store Tax Rules.
 
-```text
-taxable
-zero_rated
-exempt
-```
-
-A `taxable` category must resolve one or more effective Store Tax Rules for the Store and completion date. Missing rules are a completion blocker, not an implicit exemption. `zero_rated` produces an explicit 0% historical component for reporting. `exempt` creates no collectible tax but retains the status snapshot.
+A line’s Tax Category must resolve one or more effective Store Tax Rules for the Store and completion date. Missing rules are a completion blocker, not an implicit exemption.
 
 ### Store Tax Rate
 
 Defines an effective-dated jurisdictional percentage.
 
-Suggested attributes include Store, code, name, jurisdiction, rate (`decimal(10,8)`), effective period, receipt code, and active status.
+Suggested attributes include Store, code, name, jurisdiction, rate (`decimal(10,8)`), effective period, receipt code, and active status. The rate `code` is the tax component identity used for overlap constraints and receipt labeling.
 
 ### Store Tax Rule
 
-Connects Store, Tax Category, Store Tax Rate, taxable fraction (`decimal(10,8)`), calculation order, compounding behavior (`compounds_on_prior_tax`), and effective period.
+Connects Store, Tax Category, optional Store Tax Rate, treatment, taxable fraction (`decimal(10,8)`), calculation order, compounding behavior (`compounds_on_prior_tax`), and effective period.
 
-Rules that share the same Store Tax Rate must use consistent calculation order, compounding behavior, and receipt code. Effective periods must not overlap for the same store tax rate, tax category, and component identity.
+`treatment` values:
 
-Rates require fixed precision. Completed POS activity stores historical tax components, including rule, rate, fraction, compounding, and receipt-code snapshots.
+```text
+taxable
+zero_rated
+exempt
+not_applicable
+```
+
+* `taxable` requires an effective Store Tax Rate with a nonnegative rate;
+* `zero_rated` requires an explicit 0% Store Tax Rate and produces a 0% historical component for reporting (VAT/GST-style; uncommon in the US demo);
+* `exempt` creates no collectible tax because the component is legally excluded for that merchandise or purchaser; may omit `store_tax_rate_id`;
+* `not_applicable` creates no collectible tax because the component is outside merchandise scope (for example Food/Beverage Tax on books); may omit `store_tax_rate_id`.
+
+Rules carry a denormalized `store_id` so Store-scoped queries and overlap validation remain clear even when `store_tax_rate_id` is null for exempt treatment.
+
+Rules that share the same Store Tax Rate must use consistent calculation order, compounding behavior, and receipt code. Each rule stores a `component_code` (equal to the rate `code` when a rate is present). Effective periods must not overlap for the same `(store_id, tax_category_id, component_code)`.
+
+Rates require fixed precision. Completed POS activity stores historical tax components, including rule, treatment, rate, fraction, compounding, and receipt-code snapshots.
 
 ## Policy and reason records
 
@@ -296,7 +306,8 @@ Audit Merchandise-Class changes, Department changes, default changes, Tax Catego
 - Temporary placement does not change inventory ownership.
 - Product Type remains descriptive.
 - Tax Category is distinct from Tax Rate.
-- Tax Category status distinguishes taxable, zero-rated, and exempt treatment (ADR-0014).
+- Store Tax Rule `treatment` distinguishes taxable, zero-rated, and exempt handling; Tax Category does not (ADR-0014).
+- Store Tax Rule effective periods do not overlap for the same store, Tax Category, and component code.
 - Completed lines snapshot classifications and tax components.
 - Current classification changes do not rewrite history.
 - Tender Type does not define revenue.

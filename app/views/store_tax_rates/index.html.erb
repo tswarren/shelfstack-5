@@ -1,0 +1,14 @@
+<h1>Store tax rates — <%= Current.store.name %></h1>
+<p><%= link_to "New store tax rate", new_store_tax_rate_path if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %></p>
+<ul>
+  <% @store_tax_rates.each do |rate| %>
+    <li>
+      <%= rate.code %> — <%= rate.name %> — <%= number_to_percentage(rate.rate * 100, precision: 4) %>
+      <% if rate.receipt_code.present? %>(<%= rate.receipt_code %>)<% end %>
+      <%= "(inactive)" unless rate.active? %>
+      <%= link_to "Edit", edit_store_tax_rate_path(rate) if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %>
+    </li>
+  <% end %>
+</ul>
+<p><%= link_to "Store tax rules", store_tax_rules_path %></p>
+<p><%= link_to "Home", root_path %></p>

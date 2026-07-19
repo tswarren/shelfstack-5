@@ -120,6 +120,14 @@ Requirements:
 
 The sync is additive and audited: it grants every catalog permission that is missing, and does not remove existing role-permission assignments.
 
+### Permissions vs numeric authority
+
+Permissions and numeric authority are separate (ADR-0011). Holding `pos.discount.apply` is not enough when the action also checks a membership limit such as `maximum_discount_rate`.
+
+Under the OD-013 interim rule, a **null** membership authority override is treated as **unconfigured** and denies the action (which surfaces as “requires approval” for discounts). Bootstrap therefore sets full administrator membership limits when creating the admin membership, and `shelfstack:sync_admin_permissions` fills any still-null administrator membership limits without overwriting values already configured.
+
+If discounts still require approval after sync, check **Administration → Store memberships** for the admin user and confirm discount rate/amount limits are set (or re-run sync / bootstrap to fill nulls).
+
 ## Related files
 
 | Path | Role |

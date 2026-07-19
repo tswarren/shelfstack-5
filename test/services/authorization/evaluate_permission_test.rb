@@ -40,7 +40,12 @@ module Authorization
       )
 
       user.update!(locked_at: nil)
-      store_memberships(:admin_main_street).update!(ends_on: Date.current - 1)
+      membership = store_memberships(:admin_main_street)
+      # Expire relative to the store's own local calendar date, not the test
+      # process's UTC `Date.current` — near UTC midnight those two dates can
+      # briefly coincide for a store in a behind-UTC timezone (e.g. America/
+      # New_York), making a `Date.current - 1` boundary flaky.
+      membership.update!(ends_on: membership.store_local_today - 1)
       assert_equal :deny, EvaluatePermission.call(
         user: user,
         store: stores(:main_street),

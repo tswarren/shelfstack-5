@@ -146,6 +146,122 @@ admin_inventory_reservation_release:
   role: administrator
   permission: inventory_reservation_release
 
+admin_pos_access:
+  role: administrator
+  permission: pos_access
+
+admin_pos_business_day_open:
+  role: administrator
+  permission: pos_business_day_open
+
+admin_pos_business_day_close:
+  role: administrator
+  permission: pos_business_day_close
+
+admin_pos_session_open:
+  role: administrator
+  permission: pos_session_open
+
+admin_pos_session_close:
+  role: administrator
+  permission: pos_session_close
+
+admin_pos_transaction_open:
+  role: administrator
+  permission: pos_transaction_open
+
+admin_pos_transaction_suspend:
+  role: administrator
+  permission: pos_transaction_suspend
+
+admin_pos_transaction_recall:
+  role: administrator
+  permission: pos_transaction_recall
+
+admin_pos_transaction_cancel:
+  role: administrator
+  permission: pos_transaction_cancel
+
+admin_pos_line_remove:
+  role: administrator
+  permission: pos_line_remove
+
+admin_pos_price_override:
+  role: administrator
+  permission: pos_price_override
+
+admin_pos_discount_apply:
+  role: administrator
+  permission: pos_discount_apply
+
+admin_pos_discount_approve:
+  role: administrator
+  permission: pos_discount_approve
+
+admin_pos_tax_exempt:
+  role: administrator
+  permission: pos_tax_exempt
+
+admin_pos_tax_category_override:
+  role: administrator
+  permission: pos_tax_category_override
+
+admin_pos_transaction_complete:
+  role: administrator
+  permission: pos_transaction_complete
+
+admin_pos_tender_cash:
+  role: administrator
+  permission: pos_tender_cash
+
+admin_pos_tender_card_standalone:
+  role: administrator
+  permission: pos_tender_card_standalone
+
+admin_pos_tender_card_void:
+  role: administrator
+  permission: pos_tender_card_void
+
+admin_pos_cash_movement_create:
+  role: administrator
+  permission: pos_cash_movement_create
+
+admin_pos_receipt_reprint:
+  role: administrator
+  permission: pos_receipt_reprint
+
+admin_inventory_unit_manage:
+  role: administrator
+  permission: inventory_unit_manage
+
+admin_pos_return_create:
+  role: administrator
+  permission: pos_return_create
+
+clerk_pos_access:
+  role: associate
+  permission: pos_access
+
+clerk_pos_transaction_open:
+  role: associate
+  permission: pos_transaction_open
+
+clerk_pos_transaction_suspend:
+  role: associate
+  permission: pos_transaction_suspend
+
+clerk_pos_transaction_recall:
+  role: associate
+  permission: pos_transaction_recall
+
+clerk_pos_price_override:
+  role: associate
+  permission: pos_price_override
+
+clerk_pos_discount_apply:
+  role: associate
+  permission: pos_discount_apply
+
 catalog_editor_product_view:
   role: catalog_editor
   permission: product_view
