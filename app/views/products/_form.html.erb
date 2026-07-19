@@ -1,8 +1,8 @@
 <%= form_with url: product.persisted? ? product_path(product) : products_path,
       method: product.persisted? ? :patch : :post, class: "form" do |form| %>
-  <%= render "shared/form_errors", object: product %>
+  <%= render "shared/form_errors", object: product, id: "form-errors-product" %>
   <% if variant.present? && variant.errors.any? %>
-    <%= render "shared/form_errors", object: variant %>
+    <%= render "shared/form_errors", object: variant, id: "form-errors-variant" %>
   <% end %>
 
   <section class="form-section">
@@ -93,6 +93,8 @@
       <div class="form-grid">
         <%= render "shared/money_field", name: "product[list_price]", label: "List price",
               value_cents: product.list_price_cents, id: "product_list_price",
+              object: product, error_attr: :list_price,
+              value: params.dig(:product, :list_price),
               hint: "Manufacturer list price. Enter dollars, e.g. 24.95." %>
         <div class="field">
           <%= product_form.label :available_from, class: "field-label" %>
@@ -116,6 +118,8 @@
         </div>
         <%= render "shared/money_field", name: "product_variant[regular_price]", label: "Regular price",
               value_cents: variant.regular_price_cents, id: "product_variant_regular_price",
+              object: variant, error_attr: :regular_price,
+              value: params.dig(:product_variant, :regular_price),
               hint: "Required when the variant is sellable. Enter dollars, e.g. 12.95." %>
         <div class="field">
           <%= variant_form.label :status, class: "field-label" %>

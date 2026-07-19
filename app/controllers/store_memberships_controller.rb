@@ -16,19 +16,22 @@ class StoreMembershipsController < ApplicationController
   end
 
   def create
-    @membership = Current.store.store_memberships.new(membership_params)
+    attrs = membership_params
+    @membership = Current.store.store_memberships.new(attrs)
     @membership.assigned_by_user = Current.user
-    if Administration::CreateStoreMembership.call(
+    copy_human_readable_param_errors!(@membership)
+
+    if @membership.errors.any? || !Administration::CreateStoreMembership.call(
       membership: @membership,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
     )
-      redirect_to store_memberships_path, notice: "Membership created."
-    else
       @users = User.order(:username)
       @roles = Current.organization.roles.order(:code)
       render :new, status: :unprocessable_entity
+    else
+      redirect_to store_memberships_path, notice: "Membership created."
     end
   end
 
@@ -37,9 +40,17 @@ class StoreMembershipsController < ApplicationController
   end
 
   def update
+    attrs = membership_update_params.to_h
+    if human_readable_params_invalid?
+      copy_human_readable_param_errors!(@membership)
+      @roles = Current.organization.roles.order(:code)
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if Administration::UpdateStoreMembership.call(
       membership: @membership,
-      attributes: membership_update_params.to_h,
+      attributes: attrs,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
@@ -91,7 +102,7 @@ class StoreMembershipsController < ApplicationController
     }.each do |input_key, column|
       next unless raw.key?(input_key)
 
-      attrs[column] = helpers.parse_percent_to_rate(raw[input_key])
+      write_parsed_attr!(attrs, column, parse_percent_rate_param(raw[input_key]))
     end
 
     {
@@ -103,7 +114,7 @@ class StoreMembershipsController < ApplicationController
     }.each do |input_key, column|
       next unless raw.key?(input_key)
 
-      attrs[column] = helpers.parse_money_to_cents(raw[input_key])
+      write_parsed_attr!(attrs, column, parse_money_param(raw[input_key]))
     end
 
     attrs

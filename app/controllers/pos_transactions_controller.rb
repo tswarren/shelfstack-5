@@ -49,9 +49,14 @@ class PosTransactionsController < ApplicationController
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid
 
-    # Actionable scan resolution surfaced after an ambiguous scan (POST → PRG).
+    # Actionable scan resolution after an ambiguous scan (POST → PRG).
+    # Session stores only { transaction_id, query, quantity }; candidates rebuilt here.
     stored = session.delete(:pos_scan_resolution)
-    @scan_resolution = stored if stored.present? && stored["transaction_id"] == @pos_transaction.id
+    if stored.present? && stored["transaction_id"] == @pos_transaction.id
+      @scan_resolution = rebuild_scan_resolution(stored)
+    end
+    @scan_outcome = flash[:scan_outcome]
+    @scan_query = flash[:scan_query]
   end
 
   def create
@@ -129,5 +134,25 @@ class PosTransactionsController < ApplicationController
     session = Current.store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
     redirect_to register_path, alert: "Open a POS session first." if session.blank?
     session
+  end
+
+  def rebuild_scan_resolution(stored)
+    lookup = Catalog::Lookup.call(organization: Current.organization, query: stored["query"])
+    candidates = lookup.products.first(10).map do |product|
+      {
+        "product_id" => product.id,
+        "title" => product.name,
+        "identifier" => product.identifier,
+        "variants" => product.product_variants.map { |v|
+          { "id" => v.id, "sku" => v.sku, "label" => v.name.presence || v.sku }
+        }
+      }
+    end
+
+    {
+      "query" => stored["query"].to_s,
+      "quantity" => (stored["quantity"].presence || 1).to_i,
+      "candidates" => candidates
+    }
   end
 end

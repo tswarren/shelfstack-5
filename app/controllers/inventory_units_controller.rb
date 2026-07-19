@@ -17,9 +17,10 @@ class InventoryUnitsController < ApplicationController
   end
 
   def create
+    attrs = unit_params
     variant = ProductVariant.joins(:product)
       .where(products: { organization_id: Current.organization.id })
-      .find_by(id: unit_params[:product_variant_id])
+      .find_by(id: attrs[:product_variant_id])
 
     if variant.blank?
       load_form_collections
@@ -28,22 +29,30 @@ class InventoryUnitsController < ApplicationController
       return
     end
 
+    if human_readable_params_invalid?
+      @inventory_unit = Current.store.inventory_units.new(attrs)
+      copy_human_readable_param_errors!(@inventory_unit)
+      load_form_collections
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     result = Inventory::CreateInventoryUnit.call(
       store: Current.store,
       product_variant: variant,
       actor: Current.user,
-      acquisition_cost_cents: unit_params[:acquisition_cost_cents].presence,
-      product_condition: Current.organization.product_conditions.find_by(id: unit_params[:product_condition_id]),
-      unit_price_cents: unit_params[:unit_price_cents].presence,
-      acquisition_source_type: unit_params[:acquisition_source_type].presence,
-      description: unit_params[:description].presence,
-      internal_notes: unit_params[:internal_notes].presence
+      acquisition_cost_cents: attrs[:acquisition_cost_cents].presence,
+      product_condition: Current.organization.product_conditions.find_by(id: attrs[:product_condition_id]),
+      unit_price_cents: attrs[:unit_price_cents].presence,
+      acquisition_source_type: attrs[:acquisition_source_type].presence,
+      description: attrs[:description].presence,
+      internal_notes: attrs[:internal_notes].presence
     )
 
     if result.success?
       redirect_to result.inventory_unit, notice: "Inventory unit #{result.inventory_unit.unit_identifier} created."
     else
-      @inventory_unit = Current.store.inventory_units.new(unit_params)
+      @inventory_unit = Current.store.inventory_units.new(attrs)
       load_form_collections
       flash.now[:alert] = result.error
       render :new, status: :unprocessable_entity
@@ -73,10 +82,16 @@ class InventoryUnitsController < ApplicationController
     # cents before the service contract runs. Direct `_cents` input (tests) still
     # works when the decimal field is absent.
     if params[:inventory_unit].key?(:acquisition_cost)
-      attrs[:acquisition_cost_cents] = helpers.parse_money_to_cents(params[:inventory_unit][:acquisition_cost])
+      write_parsed_attr!(
+        attrs, :acquisition_cost_cents, parse_money_param(params[:inventory_unit][:acquisition_cost]),
+        presentation_attr: :acquisition_cost
+      )
     end
     if params[:inventory_unit].key?(:unit_price)
-      attrs[:unit_price_cents] = helpers.parse_money_to_cents(params[:inventory_unit][:unit_price])
+      write_parsed_attr!(
+        attrs, :unit_price_cents, parse_money_param(params[:inventory_unit][:unit_price]),
+        presentation_attr: :unit_price
+      )
     end
     attrs.except(:acquisition_cost, :unit_price)
   end

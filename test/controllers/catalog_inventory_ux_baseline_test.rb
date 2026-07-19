@@ -53,6 +53,31 @@ class CatalogInventoryUxBaselineTest < ActionDispatch::IntegrationTest
     assert_equal 1295, variant.regular_price_cents
   end
 
+  test "invalid money on product form is rejected and redisplayed" do
+    product = products(:sample_book)
+    variant = product_variants(:sample_book_standard)
+    original_cents = variant.regular_price_cents
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name, product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status, sellable: product.sellable,
+        list_price: "abc"
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price: "12.95",
+        sellable: variant.sellable, status: variant.status
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "#form-errors-product"
+    assert_select "input#product_list_price[value='abc'][aria-invalid='true']"
+    assert_equal original_cents, variant.reload.regular_price_cents
+  end
+
   test "product form re-renders with shared errors when validation fails" do
     assert_no_difference "Product.count" do
       post products_path, params: {

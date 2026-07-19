@@ -89,6 +89,10 @@
   max-width: 8rem;
 }
 
+.input-qty {
+  max-width: 5rem;
+}
+
 .input-date {
   max-width: 12rem;
 }

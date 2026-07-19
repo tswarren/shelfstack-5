@@ -47,10 +47,8 @@
         <%= form.label :method, "Method", class: "field-label" %>
         <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ], [ "Fixed price", "fixed_price" ] ], {}, class: "input" %>
       </div>
-      <div class="field">
-        <%= form.label :rate_bps, "Rate (bps, for percentage)", class: "field-label" %>
-        <%= form.number_field :rate_bps, min: 0, max: 10_000, class: "input", style: "max-width:7em" %>
-      </div>
+      <%= render "shared/percent_field", name: "rate_percent", label: "Rate (for percentage)",
+            id: "line_discount_rate_#{line.id}", hint: "e.g. 10 for 10%" %>
       <%= render "shared/currency_field", name: "amount_cents", label: "Amount / target price",
             id: "line_discount_amount_cents_#{line.id}" %>
       <div class="field">

@@ -11,6 +11,7 @@ class InventoryAdjustmentLinesTest < ApplicationSystemTestCase
     fill_in "Username", with: "admin"
     fill_in "Password", with: "password123"
     click_button "Sign in"
+    assert_text "Home"
   end
 
   test "adds and removes lines but always retains at least one" do

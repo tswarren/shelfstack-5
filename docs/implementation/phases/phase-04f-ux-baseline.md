@@ -88,6 +88,17 @@ Also: failed/ambiguous scan; negative-availability warning; approval-required ac
 
 Automated portions of the UX Baseline Gate are implemented on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin).
 
+### Review fixes (pre-merge)
+
+Follow-up branch `phase/ux-baseline-05-review-fixes` addresses merge-blocking review findings:
+
+* Server-side store-switch guard shared with sign-out (`Pos::CurrentOpenTransaction`); POS header hides Switch store when `@open_transaction` is set
+* Named currency fields submit decimal dollars; server parses to cents (JS mask enhances only)
+* Percent UI always percentage points (`0.5` → 0.5% / 50 bps); invalid money/percent rejected instead of cleared
+* Ambiguous scan preserves quantity with a slim session payload; failed scans keep the query via explicit `scan_outcome`
+* Form error summary IDs, field ARIA, store `currency_code`, POS percent/qty CSS
+* Browser system coverage for store-switch, currency, scan, tender/complete, and keyboard disclosure
+
 **Merge to `main` requires manual walkthrough sign-off** (see Manual walkthrough above). Do not treat automated tests alone as gate completion.
 
 After merge to `main`, update [../current-phase.md](../current-phase.md) toward Phase 5.

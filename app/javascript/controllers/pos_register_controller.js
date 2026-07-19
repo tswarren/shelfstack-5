@@ -4,7 +4,8 @@ import { Controller } from "@hotwired/stimulus"
 // Keeps the scan field focused for continuous scanning, announces server
 // results to assistive tech, and offers an optional Complete shortcut.
 export default class extends Controller {
-  static targets = ["scanInput", "liveRegion", "completeButton", "announce"]
+  static targets = ["scanInput", "scanForm", "liveRegion", "completeButton", "announce"]
+  static values = { scanOutcome: String }
 
   connect() {
     this.onSubmitEnd = this.handleSubmitEnd.bind(this)
@@ -13,6 +14,7 @@ export default class extends Controller {
     this.element.addEventListener("keydown", this.onKeydown)
 
     this.announceStatus()
+    this.applyScanOutcome()
     this.focusScanInput()
   }
 
@@ -22,11 +24,22 @@ export default class extends Controller {
   }
 
   handleSubmitEnd(event) {
-    // Clear the scan field only when the server accepted the submission.
-    if (event.detail?.success && this.hasScanInputTarget) {
+    // Do not treat Turbo redirect success as scan success. Clear only when the
+    // server stamped scan_outcome=added on the subsequent page (applyScanOutcome).
+    const form = event.target
+    if (form && this.hasScanFormTarget && form !== this.scanFormTarget) return
+
+    this.focusScanInput()
+  }
+
+  applyScanOutcome() {
+    if (!this.hasScanInputTarget) return
+
+    const outcome = this.scanOutcomeValue
+    if (outcome === "added") {
       this.scanInputTarget.value = ""
     }
-    this.focusScanInput()
+    // failed / ambiguous: server pre-fills via the scan form value.
   }
 
   handleKeydown(event) {
@@ -43,7 +56,9 @@ export default class extends Controller {
 
     const input = this.scanInputTarget
     input.focus()
-    if (typeof input.select === "function") input.select()
+    if (typeof input.select === "function" && this.scanOutcomeValue === "added") {
+      input.select()
+    }
   }
 
   // Never yank focus away from an open disclosure or approval entry the

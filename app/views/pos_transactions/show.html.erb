@@ -4,7 +4,8 @@
 <%= render "transaction_status" %>
 <%= render "recall_summary" %>
 
-<div class="pos-workspace" data-controller="pos-register">
+<div class="pos-workspace" data-controller="pos-register"
+     data-pos-register-scan-outcome-value="<%= @scan_outcome %>">
   <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
   <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
 

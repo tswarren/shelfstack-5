@@ -11,7 +11,7 @@
   <td class="num">
     <% if @pos_transaction.editable? && line.inventory_unit.blank? %>
       <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>
-        <%= form.number_field :quantity, value: line.quantity, min: 1, class: "input", style: "max-width:4em" %>
+        <%= form.number_field :quantity, value: line.quantity, min: 1, class: "input input-qty" %>
         <%= form.submit "Update", class: "button button-small button-outline" %>
       <% end %>
     <% else %>

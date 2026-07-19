@@ -9,9 +9,11 @@ class ShellSystemTest < ApplicationSystemTestCase
     fill_in "Password", with: "password123"
     click_button "Sign in"
 
+    assert_text "Home"
     assert_selector "aside.app-sidebar"
     assert_link "Products"
     assert_link "Register"
-    assert_selector "a.skip-link", text: "Skip to main content"
+    # Off-screen until focused; still present for keyboard users.
+    assert_selector "a.skip-link", text: "Skip to main content", visible: :all
   end
 end

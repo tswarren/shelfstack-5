@@ -1,16 +1,23 @@
 <% if @pos_transaction.editable? %>
+  <%
+    preserve_scan = %w[failed ambiguous].include?(@scan_outcome.to_s)
+    scan_value = preserve_scan ? @scan_query.to_s : nil
+  %>
   <section class="pos-panel" aria-label="Scan or search">
     <h2>Scan / search</h2>
-    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post,
+          class: "pos-inline-form",
+          data: { "pos-register-target": "scanForm" } do |form| %>
       <div class="field">
         <label class="field-label" for="scan_query">Scan or search</label>
         <%= form.text_field :query, id: "scan_query", placeholder: "ISBN / SKU / unit ID",
               autocomplete: "off", class: "input",
+              value: scan_value,
               data: { "pos-register-target": "scanInput" } %>
       </div>
       <div class="field">
         <label class="field-label" for="scan_quantity">Qty</label>
-        <%= form.number_field :quantity, id: "scan_quantity", value: 1, min: 1, class: "input", style: "max-width:5em" %>
+        <%= form.number_field :quantity, id: "scan_quantity", value: 1, min: 1, class: "input input-qty" %>
       </div>
       <%= form.submit "Add line", class: "button button-primary" %>
     <% end %>
@@ -33,7 +40,7 @@
       <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "open_ring_unit_price_cents" %>
       <div class="field">
         <%= form.label :quantity, class: "field-label" %>
-        <%= form.number_field :quantity, value: 1, min: 1, class: "input", style: "max-width:5em" %>
+        <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
       </div>
       <div class="form-actions">
         <%= form.submit "Add open-ring line", class: "button button-outline" %>
@@ -52,7 +59,7 @@
         </div>
         <div class="field">
           <%= form.label :quantity, class: "field-label" %>
-          <%= form.number_field :quantity, value: 1, min: 1, class: "input", style: "max-width:5em" %>
+          <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
         </div>
         <div class="field">
           <%= form.label :return_reason_id, "Reason", class: "field-label" %>

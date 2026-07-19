@@ -5,13 +5,18 @@ class PosDiscountsController < ApplicationController
   before_action :set_transaction
 
   def create
+    rate_bps = discount_rate_bps_from_params
+    amount_cents = if params[:amount_cents].present?
+      money_param_to_cents(params[:amount_cents], label: "Amount", required: false)
+    end
+
     result = Pos::ApplyDiscount.call(
       pos_transaction: @pos_transaction,
       scope: params[:scope],
       method: params[:method],
       pos_line_item: line_item,
-      rate_bps: params[:rate_bps],
-      amount_cents: params[:amount_cents],
+      rate_bps: rate_bps,
+      amount_cents: amount_cents,
       tax_treatment: params[:tax_treatment].presence || "reduces_taxable_base",
       discount_reason: discount_reason,
       reason: params[:reason],
@@ -25,6 +30,8 @@ class PosDiscountsController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   private
@@ -47,5 +54,21 @@ class PosDiscountsController < ApplicationController
 
   def approver
     params[:approver_username].presence && User.find_by(username: params[:approver_username])
+  end
+
+  # UI posts rate_percent as percentage points. Tests/API may still post
+  # integer rate_bps directly.
+  def discount_rate_bps_from_params
+    if params[:rate_percent].present?
+      return percent_param_to_bps(params[:rate_percent], label: "Rate", required: false)
+    end
+    return nil if params[:rate_bps].blank?
+
+    value = params[:rate_bps]
+    if value.is_a?(Integer) || value.to_s.strip.match?(/\A-?\d+\z/)
+      value.to_i
+    else
+      percent_param_to_bps(value, label: "Rate", required: false)
+    end
   end
 end

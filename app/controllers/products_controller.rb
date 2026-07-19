@@ -47,13 +47,23 @@ class ProductsController < ApplicationController
   def create
     @product = Current.organization.products.new
     @variant = ProductVariant.new
+    product_attrs = product_params
+    variant_attrs = variant_params
+
+    if human_readable_params_invalid?
+      @product.assign_attributes(product_attrs)
+      @variant.assign_attributes(variant_attrs)
+      copy_human_readable_param_errors_for_product!
+      render :new, status: :unprocessable_entity
+      return
+    end
 
     service = Catalog::CreateProduct.new(
       organization: Current.organization,
       actor: Current.user,
       store: Current.store,
-      product_attrs: product_params,
-      variant_attrs: variant_params,
+      product_attrs: product_attrs,
+      variant_attrs: variant_attrs,
       identifier: params[:identifier],
       accept_identifier_warning: ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning])
     )
@@ -61,8 +71,8 @@ class ProductsController < ApplicationController
     if service.call
       redirect_to service.product, notice: "Product created."
     else
-      @product = service.product || Current.organization.products.new(product_params)
-      @variant = service.variant || ProductVariant.new(variant_params)
+      @product = service.product || Current.organization.products.new(product_attrs)
+      @variant = service.variant || ProductVariant.new(variant_attrs)
       if @product.errors.empty? && @variant.errors.empty?
         @product.errors.add(:base, "Could not create product.")
       end
@@ -76,12 +86,20 @@ class ProductsController < ApplicationController
 
   def update
     @variant = @product.product_variants.first
+    product_attrs = product_params
+    variant_attrs = variant_params
+
+    if human_readable_params_invalid?
+      copy_human_readable_param_errors_for_product!
+      render :edit, status: :unprocessable_entity
+      return
+    end
 
     if Catalog::UpdateProductWithStandardVariant.call(
       product: @product,
       variant: @variant,
-      product_attrs: product_params,
-      variant_attrs: variant_params,
+      product_attrs: product_attrs,
+      variant_attrs: variant_attrs,
       actor: Current.user,
       store: Current.store
     )
@@ -163,6 +181,8 @@ class ProductsController < ApplicationController
   end
 
   def product_params
+    return @product_params if defined?(@product_params)
+
     attrs = params.require(:product).permit(
       :name, :subtitle, :description, :product_type, :product_format_id, :merchandise_class_id,
       :default_department_id, :default_tax_category_id, :list_price_cents, :status, :sellable,
@@ -173,20 +193,43 @@ class ProductsController < ApplicationController
     # to integer cents before the service contract sees them. Direct `_cents`
     # input (API/tests) still works when the decimal field is absent.
     if params[:product].key?(:list_price)
-      attrs[:list_price_cents] = helpers.parse_money_to_cents(params[:product][:list_price])
+      parsed = parse_money_param(params[:product][:list_price])
+      case parsed.status
+      when :ok then attrs[:list_price_cents] = parsed.value
+      when :blank then attrs[:list_price_cents] = nil
+      when :invalid
+        (@product_money_errors ||= []) << [ :list_price, parsed.error || "is not a valid amount" ]
+      end
     end
-    attrs
+    @product_params = attrs
   end
 
   def variant_params
+    return @variant_params if defined?(@variant_params)
+
     attrs = params.require(:product_variant).permit(
       :name, :description, :inventory_tracking_mode, :default_product_condition_id,
       :regular_price_cents, :department_id, :tax_category_id, :merchandise_class_id,
       :status, :sellable, :purchasable, :available_from, :available_until
     )
     if params[:product_variant].key?(:regular_price)
-      attrs[:regular_price_cents] = helpers.parse_money_to_cents(params[:product_variant][:regular_price])
+      parsed = parse_money_param(params[:product_variant][:regular_price])
+      case parsed.status
+      when :ok then attrs[:regular_price_cents] = parsed.value
+      when :blank then attrs[:regular_price_cents] = nil
+      when :invalid
+        (@variant_money_errors ||= []) << [ :regular_price, parsed.error || "is not a valid amount" ]
+      end
     end
-    attrs
+    @variant_params = attrs
+  end
+
+  def human_readable_params_invalid?
+    @product_money_errors.present? || @variant_money_errors.present?
+  end
+
+  def copy_human_readable_param_errors_for_product!
+    Array(@product_money_errors).each { |attr, message| @product.errors.add(attr, message) }
+    Array(@variant_money_errors).each { |attr, message| @variant.errors.add(attr, message) }
   end
 end

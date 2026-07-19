@@ -27,9 +27,17 @@ class InventoryAdjustmentsController < ApplicationController
 
   def create
     @inventory_adjustment = Current.store.inventory_adjustments.new(adjustment_header_params)
+    lines = lines_params
+    if @line_param_errors.present?
+      load_form_collections
+      flash.now[:alert] = @line_param_errors.join("; ")
+      render :new, status: :unprocessable_entity
+      return
+    end
+
     result = Inventory::CreateAdjustment.call(
       adjustment: @inventory_adjustment,
-      lines_attributes: lines_params,
+      lines_attributes: lines,
       actor: Current.user,
       store: Current.store
     )
@@ -49,10 +57,18 @@ class InventoryAdjustmentsController < ApplicationController
   end
 
   def update
+    lines = lines_params
+    if @line_param_errors.present?
+      load_form_collections
+      flash.now[:alert] = @line_param_errors.join("; ")
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     result = Inventory::UpdateAdjustment.call(
       adjustment: @inventory_adjustment,
       attributes: adjustment_header_params.to_h,
-      lines_attributes: lines_params,
+      lines_attributes: lines,
       actor: Current.user,
       store: Current.store
     )
@@ -139,11 +155,23 @@ class InventoryAdjustmentsController < ApplicationController
   def normalize_line_attrs(attrs)
     if attrs.key?(:input_unit_cost)
       value = attrs.delete(:input_unit_cost)
-      attrs[:input_unit_cost_cents] = value.blank? ? nil : helpers.parse_money_to_cents(value)
+      parsed = parse_money_param(value)
+      case parsed.status
+      when :ok then attrs[:input_unit_cost_cents] = parsed.value
+      when :blank then attrs[:input_unit_cost_cents] = nil
+      when :invalid
+        (@line_param_errors ||= []) << "Unit cost #{parsed.error || "is not a valid amount"}"
+      end
     end
     if attrs.key?(:corrected_inventory_value)
       value = attrs.delete(:corrected_inventory_value)
-      attrs[:corrected_inventory_value_cents] = value.blank? ? nil : helpers.parse_money_to_cents(value)
+      parsed = parse_money_param(value)
+      case parsed.status
+      when :ok then attrs[:corrected_inventory_value_cents] = parsed.value
+      when :blank then attrs[:corrected_inventory_value_cents] = nil
+      when :invalid
+        (@line_param_errors ||= []) << "Corrected inventory value #{parsed.error || "is not a valid amount"}"
+      end
     end
 
     %i[

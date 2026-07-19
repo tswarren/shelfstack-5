@@ -36,7 +36,7 @@ class PosLineItemsController < ApplicationController
   def override_price
     result = Pos::OverridePrice.call(
       pos_line_item: @line_item,
-      requested_unit_price_cents: params[:requested_unit_price_cents],
+      requested_unit_price_cents: money_param_to_cents(params[:requested_unit_price_cents], label: "New unit price"),
       actor: Current.user,
       reason: params[:reason],
       **approver_params
@@ -46,6 +46,8 @@ class PosLineItemsController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def override_tax_category
@@ -89,10 +91,14 @@ class PosLineItemsController < ApplicationController
     resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)
     if resolved.variant.blank?
       if resolved.error == "ambiguous_match"
-        store_scan_resolution(params[:query])
-        redirect_to pos_transaction_path(@pos_transaction), alert: scan_error_message(resolved)
+        store_scan_resolution(params[:query], params[:quantity])
+        redirect_to pos_transaction_path(@pos_transaction),
+          alert: scan_error_message(resolved),
+          flash: { scan_outcome: "ambiguous", scan_query: params[:query].to_s }
       else
-        redirect_to pos_transaction_path(@pos_transaction), alert: scan_error_message(resolved)
+        redirect_to pos_transaction_path(@pos_transaction),
+          alert: scan_error_message(resolved),
+          flash: { scan_outcome: "failed", scan_query: params[:query].to_s }
       end
       return
     end
@@ -122,31 +128,20 @@ class PosLineItemsController < ApplicationController
     )
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Line added."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to pos_transaction_path(@pos_transaction), notice: notice, flash: { scan_outcome: "added" }
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction),
+        alert: result.error,
+        flash: { scan_outcome: "failed", scan_query: params[:query].to_s }
     end
   end
 
-  # Persist ambiguous-match candidates so the transaction show page can render
-  # an actionable resolution region (products/variants) after the PRG redirect.
-  def store_scan_resolution(query)
-    lookup = Catalog::Lookup.call(organization: Current.organization, query: query)
-    candidates = lookup.products.first(10).map do |product|
-      {
-        "product_id" => product.id,
-        "title" => product.name,
-        "identifier" => product.identifier,
-        "variants" => product.product_variants.map { |v|
-          { "id" => v.id, "sku" => v.sku, "label" => v.name.presence || v.sku }
-        }
-      }
-    end
-
+  # Slim session payload; candidates are rebuilt on the transaction show GET.
+  def store_scan_resolution(query, quantity)
     session[:pos_scan_resolution] = {
       "transaction_id" => @pos_transaction.id,
       "query" => query.to_s,
-      "candidates" => candidates
+      "quantity" => (quantity.presence || 1).to_i
     }
   end
 
@@ -160,7 +155,7 @@ class PosLineItemsController < ApplicationController
     result = Pos::AddOpenRingLine.call(
       pos_transaction: @pos_transaction,
       department: department,
-      unit_price_cents: params[:unit_price_cents],
+      unit_price_cents: money_param_to_cents(params[:unit_price_cents], label: "Price"),
       description: params[:description],
       quantity: params[:quantity].presence || 1,
       actor: Current.user
@@ -170,6 +165,8 @@ class PosLineItemsController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def scan_error_message(resolved)

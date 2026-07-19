@@ -18,15 +18,18 @@ class DepartmentsController < ApplicationController
   end
 
   def create
-    @department = Current.organization.departments.new(department_params)
-    if Classification::CreateDepartment.call(
+    attrs = department_params
+    @department = Current.organization.departments.new(attrs)
+    copy_human_readable_param_errors!(@department)
+
+    if @department.errors.any? || !Classification::CreateDepartment.call(
       department: @department,
       actor: Current.user,
       organization: Current.organization
     )
-      redirect_to @department, notice: "Department created."
-    else
       render :new, status: :unprocessable_entity
+    else
+      redirect_to @department, notice: "Department created."
     end
   end
 
@@ -34,9 +37,16 @@ class DepartmentsController < ApplicationController
   end
 
   def update
+    attrs = department_params.to_h
+    if human_readable_params_invalid?
+      copy_human_readable_param_errors!(@department)
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if Classification::UpdateDepartment.call(
       department: @department,
-      attributes: department_params.to_h,
+      attributes: attrs,
       actor: Current.user,
       organization: Current.organization
     )
@@ -75,10 +85,16 @@ class DepartmentsController < ApplicationController
     # input (API/tests) still works when the percent field is absent.
     raw = params[:department] || {}
     if raw.key?(:maximum_merchandise_discount_percent)
-      attrs[:maximum_merchandise_discount] = helpers.parse_percent_to_rate(raw[:maximum_merchandise_discount_percent])
+      write_parsed_attr!(
+        attrs, :maximum_merchandise_discount,
+        parse_percent_rate_param(raw[:maximum_merchandise_discount_percent])
+      )
     end
     if raw.key?(:default_cost_estimation_margin_percent)
-      attrs[:default_cost_estimation_margin_bps] = helpers.parse_percent_to_bps(raw[:default_cost_estimation_margin_percent])
+      write_parsed_attr!(
+        attrs, :default_cost_estimation_margin_bps,
+        parse_percent_bps_param(raw[:default_cost_estimation_margin_percent])
+      )
     end
 
     attrs

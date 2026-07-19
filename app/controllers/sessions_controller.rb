@@ -36,7 +36,7 @@ class SessionsController < ApplicationController
   end
 
   def destroy
-    if (open_transaction = open_transaction_blocking_signout)
+    if (open_transaction = Pos::CurrentOpenTransaction.for(user: Current.user, store_id: session[:store_id]))
       redirect_to pos_transaction_path(open_transaction),
         alert: "Complete, suspend, or cancel the open transaction before signing out."
       return
@@ -50,23 +50,5 @@ class SessionsController < ApplicationController
 
   def after_authentication_url
     session.delete(:return_to_after_authenticating) || root_path
-  end
-
-  # Sign-out is blocked while the cashier still controls an open transaction in
-  # the active store (phase-04f-ux-baseline.md POS store-switch and sign-out).
-  # Store context is skipped on destroy, so the store is resolved from session.
-  def open_transaction_blocking_signout
-    return nil if Current.user.blank?
-
-    store_id = session[:store_id]
-    return nil if store_id.blank?
-
-    store = Store.find_by(id: store_id)
-    return nil if store.blank?
-
-    open_session = store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
-    return nil if open_session.blank?
-
-    PosTransaction.open_transactions.find_by(active_pos_session: open_session)
   end
 end

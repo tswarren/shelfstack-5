@@ -14,16 +14,19 @@ class StoreTaxRatesController < ApplicationController
   end
 
   def create
-    @store_tax_rate = Current.store.store_tax_rates.new(store_tax_rate_params)
-    if Classification::CreateStoreTaxRate.call(
+    attrs = store_tax_rate_params
+    @store_tax_rate = Current.store.store_tax_rates.new(attrs)
+    copy_human_readable_param_errors!(@store_tax_rate)
+
+    if @store_tax_rate.errors.any? || !Classification::CreateStoreTaxRate.call(
       store_tax_rate: @store_tax_rate,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
     )
-      redirect_to store_tax_rates_path, notice: "Store tax rate created."
-    else
       render :new, status: :unprocessable_entity
+    else
+      redirect_to store_tax_rates_path, notice: "Store tax rate created."
     end
   end
 
@@ -31,9 +34,16 @@ class StoreTaxRatesController < ApplicationController
   end
 
   def update
+    attrs = store_tax_rate_params.to_h
+    if human_readable_params_invalid?
+      copy_human_readable_param_errors!(@store_tax_rate)
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if Classification::UpdateStoreTaxRate.call(
       store_tax_rate: @store_tax_rate,
-      attributes: store_tax_rate_params.to_h,
+      attributes: attrs,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
@@ -59,7 +69,9 @@ class StoreTaxRatesController < ApplicationController
     # decimal-fraction storage. Direct `rate` input (API/tests) still works when
     # the percent field is absent.
     raw = params[:store_tax_rate] || {}
-    attrs[:rate] = helpers.parse_percent_to_rate(raw[:rate_percent]) if raw.key?(:rate_percent)
+    if raw.key?(:rate_percent)
+      write_parsed_attr!(attrs, :rate, parse_percent_rate_param(raw[:rate_percent]))
+    end
 
     attrs
   end

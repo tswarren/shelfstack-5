@@ -17,16 +17,19 @@ class StoreTaxRulesController < ApplicationController
   end
 
   def create
-    @store_tax_rule = Current.store.store_tax_rules.new(store_tax_rule_params)
-    if Classification::CreateStoreTaxRule.call(
+    attrs = store_tax_rule_params
+    @store_tax_rule = Current.store.store_tax_rules.new(attrs)
+    copy_human_readable_param_errors!(@store_tax_rule)
+
+    if @store_tax_rule.errors.any? || !Classification::CreateStoreTaxRule.call(
       store_tax_rule: @store_tax_rule,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
     )
-      redirect_to store_tax_rules_path, notice: "Store tax rule created."
-    else
       render :new, status: :unprocessable_entity
+    else
+      redirect_to store_tax_rules_path, notice: "Store tax rule created."
     end
   end
 
@@ -34,9 +37,16 @@ class StoreTaxRulesController < ApplicationController
   end
 
   def update
+    attrs = store_tax_rule_params.to_h
+    if human_readable_params_invalid?
+      copy_human_readable_param_errors!(@store_tax_rule)
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if Classification::UpdateStoreTaxRule.call(
       store_tax_rule: @store_tax_rule,
-      attributes: store_tax_rule_params.to_h,
+      attributes: attrs,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
@@ -68,7 +78,11 @@ class StoreTaxRulesController < ApplicationController
     # domain's decimal-fraction storage. Direct `taxable_fraction` input (API/tests)
     # still works when the percent field is absent.
     raw = params[:store_tax_rule] || {}
-    attrs[:taxable_fraction] = helpers.parse_percent_to_rate(raw[:taxable_fraction_percent]) if raw.key?(:taxable_fraction_percent)
+    if raw.key?(:taxable_fraction_percent)
+      write_parsed_attr!(
+        attrs, :taxable_fraction, parse_percent_rate_param(raw[:taxable_fraction_percent])
+      )
+    end
 
     attrs
   end

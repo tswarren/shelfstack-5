@@ -11,9 +11,18 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_nil parse_money_to_cents("abc")
   end
 
-  test "parse_percent_to_bps handles percent and fraction forms" do
+  test "parse_percent_to_bps always treats input as percentage points" do
     assert_equal 1500, parse_percent_to_bps("15%")
     assert_equal 1500, parse_percent_to_bps("15")
-    assert_equal 1500, parse_percent_to_bps("0.15")
+    assert_equal 15, parse_percent_to_bps("0.15")
+    assert_equal 50, parse_percent_to_bps("0.5")
+  end
+
+  test "0.5 percent round-trips through format and parse unchanged" do
+    stored_bps = 50 # 0.5%
+    displayed = format_bps_as_percent(stored_bps)
+    assert_equal "0.5%", displayed
+    assert_equal stored_bps, parse_percent_to_bps(displayed)
+    assert_equal stored_bps, parse_percent_to_bps(displayed.delete("%"))
   end
 end

@@ -3,6 +3,7 @@
 class StoreSelectionsController < ApplicationController
   layout "authentication"
   skip_store_context
+  before_action :block_if_open_transaction
 
   def new
     @memberships = effective_memberships_for(Current.user)
@@ -20,5 +21,15 @@ class StoreSelectionsController < ApplicationController
     session[:store_id] = membership.store_id
     set_current_from_membership(Current.user, membership)
     redirect_to root_path
+  end
+
+  private
+
+  def block_if_open_transaction
+    open_transaction = Pos::CurrentOpenTransaction.for(user: Current.user, store_id: session[:store_id])
+    return if open_transaction.blank?
+
+    redirect_to pos_transaction_path(open_transaction),
+      alert: "Complete, suspend, or cancel the open transaction before switching stores."
   end
 end

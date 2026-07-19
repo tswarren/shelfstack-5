@@ -110,17 +110,10 @@ module ApplicationHelper
     end
   end
 
-  # Parse user-facing money (`12.95`, `$12.95`) to integer cents. Returns nil if blank/invalid.
+  # Parse user-facing money (`12.95`, `$12.95`) to integer cents.
+  # Prefer Forms::ParseMoney in controllers when blank/invalid must be distinguished.
   def parse_money_to_cents(value)
-    return nil if value.nil?
-
-    str = value.to_s.strip
-    return nil if str.blank?
-
-    str = str.delete(",").sub(/\A\$/, "")
-    return nil unless str.match?(/\A-?\d+(\.\d{1,2})?\z/)
-
-    (BigDecimal(str) * 100).round(0, BigDecimal::ROUND_HALF_UP).to_i
+    Forms::ParseMoney.call(value).value
   end
 
   def format_cents_as_decimal(cents)
@@ -129,23 +122,32 @@ module ApplicationHelper
     format("%.2f", cents.to_i / 100.0)
   end
 
-  # `15` or `15%` → basis points (1500). `0.15` treated as fraction only when < 1 and no % sign.
-  def parse_percent_to_bps(value)
-    return nil if value.nil?
+  def format_money(cents, currency_code: nil)
+    return "—" if cents.nil?
 
-    str = value.to_s.strip
-    return nil if str.blank?
-
-    has_percent = str.end_with?("%")
-    str = str.delete("%").strip
-    return nil unless str.match?(/\A-?\d+(\.\d+)?\z/)
-
-    num = BigDecimal(str)
-    if has_percent || num.abs >= 1
-      (num * 100).round(0, BigDecimal::ROUND_HALF_UP).to_i
-    else
-      (num * 10_000).round(0, BigDecimal::ROUND_HALF_UP).to_i
+    code = (currency_code.presence || Current.store&.currency_code.presence || "USD").to_s
+    amount = cents.to_i / 100.0
+    begin
+      ActionController::Base.helpers.number_to_currency(amount, unit: currency_unit(code), format: "%u%n")
+    rescue StandardError
+      format("%s%.2f", currency_unit(code), amount)
     end
+  end
+
+  def currency_unit(code)
+    case code.to_s.upcase
+    when "USD" then "$"
+    when "CAD" then "CA$"
+    when "GBP" then "£"
+    when "EUR" then "€"
+    else "#{code} "
+    end
+  end
+
+  # Always percentage points for UI: `0.5` → 50 bps (0.5%), `15` → 1500 bps.
+  # Prefer Forms::ParsePercent in controllers when blank/invalid must be distinguished.
+  def parse_percent_to_bps(value)
+    Forms::ParsePercent.to_bps(value).value
   end
 
   def format_bps_as_percent(bps)
@@ -154,13 +156,9 @@ module ApplicationHelper
     format("%g%%", bps.to_i / 100.0)
   end
 
-  # Parse user-facing percent (`13`, `13%`) to a decimal-fraction rate (`0.13`).
-  # Returns nil if blank/invalid. Domain columns storing rates as 0–1 decimals.
+  # Prefer Forms::ParsePercent in controllers when blank/invalid must be distinguished.
   def parse_percent_to_rate(value)
-    bps = parse_percent_to_bps(value)
-    return nil if bps.nil?
-
-    BigDecimal(bps.to_s) / 10_000
+    Forms::ParsePercent.to_rate(value).value
   end
 
   # Format a decimal-fraction rate (`0.13`) as a percent string (`13%`).

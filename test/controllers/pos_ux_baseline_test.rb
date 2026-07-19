@@ -37,14 +37,39 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
       pos_transaction: @transaction, department: @department, unit_price_cents: 1999, actor: @admin
     )
 
-    # The currency-mask controller submits the hidden *_cents field; the server
-    # contract must persist those cents verbatim.
+    # Integer cents still accepted (tests / non-UI clients).
     post pos_transaction_pos_tenders_path(@transaction),
          params: { tender_type_id: @cash.id, amount_tendered_cents: 1250 }
 
     assert_redirected_to pos_transaction_path(@transaction)
     tender = @transaction.pos_tenders.order(:created_at).last
     assert_equal 1250, tender.amount_cents
+  end
+
+  test "a cash tender parses a decimal-dollar amount from the named currency field" do
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 1999, actor: @admin
+    )
+
+    post pos_transaction_pos_tenders_path(@transaction),
+         params: { tender_type_id: @cash.id, amount_tendered_cents: "12.50" }
+
+    assert_redirected_to pos_transaction_path(@transaction)
+    tender = @transaction.pos_tenders.order(:created_at).last
+    assert_equal 1250, tender.amount_cents
+  end
+
+  test "invalid tender amount is rejected without recording a tender" do
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
+    )
+
+    assert_no_difference -> { @transaction.pos_tenders.count } do
+      post pos_transaction_pos_tenders_path(@transaction),
+           params: { tender_type_id: @cash.id, amount_tendered_cents: "abc" }
+    end
+    assert_redirected_to pos_transaction_path(@transaction)
+    assert_match(/amount/i, flash[:alert])
   end
 
   test "the transaction show page uses the two-panel workspace" do
@@ -61,7 +86,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     products(:sample_book).update!(alternate_identifier: "SHAREDALT01")
     products(:upc_product).update!(alternate_identifier: "SHAREDALT01")
 
-    post pos_transaction_pos_line_items_path(@transaction), params: { query: "SHAREDALT01" }
+    post pos_transaction_pos_line_items_path(@transaction), params: { query: "SHAREDALT01", quantity: 3 }
     assert_redirected_to pos_transaction_path(@transaction)
 
     get pos_transaction_path(@transaction)
@@ -69,12 +94,25 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select ".pos-scan-resolution"
     assert_match "The Illustrated Man", response.body
     assert_match "UPC Sample", response.body
+    assert_select ".pos-scan-resolution input[name=quantity][value='3']"
 
     assert_difference -> { @transaction.pos_line_items.pending.count }, 1 do
       post pos_transaction_pos_line_items_path(@transaction),
-           params: { product_variant_id: @variant.id, quantity: 1 }
+           params: { product_variant_id: @variant.id, quantity: 3 }
     end
     assert_redirected_to pos_transaction_path(@transaction)
+    assert_equal 3, @transaction.pos_line_items.pending.last.quantity
+  end
+
+  test "a failed scan preserves the query and marks scan_outcome failed" do
+    post pos_transaction_pos_line_items_path(@transaction), params: { query: "ZZZNOMATCH999" }
+    assert_redirected_to pos_transaction_path(@transaction)
+    assert_equal "failed", flash[:scan_outcome]
+    assert_equal "ZZZNOMATCH999", flash[:scan_query]
+
+    get pos_transaction_path(@transaction)
+    assert_response :success
+    assert_select "input#scan_query[value='ZZZNOMATCH999']"
   end
 
   test "sign-out is blocked while the cashier controls an open transaction" do

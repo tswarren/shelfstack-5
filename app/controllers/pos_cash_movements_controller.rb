@@ -10,7 +10,7 @@ class PosCashMovementsController < ApplicationController
     result = Pos::CreateCashMovement.call(
       pos_session: @pos_session,
       cash_movement_type: cash_movement_type,
-      amount_cents: params[:amount_cents],
+      amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
       actor: Current.user,
       reason: params[:reason],
       reference: params[:reference],
@@ -23,6 +23,8 @@ class PosCashMovementsController < ApplicationController
     else
       redirect_to register_path, alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to register_path, alert: e.message
   end
 
   private

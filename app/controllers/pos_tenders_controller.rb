@@ -14,18 +14,21 @@ class PosTendersController < ApplicationController
       if params[:refund].present?
         Pos::AddCashRefundTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
-          amount_cents: params[:amount_cents], actor: Current.user
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
+          actor: Current.user
         )
       else
         Pos::AddCashTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
-          amount_tendered_cents: params[:amount_tendered_cents], actor: Current.user
+          amount_tendered_cents: money_param_to_cents(params[:amount_tendered_cents], label: "Amount tendered"),
+          actor: Current.user
         )
       end
     when "card"
       Pos::AddCardTender.call(
         pos_transaction: @pos_transaction, tender_type: tender_type,
-        amount_cents: params[:amount_cents], authorization_code: params[:authorization_code],
+        amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+        authorization_code: params[:authorization_code],
         terminal_reference: params[:terminal_reference].presence, actor: Current.user
       )
     when "check"
@@ -40,6 +43,8 @@ class PosTendersController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def destroy
@@ -67,9 +72,6 @@ class PosTendersController < ApplicationController
     @tender = @pos_transaction.pos_tenders.find(params[:id])
   end
 
-  # Cash and standalone-card Tenders are distinct permission keys (domain
-  # authorization-permissions.md); resolve which applies from the requested
-  # Tender Type's category before the underlying service runs.
   def create_permission
     tender_type = params[:tender_type_id].presence && Current.organization.tender_types.find_by(id: params[:tender_type_id])
     case tender_type&.tender_category

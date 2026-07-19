@@ -1,21 +1,39 @@
-<%# locals: name:, label:, value_cents: 0, id: nil, hint: nil, required: false, autofocus: false %>
+<%# locals: name:, label:, value_cents: 0, id: nil, hint: nil, required: false, autofocus: false, currency_code: nil, error: nil, object_name: nil, method: nil %>
 <%
-  cents = (local_assigns.fetch(:value_cents, 0) || 0).to_i
+  cents = local_assigns.key?(:value_cents) ? local_assigns[:value_cents] : 0
+  display = local_assigns[:value].presence || (cents.nil? ? "" : format_cents_as_decimal(cents))
   field_id = local_assigns.fetch(:id, nil).presence || "cf_#{name.to_s.gsub(/\W+/, "_")}"
   is_required = local_assigns.fetch(:required, false)
   is_autofocus = local_assigns.fetch(:autofocus, false)
   hint = local_assigns.fetch(:hint, nil)
+  code = (local_assigns[:currency_code].presence || Current.store&.currency_code.presence || "USD").to_s
+  unit = currency_unit(code)
+  error_text = local_assigns[:error]
+  describedby_ids = []
+  describedby_ids << "#{field_id}_hint" if hint.present?
+  describedby_ids << "#{field_id}_error" if error_text.present?
 %>
-<div class="field" data-controller="currency-mask" data-currency-mask-amount-cents-value="<%= cents %>">
+<div class="field"
+     data-controller="currency-mask"
+     data-currency-mask-amount-cents-value="<%= cents.to_i %>"
+     data-currency-mask-currency-code-value="<%= code %>">
   <label class="field-label" for="<%= field_id %>"><%= label %></label>
-  <input id="<%= field_id %>" type="text" inputmode="numeric" autocomplete="off"
-         class="input input-currency"
-         <%= "required" if is_required %>
-         <%= "autofocus" if is_autofocus %>
-         data-currency-mask-target="display"
-         data-action="input->currency-mask#handleInput paste->currency-mask#handlePaste">
-  <input type="hidden" name="<%= name %>" data-currency-mask-target="cents" value="<%= cents %>">
+  <div class="input-affix">
+    <span class="affix" aria-hidden="true"><%= unit %></span>
+    <input id="<%= field_id %>" type="text" name="<%= name %>" value="<%= display %>"
+           inputmode="decimal" autocomplete="off"
+           class="input input-currency"
+           data-currency-mask-target="input"
+           data-action="input->currency-mask#handleInput paste->currency-mask#handlePaste"
+           <%= "required" if is_required %>
+           <%= "autofocus" if is_autofocus %>
+           <%= "aria-invalid=true" if error_text.present? %>
+           <%= "aria-describedby=\"#{describedby_ids.join(" ")}\"".html_safe if describedby_ids.any? %>>
+  </div>
   <% if hint.present? %>
-    <p class="field-hint"><%= hint %></p>
+    <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
+  <% end %>
+  <% if error_text.present? %>
+    <p class="field-error" id="<%= field_id %>_error"><%= error_text %></p>
   <% end %>
 </div>
