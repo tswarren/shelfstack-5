@@ -45,6 +45,32 @@
   ] %>
 </section>
 
+<%
+  standard = @variants.first
+  effective = Catalog::ResolveClassification.call(product: @product, variant: standard)
+%>
+<section class="record-section">
+  <h2>Effective defaults</h2>
+  <p class="muted">
+    Resolved for <%= standard ? variant_option_label(standard) : "the first variant" %> using inheritance.
+    Configured overrides are shown alongside the effective result.
+  </p>
+  <%= render "shared/record_summary", rows: [
+    [ "Merchandise class",
+      "Configured: #{configured_override_label(@product.merchandise_class)} · " \
+      "Effective: #{effective.merchandise_class&.name || "—"} · " \
+      "Source: #{effective.merchandise_class_source || "—"}" ],
+    [ "Department",
+      "Configured: #{configured_override_label(@product.default_department)} · " \
+      "Effective: #{effective.department&.name || "—"} · " \
+      "Source: #{effective.department_source || "—"}" ],
+    [ "Tax category",
+      "Configured: #{configured_override_label(@product.default_tax_category)} · " \
+      "Effective: #{effective.tax_category&.name || "—"} · " \
+      "Source: #{effective.tax_category_source || "—"}" ]
+  ] %>
+</section>
+
 <section class="record-section">
   <h2>Pricing &amp; availability</h2>
   <%= render "shared/record_summary", rows: [

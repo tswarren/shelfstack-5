@@ -134,6 +134,80 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
+  test "register shows one primary CTA and POS header links to Main workspace" do
+    post suspend_pos_transaction_path(@transaction)
+
+    get register_path
+    assert_response :success
+    assert_select ".workspace-primary"
+    assert_select ".workspace-primary .button-primary", text: "New transaction"
+    assert_select "a", text: "Main workspace"
+    assert_select "a[href=?]", root_path, text: "Main workspace"
+  end
+
+  test "open-ring fields appear in department price quantity description order" do
+    get pos_transaction_path(@transaction)
+    assert_response :success
+
+    start = response.body.index("Open-ring line")
+    assert start, "expected open-ring panel"
+    segment = response.body[start..]
+    dept_at = segment.index("Department")
+    price_at = segment.index("open_ring_unit_price_cents")
+    qty_at = segment.index('name="quantity"')
+    desc_at = segment.index("Description (optional)")
+
+    assert dept_at && price_at && qty_at && desc_at
+    assert dept_at < price_at
+    assert price_at < qty_at
+    assert qty_at < desc_at
+  end
+
+  test "completed transaction shows change due and back to register without print" do
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 1000, actor: @admin
+    )
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: 2000, actor: @admin
+    )
+    Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-complete-change"
+    )
+
+    get pos_transaction_path(@transaction)
+    assert_response :success
+    assert_select ".pos-completed-summary"
+    assert_match "Change due", response.body
+    assert_select "a", text: "Back to register"
+    assert_no_match(/Print Receipt/i, response.body)
+  end
+
+  test "receipt lookup loads returnable lines for selection" do
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
+    )
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+    )
+    Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-sale-for-return"
+    )
+    receipt = @transaction.reload.receipt_number
+
+    return_txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    post lookup_pos_transaction_pos_return_lines_path(return_txn), params: { receipt_number: receipt }
+    assert_redirected_to pos_transaction_path(return_txn)
+
+    get pos_transaction_path(return_txn)
+    assert_response :success
+    assert_match(/Receipt #{Regexp.escape(receipt)}/, response.body)
+    assert_select "input[name=original_pos_line_item_id]", count: 1
+    assert_no_match(/Original line ID/i, response.body)
+  end
+
   test "operational forms render on the pos layout with currency masks" do
     get new_business_day_path
     assert_response :success

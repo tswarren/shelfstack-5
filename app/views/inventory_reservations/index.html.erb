@@ -24,8 +24,7 @@
       <caption class="sr-only">Inventory reservations</caption>
       <thead>
         <tr>
-          <th scope="col">SKU</th>
-          <th scope="col">Product</th>
+          <th scope="col">Variant</th>
           <th scope="col">Source</th>
           <th scope="col" class="num">Qty</th>
           <th scope="col">Status</th>
@@ -36,12 +35,11 @@
       <tbody>
         <% @inventory_reservations.each do |reservation| %>
           <tr class="<%= "is-inactive" unless reservation.active? %>">
-            <td><code><%= reservation.product_variant.sku %></code></td>
-            <td><%= reservation.product_variant.product.name %> — <%= reservation.product_variant.name %></td>
+            <td><%= variant_option_label(reservation.product_variant) %></td>
             <td><%= reservation.source_type.titleize %> #<%= reservation.source_id %></td>
             <td class="num"><%= reservation.quantity %></td>
             <td><%= status_badge reservation.status.titleize, variant: reservation_status_variant(reservation.status) %></td>
-            <td title="<%= reservation.reserved_at&.strftime("%Y-%m-%d %H:%M") %>">
+            <td title="<%= formatted_datetime(reservation.reserved_at, format: :short) %>">
               <%= reservation.reserved_at ? "#{time_ago_in_words(reservation.reserved_at)} ago" : "—" %>
             </td>
             <% if can_release %>

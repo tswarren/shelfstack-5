@@ -53,7 +53,7 @@
     <summary>Removed lines (<%= @removed_line_items.size %>)</summary>
     <ul>
       <% @removed_line_items.each do |line| %>
-        <li><%= line.effective_description %> — removed <%= line.removed_at&.strftime("%Y-%m-%d %H:%M") %></li>
+        <li><%= line.effective_description %> — removed <%= formatted_datetime(line.removed_at, format: :short) %></li>
       <% end %>
     </ul>
   </details>

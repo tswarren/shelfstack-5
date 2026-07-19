@@ -41,6 +41,29 @@
   </section>
 
   <section class="form-section">
+    <h2 class="form-section-title">Approval PIN</h2>
+    <p class="muted">Optional. Required only for users who approve restricted POS actions. Digits only, <%= User::PIN_MIN_LENGTH %>–<%= User::PIN_MAX_LENGTH %> characters.</p>
+    <% if user.persisted? %>
+      <p><%= user.pin_configured? ? status_badge("PIN set", variant: :success) : status_badge("No PIN", variant: :inactive) %></p>
+    <% end %>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :pin, "PIN", class: "field-label" %>
+        <%= form.password_field :pin, class: "input input-code", autocomplete: "new-password",
+              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH %>
+        <% if user.persisted? %>
+          <p class="field-hint">Leave blank to keep the current PIN.</p>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :pin_confirmation, "PIN confirmation", class: "field-label" %>
+        <%= form.password_field :pin_confirmation, class: "input input-code", autocomplete: "new-password",
+              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
     <h2 class="form-section-title">Status</h2>
     <div class="checkbox-group">
       <label><%= form.check_box :active %> User is active</label>

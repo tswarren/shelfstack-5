@@ -1,8 +1,8 @@
 <% content_for :title, "Stock: #{@stock_balance.product_variant.sku}" %>
 
 <%= render "shared/page_header",
-      title: @stock_balance.product_variant.name,
-      subtitle: "SKU #{@stock_balance.product_variant.sku}",
+      title: variant_option_label(@stock_balance.product_variant),
+      subtitle: "Store stock for #{Current.store.name}",
       breadcrumbs: [ { label: "Stock balances", path: stock_balances_path }, { label: @stock_balance.product_variant.sku } ],
       actions: capture {
         if Current.user.can?("inventory.adjustment.create", store: Current.store)
@@ -65,7 +65,7 @@
         <tbody>
           <% @ledger_entries.each do |entry| %>
             <tr>
-              <td><%= entry.posted_at&.strftime("%Y-%m-%d %H:%M") %></td>
+              <td><%= formatted_datetime(entry.posted_at, format: :short) %></td>
               <td><%= entry.movement_type.to_s.titleize %></td>
               <td class="num"><%= entry.quantity_delta %></td>
               <% if @can_view_cost %>

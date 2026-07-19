@@ -26,6 +26,7 @@ class PosTransaction < ApplicationRecord
 
   scope :open_transactions, -> { where(status: "open") }
   scope :suspended, -> { where(status: "suspended") }
+  scope :completed, -> { where(status: "completed") }
 
   def open?
     status == "open"

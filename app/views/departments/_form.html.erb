@@ -26,7 +26,9 @@
       </div>
       <div class="field">
         <%= form.label :parent_department_id, "Parent department", class: "field-label" %>
-        <%= form.collection_select :parent_department_id, parent_departments.reject { |d| d.id == department.id }, :id, :code, include_blank: true %>
+        <%= form.select :parent_department_id,
+              parent_departments.reject { |d| d.id == department.id }.map { |d| [ hierarchy_path_label(d), d.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
     </div>
     <div class="checkbox-group">
@@ -39,11 +41,15 @@
     <div class="form-grid">
       <div class="field">
         <%= form.label :default_tax_category_id, "Default tax category", class: "field-label" %>
-        <%= form.collection_select :default_tax_category_id, tax_categories, :id, :code, include_blank: true %>
+        <%= form.select :default_tax_category_id,
+              tax_categories.map { |c| [ c.name, c.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
       <div class="field">
         <%= form.label :default_return_policy_id, "Default return policy", class: "field-label" %>
-        <%= form.collection_select :default_return_policy_id, return_policies, :id, :code, include_blank: true %>
+        <%= form.select :default_return_policy_id,
+              return_policies.map { |p| [ record_option_label(p), p.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
       <%= render "shared/percent_field", name: "department[maximum_merchandise_discount_percent]",
             label: "Maximum merchandise discount", id: "department_maximum_merchandise_discount",

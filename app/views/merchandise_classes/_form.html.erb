@@ -22,7 +22,9 @@
       </div>
       <div class="field">
         <%= form.label :parent_id, "Parent class", class: "field-label" %>
-        <%= form.collection_select :parent_id, parent_classes.reject { |c| c.id == merchandise_class.id }, :id, :code, include_blank: true %>
+        <%= form.select :parent_id,
+              parent_classes.reject { |c| c.id == merchandise_class.id }.map { |c| [ hierarchy_path_label(c), c.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
       <div class="field">
         <%= form.label :position, class: "field-label" %>
@@ -36,12 +38,25 @@
     <div class="form-grid">
       <div class="field">
         <%= form.label :default_department_id, "Default department", class: "field-label" %>
-        <%= form.collection_select :default_department_id, departments, :id, :code, include_blank: true %>
+        <%= form.select :default_department_id,
+              departments.map { |d| [ hierarchy_path_label(d), d.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
       <div class="field">
         <%= form.label :default_used_department_id, "Default used department", class: "field-label" %>
-        <%= form.collection_select :default_used_department_id, departments, :id, :code, include_blank: true %>
+        <%= form.select :default_used_department_id,
+              departments.map { |d| [ hierarchy_path_label(d), d.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
+      <% if local_assigns[:tax_categories] || defined?(@tax_categories) %>
+        <% cats = local_assigns[:tax_categories] || @tax_categories %>
+        <div class="field">
+          <%= form.label :default_tax_category_id, "Default tax category", class: "field-label" %>
+          <%= form.select :default_tax_category_id,
+                cats.map { |c| [ c.name, c.id ] },
+                { include_blank: true }, class: "input" %>
+        </div>
+      <% end %>
     </div>
   </section>
 

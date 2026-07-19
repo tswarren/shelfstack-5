@@ -74,7 +74,11 @@ Rails.application.routes.draw do
         patch :override_tax_category
       end
     end
-    resources :pos_return_lines, only: %i[create]
+    resources :pos_return_lines, only: %i[create] do
+      collection do
+        post :lookup
+      end
+    end
     resources :pos_discounts, only: %i[create]
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
     resources :pos_tenders, only: %i[create destroy]

@@ -90,10 +90,32 @@ module ApplicationHelper
     end
   end
 
-  def formatted_datetime(value, format: :long)
+  def store_time_zone(store = Current.store)
+    StoreTime.zone_for(store)
+  end
+
+  def store_time(moment, store: Current.store)
+    StoreTime.at(store, moment)
+  end
+
+  def store_date(moment = nil, store: Current.store)
+    return StoreTime.today(store) if moment.nil?
+
+    StoreTime.at(store, moment)&.to_date
+  end
+
+  def formatted_datetime(value, format: :long, store: Current.store)
     return "—" if value.blank?
 
-    l(value, format: format)
+    local = store.present? ? StoreTime.at(store, value) : value
+    l(local, format: format)
+  end
+
+  def formatted_store_date(value = nil, store: Current.store)
+    date = value.nil? ? StoreTime.today(store) : (value.is_a?(Date) ? value : store_date(value, store: store))
+    return "—" if date.blank?
+
+    l(date, format: :default)
   end
 
   def record_identifier(record)
@@ -200,6 +222,72 @@ module ApplicationHelper
       "application",
       "data-turbo-track": "reload"
     )
+  end
+
+  # Product — Variant · SKU … (+ tracking mode when useful)
+  def variant_option_label(variant, include_tracking: false)
+    return "—" if variant.blank?
+
+    product_name = variant.product&.name.presence || "Product"
+    variant_name = variant.name.presence || "Standard"
+    label = "#{product_name} — #{variant_name} · SKU #{variant.sku}"
+    label += " · #{variant.inventory_tracking_mode.titleize}" if include_tracking && variant.inventory_tracking_mode.present?
+    label
+  end
+
+  def record_option_label(record, code_attr: :code, name_attr: :name, number_attr: nil)
+    return "—" if record.blank?
+
+    name = record.public_send(name_attr).to_s
+    code = record.respond_to?(code_attr) ? record.public_send(code_attr).to_s : ""
+    number = number_attr && record.respond_to?(number_attr) ? record.public_send(number_attr).to_s : ""
+    secondary = [ number.presence, code.presence ].compact
+    secondary.any? ? "#{name} — #{secondary.join(" · ")}" : name
+  end
+
+  def hierarchy_path_label(record, separator: " › ")
+    return "—" if record.blank?
+
+    names = []
+    current = record
+    seen = {}
+    while current && !seen[current.id]
+      seen[current.id] = true
+      names.unshift(current.name)
+      parent_assoc = current.class.respond_to?(:hierarchy_parent_association) ?
+        current.class.hierarchy_parent_association : :parent
+      current = current.respond_to?(parent_assoc) ? current.public_send(parent_assoc) : nil
+    end
+
+    path = names.join(separator)
+    if record.respond_to?(:department_number) && record.department_number.present?
+      "#{path} · #{record.department_number}"
+    else
+      path
+    end
+  end
+
+  def tax_treatment_label(treatment)
+    case treatment.to_s
+    when "taxable" then "Taxable"
+    when "zero_rated" then "Zero-rated"
+    when "exempt" then "Exempt"
+    when "not_applicable" then "Not applicable"
+    else treatment.to_s.humanize
+    end
+  end
+
+  def store_tax_rule_summary(rule)
+    rate = rule.store_tax_rate
+    rate_text = rate ? "#{rate.name} at #{format_rate_as_percent(rate.rate)}" : "no rate"
+    category = rule.tax_category
+    category_text = category ? "#{category.name}" : "Unknown category"
+    compound = rule.compounds_on_prior_tax? ? "It compounds on prior tax." : "It does not compound on prior tax."
+    "#{rate_text} applies (#{tax_treatment_label(rule.treatment).downcase}) to #{category_text}. #{compound}"
+  end
+
+  def configured_override_label(value)
+    value.present? ? value.name : "Inherit"
   end
 
   private

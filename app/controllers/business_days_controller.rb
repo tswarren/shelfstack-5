@@ -15,7 +15,7 @@ class BusinessDaysController < ApplicationController
   end
 
   def new
-    @business_day = Current.store.business_days.new(reporting_date: Date.current)
+    @business_day = Current.store.business_days.new(reporting_date: StoreTime.today(Current.store))
   end
 
   def create
@@ -27,7 +27,7 @@ class BusinessDaysController < ApplicationController
     if result.success?
       redirect_to register_path, notice: "Business day opened."
     else
-      @business_day = Current.store.business_days.new(reporting_date: Date.current)
+      @business_day = Current.store.business_days.new(reporting_date: StoreTime.today(Current.store))
       redirect_to new_business_day_path, alert: result.error
     end
   end

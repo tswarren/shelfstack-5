@@ -2,7 +2,7 @@
 
 <%= render "shared/page_header",
       title: "Unit #{@inventory_unit.unit_identifier}",
-      subtitle: "#{@inventory_unit.product_variant.sku} — #{@inventory_unit.product_variant.name}",
+      subtitle: variant_option_label(@inventory_unit.product_variant),
       breadcrumbs: [ { label: "Inventory units", path: inventory_units_path }, { label: @inventory_unit.unit_identifier } ],
       actions: capture {
         concat link_to("Back to units", inventory_units_path, class: "button button-outline")
@@ -12,12 +12,12 @@
   <h2>Unit</h2>
   <%= render "shared/record_summary", rows: [
     [ "Status", status_badge(@inventory_unit.status.titleize, variant: inventory_unit_status_variant(@inventory_unit.status)) ],
-    [ "Variant", "#{@inventory_unit.product_variant.sku} — #{@inventory_unit.product_variant.name}" ],
+    [ "Variant", variant_option_label(@inventory_unit.product_variant) ],
     [ "Condition", @inventory_unit.product_condition&.name || "—" ],
     [ "Acquisition cost", @inventory_unit.acquisition_cost_cents.nil? ? "—" : inventory_money(@inventory_unit.acquisition_cost_cents) ],
     [ "Unit price override", @inventory_unit.unit_price_cents.nil? ? "—" : inventory_money(@inventory_unit.unit_price_cents) ],
     [ "Acquisition source", @inventory_unit.acquisition_source_type&.titleize || "—" ],
-    [ "Acquired at", @inventory_unit.acquired_at&.strftime("%Y-%m-%d %H:%M") ]
+    [ "Acquired at", formatted_datetime(@inventory_unit.acquired_at, format: :short) ]
   ] %>
 </section>
 
@@ -36,7 +36,7 @@
     <h2>Sale</h2>
     <%= render "shared/record_summary", rows: [
       [ "Sold via", link_to(@inventory_unit.sold_pos_line_item.pos_transaction.public_id, pos_transaction_path(@inventory_unit.sold_pos_line_item.pos_transaction)) ],
-      [ "Sold at", @inventory_unit.sold_at&.strftime("%Y-%m-%d %H:%M") ]
+      [ "Sold at", formatted_datetime(@inventory_unit.sold_at, format: :short) ]
     ] %>
   </section>
 <% end %>

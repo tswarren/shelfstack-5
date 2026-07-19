@@ -22,7 +22,9 @@
       </div>
       <div class="field">
         <%= form.label :resulting_return_policy_id, "Resulting return policy", class: "field-label" %>
-        <%= form.collection_select :resulting_return_policy_id, return_policies, :id, :code, include_blank: true %>
+        <%= form.select :resulting_return_policy_id,
+              return_policies.map { |p| [ record_option_label(p), p.id ] },
+              { include_blank: true }, class: "input" %>
       </div>
     </div>
   </section>

@@ -30,9 +30,12 @@
       <tbody>
         <% @store_tax_rules.each do |rule| %>
           <tr class="<%= "is-inactive" unless rule.active? %>">
-            <td><code><%= rule.tax_category.code %></code></td>
+            <td>
+              <%= rule.tax_category.name %>
+              <br><span class="muted"><code><%= rule.tax_category.code %></code></span>
+            </td>
             <td><%= rule.component_code %></td>
-            <td><%= rule.treatment.titleize %></td>
+            <td><%= tax_treatment_label(rule.treatment) %></td>
             <td class="num"><%= rule.store_tax_rate ? format_rate_as_percent(rule.store_tax_rate.rate) : "—" %></td>
             <td class="num"><%= format_rate_as_percent(rule.taxable_fraction) %></td>
             <td class="num"><%= rule.calculation_order %></td>
@@ -43,6 +46,9 @@
                 <%= link_to "Edit", edit_store_tax_rule_path(rule), class: "button button-outline" %>
               <% end %>
             </td>
+          </tr>
+          <tr class="pos-line-detail-row">
+            <td colspan="9" class="muted"><%= store_tax_rule_summary(rule) %></td>
           </tr>
         <% end %>
       </tbody>

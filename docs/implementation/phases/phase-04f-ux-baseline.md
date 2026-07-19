@@ -34,7 +34,10 @@ main
     ├── phase/ux-baseline-01-foundation
     ├── phase/ux-baseline-02-pos
     ├── phase/ux-baseline-03-catalog-inventory
-    └── phase/ux-baseline-04-admin
+    ├── phase/ux-baseline-04-admin
+    ├── phase/ux-baseline-05-review-fixes
+    ├── phase/ux-baseline-06-p0-gate
+    └── phase/ux-baseline-07-p1-labels
 ```
 
 Each milestone branch is cut from updated `phase/ux-baseline` after the preceding PR merges. PRs target `phase/ux-baseline`, not `main`.
@@ -45,6 +48,9 @@ Each milestone branch is cut from updated `phase/ux-baseline` after the precedin
 | 2 | `…-02-pos` | Operational `pos` layout screens, two-panel workspace, currency mask, scan resolution, completion states |
 | 3 | `…-03-catalog-inventory` | Products, stock, adjustments, reservations, units + Pagy |
 | 4 | `…-04-admin` | Remaining route-backed admin/classification screens |
+| 5 | `…-05-review-fixes` | Store-switch guard, named currency fields, percent parsing, scan preserve, ARIA |
+| 6 | `…-06-p0-gate` | Store-local time, approval PIN admin, Register CTA hierarchy, Main workspace, balance/change, receipt return lookup |
+| 7 | `…-07-p1-labels` | Variant labels, hierarchy paths, name-first codes, effective defaults display, open-ring order, tax-rule summaries |
 
 ## Operational layout (`pos`)
 
@@ -58,12 +64,26 @@ Business-day history lists use `application`.
 - Store switching is **not** offered while a transaction is active (open with or without unresolved tenders). Cashier must complete, suspend, or cancel first.
 - Sign-out is **blocked** while the cashier controls an open transaction or the session has unresolved tender activity on an open transaction; prompt to complete, suspend, or cancel first.
 
-## Gate criteria (merge `phase/ux-baseline` → `main`)
+## Gate acceptance criteria
 
-See the acceptance list in the UX Baseline Gate plan. Phase 5 must not start until:
+Merge `phase/ux-baseline` → `main` only when automated coverage and the manual walkthrough below are signed off.
 
-- Shell, POS workspace, flash/forms/tables, money entry models, and system tests meet the gate
-- Manual walkthrough below is signed off
+### P0 correctness / usability
+
+- [ ] Store-local calendar date and display time use the store time zone (business-day default, midnight/DST covered by tests)
+- [ ] User admin can set/reset an Approval PIN (4–8 digits; blank on edit preserves; status only, never display the PIN)
+- [ ] Register shows one dominant primary CTA (open day / open session / Resume transaction / New transaction)
+- [ ] POS header **Main workspace** navigates to the home workspace; open-transaction indicator remains
+- [ ] Payment panel shows tendered, remaining balance or refund due, and change due; completed summary has no dead Print control; **Back to register** is the next action
+- [ ] Linked returns start from receipt-number lookup with selectable returnable lines (no raw line-ID entry)
+
+### P1 presentation / comprehension
+
+- [ ] Variant selects and key inventory lists use shared Product — Variant · SKU labels
+- [ ] Department / merchandise-class selectors show hierarchy path labels; related selectors are name-first with codes secondary
+- [ ] Product show displays Configured / Effective / Source classification defaults via shared resolver
+- [ ] Open-ring fields order: Department → Price → Quantity → Description
+- [ ] Store tax rules index/form use treatment labels, name-first category, and a per-rule summary sentence
 
 ### Manual walkthrough
 
@@ -76,17 +96,25 @@ Also: failed/ambiguous scan; negative-availability warning; approval-required ac
 
 ## Deferred UX
 
-- Locally hosted Inter webfont
-- Full modal approval dialog (inline disclosure is baseline)
-- Phone-sized POS
-- Tender / cash-movement type admin CRUD
-- Pagination beyond Products/Stock unless needed
-- Scan-resolution polish beyond the actionable baseline region
-- Fixed-point currency mask outside POS/operational cash fields
+| Deferred | Note |
+| --- | --- |
+| Searchable record-picker / combobox | **Phase 5 entry prerequisite** |
+| Live effective-default recomputation while editing | After static display on show |
+| Modal dialog conversion | Keep `<details>`; one shared dialog primitive later |
+| Comprehensive hotkey framework | Keep Ctrl/Cmd+Enter complete; Enter on completed → register; scanner Enter |
+| Advanced returns | Scan-in-receipt, no-receipt, gift, multi-receipt |
+| Receipt printing | Summary only; no dead Print control |
+| Tax-rule matrix / visual builder | Beyond comprehension baseline |
+| Self-service PIN change | Admin setup is enough for 4f |
+| Locally hosted Inter webfont | External Inter dependency remains deferred |
+| Phone-sized POS | Out of gate scope |
+| Tender / cash-movement type admin CRUD | No routes today |
+| Fixed-point currency mask outside POS/operational cash fields | Catalog uses explicit decimal entry |
+| Pagination beyond Products/Stock unless needed | — |
 
 ## Gate status
 
-Automated portions of the UX Baseline Gate are implemented on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin).
+Automated portions of the UX Baseline Gate are implemented on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin → review fixes). Observation-gate work lands via `…-06-p0-gate` and `…-07-p1-labels`.
 
 ### Review fixes (pre-merge)
 

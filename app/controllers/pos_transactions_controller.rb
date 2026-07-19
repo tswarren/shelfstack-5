@@ -45,6 +45,7 @@ class PosTransactionsController < ApplicationController
       @pos_transaction.pos_tenders.where(status: "completed", direction: "refunded").sum(:amount_cents)
     @tendered_total_cents = received - refunded
     @balance_due_cents = @net_total_cents - @tendered_total_cents
+    @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid
@@ -57,6 +58,8 @@ class PosTransactionsController < ApplicationController
     end
     @scan_outcome = flash[:scan_outcome]
     @scan_query = flash[:scan_query]
+
+    load_return_lookup!
   end
 
   def create
@@ -144,7 +147,8 @@ class PosTransactionsController < ApplicationController
         "title" => product.name,
         "identifier" => product.identifier,
         "variants" => product.product_variants.map { |v|
-          { "id" => v.id, "sku" => v.sku, "label" => v.name.presence || v.sku }
+          label = "#{v.name.presence || 'Standard'} · SKU #{v.sku}"
+          { "id" => v.id, "sku" => v.sku, "label" => label }
         }
       }
     end
@@ -154,5 +158,23 @@ class PosTransactionsController < ApplicationController
       "quantity" => (stored["quantity"].presence || 1).to_i,
       "candidates" => candidates
     }
+  end
+
+  def load_return_lookup!
+    stored = session[:pos_return_lookup]
+    return if stored.blank? || stored["for_transaction_id"] != @pos_transaction.id
+
+    original_txn = Current.store.pos_transactions.completed.find_by(id: stored["original_transaction_id"])
+    if original_txn.blank?
+      session.delete(:pos_return_lookup)
+      return
+    end
+
+    @return_lookup_transaction = original_txn
+    @return_lookup_lines = original_txn.pos_line_items
+      .where(status: "completed", direction: "sale")
+      .includes(:product_variant, product_variant: :product)
+      .order(:position)
+      .select { |line| line.remaining_returnable_quantity.positive? }
   end
 end

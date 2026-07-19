@@ -48,6 +48,8 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 | `Catalog::UpdateProductWithStandardVariant` | Catalog and Products | 2 | Yes | No | Product + variant | Product, standard variant, attrs | Atomic product+variant update + audits |
 | `Catalog::Lookup` | Catalog and Products | 2 | No | Yes | None | Organization, query | `Catalog::LookupResult` (products, match_kind; ambiguous alternates) |
 | `Catalog::SaleEligibility` | Catalog and Products | 2 | No | Yes | None | Variant, store, as-of date | `Catalog::SaleEligibilityResult` distinct readiness blockers |
+| `Catalog::ResolveClassification` | Catalog and Products | 4f | No | Yes | None | Product, optional variant | Effective merchandise class, department, and tax category with source labels (variant → product → MC → department) |
+| `StoreTime` | Organization and Authorization | 4f | No | Yes | None | Store, optional moment | Store-zone `today` / `at` helpers for business dates and display |
 
 \*Generation is not replay-idempotent; callers must not retry blindly without checking uniqueness errors.
 
@@ -104,7 +106,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 
 ### Phase 4a notes
 
-- `Pos::AddLine` / `Pos::AddOpenRingLine` resolve Department and Tax Category using the same variant-override → product-default → merchandise-class-default (→ department-default for tax) order as `Catalog::SaleEligibility`.
+- `Pos::AddLine` / `Pos::AddOpenRingLine` resolve Department and Tax Category via `Catalog::ResolveClassification` (same order as `Catalog::SaleEligibility`: variant override → product default → merchandise-class default → department default for tax).
 - Individually tracked variants (`inventory_tracking_mode: individual`) are accepted by `Pos::AddLine` when an exact `InventoryUnit` is supplied (Phase 4d).
 - No service in this list sets `pos_transactions.status` or `pos_line_items.status` to `completed`; that is reserved for `Pos::CompleteTransaction` (Phase 4c).
 

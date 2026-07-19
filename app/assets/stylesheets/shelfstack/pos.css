@@ -60,6 +60,32 @@
   font-variant-numeric: tabular-nums;
 }
 
+.pos-change {
+  color: var(--success-text, var(--text-primary));
+}
+
+.workspace-primary {
+  margin-bottom: 1rem;
+  padding: 1.25rem 1.35rem;
+  border-width: 2px;
+  border-color: var(--brand-primary, var(--border-strong));
+}
+
+.button-large {
+  font-size: 1.05rem;
+  padding: 0.7rem 1.25rem;
+}
+
+.pos-completed-summary .pos-receipt-number {
+  font-size: 1.25rem;
+  margin: 0.35rem 0;
+}
+
+.pos-tender-summary {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.1rem;
+}
+
 .pos-live-region {
   position: absolute;
   width: 1px;

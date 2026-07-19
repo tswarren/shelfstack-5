@@ -62,4 +62,49 @@ class UsersControllerTest < ActionDispatch::IntegrationTest
     get new_user_path
     assert_redirected_to root_path
   end
+
+  test "sets approval PIN on create and preserves it when blank on update" do
+    post users_path, params: {
+      user: {
+        username: "approver",
+        first_name: "App",
+        last_name: "Rover",
+        password: "password123",
+        password_confirmation: "password123",
+        pin: "2468",
+        pin_confirmation: "2468",
+        active: true
+      }
+    }
+
+    user = User.find_by!(username: "approver")
+    assert user.pin_configured?
+    assert user.authenticate_pin("2468")
+
+    patch user_path(user), params: {
+      user: {
+        first_name: "Approver",
+        pin: "",
+        pin_confirmation: ""
+      }
+    }
+    assert_redirected_to user_path(user)
+    assert user.reload.authenticate_pin("2468")
+  end
+
+  test "rejects non-digit approval PIN" do
+    post users_path, params: {
+      user: {
+        username: "badpin",
+        password: "password123",
+        password_confirmation: "password123",
+        pin: "12ab",
+        pin_confirmation: "12ab",
+        active: true
+      }
+    }
+
+    assert_response :unprocessable_entity
+    refute User.exists?(username: "badpin")
+  end
 end

@@ -1,11 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Register workspace ergonomics only — no business logic lives here.
-// Keeps the scan field focused for continuous scanning, announces server
-// results to assistive tech, and offers an optional Complete shortcut.
 export default class extends Controller {
-  static targets = ["scanInput", "scanForm", "liveRegion", "completeButton", "announce"]
-  static values = { scanOutcome: String }
+  static targets = ["scanInput", "scanForm", "liveRegion", "completeButton", "announce", "backToRegister"]
+  static values = {
+    scanOutcome: String,
+    completed: { type: Boolean, default: false }
+  }
 
   connect() {
     this.onSubmitEnd = this.handleSubmitEnd.bind(this)
@@ -15,7 +16,7 @@ export default class extends Controller {
 
     this.announceStatus()
     this.applyScanOutcome()
-    this.focusScanInput()
+    if (!this.completedValue) this.focusScanInput()
   }
 
   disconnect() {
@@ -24,8 +25,6 @@ export default class extends Controller {
   }
 
   handleSubmitEnd(event) {
-    // Do not treat Turbo redirect success as scan success. Clear only when the
-    // server stamped scan_outcome=added on the subsequent page (applyScanOutcome).
     const form = event.target
     if (form && this.hasScanFormTarget && form !== this.scanFormTarget) return
 
@@ -35,18 +34,27 @@ export default class extends Controller {
   applyScanOutcome() {
     if (!this.hasScanInputTarget) return
 
-    const outcome = this.scanOutcomeValue
-    if (outcome === "added") {
+    if (this.scanOutcomeValue === "added") {
       this.scanInputTarget.value = ""
     }
-    // failed / ambiguous: server pre-fills via the scan form value.
   }
 
   handleKeydown(event) {
-    // Ctrl+Enter (or Cmd+Enter) triggers the primary Complete action.
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && this.hasCompleteButtonTarget) {
       event.preventDefault()
       this.completeButtonTarget.click()
+      return
+    }
+
+    // On the completed summary, Enter returns to the register when focus is not
+    // inside another interactive control.
+    if (this.completedValue && event.key === "Enter" && this.hasBackToRegisterTarget) {
+      const active = document.activeElement
+      if (active && (active.matches("input, textarea, select, button, a") || active.isContentEditable)) {
+        return
+      }
+      event.preventDefault()
+      this.backToRegisterTarget.click()
     }
   }
 
@@ -61,8 +69,6 @@ export default class extends Controller {
     }
   }
 
-  // Never yank focus away from an open disclosure or approval entry the
-  // cashier is actively using (e.g. typing an approver PIN).
   shouldPreserveFocus() {
     const active = document.activeElement
     if (!active || active === document.body) return false

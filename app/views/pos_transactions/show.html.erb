@@ -1,26 +1,76 @@
-<% content_for :title, "Transaction #{@pos_transaction.public_id}" %>
+<% if @pos_transaction.completed? %>
+  <div class="pos-workspace pos-completed-workspace" data-controller="pos-register"
+       data-pos-register-completed-value="true">
+    <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
+    <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
 
-<%= render "session_context" %>
-<%= render "transaction_status" %>
-<%= render "recall_summary" %>
+    <section class="pos-panel pos-completed-summary" aria-label="Completed transaction">
+      <h2>Transaction complete</h2>
+      <p class="pos-receipt-number">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
+      <p class="muted">Completed <%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></p>
 
-<div class="pos-workspace" data-controller="pos-register"
-     data-pos-register-scan-outcome-value="<%= @scan_outcome %>">
-  <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
-  <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
+      <dl class="definition-grid pos-totals">
+        <div class="definition-item"><dt>Final total</dt><dd class="pos-balance"><%= pos_money(@net_total_cents) %></dd></div>
+        <div class="definition-item"><dt>Tendered</dt><dd><%= pos_money(@tendered_total_cents) %></dd></div>
+        <% if @change_due_cents.to_i.positive? %>
+          <div class="definition-item">
+            <dt>Change due</dt>
+            <dd class="pos-balance pos-change"><%= pos_money(@change_due_cents) %></dd>
+          </div>
+        <% end %>
+      </dl>
 
-  <section class="pos-sale-panel" aria-label="Sale">
-    <%= render "scan_form" %>
-    <%= render "line_items" %>
-    <%= render "secondary_actions" %>
-  </section>
+      <% if @pos_tenders.any? %>
+        <h3>Tenders</h3>
+        <ul class="pos-tender-summary">
+          <% @pos_tenders.each do |tender| %>
+            <li>
+              <%= tender.tender_type.name %> · <%= tender.direction.humanize %> ·
+              <%= pos_money(tender.amount_cents) %>
+              <% if tender.change_due_cents.to_i.positive? %>
+                <span class="muted">(change <%= pos_money(tender.change_due_cents) %>)</span>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
 
-  <aside class="pos-payment-panel" aria-label="Payment">
-    <%= render "totals" %>
-    <%= render "tenders" %>
-    <%= render "tender_entry" %>
-    <%= render "transaction_actions" %>
-  </aside>
-</div>
+      <div class="form-actions">
+        <%= link_to "Back to register", register_path, class: "button button-primary button-large",
+              data: { "pos-register-target": "backToRegister" } %>
+      </div>
+      <p class="field-hint">Press Enter to return to the register.</p>
+    </section>
 
-<p><%= link_to "Back to register", register_path, class: "button button-ghost button-small" %></p>
+    <details class="pos-panel">
+      <summary>Transaction detail</summary>
+      <%= render "line_items" %>
+      <%= render "totals" %>
+    </details>
+  </div>
+<% else %>
+  <%= render "session_context" %>
+  <%= render "transaction_status" %>
+  <%= render "recall_summary" %>
+
+  <div class="pos-workspace" data-controller="pos-register"
+       data-pos-register-scan-outcome-value="<%= @scan_outcome %>">
+    <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
+    <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
+
+    <section class="pos-sale-panel" aria-label="Sale">
+      <%= render "scan_form" %>
+      <%= render "line_items" %>
+      <%= render "secondary_actions" %>
+    </section>
+
+    <aside class="pos-payment-panel" aria-label="Payment">
+      <%= render "totals" %>
+      <%= render "tenders" %>
+      <%= render "tender_entry" %>
+      <%= render "transaction_actions" %>
+    </aside>
+  </div>
+
+  <p><%= link_to "Back to register", register_path, class: "button button-ghost button-small" %></p>
+<% end %>

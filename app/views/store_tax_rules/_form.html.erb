@@ -2,15 +2,29 @@
   <%= render "shared/form_errors", object: store_tax_rule %>
 
   <section class="form-section">
+    <h2 class="form-section-title">How store tax rules work</h2>
+    <p class="muted">
+      A rule connects a <strong>tax category</strong> (what is being sold) to a
+      <strong>tax rate component</strong> (how it is taxed). Treatments:
+      <em>Taxable</em> and <em>Zero-rated</em> need a rate;
+      <em>Exempt</em> and <em>Not applicable</em> usually omit one.
+      <em>Taxable portion</em> is the fraction of price subject to that component.
+      <em>Compounds on prior tax</em> means this component taxes earlier tax amounts.
+      Effective dates control when the rule applies.
+    </p>
+  </section>
+
+  <section class="form-section">
     <h2 class="form-section-title">Applicability</h2>
     <div class="form-grid">
       <div class="field">
         <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
-        <%= form.select :tax_category_id, @tax_categories.map { |c| [ "#{c.code} — #{c.name}", c.id ] } %>
+        <%= form.select :tax_category_id, @tax_categories.map { |c| [ c.name, c.id ] }, {}, class: "input" %>
       </div>
       <div class="field">
         <%= form.label :store_tax_rate_id, "Store tax rate", class: "field-label" %>
-        <%= form.select :store_tax_rate_id, @store_tax_rates.map { |r| [ "#{r.code} — #{r.name}", r.id ] }, include_blank: true %>
+        <%= form.select :store_tax_rate_id, @store_tax_rates.map { |r| [ record_option_label(r), r.id ] },
+              { include_blank: true }, class: "input" %>
         <p class="field-hint">Leave blank for exempt or not-applicable treatments.</p>
       </div>
       <div class="field">
@@ -19,8 +33,9 @@
       </div>
       <div class="field">
         <%= form.label :treatment, class: "field-label" %>
-        <%= form.select :treatment, StoreTaxRule::TREATMENTS.map { |t| [ t.titleize, t ] } %>
-        <p class="field-hint">Taxable and zero-rated require a rate; exempt and not-applicable may omit it.</p>
+        <%= form.select :treatment,
+              StoreTaxRule::TREATMENTS.map { |t| [ tax_treatment_label(t), t ] },
+              {}, class: "input" %>
       </div>
     </div>
   </section>
@@ -58,6 +73,13 @@
       <label><%= form.check_box :active %> Tax rule is active</label>
     </div>
   </section>
+
+  <% if store_tax_rule.persisted? && store_tax_rule.tax_category.present? %>
+    <section class="form-section">
+      <h2 class="form-section-title">Summary</h2>
+      <p><%= store_tax_rule_summary(store_tax_rule) %></p>
+    </section>
+  <% end %>
 
   <div class="form-actions">
     <%= form.submit store_tax_rule.persisted? ? "Update store tax rule" : "Create store tax rule", class: "button button-primary" %>

@@ -22,7 +22,7 @@
   <% if @inventory_adjustment.posted? %>
     <%= render "shared/record_summary", rows: [
       [ "Qualified reason", @inventory_adjustment.qualified_reason_code ],
-      [ "Posted at", @inventory_adjustment.posted_at&.strftime("%Y-%m-%d %H:%M") ]
+      [ "Posted at", formatted_datetime(@inventory_adjustment.posted_at, format: :short) ]
     ] %>
   <% end %>
 </section>
@@ -34,7 +34,7 @@
       <caption class="sr-only">Adjustment lines</caption>
       <thead>
         <tr>
-          <th scope="col">SKU</th>
+          <th scope="col">Variant</th>
           <th scope="col" class="num">Quantity Δ</th>
           <th scope="col" class="num">Input unit cost</th>
           <th scope="col" class="num">Corrected value</th>
@@ -43,7 +43,7 @@
       <tbody>
         <% @inventory_adjustment.inventory_adjustment_lines.order(:position).each do |line| %>
           <tr>
-            <td><code><%= line.product_variant.sku %></code></td>
+            <td><%= variant_option_label(line.product_variant) %></td>
             <td class="num"><%= line.quantity_delta %></td>
             <td class="num">
               <% if @can_view_cost %>

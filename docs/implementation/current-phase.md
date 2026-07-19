@@ -7,9 +7,9 @@
 
 ## Immediate next work
 
-1. Deliver the four UX baseline milestone PRs into `phase/ux-baseline` (foundation → POS → catalog/inventory → admin).
+1. Land observation-gate follow-ups into `phase/ux-baseline`: `…-06-p0-gate` (store time, PIN, Register CTA, Main workspace, balance/change, receipt returns) and `…-07-p1-labels` (variant/hierarchy labels, effective defaults, open-ring order, tax-rule summaries). PR #30 tracks the phase branch.
 2. Satisfy the UX Baseline Gate (system tests + manual walkthrough) before merging to `main`.
-3. After the gate: begin Phase 5 foundational purchasing / receiving / requests. See [roadmap.md](roadmap.md) and [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
+3. After the gate: begin Phase 5 foundational purchasing / receiving / requests. Searchable record-picker / combobox is a Phase 5 entry prerequisite — see deferred UX in the phase plan.
 4. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
 5. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
@@ -17,6 +17,7 @@
 
 - Phase 4a–4e (Point of Sale) merged to `main` ([phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)).
 - Pre–Phase 4 lightweight UX readiness gate (design docs, tokens, light header) — superseded by this full Baseline Gate for Phase 5 unlock.
+- UX baseline milestones 01–04 plus 05 review fixes on `phase/ux-baseline`.
 
 ## Do not start yet
 

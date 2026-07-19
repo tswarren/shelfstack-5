@@ -130,4 +130,12 @@ class AdminUxBaselineTest < ActionDispatch::IntegrationTest
       assert_select "form.form"
     end
   end
+
+  test "store tax rules index uses name-first category and treatment labels" do
+    get store_tax_rules_path
+    assert_response :success
+    assert_match "Physical Book", response.body
+    assert_match(/Taxable|Zero-rated|Exempt|Not applicable/, response.body)
+    assert_match(/applies/i, response.body)
+  end
 end

@@ -33,14 +33,15 @@
         <%= form.label :department_id, "Department", class: "field-label" %>
         <%= form.collection_select :department_id, @departments, :id, :name, {}, class: "input" %>
       </div>
-      <div class="field">
-        <%= form.label :description, "Description (optional)", class: "field-label" %>
-        <%= form.text_field :description, placeholder: "Blank uses department name", class: "input" %>
-      </div>
       <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "open_ring_unit_price_cents" %>
       <div class="field">
         <%= form.label :quantity, class: "field-label" %>
         <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
+      </div>
+      <div class="field">
+        <%= form.label :description, "Description (optional)", class: "field-label" %>
+        <%= form.text_field :description, placeholder: "Blank uses department name", class: "input" %>
+        <p class="field-hint">When blank, the department name is used on the line.</p>
       </div>
       <div class="form-actions">
         <%= form.submit "Add open-ring line", class: "button button-outline" %>
@@ -49,36 +50,72 @@
   </details>
 
   <% if Current.user.can?("pos.return.create", store: Current.store) %>
-    <details class="pos-panel">
+    <details class="pos-panel" <%= "open" if @return_lookup_transaction.present? %>>
       <summary>Linked return</summary>
-      <p class="muted">Look up the completed line ID from the original transaction's receipt or history to link the return.</p>
-      <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <p class="muted">Look up a completed receipt, then choose a returnable line.</p>
+
+      <%= form_with url: lookup_pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
         <div class="field">
-          <%= form.label :original_pos_line_item_id, "Original completed line ID", class: "field-label" %>
-          <%= form.number_field :original_pos_line_item_id, min: 1, required: true, class: "input" %>
-        </div>
-        <div class="field">
-          <%= form.label :quantity, class: "field-label" %>
-          <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
-        </div>
-        <div class="field">
-          <%= form.label :return_reason_id, "Reason", class: "field-label" %>
-          <%= form.collection_select :return_reason_id, @return_reasons, :id, :name, {}, class: "input" %>
-        </div>
-        <div class="field">
-          <%= form.label :return_disposition, "Disposition", class: "field-label" %>
-          <%= form.select :return_disposition, [
-                [ "Return to stock", "return_to_stock" ],
-                [ "Inspection required", "inspection_required" ],
-                [ "Damaged", "damaged" ],
-                [ "Return to vendor", "return_to_vendor" ],
-                [ "Discard", "discard" ],
-                [ "Non-inventory", "non_inventory" ]
-              ], {}, class: "input" %>
+          <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
+          <%= form.text_field :receipt_number, class: "input",
+                value: @return_lookup_transaction&.receipt_number, required: true,
+                autocomplete: "off", placeholder: "e.g. 001-000001" %>
         </div>
         <div class="form-actions">
-          <%= form.submit "Add return line", class: "button button-outline" %>
+          <%= form.submit "Find receipt", class: "button button-outline" %>
         </div>
+      <% end %>
+
+      <% if @return_lookup_transaction.present? %>
+        <h3>Receipt <%= @return_lookup_transaction.receipt_number %></h3>
+        <% if @return_lookup_lines.blank? %>
+          <p class="muted">No returnable lines remain on this receipt.</p>
+        <% else %>
+          <ul class="pos-resolution-list">
+            <% @return_lookup_lines.each do |line| %>
+              <% remaining = line.remaining_returnable_quantity %>
+              <% returned = line.quantity - remaining %>
+              <li>
+                <p>
+                  <strong><%= line.effective_description %></strong>
+                  <span class="muted">
+                    · sold <%= line.quantity %>
+                    · returned <%= returned %>
+                    · remaining <%= remaining %>
+                    · <%= pos_money(line.unit_price_cents) %> each
+                  </span>
+                </p>
+                <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
+                  <%= hidden_field_tag :original_pos_line_item_id, line.id %>
+                  <div class="form-grid">
+                    <div class="field">
+                      <%= form.label :quantity, class: "field-label" %>
+                      <%= form.number_field :quantity, value: 1, min: 1, max: remaining, class: "input input-qty" %>
+                    </div>
+                    <div class="field">
+                      <%= form.label :return_reason_id, "Reason", class: "field-label" %>
+                      <%= form.collection_select :return_reason_id, @return_reasons, :id, :name, {}, class: "input" %>
+                    </div>
+                    <div class="field">
+                      <%= form.label :return_disposition, "Disposition", class: "field-label" %>
+                      <%= form.select :return_disposition, [
+                            [ "Return to stock", "return_to_stock" ],
+                            [ "Inspection required", "inspection_required" ],
+                            [ "Damaged", "damaged" ],
+                            [ "Return to vendor", "return_to_vendor" ],
+                            [ "Discard", "discard" ],
+                            [ "Non-inventory", "non_inventory" ]
+                          ], {}, class: "input" %>
+                    </div>
+                  </div>
+                  <div class="form-actions">
+                    <%= form.submit "Add return line", class: "button button-small button-outline" %>
+                  </div>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
       <% end %>
     </details>
   <% end %>

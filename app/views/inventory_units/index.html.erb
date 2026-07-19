@@ -26,7 +26,7 @@
         <% @inventory_units.each do |unit| %>
           <tr>
             <td><%= link_to tag.code(unit.unit_identifier), inventory_unit_path(unit) %></td>
-            <td><%= unit.product_variant.sku %> — <%= unit.product_variant.name %></td>
+            <td><%= variant_option_label(unit.product_variant) %></td>
             <td><%= status_badge unit.status.titleize, variant: inventory_unit_status_variant(unit.status) %></td>
             <td class="num"><%= unit.acquisition_cost_cents.nil? ? "—" : inventory_money(unit.acquisition_cost_cents) %></td>
           </tr>

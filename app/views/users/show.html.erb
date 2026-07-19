@@ -15,6 +15,7 @@
     [ "First name", @user.first_name.presence || "—" ],
     [ "Last name", @user.last_name.presence || "—" ],
     [ "Email", @user.email.presence || "—" ],
+    [ "Approval PIN", @user.pin_configured? ? "Set" : "Not set" ],
     [ "Status", boolean_status(@user.active?) ]
   ] %>
 </section>

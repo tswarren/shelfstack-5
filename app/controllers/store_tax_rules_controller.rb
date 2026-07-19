@@ -8,7 +8,8 @@ class StoreTaxRulesController < ApplicationController
 
   def index
     @store_tax_rules = Current.store.store_tax_rules.includes(:tax_category, :store_tax_rate)
-                               .order(:calculation_order, :component_code)
+                               .joins(:tax_category)
+                               .order("tax_categories.name", :calculation_order, :component_code)
   end
 
   def new

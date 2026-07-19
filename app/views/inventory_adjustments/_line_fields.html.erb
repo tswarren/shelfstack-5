@@ -16,7 +16,10 @@
   <div class="form-grid">
     <div class="field">
       <%= f.label :product_variant_id, "Variant", class: "field-label" %>
-      <%= f.collection_select :product_variant_id, variants, :id, :sku, include_blank: true %>
+      <%= f.select :product_variant_id,
+            variants.map { |v| [ variant_option_label(v), v.id ] },
+            { include_blank: true },
+            class: "input" %>
     </div>
 
     <div class="field" data-inventory-adjustment-form-target="lineFields"

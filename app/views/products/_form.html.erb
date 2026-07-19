@@ -75,15 +75,25 @@
         </div>
         <div class="field">
           <%= product_form.label :merchandise_class_id, "Merchandise class", class: "field-label" %>
-          <%= product_form.collection_select :merchandise_class_id, Current.organization.merchandise_classes.order(:code), :id, :name, include_blank: true %>
+          <%= product_form.select :merchandise_class_id,
+                MerchandiseClass.sorted_hierarchically(
+                  Current.organization.merchandise_classes.includes(parent: :parent)
+                ).map { |c| [ hierarchy_path_label(c), c.id ] },
+                { include_blank: true }, class: "input" %>
         </div>
         <div class="field">
           <%= product_form.label :default_department_id, "Default department", class: "field-label" %>
-          <%= product_form.collection_select :default_department_id, Current.organization.departments.order(:code), :id, :name, include_blank: true %>
+          <%= product_form.select :default_department_id,
+                Current.organization.departments.order(:name).map { |d| [ hierarchy_path_label(d), d.id ] },
+                { include_blank: true }, class: "input" %>
+          <p class="field-hint">Leave blank to inherit from the merchandise class when present.</p>
         </div>
         <div class="field">
           <%= product_form.label :default_tax_category_id, "Default tax category", class: "field-label" %>
-          <%= product_form.collection_select :default_tax_category_id, Current.organization.tax_categories.order(:code), :id, :name, include_blank: true %>
+          <%= product_form.select :default_tax_category_id,
+                Current.organization.tax_categories.order(:name).map { |c| [ c.name, c.id ] },
+                { include_blank: true }, class: "input" %>
+          <p class="field-hint">Leave blank to inherit from merchandise class or department.</p>
         </div>
       </div>
     </section>

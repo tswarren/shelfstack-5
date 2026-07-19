@@ -3,83 +3,97 @@
 <%= render "shared/page_header", title: "Register",
       subtitle: "#{Current.store.name} · Signed in as #{Current.user.username}" %>
 
-<div class="workspace-landing">
-  <%# Business day state %>
-  <section class="card workspace-card" aria-label="Business day">
-    <h2>Business day</h2>
-    <% if @business_day.blank? %>
-      <p class="muted">No business day is open for this store.</p>
-      <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
-        <div class="action-group">
-          <%= link_to "Open business day", new_business_day_path, class: "button button-primary" %>
-        </div>
-      <% end %>
-    <% else %>
-      <p>
-        Open since <strong><%= @business_day.opened_at.strftime("%Y-%m-%d %H:%M") %></strong>
-        <br><span class="muted">Reporting date <%= @business_day.reporting_date %></span>
-      </p>
-      <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
-        <div class="action-group">
-          <%= button_to "Close business day", close_business_day_path(@business_day), class: "button button-small button-outline" %>
-        </div>
-      <% end %>
+<%#
+  One dominant primary action based on register state. Secondary operational
+  controls (close day/session, cash movements, recalls) stay below.
+%>
+<section class="card workspace-card workspace-primary" aria-label="Next action">
+  <% if @business_day.blank? %>
+    <h2>Open a business day</h2>
+    <p class="muted">No business day is open for this store.</p>
+    <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
+      <div class="action-group">
+        <%= link_to "Open business day", new_business_day_path, class: "button button-primary button-large" %>
+      </div>
     <% end %>
-  </section>
+  <% elsif @open_session.blank? %>
+    <h2>Open a session</h2>
+    <p class="muted">
+      Business day open since <strong><%= formatted_datetime(@business_day.opened_at, format: :short) %></strong>
+      · reporting date <%= @business_day.reporting_date %>
+    </p>
+    <% if Current.user.can?("pos.session.open", store: Current.store) %>
+      <div class="action-group">
+        <%= link_to "Open session", new_pos_session_path(business_day_id: @business_day.id), class: "button button-primary button-large" %>
+      </div>
+    <% end %>
+  <% elsif @open_transaction.present? %>
+    <h2>Resume transaction</h2>
+    <p class="muted">A transaction is in progress.</p>
+    <div class="action-group">
+      <%= link_to "Resume transaction", pos_transaction_path(@open_transaction), class: "button button-primary button-large" %>
+    </div>
+  <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
+    <h2>New transaction</h2>
+    <p class="muted">Start a sale, return, or mixed transaction.</p>
+    <div class="action-group">
+      <%= button_to "New transaction", pos_transactions_path, class: "button button-primary button-large" %>
+    </div>
+  <% else %>
+    <h2>Register ready</h2>
+    <p class="muted">Session is open. You do not have permission to start a transaction.</p>
+  <% end %>
+</section>
 
-  <%# Session state %>
-  <% if @business_day.present? %>
-    <section class="card workspace-card" aria-label="POS session">
-      <h2>Session</h2>
-      <% if @open_session.blank? %>
-        <p class="muted">You have no open POS session.</p>
-        <% if Current.user.can?("pos.session.open", store: Current.store) %>
-          <div class="action-group">
-            <%= link_to "Open session", new_pos_session_path(business_day_id: @business_day.id), class: "button button-primary" %>
-          </div>
-        <% end %>
+<details class="pos-panel">
+  <summary>Day and session details</summary>
+  <div class="workspace-landing">
+    <section class="card workspace-card" aria-label="Business day">
+      <h2>Business day</h2>
+      <% if @business_day.blank? %>
+        <p class="muted">No business day is open.</p>
       <% else %>
         <p>
-          Device <strong><%= @open_session.pos_device.name %></strong>
-          <% if @open_session.cash_drawer.present? %>
-            <br>Drawer <strong><%= @open_session.cash_drawer.name %></strong>
-          <% else %>
-            <br><span class="muted">Card-only (no drawer)</span>
-          <% end %>
+          Open since <strong><%= formatted_datetime(@business_day.opened_at, format: :short) %></strong>
+          <br><span class="muted">Reporting date <%= @business_day.reporting_date %></span>
         </p>
-        <% if Current.user.can?("pos.session.close", store: Current.store) %>
+        <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
           <div class="action-group">
-            <% if @open_session.cash_enabled? %>
-              <%= link_to "Close session", close_form_pos_session_path(@open_session), class: "button button-small button-outline" %>
-            <% else %>
-              <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
-            <% end %>
+            <%= button_to "Close business day", close_business_day_path(@business_day), class: "button button-small button-outline" %>
           </div>
         <% end %>
       <% end %>
     </section>
-  <% end %>
 
-  <%# Primary action: current / new sale %>
-  <% if @open_session.present? %>
-    <section class="card workspace-card" aria-label="Sale">
-      <h2>Sale</h2>
-      <% if @open_transaction.present? %>
-        <p class="muted">A transaction is in progress.</p>
-        <div class="action-group">
-          <%= link_to "Continue current transaction", pos_transaction_path(@open_transaction), class: "button button-primary" %>
-        </div>
-      <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
-        <p class="muted">Start ringing up a new customer.</p>
-        <div class="action-group">
-          <%= button_to "New sale", pos_transactions_path, class: "button button-primary" %>
-        </div>
-      <% end %>
-    </section>
-  <% end %>
-</div>
+    <% if @business_day.present? %>
+      <section class="card workspace-card" aria-label="POS session">
+        <h2>Session</h2>
+        <% if @open_session.blank? %>
+          <p class="muted">No open POS session.</p>
+        <% else %>
+          <p>
+            Device <strong><%= @open_session.pos_device.name %></strong>
+            <% if @open_session.cash_drawer.present? %>
+              <br>Drawer <strong><%= @open_session.cash_drawer.name %></strong>
+            <% else %>
+              <br><span class="muted">Card-only (no drawer)</span>
+            <% end %>
+          </p>
+          <% if Current.user.can?("pos.session.close", store: Current.store) %>
+            <div class="action-group">
+              <% if @open_session.cash_enabled? %>
+                <%= link_to "Close session", close_form_pos_session_path(@open_session), class: "button button-small button-outline" %>
+              <% else %>
+                <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
+              <% end %>
+            </div>
+          <% end %>
+        <% end %>
+      </section>
+    <% end %>
+  </div>
+</details>
 
-<%# Cash movements — behind a disclosure to keep the landing scannable %>
 <% if @open_session.present? && Current.user.can?("pos.cash_movement.create", store: Current.store) %>
   <details class="pos-panel">
     <summary>Cash movements</summary>
@@ -127,17 +141,12 @@
         <%= form.submit "Record cash movement", class: "button button-outline" %>
       </div>
     <% end %>
-    <p class="field-hint">
-      Additional float needs only an amount. Paid in, paid out, and safe drop require a reference.
-      Paid in/out also require approval when the amount exceeds your paid-out authority.
-    </p>
   </details>
 <% end %>
 
-<%# Suspended queue %>
 <% if @open_session.present? %>
-  <section class="pos-panel" aria-label="Suspended transactions">
-    <h2>Suspended transactions</h2>
+  <details class="pos-panel" <%= "open" if @suspended_transactions.any? %>>
+    <summary>Suspended transactions (<%= @suspended_transactions.size %>)</summary>
     <% if @suspended_transactions.empty? %>
       <p class="muted">None.</p>
     <% else %>
@@ -154,7 +163,7 @@
             <% @suspended_transactions.each do |transaction| %>
               <tr>
                 <td><%= link_to transaction.public_id, pos_transaction_path(transaction) %></td>
-                <td><%= transaction.suspended_at&.strftime("%Y-%m-%d %H:%M") %></td>
+                <td><%= formatted_datetime(transaction.suspended_at, format: :short) %></td>
                 <td>
                   <% if Current.user.can?("pos.transaction.recall", store: Current.store) %>
                     <%= button_to "Recall", recall_pos_transaction_path(transaction), class: "button button-small button-outline" %>
@@ -166,5 +175,5 @@
         </table>
       </div>
     <% end %>
-  </section>
+  </details>
 <% end %>

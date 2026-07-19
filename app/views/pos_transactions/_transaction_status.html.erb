@@ -2,7 +2,7 @@
   <div class="ss-alert ss-alert-info" role="status">
     <p>
       <strong>Receipt <%= @pos_transaction.receipt_number %></strong> ·
-      completed <%= @pos_transaction.completed_at&.strftime("%Y-%m-%d %H:%M") %> ·
+      completed <%= formatted_datetime(@pos_transaction.completed_at, format: :short) %> ·
       net <%= pos_money(@pos_transaction.net_total_cents) %>
     </p>
   </div>

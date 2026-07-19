@@ -16,6 +16,7 @@ module Administration
     def call
       ActiveRecord::Base.transaction do
         @user.password_changed_at ||= Time.current if @user.password.present?
+        @user.pin_changed_at ||= Time.current if @user.pin.present?
         @user.save!
 
         metadata = {
@@ -23,6 +24,8 @@ module Administration
           "after" => ChangeMetadata.snapshot(@user, TRACKED_ATTRIBUTES)
         }
         metadata["password_changed"] = true if @user.password.present?
+        metadata["pin_changed"] = true if @user.pin.present?
+        metadata["pin_action"] = "set" if @user.pin.present?
 
         RecordAuditEvent.call(
           actor: @actor,

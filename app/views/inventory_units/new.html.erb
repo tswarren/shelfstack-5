@@ -12,7 +12,7 @@
       <div class="field">
         <%= form.label :product_variant_id, "Variant", class: "field-label" %>
         <%= form.select :product_variant_id,
-              @variants.map { |v| [ "#{v.sku} — #{v.name}", v.id ] }, include_blank: true %>
+              @variants.map { |v| [ variant_option_label(v, include_tracking: true), v.id ] }, include_blank: true %>
         <p class="field-hint">Only individually tracked variants are eligible.</p>
       </div>
       <div class="field">

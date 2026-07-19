@@ -26,8 +26,11 @@
         <span>Signed in as <strong><%= Current.user.username %></strong></span>
         <% show_switch = effective_memberships_for(Current.user).many? %>
         <% if mode == :pos %>
-          <%# Store switch is suppressed during an active transaction (PR 2 enforces fully). %>
+          <%= link_to "Main workspace", root_path, class: "button button-small button-outline" %>
           <% active_txn = local_assigns[:active_transaction] %>
+          <% if active_txn %>
+            <span class="status-badge status-badge-warning" title="Open transaction">Open transaction</span>
+          <% end %>
           <% if show_switch && !active_txn %>
             <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-outline" %>
           <% end %>
