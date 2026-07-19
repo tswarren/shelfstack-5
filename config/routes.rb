@@ -39,6 +39,7 @@ Rails.application.routes.draw do
       post :release
     end
   end
+  resources :inventory_units, only: %i[index show new create]
 
   get "register", to: "register#show", as: :register
 

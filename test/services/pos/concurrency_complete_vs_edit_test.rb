@@ -21,6 +21,8 @@ module Pos
       PosSession.delete_all
       BusinessDay.delete_all
       InventoryLedgerEntry.delete_all
+      InventoryAdjustmentLine.delete_all
+      InventoryAdjustment.delete_all
       InventoryReservation.delete_all
       StockBalance.delete_all
 
@@ -60,6 +62,8 @@ module Pos
       PosSession.delete_all
       BusinessDay.delete_all
       InventoryLedgerEntry.delete_all
+      InventoryAdjustmentLine.delete_all
+      InventoryAdjustment.delete_all
       InventoryReservation.delete_all
       StockBalance.delete_all
       # Not transactional (see above); a successful race leaves the shared store

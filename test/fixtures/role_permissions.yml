@@ -226,6 +226,10 @@ admin_pos_receipt_reprint:
   role: administrator
   permission: pos_receipt_reprint
 
+admin_inventory_unit_manage:
+  role: administrator
+  permission: inventory_unit_manage
+
 clerk_pos_access:
   role: associate
   permission: pos_access

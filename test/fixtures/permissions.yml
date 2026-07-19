@@ -339,3 +339,9 @@ pos_receipt_reprint:
   name: Reprint receipts
   permission_group: pos
   active: true
+
+inventory_unit_manage:
+  code: inventory.unit.manage
+  name: Create/manage inventory units
+  permission_group: inventory
+  active: true

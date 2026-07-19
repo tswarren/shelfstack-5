@@ -15,8 +15,8 @@ module Pos
   # side effects; a completed Transaction may not be completed again under a
   # different key.
   #
-  # Individual-unit and Stored-Value posting are out of scope (Phase 4d/6);
-  # Product-line tracking modes `quantity` and `none` only (phase-04 4c scope).
+  # Product-line tracking modes `quantity`, `individual` (Phase 4d), and `none`
+  # are in scope; Stored-Value posting remains out of scope (Phase 6).
   class CompleteTransaction < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_transaction, :success?, :error, :warnings, :replayed)
@@ -63,7 +63,7 @@ module Pos
 
         warnings = recalculation.warnings.dup
         lines.each do |line|
-          next unless quantity_tracked_product_line?(line)
+          next unless inventory_tracked_product_line?(line)
 
           conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
           raise Error, conversion.error unless conversion.success?
@@ -107,8 +107,9 @@ module Pos
 
     private
 
-    def quantity_tracked_product_line?(line)
-      line.line_kind == "product" && line.product_variant.inventory_tracking_mode == "quantity"
+    def inventory_tracked_product_line?(line)
+      line.line_kind == "product" &&
+        %w[quantity individual].include?(line.product_variant.inventory_tracking_mode)
     end
 
     # Domain: "Completion blocks when the resolved Department on a contributing

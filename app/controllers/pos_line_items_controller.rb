@@ -89,6 +89,7 @@ class PosLineItemsController < ApplicationController
       pos_transaction: @pos_transaction,
       product_variant: resolved.variant,
       quantity: params[:quantity].presence || 1,
+      inventory_unit: resolved.inventory_unit,
       actor: Current.user
     )
     if result.success?

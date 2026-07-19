@@ -21,6 +21,9 @@
     <% if Current.user.can?("inventory.reservation.view", store: Current.store) %>
       <li><%= link_to "Reservations", inventory_reservations_path %></li>
     <% end %>
+    <% if Current.user.can?("inventory.unit.manage", store: Current.store) %>
+      <li><%= link_to "Inventory units", inventory_units_path %></li>
+    <% end %>
     <% if Current.user.can?("classification.view", store: Current.store) %>
       <li><%= link_to "Inventory adjustment reasons", inventory_adjustment_reasons_path %></li>
     <% end %>

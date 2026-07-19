@@ -12,6 +12,7 @@ class Store < ApplicationRecord
   has_many :stock_balances, dependent: :restrict_with_exception
   has_many :inventory_ledger_entries, dependent: :restrict_with_exception
   has_many :inventory_reservations, dependent: :restrict_with_exception
+  has_many :inventory_units, dependent: :restrict_with_exception
   has_many :inventory_adjustments, dependent: :restrict_with_exception
   has_many :business_days, dependent: :restrict_with_exception
   has_many :pos_sessions, dependent: :restrict_with_exception

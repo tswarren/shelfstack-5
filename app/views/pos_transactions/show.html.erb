@@ -70,9 +70,14 @@
     <% @pos_line_items.each do |line| %>
       <tr>
         <td><%= line.line_kind %></td>
-        <td><%= line.effective_description %></td>
         <td>
-          <% if @pos_transaction.editable? %>
+          <%= line.effective_description %>
+          <% if line.inventory_unit.present? %>
+            <br><span class="muted">Unit <%= line.inventory_unit.unit_identifier %></span>
+          <% end %>
+        </td>
+        <td>
+          <% if @pos_transaction.editable? && line.inventory_unit.blank? %>
             <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch do |form| %>
               <%= form.number_field :quantity, value: line.quantity, min: 1, style: "width:4em" %>
               <%= form.submit "Update", class: "button button-small button-outline" %>

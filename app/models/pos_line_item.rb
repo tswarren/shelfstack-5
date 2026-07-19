@@ -6,6 +6,7 @@ class PosLineItem < ApplicationRecord
 
   belongs_to :pos_transaction
   belongs_to :product_variant, optional: true
+  belongs_to :inventory_unit, optional: true
   belongs_to :department
   belongs_to :tax_category, optional: true
   belongs_to :original_tax_category, class_name: "TaxCategory", optional: true
@@ -23,6 +24,7 @@ class PosLineItem < ApplicationRecord
   validate :open_ring_forbids_variant
   validate :open_ring_requires_description_snapshot
   validate :department_is_postable
+  validate :individual_line_requires_unit
 
   scope :pending, -> { where(status: "pending") }
 
@@ -86,5 +88,20 @@ class PosLineItem < ApplicationRecord
     return if department.postable?
 
     errors.add(:department, "must be postable")
+  end
+
+  def individual_line_requires_unit
+    return unless line_kind == "product"
+    return if product_variant.blank?
+
+    if product_variant.inventory_tracking_mode == "individual"
+      if inventory_unit.blank?
+        errors.add(:inventory_unit, "is required for individually tracked lines")
+      elsif inventory_unit.product_variant_id != product_variant_id
+        errors.add(:inventory_unit, "must match the line's product variant")
+      end
+    elsif inventory_unit.present?
+      errors.add(:inventory_unit, "must be blank unless the variant is individually tracked")
+    end
   end
 end

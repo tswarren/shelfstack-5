@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -251,6 +251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
   create_table "inventory_reservations", force: :cascade do |t|
     t.datetime "converted_at"
     t.datetime "created_at", null: false
+    t.bigint "inventory_unit_id"
     t.bigint "product_variant_id", null: false
     t.integer "quantity", null: false
     t.text "release_reason"
@@ -262,14 +263,49 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
     t.string "status", default: "active", null: false
     t.bigint "store_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["inventory_unit_id"], name: "index_inv_reservations_active_unit_unique", unique: true, where: "((status)::text = 'active'::text)"
+    t.index ["inventory_unit_id"], name: "index_inventory_reservations_on_inventory_unit_id"
     t.index ["product_variant_id"], name: "index_inventory_reservations_on_product_variant_id"
     t.index ["released_by_user_id"], name: "index_inventory_reservations_on_released_by_user_id"
     t.index ["store_id", "product_variant_id", "source_type", "source_id"], name: "index_inv_reservations_active_source_unique", unique: true, where: "((status)::text = 'active'::text)"
     t.index ["store_id", "product_variant_id", "status"], name: "idx_on_store_id_product_variant_id_status_6ca347337e"
     t.index ["store_id"], name: "index_inventory_reservations_on_store_id"
+    t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "inv_reservations_unit_quantity_one"
     t.check_constraint "quantity > 0", name: "inv_reservations_quantity_positive"
     t.check_constraint "source_type::text = ANY (ARRAY['pos_line_item'::character varying, 'product_request'::character varying]::text[])", name: "inv_reservations_source_type"
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying, 'released'::character varying, 'converted'::character varying]::text[])", name: "inv_reservations_status"
+  end
+
+  create_table "inventory_units", force: :cascade do |t|
+    t.datetime "acquired_at", null: false
+    t.integer "acquisition_cost_cents"
+    t.bigint "acquisition_source_id"
+    t.string "acquisition_source_type"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.string "description"
+    t.text "internal_notes"
+    t.bigint "product_condition_id"
+    t.bigint "product_variant_id", null: false
+    t.datetime "sold_at"
+    t.bigint "sold_pos_line_item_id"
+    t.string "status", default: "available", null: false
+    t.bigint "store_id", null: false
+    t.string "unit_identifier", null: false
+    t.integer "unit_price_cents"
+    t.datetime "updated_at", null: false
+    t.index ["acquisition_source_type", "acquisition_source_id"], name: "idx_on_acquisition_source_type_acquisition_source_i_d5d02d1bb1"
+    t.index ["created_by_user_id"], name: "index_inventory_units_on_created_by_user_id"
+    t.index ["product_condition_id"], name: "index_inventory_units_on_product_condition_id"
+    t.index ["product_variant_id"], name: "index_inventory_units_on_product_variant_id"
+    t.index ["sold_pos_line_item_id"], name: "index_inventory_units_on_sold_pos_line_item_id"
+    t.index ["store_id", "product_variant_id", "status"], name: "idx_on_store_id_product_variant_id_status_93e8b8db14"
+    t.index ["store_id"], name: "index_inventory_units_on_store_id"
+    t.index ["unit_identifier"], name: "index_inventory_units_on_unit_identifier", unique: true
+    t.check_constraint "acquisition_cost_cents IS NULL OR acquisition_cost_cents >= 0", name: "inventory_units_acquisition_cost_non_negative"
+    t.check_constraint "acquisition_source_type IS NULL OR (acquisition_source_type::text = ANY (ARRAY['receipt_line'::character varying, 'return_line'::character varying, 'buyback'::character varying, 'adjustment'::character varying, 'other'::character varying]::text[]))", name: "inventory_units_acquisition_source_type_check"
+    t.check_constraint "status::text = ANY (ARRAY['available'::character varying, 'reserved'::character varying, 'sold'::character varying, 'inspection'::character varying, 'damaged'::character varying, 'discarded'::character varying, 'rtv'::character varying, 'in_transfer'::character varying]::text[])", name: "inventory_units_status_check"
+    t.check_constraint "unit_price_cents IS NULL OR unit_price_cents >= 0", name: "inventory_units_unit_price_non_negative"
   end
 
   create_table "merchandise_classes", force: :cascade do |t|
@@ -454,6 +490,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
     t.bigint "created_by_user_id", null: false
     t.bigint "department_id", null: false
     t.string "description_snapshot"
+    t.bigint "inventory_unit_id"
     t.string "line_kind", null: false
     t.bigint "original_tax_category_id"
     t.bigint "pos_transaction_id", null: false
@@ -472,6 +509,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
     t.datetime "updated_at", null: false
     t.index ["created_by_user_id"], name: "index_pos_line_items_on_created_by_user_id"
     t.index ["department_id"], name: "index_pos_line_items_on_department_id"
+    t.index ["inventory_unit_id"], name: "index_pos_line_items_on_inventory_unit_id"
     t.index ["original_tax_category_id"], name: "index_pos_line_items_on_original_tax_category_id"
     t.index ["pos_transaction_id"], name: "index_pos_line_items_on_pos_transaction_id"
     t.index ["product_variant_id"], name: "index_pos_line_items_on_product_variant_id"
@@ -482,6 +520,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
     t.check_constraint "cost_method_snapshot IS NULL OR (cost_method_snapshot::text = ANY (ARRAY['explicit'::character varying, 'configured_estimate'::character varying, 'moving_average'::character varying, 'last_known'::character varying, 'unknown'::character varying]::text[]))", name: "pos_line_items_cost_method_snapshot_check"
     t.check_constraint "cost_quality_snapshot IS NULL OR (cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[]))", name: "pos_line_items_cost_quality_snapshot_check"
     t.check_constraint "cost_unit_cost_cents IS NULL OR cost_unit_cost_cents >= 0", name: "pos_line_items_cost_unit_cost_non_negative"
+    t.check_constraint "inventory_unit_id IS NULL OR line_kind::text = 'product'::text", name: "pos_line_items_unit_matches_kind"
+    t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "pos_line_items_unit_quantity_one"
     t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL", name: "pos_line_items_product_variant_matches_kind"
     t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying, 'open_ring'::character varying]::text[])", name: "pos_line_items_line_kind_check"
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
@@ -974,9 +1014,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
   add_foreign_key "inventory_ledger_entries", "product_variants", on_delete: :restrict
   add_foreign_key "inventory_ledger_entries", "stores", on_delete: :restrict
   add_foreign_key "inventory_ledger_entries", "users", column: "posted_by_user_id", on_delete: :restrict
+  add_foreign_key "inventory_reservations", "inventory_units", on_delete: :restrict
   add_foreign_key "inventory_reservations", "product_variants", on_delete: :restrict
   add_foreign_key "inventory_reservations", "stores", on_delete: :restrict
   add_foreign_key "inventory_reservations", "users", column: "released_by_user_id", on_delete: :restrict
+  add_foreign_key "inventory_units", "pos_line_items", column: "sold_pos_line_item_id", on_delete: :restrict
+  add_foreign_key "inventory_units", "product_conditions", on_delete: :restrict
+  add_foreign_key "inventory_units", "product_variants", on_delete: :restrict
+  add_foreign_key "inventory_units", "stores", on_delete: :restrict
+  add_foreign_key "inventory_units", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "merchandise_classes", "departments", column: "default_department_id"
   add_foreign_key "merchandise_classes", "departments", column: "default_used_department_id"
   add_foreign_key "merchandise_classes", "merchandise_classes", column: "parent_id"
@@ -1006,6 +1052,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_070000) do
   add_foreign_key "pos_line_item_taxes", "store_tax_rules", on_delete: :restrict
   add_foreign_key "pos_line_item_taxes", "tax_categories", on_delete: :restrict
   add_foreign_key "pos_line_items", "departments", on_delete: :restrict
+  add_foreign_key "pos_line_items", "inventory_units", on_delete: :restrict
   add_foreign_key "pos_line_items", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_line_items", "product_variants", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", column: "original_tax_category_id", on_delete: :restrict

@@ -149,6 +149,23 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - `Pos::CompleteTransaction` scope matches phase-04: Product-line tracking modes `quantity` and `none` only; individual units and Stored Value are out of scope (4d/6). Departments are re-checked (`active?`/`postable?`) directly off the persisted Line at completion, independent of `Catalog::SaleEligibility`, since a Department can be deactivated after a Line was added.
 - Receipt Number format (v1, not architecturally locked beyond OD-002's sequence ownership): `"#{store.code}-#{receipt_sequence.to_s.rjust(6, '0')}"`.
 
+## Phase 4d — Individually tracked inventory
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Inventory::CreateInventoryUnit` | Receiving and Inventory | 4d | Yes | No | `identifier_sequences` row via `Identifiers::Generate`; requires `inventory.unit.manage` | Store, variant, actor, acquisition cost, optional condition/price/acquisition source type+id/description/internal notes | Persisted `InventoryUnit` (`available`, generated `27` identifier) + audit; bootstrap mechanism parallel to Phase 3's opening-inventory-adjustment, since receiving is not implemented until Phase 5 |
+| `Inventory::Reserve` (individual branch) | Receiving and Inventory | 4d | Yes | Yes (unit status is the single source of truth) | `InventoryUnit` (`lock!`) | Store, variant, quantity (always 1), source, `inventory_unit` | Active reservation on the exact unit; unit `status: reserved`; fails safely (no oversell) when the unit is not `available` |
+| `Inventory::ReleaseReservation` (individual branch) | Receiving and Inventory | 4d | Yes | Yes | `InventoryUnit` (`lock!`) + Reservation | Reservation | Released reservation; unit `status: available` |
+| `Inventory::ConvertReservation` (individual branch) | Receiving and Inventory | 4d | Yes | Yes (reservation-status replay) | `InventoryUnit` (`lock`), then Reservation | POS line (with `inventory_unit_id`), posted-by actor | Unit `status: sold` + `sold_at` + `sold_pos_line_item_id`; Reservation `converted`; line cost snapshot set from the unit's exact `acquisition_cost_cents` (`cost_method_snapshot: "explicit"`) |
+| `Pos::AddLine` (individual branch) | Point of Sale | 4d | Yes | No | Reservation via `Inventory::Reserve` | Transaction, variant, `inventory_unit`, actor | Pending product line pinned to the exact unit (`quantity: 1`, `inventory_unit_id` set); rejects a missing/already-reserved unit instead of falling back to aggregate stock |
+
+### Phase 4d notes
+
+- `InventoryUnit#status` (`available` / `reserved` / `sold`) is authoritative; `Inventory::Reserve` locks the unit row and rechecks `available?` after acquiring the lock, so two concurrent reservation attempts for the same unit always leave exactly one winner and one safe failure (`test/services/inventory/concurrency_reserve_unit_test.rb`).
+- Unlike quantity-tracked lines, an individually tracked line always reserves quantity `1` against one exact unit; `Pos::UpdateLineQty` rejects any quantity change on a unit-backed line rather than trying to re-resolve a different unit.
+- `Pos::ResolveScan` resolves a scanned generated `27` identifier directly to its `InventoryUnit` (and from there to its variant), ahead of the ordinary product/variant lookup path.
+- `inventory.unit.manage` gates direct unit creation (`InventoryUnitsController`); there is no receiving workflow yet (Phase 5), so this remains the only creation path.
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:

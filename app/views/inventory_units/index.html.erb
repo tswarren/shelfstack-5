@@ -1,0 +1,23 @@
+<h1>Inventory units</h1>
+<p><%= link_to "New unit", new_inventory_unit_path %></p>
+<table>
+  <thead>
+    <tr>
+      <th>Unit identifier</th>
+      <th>Variant</th>
+      <th>Status</th>
+      <th>Acquisition cost</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @inventory_units.each do |unit| %>
+      <tr>
+        <td><%= link_to unit.unit_identifier, unit %></td>
+        <td><%= unit.product_variant.sku %> — <%= unit.product_variant.name %></td>
+        <td><%= unit.status %></td>
+        <td><%= unit.acquisition_cost_cents.nil? ? "—" : inventory_money(unit.acquisition_cost_cents) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+<p><%= link_to "Home", root_path %></p>

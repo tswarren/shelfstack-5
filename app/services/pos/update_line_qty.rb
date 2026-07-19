@@ -15,6 +15,9 @@ module Pos
       raise Error, "quantity must be positive" unless @quantity.positive?
       raise Error, "line is not pending" unless @pos_line_item.pending?
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
+      if individually_tracked?(@pos_line_item)
+        raise Error, "quantity is fixed at 1 for individually tracked lines"
+      end
 
       warnings = []
 
@@ -46,6 +49,12 @@ module Pos
       end
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_line_item: nil, success?: false, error: e.message, warnings: [])
+    end
+
+    private
+
+    def individually_tracked?(line)
+      line.line_kind == "product" && line.product_variant&.inventory_tracking_mode == "individual"
     end
   end
 end
