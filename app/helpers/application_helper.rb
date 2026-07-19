@@ -13,13 +13,13 @@ module ApplicationHelper
   end
 
   def nav_section(title, &block)
-    items = capture(&block)
-    return "".html_safe unless items.to_s.include?("nav-item")
+    items = capture(&block).to_s
+    return "".html_safe unless items.include?("nav-item")
 
     tag.div(class: "nav-section") do
       safe_join([
         tag.h2(title, class: "nav-section-title"),
-        tag.ul(items, class: "nav-section-list")
+        tag.ul(items.html_safe, class: "nav-section-list")
       ])
     end
   end
@@ -28,11 +28,10 @@ module ApplicationHelper
     return "".html_safe if permission_key.present? && !nav_permitted?(permission_key)
 
     active = nav_item_active?(path, match)
-    classes = [ "nav-item", ("is-active" if active) ].compact.join(" ")
-    opts = { class: classes }
-    opts[:"aria-current"] = "page" if active
+    link_opts = { class: [ "nav-item", ("is-active" if active) ].compact.join(" ") }
+    link_opts[:"aria-current"] = "page" if active
 
-    tag.li(link_to(label, path, opts))
+    tag.li(link_to(label, path, link_opts))
   end
 
   def status_badge(text, variant: :neutral)
@@ -186,6 +185,23 @@ module ApplicationHelper
       ids << field_error_id(object_name, method)
     end
     ids.presence&.join(" ")
+  end
+
+  # Propshaft serves each CSS file with a digest. Link the ShelfStack sheets
+  # explicitly — bare `@import` paths in application.css 404 in the browser.
+  def shelfstack_stylesheet_tags
+    stylesheet_link_tag(
+      "shelfstack/tokens",
+      "shelfstack/base",
+      "shelfstack/shell",
+      "shelfstack/components",
+      "shelfstack/forms",
+      "shelfstack/tables",
+      "shelfstack/patterns",
+      "shelfstack/pos",
+      "application",
+      "data-turbo-track": "reload"
+    )
   end
 
   private
