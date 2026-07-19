@@ -38,7 +38,7 @@ superseded
 | OD-011 | Identifier generation sequence ownership | accepted | Phase 2 | Catalog | Installation-singleton `identifier_sequences` (namespaces `21`/`27`/`28`/`29`); INV-ORG-001. Issue [#14](https://github.com/tswarren/shelfstack-5/issues/14) |
 | OD-012 | Parent/reporting-only departments (`postable = false`) in first release | accepted | Phase 2 | Classification | Hierarchical departments with `postable`; reporting-only parents in scope |
 | OD-013 | Storage and precedence of role and store authority defaults | deferred | Phase 4b | Organization / Authorization | See [OD-013 notes](#od-013-role-and-store-authority-defaults) |
-| OD-014 | Negative-inventory deficit allocation and settlement representation | open | Phase 4c / Phase 5 | Inventory / Reporting | See [OD-014 notes](#od-014-negative-inventory-deficit-allocation); ADR-0013 accepted with open details |
+| OD-014 | Negative-inventory deficit allocation and settlement representation | accepted | Phase 4c / Phase 5 | Inventory / Reporting | [Phase 4c interim](#od-014-negative-inventory-deficit-allocation); settlement/variance tables remain Phase 5 open detail |
 
 ## OD-013 role and store authority defaults
 
@@ -76,26 +76,32 @@ Quantity may sell negative after warning ([architectural-locks](architectural-lo
 
 ## OD-014 — negative-inventory deficit allocation
 
-**Status:** open  
+**Status:** accepted (Phase 4c interim); settlement tables remain open for Phase 5  
 **Needed by:** Phase 4c / Phase 5  
 **Governing area:** Inventory / Reporting  
 **Related:** [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md), [inventory cost schema design note](design-notes/inventory-costing/inventory_cost_schema_design_note.md)
 
 ADR-0013 and the closed portion of OD-003 settle positive moving average, zero/negative **asset** treatment, opening inventory, quantity-only and cost-correction kinds, unknown versus zero, and immutable historical costs.
 
-They deliberately leave unresolved how provisional deficit cost is allocated when incoming supply settles negative On Hand. Different algorithms produce different variance timing and Department attribution.
+### Phase 4c accepted interim (sale posting)
 
-### Must resolve
+For quantity-tracked sales that create or increase negative On Hand:
+
+1. **No settlement/variance tables in Phase 4c.** Explicit outcome: introduce **zero** new deficit-settlement tables for the first completed-sale milestone.
+2. Outbound sale movements carry **provisional unit cost** from the best available rate (`moving_average` / `last_known` when positive history exists); otherwise cost quality is `unknown`. Confirmed zero remains distinct from unknown.
+3. When On Hand ≤ 0 after the sale, **positive inventory asset value remains zero** (ADR-0013). Provisional deficit cost may be recorded on the outbound ledger/sale snapshot for later settlement; it is not a negative inventory asset.
+4. Completed POS cost snapshots remain immutable when later supply arrives.
+5. Incoming Receipt settlement that allocates provisional deficit cost and records monetary variances is **Phase 5** work and must not rewrite completed sale snapshots.
+
+### Still open for Phase 5 (settlement representation)
 
 - aggregate proportional deficit pool versus origin-based settlement;
 - allocation order (if origin-based);
-- partial settlement;
-- exact settlement to zero;
+- partial settlement and exact settlement to zero;
 - incoming stock crossing into positive after deficit settlement;
 - Department attribution for variances;
 - unknown provisional cost and/or unknown settling cost;
-- whether settlement allocations and monetary variances are separate record types;
-- when variance/settlement tables are introduced relative to Phase 4c and Phase 5.
+- whether settlement allocations and monetary variances are separate record types.
 
 ### Non-goals
 

@@ -63,7 +63,7 @@ Ledger entries retain at minimum:
 
 **Quantity-tracked costing (ADR-0013):** Positive On Hand uses moving weighted average over aggregate inventory value. Zero or negative On Hand carries no positive inventory asset value. Opening, quantity-only, and cost-correction kinds remain as locked above. Missing cost differs from confirmed zero. Completed cost snapshots are immutable.
 
-**Deficit allocation:** open as [OD-014](open-decisions.md); required before Phase 4c/5 negative-sale settlement and Receipt deficit settlement produce different attributable variances. Phase 3 keeps asset value at zero when On Hand ≤ 0 without implementing full provisional-deficit reconciliation.
+**Deficit allocation (OD-014):** Phase 4c interim accepted — provisional outbound cost on negative-sale posting; **no settlement/variance tables** until Phase 5 Receipt settlement. Asset value remains zero when On Hand ≤ 0. See [open-decisions.md](open-decisions.md#od-014-negative-inventory-deficit-allocation).
 
 ## Tax before Phase 4b
 
