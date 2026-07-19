@@ -3,29 +3,22 @@
   <head>
     <title><%= content_for?(:title) ? "#{content_for(:title)} · ShelfStack" : "ShelfStack" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="ShelfStack">
-    <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= yield :head %>
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="layout-application" data-controller="sidebar">
+  <body class="layout-authentication">
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <%= render "shared/app_header", mode: :back_office %>
-    <div class="app-shell">
-      <%= render "shared/sidebar" %>
-      <div class="app-shell-main">
-        <div class="app-main" id="main-content" tabindex="-1">
-          <%= render "shared/flash_messages" %>
-          <%= yield %>
-        </div>
+    <main class="auth-main" id="main-content" tabindex="-1">
+      <div class="auth-card">
+        <p class="auth-brand">ShelfStack</p>
+        <%= render "shared/flash_messages" %>
+        <%= yield %>
       </div>
-    </div>
+    </main>
   </body>
 </html>

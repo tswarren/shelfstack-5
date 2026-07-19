@@ -1,0 +1,9 @@
+<%# locals: rows: [[label, value], ...] %>
+<dl class="definition-grid record-summary">
+  <% rows.each do |label, value| %>
+    <div class="definition-item">
+      <dt><%= label %></dt>
+      <dd><%= value %></dd>
+    </div>
+  <% end %>
+</dl>

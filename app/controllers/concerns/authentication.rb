@@ -66,6 +66,23 @@ module Authentication
     Current.user = user
     Current.store = membership.store
     Current.organization = membership.store.organization
+    Current.store_membership = membership
+    Current.permission_codes = preload_permission_codes(membership)
+  end
+
+  # One query for the active permission codes granted by the membership role.
+  # Sidebar helpers use Current.permission? — not repeated EvaluatePermission calls.
+  def preload_permission_codes(membership)
+    return Set.new if membership.blank?
+
+    role = membership.role
+    return Set.new unless role&.active?
+
+    Permission
+      .joins(:role_permissions)
+      .where(role_permissions: { role_id: role.id }, active: true)
+      .pluck(:code)
+      .to_set
   end
 
   def effective_membership_for(user, store_id)

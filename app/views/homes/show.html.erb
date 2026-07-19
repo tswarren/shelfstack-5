@@ -1,67 +1,38 @@
 <% content_for :title, "Home" %>
 
-<h1>Home</h1>
-<p class="muted">Workspace for <%= Current.store.name %>.</p>
+<%= render "shared/page_header", title: "Home", subtitle: "Workspace for #{Current.store.name}." %>
 
-<nav aria-label="Primary">
-  <ul>
-    <% if Current.user.can?("pos.access", store: Current.store) %>
-      <li><%= link_to "Register", register_path %></li>
-    <% end %>
-    <% if Current.user.can?("pos.access", store: Current.store) %>
-      <li><%= link_to "Business days", business_days_path %></li>
-    <% end %>
-    <% if Current.user.can?("catalog.product.view", store: Current.store) %>
-      <li><%= link_to "Products", products_path %></li>
-    <% end %>
-    <% if Current.user.can?("inventory.stock.view", store: Current.store) %>
-      <li><%= link_to "Stock", stock_balances_path %></li>
-      <li><%= link_to "Inventory adjustments", inventory_adjustments_path %></li>
-    <% end %>
-    <% if Current.user.can?("inventory.reservation.view", store: Current.store) %>
-      <li><%= link_to "Reservations", inventory_reservations_path %></li>
-    <% end %>
-    <% if Current.user.can?("inventory.unit.manage", store: Current.store) %>
-      <li><%= link_to "Inventory units", inventory_units_path %></li>
-    <% end %>
-    <% if Current.user.can?("classification.view", store: Current.store) %>
-      <li><%= link_to "Inventory adjustment reasons", inventory_adjustment_reasons_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.store.view", store: Current.store) %>
-      <li><%= link_to "Stores", stores_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.user.view", store: Current.store) %>
-      <li><%= link_to "Users", users_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.role.manage", store: Current.store) %>
-      <li><%= link_to "Roles", roles_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.store.view", store: Current.store) %>
-      <li><%= link_to "Permissions", permissions_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.audit.view", store: Current.store) %>
-      <li><%= link_to "Audit", administrative_audit_events_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.membership.manage", store: Current.store) %>
-      <li><%= link_to "Memberships", store_memberships_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.device.manage", store: Current.store) %>
-      <li><%= link_to "Devices", pos_devices_path %></li>
-    <% end %>
-    <% if Current.user.can?("administration.drawer.manage", store: Current.store) %>
-      <li><%= link_to "Drawers", cash_drawers_path %></li>
-    <% end %>
-    <% if Current.user.can?("classification.view", store: Current.store) %>
-      <li><%= link_to "Tax categories", tax_categories_path %></li>
-      <li><%= link_to "Store tax rates", store_tax_rates_path %></li>
-      <li><%= link_to "Store tax rules", store_tax_rules_path %></li>
-      <li><%= link_to "Return policies", return_policies_path %></li>
-      <li><%= link_to "Return reasons", return_reasons_path %></li>
-      <li><%= link_to "Discount reasons", discount_reasons_path %></li>
-      <li><%= link_to "Departments", departments_path %></li>
-      <li><%= link_to "Merchandise classes", merchandise_classes_path %></li>
-      <li><%= link_to "Product formats", product_formats_path %></li>
-      <li><%= link_to "Product conditions", product_conditions_path %></li>
-    <% end %>
-  </ul>
-</nav>
+<div class="workspace-landing">
+  <% if nav_permitted?("pos.access") %>
+    <section class="card workspace-card">
+      <h2>Register</h2>
+      <p class="muted">Open the register, manage the business day and session, and run sales.</p>
+      <div class="page-actions">
+        <%= link_to "Go to register", register_path, class: "button button-primary" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if nav_permitted?("catalog.product.view") %>
+    <section class="card workspace-card">
+      <h2>Catalog</h2>
+      <p class="muted">Find and maintain products and variants.</p>
+      <div class="page-actions">
+        <%= link_to "Products", products_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if nav_permitted?("inventory.stock.view") %>
+    <section class="card workspace-card">
+      <h2>Inventory</h2>
+      <p class="muted">Review stock balances and post adjustments.</p>
+      <div class="page-actions">
+        <%= link_to "Stock", stock_balances_path, class: "button button-outline" %>
+        <%= link_to "Adjustments", inventory_adjustments_path, class: "button button-ghost" %>
+      </div>
+    </section>
+  <% end %>
+</div>
+
+<p class="muted">Use the sidebar for configuration and administration.</p>

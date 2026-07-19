@@ -89,26 +89,25 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 - Only inventory movements posted through ledger services change `on_hand`.
 - Do not invent deferred workflows (see [deferred-capabilities.md](deferred-capabilities.md)).
 - Tests scale with risk: concurrency and idempotency required for inventory, money, and completion.
-- UI/UX is a cross-cutting responsibility ([../design/](../design/README.md)): a short readiness gate precedes Phase 4a; POS UI and transaction semantics develop together; broader consolidation is planned for Phase 5. Mockups are a north star, not business-logic contracts.
+- UI/UX is a cross-cutting responsibility ([../design/](../design/README.md)): mockups are a north star, not business-logic contracts. The **UX Baseline Gate** (Phase 4f) must complete before Phase 5 so new screens inherit shared shell, form, table, and page patterns.
 
 ## Near-term cadence
 
-Completed: Phases 0–3; Phase 4a–4e implemented on `phase/p4-point-of-sale` (merge to `main` only after manual testing).
+Completed: Phases 0–4 (Phase 4a–4e Point of Sale on `main`).
 
-**Phase 5 unlock (Option B — accepted):**
+**Active:** Phase 4f — UX Baseline Gate on `phase/ux-baseline`. See [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md).
 
-| Phase 5 work | Gate | Status on `phase/p4-point-of-sale` |
+**Phase 5 unlock (Option B — accepted; gated by UX baseline):**
+
+| Phase 5 work | Gate | Status |
 | --- | --- | --- |
-| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** | Satisfied |
-| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** | Satisfied |
-| Return/refund-oriented fulfilment paths | **4e** recommended | Satisfied |
+| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** + **UX Baseline Gate** | Domain gate satisfied; start after 4f merges |
+| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + **UX Baseline Gate** | Domain gate satisfied; start after 4f merges |
+| Return/refund-oriented fulfilment paths | **4e** recommended + **UX Baseline Gate** | Domain gate satisfied; start after 4f merges |
 
-Do not start unit-dependent Phase 5 paths before 4d is merged with Phase 4. Foundational purchasing must not wait for 4d/4e.
-
-1. Manually accept Phase 4 on `phase/p4-point-of-sale` before merge to `main`  
-2. Begin Phase 5 foundational purchasing / receiving / requests (diagram: `P4c → P5f`; `P4d → P5u`)  
-3. First app-wide UX consolidation during or after early Phase 5  
-4. Phases 6–7 as separate epics  
+1. Complete Phase 4f UX Baseline Gate on `phase/ux-baseline` (four milestone PRs + manual walkthrough) before merge to `main`
+2. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`)
+3. Phases 6–7 as separate epics
 
 
 

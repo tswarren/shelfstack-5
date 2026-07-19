@@ -1,0 +1,9 @@
+<% if flash[:notice].present? %>
+  <div class="ss-alert ss-alert-info" role="status"><p><%= flash[:notice] %></p></div>
+<% end %>
+<% if flash[:alert].present? %>
+  <div class="ss-alert ss-alert-danger" role="alert"><p><%= flash[:alert] %></p></div>
+<% end %>
+<% if flash[:warning].present? %>
+  <div class="ss-alert ss-alert-warning" role="status"><p><%= flash[:warning] %></p></div>
+<% end %>

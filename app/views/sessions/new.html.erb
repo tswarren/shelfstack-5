@@ -2,20 +2,16 @@
 
 <h1>Sign in</h1>
 
-<% if flash[:alert] %>
-  <p><%= flash[:alert] %></p>
-<% end %>
-
 <%= form_with url: session_path, method: :post do |form| %>
-  <div>
-    <%= form.label :username, "Username" %>
-    <%= form.text_field :username, required: true, autocomplete: "username" %>
+  <div class="field">
+    <%= form.label :username, "Username", class: "field-label" %>
+    <%= form.text_field :username, required: true, autocomplete: "username", class: "input" %>
   </div>
-  <div>
-    <%= form.label :password, "Password" %>
-    <%= form.password_field :password, required: true, autocomplete: "current-password" %>
+  <div class="field">
+    <%= form.label :password, "Password", class: "field-label" %>
+    <%= form.password_field :password, required: true, autocomplete: "current-password", class: "input" %>
   </div>
-  <div>
-    <%= form.submit "Sign in" %>
+  <div class="form-actions">
+    <%= form.submit "Sign in", class: "button button-primary" %>
   </div>
 <% end %>

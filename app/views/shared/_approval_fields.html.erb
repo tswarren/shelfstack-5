@@ -1,0 +1,12 @@
+<%# locals: prefix: optional id prefix for fields %>
+<% prefix = local_assigns.fetch(:prefix, "approval") %>
+<div class="approval-fields form-grid">
+  <div class="field">
+    <label class="field-label" for="<%= prefix %>_approver_username">Approver username</label>
+    <input type="text" name="approver_username" id="<%= prefix %>_approver_username" autocomplete="username" class="input">
+  </div>
+  <div class="field">
+    <label class="field-label" for="<%= prefix %>_approver_pin">Approver PIN</label>
+    <input type="password" name="approver_pin" id="<%= prefix %>_approver_pin" autocomplete="one-time-code" inputmode="numeric" class="input input-code">
+  </div>
+</div>

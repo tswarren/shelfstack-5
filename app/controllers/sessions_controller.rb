@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class SessionsController < ApplicationController
+  layout "authentication"
   allow_unauthenticated_access only: %i[new create]
   skip_store_context only: :destroy
 

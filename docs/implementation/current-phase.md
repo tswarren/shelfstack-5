@@ -1,44 +1,31 @@
 # Current Phase
 
-**Active delivery phase:** Phase 4e — Simple linked returns (Phase 4 complete on branch)  
-**Status:** 4a–4e implemented on `phase/p4-point-of-sale`; not merged to `main` pending manual testing per the Phase 4 delivery plan's merge gate  
+**Active delivery phase:** Phase 4f — UX Baseline Gate  
+**Status:** In progress on `phase/ux-baseline` (do not merge to `main` until the Baseline Gate is signed off)  
 **Design docs:** [../design/README.md](../design/README.md)  
-**Plan document:** [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)
+**Plan document:** [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md)
 
 ## Immediate next work
 
-1. Manually test Phase 4a–4e on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
-2. ~~Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b~~ — done on `phase/p4-point-of-sale`. See [phase-04-tax-schema.md](phase-04-tax-schema.md), [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md), and [service-catalog.md](service-catalog.md).
-3. ~~Phase 4b (discount allocation, `Pos::RecalculateTransaction`, approvals)~~ — done. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4b exit criteria.
-4. ~~Phase 4c (tender and atomic completion)~~ — done. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4c exit criteria.
-5. ~~Phase 4d (individually tracked inventory)~~ — done. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4d exit criteria.
-6. ~~Phase 4e (simple linked returns)~~ — done on `phase/p4-point-of-sale`: return `direction` / link / disposition on `pos_line_items`; `pos.return.create`; `Pos::AddLinkedReturnLine`, `Pos::AddCashRefundTender`, `Inventory::PostCustomerReturn` (`customer_return` ledger movement for `return_to_stock`); `Pos::RecalculateTransaction` / `Pos::CompleteTransaction` return branches; register UI for linked return + cash refund. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4e exit criteria and [service-catalog.md](service-catalog.md).
-7. Keep [OD-014](open-decisions.md)'s full settlement/variance representation open for Phase 5; the Phase 4c interim is closed as accepted and implemented.
-8. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
-9. Wire up a `test/system` (Capybara/Selenium) harness before claiming the 4c "critical browser paths" UX-acceptance item — carried gap from 4a/4b, not newly introduced.
-10. Phase 5 *foundational* purchasing may begin after 4c (already satisfied). Complete **4d before individual-item Phase 5 work** (also satisfied on this branch). See [roadmap.md](roadmap.md).
+1. Deliver the four UX baseline milestone PRs into `phase/ux-baseline` (foundation → POS → catalog/inventory → admin).
+2. Satisfy the UX Baseline Gate (system tests + manual walkthrough) before merging to `main`.
+3. After the gate: begin Phase 5 foundational purchasing / receiving / requests. See [roadmap.md](roadmap.md) and [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
+4. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
+5. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
-### UX readiness gate (complete)
+## Completed recently
 
-- [x] Original UX drafts archived under [../archive/ux-drafts-2026-07/](../archive/ux-drafts-2026-07/)
-- [x] Living mockups under [../design/prototypes/ui_mockup/](../design/prototypes/ui_mockup/) with demo-only warning
-- [x] Governing [../design/](../design/) docs for visual style, shell, POS register UI/states, scanner/hotkeys, accessibility
-- [x] Architecture mismatches corrected (merchandise class; no float-money / title-based tax / bypass-validation contract language)
-- [x] Shared tokens and shell primitives in Rails CSS; light header/context application
-- [x] Roadmap and Phase 4 docs require the gate and list UX acceptance criteria
-
-Phase 3 (quantity inventory bootstrap) exit criteria and hardening follow-up are complete. See [phases/phase-03-quantity-inventory-bootstrap.md](phase-03-quantity-inventory-bootstrap.md).
-
-Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md).
+- Phase 4a–4e (Point of Sale) merged to `main` ([phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)).
+- Pre–Phase 4 lightweight UX readiness gate (design docs, tokens, light header) — superseded by this full Baseline Gate for Phase 5 unlock.
 
 ## Do not start yet
 
-- Merge Phase 4 to `main` without manual gate acceptance.
-- Full redesign of Phase 1–3 admin CRUD to match mockups.
-- Inventing Phase 5 deficit settlement tables beyond the accepted OD-014 interim (settlement/variance remains Phase 5 design).
+- Phase 5 screens before the UX Baseline Gate merges to `main`.
+- Inventing Phase 5 deficit settlement tables beyond the accepted OD-014 interim.
 - Closing [OD-013](open-decisions.md) role/store authority defaults without an accepted decision.
-- Deferred capabilities listed in [deferred-capabilities.md](deferred-capabilities.md).
+- Deferred capabilities in [deferred-capabilities.md](deferred-capabilities.md).
 - PWA / offline POS as adopted architecture.
+- External Inter font dependency (see deferred UX in the phase plan).
 
 ## Pointers
 
@@ -46,8 +33,5 @@ Phase 2 (configuration and catalog) exit criteria are complete. See [phases/phas
 - Design: [../design/README.md](../design/README.md)
 - Git workflow: [git-workflow.md](git-workflow.md)
 - Index: [README.md](README.md)
-- Phase 3 cost schema: [phase-03-inventory-cost-schema.md](phase-03-inventory-cost-schema.md)
-- Phase 4 tax schema: [phase-04-tax-schema.md](phase-04-tax-schema.md)
-- Identifiers: [../reference/identifiers.md](../reference/identifiers.md)
-- Testing mechanics: [testing.md](testing.md)
+- Testing: [testing.md](testing.md)
 - Services: [service-catalog.md](service-catalog.md)

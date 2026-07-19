@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title><%= content_for?(:title) ? "#{content_for(:title)} · ShelfStack" : "ShelfStack" %></title>
+    <title><%= content_for?(:title) ? "#{content_for(:title)} · ShelfStack" : "ShelfStack POS" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="ShelfStack">
@@ -15,17 +15,12 @@
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="layout-application" data-controller="sidebar">
+  <body class="layout-pos">
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <%= render "shared/app_header", mode: :back_office %>
-    <div class="app-shell">
-      <%= render "shared/sidebar" %>
-      <div class="app-shell-main">
-        <div class="app-main" id="main-content" tabindex="-1">
-          <%= render "shared/flash_messages" %>
-          <%= yield %>
-        </div>
-      </div>
-    </div>
+    <%= render "shared/app_header", mode: :pos %>
+    <main class="pos-main" id="main-content" tabindex="-1">
+      <%= render "shared/flash_messages" %>
+      <%= yield %>
+    </main>
   </body>
 </html>

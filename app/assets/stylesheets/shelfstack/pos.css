@@ -1,0 +1,79 @@
+/* POS workspace — see docs/design/pos-register-ui.md */
+
+.pos-panel {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+}
+
+.pos-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.pos-inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.pos-totals {
+  margin: 0.5rem 0 1rem;
+  padding: 0.5rem 0;
+}
+
+.pos-totals p {
+  margin: 0.15rem 0;
+}
+
+.pos-line-return {
+  background: var(--surface-warning);
+}
+
+.pos-workspace {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.9fr);
+  align-items: start;
+}
+
+.pos-sale-panel,
+.pos-payment-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.pos-payment-panel {
+  position: sticky;
+  top: calc(var(--header-height) + 0.75rem);
+}
+
+.pos-balance {
+  font-size: 1.35rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.pos-live-region {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (max-width: 960px) {
+  .pos-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .pos-payment-panel {
+    position: static;
+  }
+}

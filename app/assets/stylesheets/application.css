@@ -6,5 +6,9 @@
 
 @import "shelfstack/tokens.css";
 @import "shelfstack/base.css";
-@import "shelfstack/components.css";
 @import "shelfstack/shell.css";
+@import "shelfstack/components.css";
+@import "shelfstack/forms.css";
+@import "shelfstack/tables.css";
+@import "shelfstack/patterns.css";
+@import "shelfstack/pos.css";

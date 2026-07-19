@@ -1,0 +1,129 @@
+/* Forms */
+
+.form,
+.form-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-section {
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin: 0;
+  color: var(--danger-text);
+  font-size: 0.85rem;
+}
+
+.input,
+.field input[type="text"],
+.field input[type="number"],
+.field input[type="password"],
+.field input[type="email"],
+.field input[type="search"],
+.field input[type="date"],
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 38px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-primary);
+  color: var(--text-primary);
+}
+
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled,
+.field input[readonly] {
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+}
+
+.field input[aria-invalid="true"],
+.field select[aria-invalid="true"],
+.field textarea[aria-invalid="true"] {
+  border-color: var(--danger-border);
+}
+
+.input-currency,
+.input-code {
+  max-width: 10rem;
+}
+
+.input-percent {
+  max-width: 8rem;
+}
+
+.input-date {
+  max-width: 12rem;
+}
+
+.checkbox-group,
+.radio-group {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.input-affix {
+  display: flex;
+  align-items: stretch;
+}
+
+.input-affix .affix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border-default);
+  background: var(--bg-200);
+  color: var(--text-secondary);
+}
+
+.input-affix .affix:first-child {
+  border-right: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.input-affix .affix:last-child {
+  border-left: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.input-affix .input {
+  border-radius: 0;
+}

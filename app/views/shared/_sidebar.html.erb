@@ -1,0 +1,49 @@
+<aside class="app-sidebar" id="app-sidebar" data-sidebar-target="panel" aria-label="Primary">
+  <nav class="sidebar-nav" aria-label="Primary">
+    <%= nav_section "Workspace" do %>
+      <%= nav_item "Home", root_path, match: :exact %>
+      <%= nav_item "Register", register_path, permission_key: "pos.access" %>
+    <% end %>
+
+    <%= nav_section "Catalog" do %>
+      <%= nav_item "Products", products_path, permission_key: "catalog.product.view" %>
+    <% end %>
+
+    <%= nav_section "Inventory" do %>
+      <%= nav_item "Stock", stock_balances_path, permission_key: "inventory.stock.view" %>
+      <%= nav_item "Adjustments", inventory_adjustments_path, permission_key: "inventory.stock.view" %>
+      <%= nav_item "Reservations", inventory_reservations_path, permission_key: "inventory.reservation.view" %>
+      <%= nav_item "Inventory units", inventory_units_path, permission_key: "inventory.unit.manage" %>
+    <% end %>
+
+    <%= nav_section "Operations" do %>
+      <%= nav_item "Business days", business_days_path, permission_key: "pos.access" %>
+    <% end %>
+
+    <%= nav_section "Configuration" do %>
+      <%= nav_item "Departments", departments_path, permission_key: "classification.view" %>
+      <%= nav_item "Merchandise classes", merchandise_classes_path, permission_key: "classification.view" %>
+      <%= nav_item "Formats", product_formats_path, permission_key: "classification.view" %>
+      <%= nav_item "Conditions", product_conditions_path, permission_key: "classification.view" %>
+      <%= nav_item "Tax categories", tax_categories_path, permission_key: "classification.view" %>
+      <%= nav_item "Store tax rates", store_tax_rates_path, permission_key: "classification.view" %>
+      <%= nav_item "Store tax rules", store_tax_rules_path, permission_key: "classification.view" %>
+      <%= nav_item "Discount reasons", discount_reasons_path, permission_key: "classification.view" %>
+      <%= nav_item "Return policies", return_policies_path, permission_key: "classification.view" %>
+      <%= nav_item "Return reasons", return_reasons_path, permission_key: "classification.view" %>
+      <%= nav_item "Adjustment reasons", inventory_adjustment_reasons_path, permission_key: "classification.view" %>
+    <% end %>
+
+    <%= nav_section "Administration" do %>
+      <%= nav_item "Stores", stores_path, permission_key: "administration.store.view" %>
+      <%= nav_item "Users", users_path, permission_key: "administration.user.view" %>
+      <%= nav_item "Roles", roles_path, permission_key: "administration.role.manage" %>
+      <%= nav_item "Memberships", store_memberships_path, permission_key: "administration.membership.manage" %>
+      <%= nav_item "Devices", pos_devices_path, permission_key: "administration.device.manage" %>
+      <%= nav_item "Drawers", cash_drawers_path, permission_key: "administration.drawer.manage" %>
+      <%= nav_item "Permissions", permissions_path, permission_key: "administration.store.view" %>
+      <%= nav_item "Audit", administrative_audit_events_path, permission_key: "administration.audit.view" %>
+    <% end %>
+  </nav>
+</aside>
+<div class="sidebar-backdrop" data-sidebar-target="backdrop" data-action="click->sidebar#close" hidden></div>
