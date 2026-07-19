@@ -34,7 +34,7 @@ module Pos
 
       @day = OpenBusinessDay.call(store: @store, actor: @admin).business_day
       @session_a = OpenSession.call(
-        business_day: @day, store: @store, pos_device: @device_a, cash_drawer: @drawer, cashier: @admin, actor: @admin
+        business_day: @day, store: @store, pos_device: @device_a, cash_drawer: @drawer, opening_cash_cents: 0, cashier: @admin, actor: @admin
       ).pos_session
     end
 
@@ -138,6 +138,7 @@ module Pos
       assert transaction.suspended?
       assert_nil transaction.active_pos_session_id
 
+      assert RecordClosingCashCount.call(pos_session: @session_a, counted_cash_cents: 0, actor: @admin).success?
       close_result = CloseSession.call(pos_session: @session_a, actor: @admin)
       assert close_result.success?
 

@@ -36,7 +36,11 @@
         / drawer <strong><%= @open_session.cash_drawer.name %></strong>
       <% end %>.
       <% if Current.user.can?("pos.session.close", store: Current.store) %>
-        <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
+        <% if @open_session.cash_enabled? %>
+          <%= link_to "Close session", close_form_pos_session_path(@open_session), class: "button button-small button-outline" %>
+        <% else %>
+          <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
+        <% end %>
       <% end %>
     </p>
 

@@ -14,6 +14,7 @@ module Pos
       PosLineItemTax.delete_all
       PosLineItem.delete_all
       PosTransaction.delete_all
+      PosSessionCashCount.delete_all
       PosSession.delete_all
       BusinessDay.delete_all
       InventoryLedgerEntry.delete_all
@@ -41,7 +42,7 @@ module Pos
 
       @day = OpenBusinessDay.call(store: @store, actor: @admin).business_day
       @session = OpenSession.call(
-        business_day: @day, store: @store, pos_device: @device, cash_drawer: @drawer, cashier: @admin, actor: @admin
+        business_day: @day, store: @store, pos_device: @device, cash_drawer: @drawer, opening_cash_cents: 0, cashier: @admin, actor: @admin
       ).pos_session
       @transaction = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       @line = AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin).pos_line_item
@@ -53,6 +54,7 @@ module Pos
       PosLineItemTax.delete_all
       PosLineItem.delete_all
       PosTransaction.delete_all
+      PosSessionCashCount.delete_all
       PosSession.delete_all
       BusinessDay.delete_all
       InventoryLedgerEntry.delete_all

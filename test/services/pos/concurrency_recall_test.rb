@@ -9,6 +9,7 @@ module Pos
     setup do
       PosLineItem.delete_all
       PosTransaction.delete_all
+      PosSessionCashCount.delete_all
       PosSession.delete_all
       BusinessDay.delete_all
 
@@ -32,6 +33,7 @@ module Pos
     teardown do
       PosLineItem.delete_all
       PosTransaction.delete_all
+      PosSessionCashCount.delete_all
       PosSession.delete_all
       BusinessDay.delete_all
     end

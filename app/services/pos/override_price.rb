@@ -57,7 +57,11 @@ module Pos
         raise Error, "line is not pending" unless line.pending?
         raise Error, "line does not belong to the locked transaction" unless line.pos_transaction_id == transaction.id
 
-        line.update!(unit_price_cents: @requested_unit_price_cents)
+        line.update!(
+          unit_price_cents: @requested_unit_price_cents,
+          price_overridden_at: Time.current,
+          price_overridden_by_user: @actor
+        )
 
         Administration::RecordAuditEvent.call(
           actor: @actor,

@@ -50,6 +50,7 @@ Rails.application.routes.draw do
   end
   resources :pos_sessions, only: %i[new create] do
     member do
+      get :close_form
       post :close
     end
     resources :pos_cash_movements, only: %i[create]

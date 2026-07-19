@@ -15,6 +15,7 @@ module Pos
       PosLineItemTax.delete_all
       PosLineItem.delete_all
       PosTransaction.delete_all
+      PosSessionCashCount.delete_all
       PosSession.delete_all
       BusinessDay.delete_all
 
@@ -40,6 +41,7 @@ module Pos
       PosLineItemTax.delete_all
       PosLineItem.delete_all
       PosTransaction.delete_all
+      PosSessionCashCount.delete_all
       PosSession.delete_all
       BusinessDay.delete_all
     end

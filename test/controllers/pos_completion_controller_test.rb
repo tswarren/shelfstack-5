@@ -23,7 +23,7 @@ class PosCompletionControllerTest < ActionDispatch::IntegrationTest
 
     @day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
     @session = Pos::OpenSession.call(
-      business_day: @day, store: @store, pos_device: @device, cash_drawer: @drawer, cashier: @admin, actor: @admin
+      business_day: @day, store: @store, pos_device: @device, cash_drawer: @drawer, opening_cash_cents: 0, cashier: @admin, actor: @admin
     ).pos_session
     @transaction = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     @line = Pos::AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 2, actor: @admin).pos_line_item

@@ -26,7 +26,22 @@ module Pos
           raise Error, "cannot close session while it controls an open transaction"
         end
 
-        session.update!(status: "closed", closed_at: Time.current, closed_by_user: @actor)
+        if session.cash_enabled?
+          closing = PosSessionCashCount.find_by(pos_session_id: session.id, count_type: "closing")
+          raise Error, "closing cash count is required before closing a cash-enabled session" if closing.blank?
+
+          expected = Pos::CalculateExpectedCash.call(pos_session: session).expected_cash_cents
+          session.update!(
+            status: "closed",
+            closed_at: Time.current,
+            closed_by_user: @actor,
+            expected_cash_cents: expected,
+            counted_cash_cents: closing.total_cents,
+            cash_variance_cents: closing.total_cents - expected
+          )
+        else
+          session.update!(status: "closed", closed_at: Time.current, closed_by_user: @actor)
+        end
 
         Result.new(pos_session: session, success?: true, error: nil, replayed: false)
       end

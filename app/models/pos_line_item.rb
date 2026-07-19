@@ -27,6 +27,7 @@ class PosLineItem < ApplicationRecord
   belongs_to :created_by_user, class_name: "User"
   belongs_to :removed_by_user, class_name: "User", optional: true
   belongs_to :tax_category_overridden_by_user, class_name: "User", optional: true
+  belongs_to :price_overridden_by_user, class_name: "User", optional: true
   has_many :pos_discount_allocations, dependent: :restrict_with_exception
   has_many :pos_line_item_taxes, dependent: :restrict_with_exception
   has_many :linked_return_lines, class_name: "PosLineItem", foreign_key: :original_pos_line_item_id,
@@ -64,6 +65,10 @@ class PosLineItem < ApplicationRecord
 
   def tax_category_overridden?
     tax_category_overridden_at.present?
+  end
+
+  def price_overridden?
+    price_overridden_at.present?
   end
 
   def extended_price_cents

@@ -65,10 +65,10 @@ module Pos
       day = OpenBusinessDay.call(store: @store, actor: @admin).business_day
       other_device = PosDevice.create!(store: @store, code: "REG2", name: "Register 2", device_type: "register", active: true)
 
-      first = OpenSession.call(business_day: day, store: @store, pos_device: @device, cash_drawer: @drawer, cashier: @admin, actor: @admin)
+      first = OpenSession.call(business_day: day, store: @store, pos_device: @device, cash_drawer: @drawer, opening_cash_cents: 0, cashier: @admin, actor: @admin)
       assert first.success?
 
-      second = OpenSession.call(business_day: day, store: @store, pos_device: other_device, cash_drawer: @drawer, cashier: @admin, actor: @admin)
+      second = OpenSession.call(business_day: day, store: @store, pos_device: other_device, cash_drawer: @drawer, opening_cash_cents: 0, cashier: @admin, actor: @admin)
       refute second.success?
       assert_match(/active cash-enabled session/, second.error)
     end

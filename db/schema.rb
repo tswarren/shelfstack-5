@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -477,7 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
     t.index ["tax_category_id"], name: "index_pos_line_item_taxes_on_tax_category_id"
     t.check_constraint "amount_cents >= 0", name: "pos_line_item_taxes_amount_non_negative"
     t.check_constraint "taxable_amount_cents >= 0", name: "pos_line_item_taxes_taxable_amount_non_negative"
-    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying, 'not_applicable'::character varying]::text[])", name: "pos_line_item_taxes_treatment_check"
+    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying::text, 'zero_rated'::character varying::text, 'exempt'::character varying::text, 'not_applicable'::character varying::text])", name: "pos_line_item_taxes_treatment_check"
   end
 
   create_table "pos_line_items", force: :cascade do |t|
@@ -497,6 +497,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
     t.bigint "original_tax_category_id"
     t.bigint "pos_transaction_id", null: false
     t.integer "position", default: 0, null: false
+    t.datetime "price_overridden_at"
+    t.bigint "price_overridden_by_user_id"
     t.bigint "product_variant_id"
     t.integer "quantity", default: 1, null: false
     t.text "remove_reason"
@@ -518,6 +520,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
     t.index ["original_pos_line_item_id"], name: "index_pos_line_items_on_original_pos_line_item_id"
     t.index ["original_tax_category_id"], name: "index_pos_line_items_on_original_tax_category_id"
     t.index ["pos_transaction_id"], name: "index_pos_line_items_on_pos_transaction_id"
+    t.index ["price_overridden_by_user_id"], name: "index_pos_line_items_on_price_overridden_by_user_id"
     t.index ["product_variant_id"], name: "index_pos_line_items_on_product_variant_id"
     t.index ["removed_by_user_id"], name: "index_pos_line_items_on_removed_by_user_id"
     t.index ["return_reason_id"], name: "index_pos_line_items_on_return_reason_id"
@@ -539,15 +542,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
     t.check_constraint "unit_price_cents >= 0", name: "pos_line_items_unit_price_non_negative"
   end
 
+  create_table "pos_session_cash_counts", force: :cascade do |t|
+    t.string "count_type", null: false
+    t.datetime "counted_at", null: false
+    t.bigint "counted_by_user_id", null: false
+    t.datetime "created_at", null: false
+    t.jsonb "denomination_detail"
+    t.bigint "pos_session_id", null: false
+    t.integer "total_cents", null: false
+    t.index ["counted_by_user_id"], name: "index_pos_session_cash_counts_on_counted_by_user_id"
+    t.index ["pos_session_id", "count_type"], name: "index_pos_session_cash_counts_one_opening_closing", unique: true, where: "((count_type)::text = ANY ((ARRAY['opening'::character varying, 'closing'::character varying])::text[]))"
+    t.index ["pos_session_id"], name: "index_pos_session_cash_counts_on_pos_session_id"
+    t.check_constraint "count_type::text = ANY (ARRAY['opening'::character varying, 'closing'::character varying, 'manager_recount'::character varying, 'reconciled'::character varying]::text[])", name: "pos_session_cash_counts_type_check"
+    t.check_constraint "total_cents >= 0", name: "pos_session_cash_counts_total_non_negative"
+  end
+
   create_table "pos_sessions", force: :cascade do |t|
     t.bigint "business_day_id", null: false
     t.bigint "cash_drawer_id"
+    t.integer "cash_variance_cents"
     t.bigint "cashier_user_id", null: false
     t.datetime "closed_at"
     t.bigint "closed_by_user_id"
+    t.integer "counted_cash_cents"
     t.datetime "created_at", null: false
+    t.integer "expected_cash_cents"
     t.datetime "opened_at", null: false
     t.bigint "opened_by_user_id", null: false
+    t.integer "opening_cash_cents"
     t.bigint "pos_device_id", null: false
     t.string "status", default: "open", null: false
     t.bigint "store_id", null: false
@@ -561,6 +583,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
     t.index ["pos_device_id"], name: "index_pos_sessions_on_pos_device_id"
     t.index ["pos_device_id"], name: "index_pos_sessions_one_open_per_device", unique: true, where: "((status)::text = 'open'::text)"
     t.index ["store_id"], name: "index_pos_sessions_on_store_id"
+    t.check_constraint "counted_cash_cents IS NULL OR counted_cash_cents >= 0", name: "pos_sessions_counted_cash_non_negative"
+    t.check_constraint "opening_cash_cents IS NULL OR opening_cash_cents >= 0", name: "pos_sessions_opening_cash_non_negative"
     t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'closed'::character varying::text])", name: "pos_sessions_status_check"
   end
 
@@ -1074,8 +1098,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021002) do
   add_foreign_key "pos_line_items", "tax_categories", column: "original_tax_category_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_line_items", "users", column: "price_overridden_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "removed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "tax_category_overridden_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_session_cash_counts", "pos_sessions", on_delete: :restrict
+  add_foreign_key "pos_session_cash_counts", "users", column: "counted_by_user_id", on_delete: :restrict
   add_foreign_key "pos_sessions", "business_days", on_delete: :restrict
   add_foreign_key "pos_sessions", "cash_drawers", on_delete: :restrict
   add_foreign_key "pos_sessions", "pos_devices", on_delete: :restrict

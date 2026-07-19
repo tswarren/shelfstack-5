@@ -58,6 +58,7 @@ module Pos
         lines = transaction.pos_line_items.lock.pending.order(:position, :id).to_a
         raise Error, "transaction has no lines to complete" if lines.empty?
         validate_departments!(lines)
+        validate_sale_eligibility!(lines, transaction.store)
 
         tenders = transaction.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
         validate_tenders_settle!(tenders, recalculation.net_total_cents)
@@ -127,6 +128,23 @@ module Pos
         if department.nil? || !department.active? || !department.postable?
           raise Error, "line #{line.id} has a missing, inactive, or non-postable department"
         end
+      end
+    end
+
+    # Domain: completion revalidates sale eligibility for pending sale product
+    # lines. Linked returns keep historical values; open-ring has no variant.
+    def validate_sale_eligibility!(lines, store)
+      lines.each do |line|
+        next unless line.sale? && line.line_kind == "product"
+
+        variant = line.product_variant
+        raise Error, "line #{line.id} is missing its product variant" if variant.blank?
+        raise Error, "line #{line.id} has no selling price" if line.unit_price_cents.nil?
+
+        eligibility = Catalog::SaleEligibility.call(variant: variant, store: store)
+        next if eligibility.blockers.empty?
+
+        raise Error, "line #{line.id} is not eligible for sale: #{eligibility.blockers.join(', ')}"
       end
     end
 

@@ -16,6 +16,11 @@
     <%= form.label :cash_drawer_id, "Drawer (optional)" %>
     <%= form.collection_select :cash_drawer_id, @drawers, :id, :name, include_blank: "Card-only (no drawer)" %>
   </div>
+  <div>
+    <%= form.label :opening_cash_cents, "Opening cash (cents)" %>
+    <%= form.number_field :opening_cash_cents, min: 0, step: 1, value: 0 %>
+    <p class="muted">Required when a cash drawer is selected.</p>
+  </div>
   <div><%= form.submit "Open session", class: "button button-primary" %></div>
 <% end %>
 

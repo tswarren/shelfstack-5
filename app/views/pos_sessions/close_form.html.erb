@@ -1,0 +1,25 @@
+<% content_for :title, "Close session" %>
+
+<h1>Close cash session</h1>
+
+<% if flash[:alert].present? %>
+  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
+<% end %>
+
+<p>Opening cash: <%= @session.opening_cash_cents %>¢</p>
+<p>Expected cash: <%= @expected_cash_cents %>¢</p>
+
+<% if @closing_count %>
+  <p>Closing count already recorded: <%= @closing_count.total_cents %>¢</p>
+  <%= button_to "Close session", close_pos_session_path(@session), method: :post, class: "button button-primary" %>
+<% else %>
+  <%= form_with url: close_pos_session_path(@session), method: :post do |form| %>
+    <div>
+      <%= form.label :counted_cash_cents, "Counted cash (cents)" %>
+      <%= form.number_field :counted_cash_cents, min: 0, step: 1, required: true %>
+    </div>
+    <div><%= form.submit "Record count and close", class: "button button-primary" %></div>
+  <% end %>
+<% end %>
+
+<p><%= link_to "Back to register", register_path %></p>

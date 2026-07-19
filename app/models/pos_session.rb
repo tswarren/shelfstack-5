@@ -17,9 +17,11 @@ class PosSession < ApplicationRecord
   has_many :completed_pos_transactions, class_name: "PosTransaction", foreign_key: :completed_pos_session_id,
            inverse_of: :completed_pos_session, dependent: :restrict_with_exception
   has_many :pos_cash_movements, dependent: :restrict_with_exception
+  has_many :pos_session_cash_counts, dependent: :restrict_with_exception
 
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :opened_at, presence: true
+  validates :opening_cash_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validate :device_belongs_to_store
   validate :drawer_belongs_to_store
   validate :business_day_belongs_to_store
@@ -32,6 +34,10 @@ class PosSession < ApplicationRecord
 
   def closed?
     status == "closed"
+  end
+
+  def cash_enabled?
+    cash_drawer_id.present?
   end
 
   private

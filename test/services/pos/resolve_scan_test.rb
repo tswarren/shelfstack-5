@@ -32,7 +32,7 @@ module Pos
       day = OpenBusinessDay.call(store: @store, actor: @admin).business_day
       session = OpenSession.call(
         business_day: day, store: @store, pos_device: pos_devices(:register_1),
-        cash_drawer: cash_drawers(:drawer_1), cashier: @admin, actor: @admin
+        cash_drawer: cash_drawers(:drawer_1), opening_cash_cents: 0, cashier: @admin, actor: @admin
       ).pos_session
       txn = OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
       AddLine.call(pos_transaction: txn, product_variant: @variant, inventory_unit: unit, quantity: 1, actor: @admin)

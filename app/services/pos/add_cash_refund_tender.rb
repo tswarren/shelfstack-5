@@ -17,12 +17,16 @@ module Pos
       raise Error, "transaction is not open" unless @pos_transaction.open?
       raise Error, "tender type must be cash" unless @tender_type.tender_category == "cash"
       raise Error, "refund amount must be positive" unless @amount_cents.positive?
+      TenderGuards.assert_active!(@tender_type)
+      TenderGuards.assert_refund_enabled!(@tender_type)
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
 
         recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
+        TenderGuards.assert_no_calculation_blockers!(recalculation)
+
         refund_due = [ -recalculation.net_total_cents - already_refunded_cents(transaction), 0 ].max
         raise Error, "no refund balance due" if refund_due.zero?
         raise Error, "refund exceeds balance due (#{refund_due})" if @amount_cents > refund_due
@@ -33,10 +37,9 @@ module Pos
           created_by_user: @actor
         )
 
-        Result.new(pos_tender: tender, success?: true, error: nil,
-                   warnings: recalculation.blockers + recalculation.warnings)
+        Result.new(pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings)
       end
-    rescue Error, ActiveRecord::RecordInvalid => e
+    rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [])
     end
 

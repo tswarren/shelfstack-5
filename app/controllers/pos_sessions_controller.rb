@@ -2,8 +2,8 @@
 
 class PosSessionsController < ApplicationController
   before_action -> { require_permission!("pos.session.open") }, only: %i[new create]
-  before_action -> { require_permission!("pos.session.close") }, only: %i[close]
-  before_action :set_session, only: %i[close]
+  before_action -> { require_permission!("pos.session.close") }, only: %i[close close_form]
+  before_action :set_session, only: %i[close close_form]
 
   def new
     @business_day = Current.store.business_days.find(params[:business_day_id])
@@ -16,12 +16,14 @@ class PosSessionsController < ApplicationController
     device = Current.store.pos_devices.find(params.dig(:pos_session, :pos_device_id))
     drawer_id = params.dig(:pos_session, :cash_drawer_id)
     drawer = drawer_id.presence && Current.store.cash_drawers.find(drawer_id)
+    opening_cash = params.dig(:pos_session, :opening_cash_cents)
 
     result = Pos::OpenSession.call(
       business_day: business_day,
       store: Current.store,
       pos_device: device,
       cash_drawer: drawer,
+      opening_cash_cents: drawer.present? ? opening_cash : nil,
       cashier: Current.user,
       actor: Current.user
     )
@@ -32,12 +34,42 @@ class PosSessionsController < ApplicationController
     end
   end
 
+  def close_form
+    unless @session.cash_enabled?
+      redirect_to register_path, alert: "Closing cash count is only required for cash-enabled sessions."
+      return
+    end
+
+    @expected_cash_cents = Pos::CalculateExpectedCash.call(pos_session: @session).expected_cash_cents
+    @closing_count = PosSessionCashCount.find_by(pos_session_id: @session.id, count_type: "closing")
+  end
+
   def close
+    if @session.cash_enabled? && params[:counted_cash_cents].present?
+      counted = Pos::RecordClosingCashCount.call(
+        pos_session: @session,
+        counted_cash_cents: params[:counted_cash_cents],
+        actor: Current.user
+      )
+      unless counted.success?
+        redirect_to close_form_pos_session_path(@session), alert: counted.error
+        return
+      end
+    end
+
     result = Pos::CloseSession.call(pos_session: @session, actor: Current.user)
     if result.success?
-      redirect_to register_path, notice: result.replayed ? "Session already closed." : "Session closed."
+      notice = if result.replayed
+        "Session already closed."
+      elsif @session.reload.cash_enabled?
+        "Session closed. Variance: #{@session.cash_variance_cents}¢."
+      else
+        "Session closed."
+      end
+      redirect_to register_path, notice: notice
     else
-      redirect_to register_path, alert: result.error
+      target = @session.cash_enabled? ? close_form_pos_session_path(@session) : register_path
+      redirect_to target, alert: result.error
     end
   end
 

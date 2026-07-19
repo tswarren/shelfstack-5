@@ -9,22 +9,29 @@ class PosTendersController < ApplicationController
   def create
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
 
-    result = if tender_type.tender_category == "cash" && params[:refund].present?
-      Pos::AddCashRefundTender.call(
-        pos_transaction: @pos_transaction, tender_type: tender_type,
-        amount_cents: params[:amount_cents], actor: Current.user
-      )
-    elsif tender_type.tender_category == "cash"
-      Pos::AddCashTender.call(
-        pos_transaction: @pos_transaction, tender_type: tender_type,
-        amount_tendered_cents: params[:amount_tendered_cents], actor: Current.user
-      )
-    else
+    result = case tender_type.tender_category
+    when "cash"
+      if params[:refund].present?
+        Pos::AddCashRefundTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: params[:amount_cents], actor: Current.user
+        )
+      else
+        Pos::AddCashTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_tendered_cents: params[:amount_tendered_cents], actor: Current.user
+        )
+      end
+    when "card"
       Pos::AddCardTender.call(
         pos_transaction: @pos_transaction, tender_type: tender_type,
         amount_cents: params[:amount_cents], authorization_code: params[:authorization_code],
         terminal_reference: params[:terminal_reference].presence, actor: Current.user
       )
+    when "check"
+      unsupported_tender_result("check tendering is not available yet")
+    else
+      unsupported_tender_result("tender category '#{tender_type.tender_category}' is not supported")
     end
 
     if result.success?
@@ -65,7 +72,11 @@ class PosTendersController < ApplicationController
   # Tender Type's category before the underlying service runs.
   def create_permission
     tender_type = params[:tender_type_id].presence && Current.organization.tender_types.find_by(id: params[:tender_type_id])
-    tender_type&.tender_category == "card" ? "pos.tender.card_standalone" : "pos.tender.cash"
+    case tender_type&.tender_category
+    when "card" then "pos.tender.card_standalone"
+    when "cash" then "pos.tender.cash"
+    else "pos.tender.cash"
+    end
   end
 
   def destroy_permission
@@ -74,5 +85,9 @@ class PosTendersController < ApplicationController
     else
       "pos.access"
     end
+  end
+
+  def unsupported_tender_result(message)
+    Data.define(:success?, :error, :warnings).new(success?: false, error: message, warnings: [])
   end
 end
