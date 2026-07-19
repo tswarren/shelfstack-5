@@ -1,0 +1,61 @@
+<section class="pos-panel" aria-label="Tenders">
+  <h2>Tenders</h2>
+  <% if @pos_tenders.any? %>
+    <div class="table-container">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Amount</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pos_tenders.each do |tender| %>
+            <tr>
+              <td>
+                <%= tender.tender_type.name %>
+                <br><span class="muted"><%= tender.direction.humanize %></span>
+                <% if tender.authorization_code.present? || tender.terminal_reference.present? %>
+                  <br><span class="muted"><%= tender.authorization_code || tender.terminal_reference %></span>
+                <% end %>
+              </td>
+              <td><%= tender.status.humanize %></td>
+              <td class="num"><%= pos_money(tender.amount_cents) %></td>
+              <td>
+                <% if @pos_transaction.open? && tender.unresolved? %>
+                  <% if tender.authorized? && tender.tender_type.tender_category == "card" %>
+                    <details>
+                      <summary>Void card</summary>
+                      <%= form_with url: pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "form" do |form| %>
+                        <div class="field">
+                          <%= form.label :external_void_reference, "External void ref", class: "field-label" %>
+                          <%= form.text_field :external_void_reference, class: "input" %>
+                        </div>
+                        <div class="checkbox-group">
+                          <label>
+                            <%= form.check_box :external_void_confirmed, {}, "true", "false" %>
+                            External void confirmed
+                          </label>
+                        </div>
+                        <div class="form-actions">
+                          <%= form.submit "Void card", class: "button button-small button-danger",
+                                data: { turbo_confirm: "Confirm the card was voided on the external terminal before continuing." } %>
+                        </div>
+                      <% end %>
+                    </details>
+                  <% else %>
+                    <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="muted">No tenders recorded.</p>
+  <% end %>
+</section>

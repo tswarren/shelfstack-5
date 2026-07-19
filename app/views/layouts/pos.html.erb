@@ -17,7 +17,8 @@
   </head>
   <body class="layout-pos">
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <%= render "shared/app_header", mode: :pos %>
+    <%# Hide the store switch while the cashier is mid-sale on an open transaction. %>
+    <%= render "shared/app_header", mode: :pos, active_transaction: (@pos_transaction if @pos_transaction&.open?) %>
     <main class="pos-main" id="main-content" tabindex="-1">
       <%= render "shared/flash_messages" %>
       <%= yield %>

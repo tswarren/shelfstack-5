@@ -1,0 +1,15 @@
+<section class="pos-panel" aria-label="Totals">
+  <h2>Totals</h2>
+  <dl class="definition-grid pos-totals">
+    <div class="definition-item"><dt>Subtotal</dt><dd><%= pos_money(@subtotal_cents) %></dd></div>
+    <div class="definition-item"><dt>Discount</dt><dd><%= pos_money(@discount_total_cents) %></dd></div>
+    <div class="definition-item"><dt>Tax</dt><dd><%= pos_money(@tax_total_cents) %></dd></div>
+    <div class="definition-item"><dt>Net total</dt><dd><strong><%= pos_money(@net_total_cents) %></strong></dd></div>
+  </dl>
+  <% if @pos_transaction.open? %>
+    <p>
+      <span class="muted">Balance due</span><br>
+      <span class="pos-balance"><%= pos_money(@balance_due_cents) %></span>
+    </p>
+  <% end %>
+</section>

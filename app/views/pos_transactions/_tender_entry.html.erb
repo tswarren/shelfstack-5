@@ -1,0 +1,59 @@
+<% if @pos_transaction.open? %>
+  <details class="pos-panel" open>
+    <summary>Cash tender</summary>
+    <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+        <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_tendered_cents", label: "Amount tendered",
+            id: "cash_amount_tendered_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+      <div class="form-actions">
+        <%= form.submit "Add cash tender", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </details>
+
+  <details class="pos-panel">
+    <summary>Standalone card tender</summary>
+    <p class="muted">Confirm approval on the external terminal first; record the result here.</p>
+    <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+        <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
+            id: "card_amount_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+      <div class="field">
+        <%= form.label :authorization_code, "Authorization code", class: "field-label" %>
+        <%= form.text_field :authorization_code, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
+        <%= form.text_field :terminal_reference, class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Add card tender", class: "button button-outline" %>
+      </div>
+    <% end %>
+  </details>
+
+  <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.cash", store: Current.store) %>
+    <details class="pos-panel" open>
+      <summary>Cash refund</summary>
+      <p class="muted">Transaction balance is negative (net return) — issue a cash refund to settle it.</p>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
+        <div class="field">
+          <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name, {}, class: "input" %>
+        </div>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+              id: "refund_amount_cents", value_cents: -@balance_due_cents %>
+        <div class="form-actions">
+          <%= form.submit "Add cash refund", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+<% end %>

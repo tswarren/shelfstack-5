@@ -1,0 +1,21 @@
+<%# locals: name:, label:, value_cents: 0, id: nil, hint: nil, required: false, autofocus: false %>
+<%
+  cents = (local_assigns.fetch(:value_cents, 0) || 0).to_i
+  field_id = local_assigns.fetch(:id, nil).presence || "cf_#{name.to_s.gsub(/\W+/, "_")}"
+  is_required = local_assigns.fetch(:required, false)
+  is_autofocus = local_assigns.fetch(:autofocus, false)
+  hint = local_assigns.fetch(:hint, nil)
+%>
+<div class="field" data-controller="currency-mask" data-currency-mask-amount-cents-value="<%= cents %>">
+  <label class="field-label" for="<%= field_id %>"><%= label %></label>
+  <input id="<%= field_id %>" type="text" inputmode="numeric" autocomplete="off"
+         class="input input-currency"
+         <%= "required" if is_required %>
+         <%= "autofocus" if is_autofocus %>
+         data-currency-mask-target="display"
+         data-action="input->currency-mask#handleInput paste->currency-mask#handlePaste">
+  <input type="hidden" name="<%= name %>" data-currency-mask-target="cents" value="<%= cents %>">
+  <% if hint.present? %>
+    <p class="field-hint"><%= hint %></p>
+  <% end %>
+</div>

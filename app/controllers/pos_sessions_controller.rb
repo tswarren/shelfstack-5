@@ -3,6 +3,8 @@
 class PosSessionsController < ApplicationController
   include PosHelper
 
+  layout "pos"
+
   before_action -> { require_permission!("pos.session.open") }, only: %i[new create]
   before_action -> { require_permission!("pos.session.close") }, only: %i[close close_form]
   before_action :set_session, only: %i[close close_form]

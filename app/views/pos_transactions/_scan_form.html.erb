@@ -1,0 +1,78 @@
+<% if @pos_transaction.editable? %>
+  <section class="pos-panel" aria-label="Scan or search">
+    <h2>Scan / search</h2>
+    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+      <div class="field">
+        <label class="field-label" for="scan_query">Scan or search</label>
+        <%= form.text_field :query, id: "scan_query", placeholder: "ISBN / SKU / unit ID",
+              autocomplete: "off", class: "input",
+              data: { "pos-register-target": "scanInput" } %>
+      </div>
+      <div class="field">
+        <label class="field-label" for="scan_quantity">Qty</label>
+        <%= form.number_field :quantity, id: "scan_quantity", value: 1, min: 1, class: "input", style: "max-width:5em" %>
+      </div>
+      <%= form.submit "Add line", class: "button button-primary" %>
+    <% end %>
+
+    <%= render "scan_resolution" %>
+  </section>
+
+  <details class="pos-panel">
+    <summary>Open-ring line</summary>
+    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <%= hidden_field_tag :kind, "open_ring" %>
+      <div class="field">
+        <%= form.label :department_id, "Department", class: "field-label" %>
+        <%= form.collection_select :department_id, @departments, :id, :name, {}, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :description, "Description (optional)", class: "field-label" %>
+        <%= form.text_field :description, placeholder: "Blank uses department name", class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "open_ring_unit_price_cents" %>
+      <div class="field">
+        <%= form.label :quantity, class: "field-label" %>
+        <%= form.number_field :quantity, value: 1, min: 1, class: "input", style: "max-width:5em" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Add open-ring line", class: "button button-outline" %>
+      </div>
+    <% end %>
+  </details>
+
+  <% if Current.user.can?("pos.return.create", store: Current.store) %>
+    <details class="pos-panel">
+      <summary>Linked return</summary>
+      <p class="muted">Look up the completed line ID from the original transaction's receipt or history to link the return.</p>
+      <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <div class="field">
+          <%= form.label :original_pos_line_item_id, "Original completed line ID", class: "field-label" %>
+          <%= form.number_field :original_pos_line_item_id, min: 1, required: true, class: "input" %>
+        </div>
+        <div class="field">
+          <%= form.label :quantity, class: "field-label" %>
+          <%= form.number_field :quantity, value: 1, min: 1, class: "input", style: "max-width:5em" %>
+        </div>
+        <div class="field">
+          <%= form.label :return_reason_id, "Reason", class: "field-label" %>
+          <%= form.collection_select :return_reason_id, @return_reasons, :id, :name, {}, class: "input" %>
+        </div>
+        <div class="field">
+          <%= form.label :return_disposition, "Disposition", class: "field-label" %>
+          <%= form.select :return_disposition, [
+                [ "Return to stock", "return_to_stock" ],
+                [ "Inspection required", "inspection_required" ],
+                [ "Damaged", "damaged" ],
+                [ "Return to vendor", "return_to_vendor" ],
+                [ "Discard", "discard" ],
+                [ "Non-inventory", "non_inventory" ]
+              ], {}, class: "input" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Add return line", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+<% end %>

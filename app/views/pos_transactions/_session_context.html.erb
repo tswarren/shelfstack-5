@@ -1,0 +1,16 @@
+<%
+  status_variant = case @pos_transaction.status
+  when "completed" then :success
+  when "open" then :primary
+  when "suspended" then :warning
+  when "cancelled" then :inactive
+  else :neutral
+  end
+%>
+<%= render "shared/page_header",
+      title: "Transaction #{@pos_transaction.public_id}",
+      subtitle: "#{Current.store.name} · Cashier #{@pos_transaction.cashier_user.username}",
+      actions: capture {
+        concat status_badge(@pos_transaction.status.humanize, variant: status_variant)
+        concat status_badge("Tax exempt", variant: :info) if @pos_transaction.tax_exempt?
+      } %>

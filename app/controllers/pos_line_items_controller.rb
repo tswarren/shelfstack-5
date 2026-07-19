@@ -79,17 +79,45 @@ class PosLineItemsController < ApplicationController
   end
 
   def create_product_line
-    resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)
-    if resolved.variant.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: scan_error_message(resolved)
+    # Explicit selection from the scan-resolution region resolves an exact
+    # variant directly, bypassing the ambiguous free-text lookup.
+    if params[:product_variant_id].present?
+      add_selected_variant
       return
     end
 
+    resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)
+    if resolved.variant.blank?
+      if resolved.error == "ambiguous_match"
+        store_scan_resolution(params[:query])
+        redirect_to pos_transaction_path(@pos_transaction), alert: scan_error_message(resolved)
+      else
+        redirect_to pos_transaction_path(@pos_transaction), alert: scan_error_message(resolved)
+      end
+      return
+    end
+
+    add_line(resolved.variant, inventory_unit: resolved.inventory_unit)
+  end
+
+  def add_selected_variant
+    variant = ProductVariant.joins(:product)
+                            .where(products: { organization_id: Current.organization.id })
+                            .find_by(id: params[:product_variant_id])
+    if variant.blank?
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a valid product variant."
+      return
+    end
+
+    add_line(variant)
+  end
+
+  def add_line(variant, inventory_unit: nil)
     result = Pos::AddLine.call(
       pos_transaction: @pos_transaction,
-      product_variant: resolved.variant,
+      product_variant: variant,
       quantity: params[:quantity].presence || 1,
-      inventory_unit: resolved.inventory_unit,
+      inventory_unit: inventory_unit,
       actor: Current.user
     )
     if result.success?
@@ -98,6 +126,28 @@ class PosLineItemsController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  end
+
+  # Persist ambiguous-match candidates so the transaction show page can render
+  # an actionable resolution region (products/variants) after the PRG redirect.
+  def store_scan_resolution(query)
+    lookup = Catalog::Lookup.call(organization: Current.organization, query: query)
+    candidates = lookup.products.first(10).map do |product|
+      {
+        "product_id" => product.id,
+        "title" => product.name,
+        "identifier" => product.identifier,
+        "variants" => product.product_variants.map { |v|
+          { "id" => v.id, "sku" => v.sku, "label" => v.name.presence || v.sku }
+        }
+      }
+    end
+
+    session[:pos_scan_resolution] = {
+      "transaction_id" => @pos_transaction.id,
+      "query" => query.to_s,
+      "candidates" => candidates
+    }
   end
 
   def create_open_ring_line

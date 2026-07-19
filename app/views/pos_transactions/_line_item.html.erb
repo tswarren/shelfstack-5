@@ -1,0 +1,41 @@
+<tr class="<%= "pos-line-return" if line.return? %>">
+  <td>
+    <%= line.effective_description %>
+    <% if line.return? %>
+      <br><span class="muted">Return of line #<%= line.original_pos_line_item_id %> · <%= line.return_reason&.name %> · <%= line.return_disposition&.humanize %></span>
+    <% end %>
+    <% if line.inventory_unit.present? %>
+      <br><span class="muted">Unit <%= line.inventory_unit.unit_identifier %></span>
+    <% end %>
+  </td>
+  <td class="num">
+    <% if @pos_transaction.editable? && line.inventory_unit.blank? %>
+      <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>
+        <%= form.number_field :quantity, value: line.quantity, min: 1, class: "input", style: "max-width:4em" %>
+        <%= form.submit "Update", class: "button button-small button-outline" %>
+      <% end %>
+    <% else %>
+      <%= line.quantity %>
+    <% end %>
+  </td>
+  <td class="num"><%= pos_money(line.unit_price_cents) %></td>
+  <td class="num"><%= pos_money(line.extended_price_cents) %></td>
+  <td class="num"><%= pos_money(line.discount_amount_cents) %></td>
+  <td class="num"><%= pos_money(line.tax_amount_cents) %></td>
+  <td class="num"><%= pos_money(line.extended_price_cents - line.discount_amount_cents + line.tax_amount_cents) %></td>
+  <td>
+    <% if @pos_transaction.editable? && Current.user.can?("pos.line.remove", store: Current.store) %>
+      <%= button_to "Remove", pos_transaction_pos_line_item_path(@pos_transaction, line), method: :delete, class: "button button-small button-danger" %>
+    <% end %>
+  </td>
+</tr>
+<% if @pos_transaction.editable? && line.sale? %>
+  <tr class="pos-line-detail-row">
+    <td colspan="8">
+      <% if line.tax_category_overridden? %>
+        <p class="muted">Tax category overridden from <%= line.original_tax_category&.name %> to <%= line.tax_category&.name %> — <%= line.tax_category_override_reason %></p>
+      <% end %>
+      <%= render "line_actions", line: line %>
+    </td>
+  </tr>
+<% end %>

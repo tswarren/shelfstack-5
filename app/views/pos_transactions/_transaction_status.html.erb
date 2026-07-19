@@ -1,0 +1,13 @@
+<% if @pos_transaction.completed? %>
+  <div class="ss-alert ss-alert-info" role="status">
+    <p>
+      <strong>Receipt <%= @pos_transaction.receipt_number %></strong> ·
+      completed <%= @pos_transaction.completed_at&.strftime("%Y-%m-%d %H:%M") %> ·
+      net <%= pos_money(@pos_transaction.net_total_cents) %>
+    </p>
+  </div>
+<% elsif @pos_transaction.open? && !@pos_transaction.editable? %>
+  <div class="ss-alert ss-alert-warning" role="status">
+    <p>Commercial fields (lines, prices, discounts, tax category, exemptions) are locked while a Tender is pending or authorized. Remove or void the Tender to resume editing.</p>
+  </div>
+<% end %>

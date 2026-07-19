@@ -1,125 +1,170 @@
 <% content_for :title, "Register" %>
 
-<h1>Register</h1>
-<p class="muted">
-  <strong><%= Current.store.name %></strong> ·
-  Signed in as <strong><%= Current.user.username %></strong>
-</p>
+<%= render "shared/page_header", title: "Register",
+      subtitle: "#{Current.store.name} · Signed in as #{Current.user.username}" %>
 
-<% if flash[:alert].present? %>
-  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
-<% end %>
-<% if flash[:notice].present? %>
-  <div class="ss-alert ss-alert-info"><p><%= flash[:notice] %></p></div>
-<% end %>
-
-<% if @business_day.blank? %>
-  <div class="ss-alert ss-alert-info">
-    <p>No business day is open for this store.</p>
-  </div>
-  <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
-    <%= link_to "Open business day", new_business_day_path, class: "button button-primary" %>
-  <% end %>
-<% else %>
-  <p>
-    Business day open since <%= @business_day.opened_at.strftime("%Y-%m-%d %H:%M") %>
-    (reporting date <%= @business_day.reporting_date %>).
-    <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
-      <%= button_to "Close business day", close_business_day_path(@business_day), class: "button button-small button-outline" %>
+<div class="workspace-landing">
+  <%# Business day state %>
+  <section class="card workspace-card" aria-label="Business day">
+    <h2>Business day</h2>
+    <% if @business_day.blank? %>
+      <p class="muted">No business day is open for this store.</p>
+      <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
+        <div class="action-group">
+          <%= link_to "Open business day", new_business_day_path, class: "button button-primary" %>
+        </div>
+      <% end %>
+    <% else %>
+      <p>
+        Open since <strong><%= @business_day.opened_at.strftime("%Y-%m-%d %H:%M") %></strong>
+        <br><span class="muted">Reporting date <%= @business_day.reporting_date %></span>
+      </p>
+      <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
+        <div class="action-group">
+          <%= button_to "Close business day", close_business_day_path(@business_day), class: "button button-small button-outline" %>
+        </div>
+      <% end %>
     <% end %>
-  </p>
+  </section>
 
-  <% if @open_session.blank? %>
-    <div class="ss-alert ss-alert-info">
-      <p>You have no open POS session.</p>
-    </div>
-    <% if Current.user.can?("pos.session.open", store: Current.store) %>
-      <%= link_to "Open session", new_pos_session_path(business_day_id: @business_day.id), class: "button button-primary" %>
-    <% end %>
-  <% else %>
-    <p>
-      Session open on device <strong><%= @open_session.pos_device.name %></strong>
-      <% if @open_session.cash_drawer.present? %>
-        / drawer <strong><%= @open_session.cash_drawer.name %></strong>
-      <% end %>.
-      <% if Current.user.can?("pos.session.close", store: Current.store) %>
-        <% if @open_session.cash_enabled? %>
-          <%= link_to "Close session", close_form_pos_session_path(@open_session), class: "button button-small button-outline" %>
-        <% else %>
-          <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
+  <%# Session state %>
+  <% if @business_day.present? %>
+    <section class="card workspace-card" aria-label="POS session">
+      <h2>Session</h2>
+      <% if @open_session.blank? %>
+        <p class="muted">You have no open POS session.</p>
+        <% if Current.user.can?("pos.session.open", store: Current.store) %>
+          <div class="action-group">
+            <%= link_to "Open session", new_pos_session_path(business_day_id: @business_day.id), class: "button button-primary" %>
+          </div>
+        <% end %>
+      <% else %>
+        <p>
+          Device <strong><%= @open_session.pos_device.name %></strong>
+          <% if @open_session.cash_drawer.present? %>
+            <br>Drawer <strong><%= @open_session.cash_drawer.name %></strong>
+          <% else %>
+            <br><span class="muted">Card-only (no drawer)</span>
+          <% end %>
+        </p>
+        <% if Current.user.can?("pos.session.close", store: Current.store) %>
+          <div class="action-group">
+            <% if @open_session.cash_enabled? %>
+              <%= link_to "Close session", close_form_pos_session_path(@open_session), class: "button button-small button-outline" %>
+            <% else %>
+              <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
+            <% end %>
+          </div>
         <% end %>
       <% end %>
-    </p>
+    </section>
+  <% end %>
 
-    <% if @open_transaction.present? %>
-      <p><%= link_to "Continue current transaction", pos_transaction_path(@open_transaction), class: "button button-primary" %></p>
-    <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
-      <%= button_to "New sale", pos_transactions_path, class: "button button-primary" %>
-    <% end %>
+  <%# Primary action: current / new sale %>
+  <% if @open_session.present? %>
+    <section class="card workspace-card" aria-label="Sale">
+      <h2>Sale</h2>
+      <% if @open_transaction.present? %>
+        <p class="muted">A transaction is in progress.</p>
+        <div class="action-group">
+          <%= link_to "Continue current transaction", pos_transaction_path(@open_transaction), class: "button button-primary" %>
+        </div>
+      <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
+        <p class="muted">Start ringing up a new customer.</p>
+        <div class="action-group">
+          <%= button_to "New sale", pos_transactions_path, class: "button button-primary" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+</div>
 
-    <% if Current.user.can?("pos.cash_movement.create", store: Current.store) %>
-      <div class="pos-panel">
-        <h2>Cash movement</h2>
-        <% if @open_session.pos_cash_movements.any? %>
-          <table>
-            <thead>
-              <tr><th>Type</th><th>Direction</th><th>Amount</th><th>Reference</th></tr>
-            </thead>
-            <tbody>
-              <% @open_session.pos_cash_movements.includes(:cash_movement_type).order(:id).each do |movement| %>
-                <tr>
-                  <td><%= movement.cash_movement_type.name %></td>
-                  <td><%= movement.cash_movement_type.direction.humanize %></td>
-                  <td><%= pos_money(movement.amount_cents) %></td>
-                  <td><%= movement.reference.presence || "—" %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% end %>
-        <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "pos-inline-form" do |form| %>
-          <%= form.label :cash_movement_type_id, "Type" %>
-          <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name %>
-          <%= form.label :amount_cents, "Amount (cents)" %>
-          <%= form.number_field :amount_cents, min: 1, style: "width:8em", required: true %>
-          <%= form.text_field :reason, placeholder: "Reason" %>
-          <%= form.text_field :reference, placeholder: "Reference (required for paid in/out and safe drop)" %>
-          <%= form.text_field :approver_username, placeholder: "Approver username (if needed)" %>
-          <%= form.password_field :approver_pin, placeholder: "Approver PIN" %>
-          <%= form.submit "Record cash movement", class: "button button-outline" %>
-        <% end %>
-        <p class="muted">
-          Additional float needs only amount.
-          Paid in, paid out, and safe drop require a reference.
-          Paid in/out also require approval when the amount exceeds your paid-out authority.
-        </p>
+<%# Cash movements — behind a disclosure to keep the landing scannable %>
+<% if @open_session.present? && Current.user.can?("pos.cash_movement.create", store: Current.store) %>
+  <details class="pos-panel">
+    <summary>Cash movements</summary>
+    <% if @open_session.pos_cash_movements.any? %>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th scope="col">Type</th>
+              <th scope="col">Direction</th>
+              <th scope="col" class="num">Amount</th>
+              <th scope="col">Reference</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @open_session.pos_cash_movements.includes(:cash_movement_type).order(:id).each do |movement| %>
+              <tr>
+                <td><%= movement.cash_movement_type.name %></td>
+                <td><%= movement.cash_movement_type.direction.humanize %></td>
+                <td class="num"><%= pos_money(movement.amount_cents) %></td>
+                <td><%= movement.reference.presence || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
       </div>
     <% end %>
+    <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= form.label :cash_movement_type_id, "Type", class: "field-label" %>
+        <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
+            id: "cash_movement_amount_cents", required: true %>
+      <div class="field">
+        <%= form.label :reason, class: "field-label" %>
+        <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :reference, class: "field-label" %>
+        <%= form.text_field :reference, placeholder: "Reference (required for paid in/out and safe drop)", class: "input" %>
+      </div>
+      <%= render "shared/approval_fields", prefix: "cash_movement" %>
+      <div class="form-actions">
+        <%= form.submit "Record cash movement", class: "button button-outline" %>
+      </div>
+    <% end %>
+    <p class="field-hint">
+      Additional float needs only an amount. Paid in, paid out, and safe drop require a reference.
+      Paid in/out also require approval when the amount exceeds your paid-out authority.
+    </p>
+  </details>
+<% end %>
 
+<%# Suspended queue %>
+<% if @open_session.present? %>
+  <section class="pos-panel" aria-label="Suspended transactions">
     <h2>Suspended transactions</h2>
     <% if @suspended_transactions.empty? %>
       <p class="muted">None.</p>
     <% else %>
-      <table>
-        <thead>
-          <tr><th>Public ID</th><th>Suspended at</th><th></th></tr>
-        </thead>
-        <tbody>
-          <% @suspended_transactions.each do |transaction| %>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
             <tr>
-              <td><%= transaction.public_id %></td>
-              <td><%= transaction.suspended_at&.strftime("%Y-%m-%d %H:%M") %></td>
-              <td>
-                <% if Current.user.can?("pos.transaction.recall", store: Current.store) %>
-                  <%= button_to "Recall", recall_pos_transaction_path(transaction), class: "button button-small button-outline" %>
-                <% end %>
-              </td>
+              <th scope="col">Public ID</th>
+              <th scope="col">Suspended at</th>
+              <th scope="col"><span class="sr-only">Actions</span></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @suspended_transactions.each do |transaction| %>
+              <tr>
+                <td><%= link_to transaction.public_id, pos_transaction_path(transaction) %></td>
+                <td><%= transaction.suspended_at&.strftime("%Y-%m-%d %H:%M") %></td>
+                <td>
+                  <% if Current.user.can?("pos.transaction.recall", store: Current.store) %>
+                    <%= button_to "Recall", recall_pos_transaction_path(transaction), class: "button button-small button-outline" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     <% end %>
-  <% end %>
+  </section>
 <% end %>
-
-<p><%= link_to "Home", root_path %></p>

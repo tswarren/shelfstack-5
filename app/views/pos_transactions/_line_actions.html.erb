@@ -1,0 +1,70 @@
+<%# locals: line: %>
+<details class="pos-line-actions">
+  <summary>Line actions</summary>
+
+  <% if line.line_kind == "product" %>
+    <div class="pos-panel">
+      <h3>Override price</h3>
+      <%= form_with url: override_price_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "form" do |form| %>
+        <%= render "shared/currency_field", name: "requested_unit_price_cents", label: "New unit price",
+              id: "override_price_cents_#{line.id}" %>
+        <div class="field">
+          <%= form.label :reason, class: "field-label" %>
+          <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
+        </div>
+        <%= render "shared/approval_fields", prefix: "override_price_#{line.id}" %>
+        <div class="form-actions">
+          <%= form.submit "Override price", class: "button button-small button-outline" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div class="pos-panel">
+    <h3>Override tax category</h3>
+    <%= form_with url: override_tax_category_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "form" do |form| %>
+      <div class="field">
+        <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
+        <%= form.collection_select :tax_category_id, @tax_categories, :id, :name, { selected: line.tax_category_id }, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :reason, "Reason (required)", class: "field-label" %>
+        <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
+      </div>
+      <%= render "shared/approval_fields", prefix: "override_tax_#{line.id}" %>
+      <div class="form-actions">
+        <%= form.submit "Override tax category", class: "button button-small button-outline" %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="pos-panel">
+    <h3>Line discount</h3>
+    <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <%= hidden_field_tag :scope, "line" %>
+      <%= hidden_field_tag :pos_line_item_id, line.id %>
+      <div class="field">
+        <%= form.label :method, "Method", class: "field-label" %>
+        <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ], [ "Fixed price", "fixed_price" ] ], {}, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :rate_bps, "Rate (bps, for percentage)", class: "field-label" %>
+        <%= form.number_field :rate_bps, min: 0, max: 10_000, class: "input", style: "max-width:7em" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount / target price",
+            id: "line_discount_amount_cents_#{line.id}" %>
+      <div class="field">
+        <%= form.label :discount_reason_id, "Reason code", class: "field-label" %>
+        <%= form.collection_select :discount_reason_id, @discount_reasons, :id, :name, { include_blank: "No reason" }, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :reason, "Reason note", class: "field-label" %>
+        <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
+      </div>
+      <%= render "shared/approval_fields", prefix: "line_discount_#{line.id}" %>
+      <div class="form-actions">
+        <%= form.submit "Apply line discount", class: "button button-small button-outline" %>
+      </div>
+    <% end %>
+  </div>
+</details>

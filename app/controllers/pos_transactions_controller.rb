@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosTransactionsController < ApplicationController
+  layout "pos"
+
   before_action -> { require_permission!("pos.access") }, only: %i[index show]
   before_action -> { require_permission!("pos.transaction.open") }, only: %i[create]
   before_action -> { require_permission!("pos.transaction.suspend") }, only: %i[suspend]
@@ -46,6 +48,10 @@ class PosTransactionsController < ApplicationController
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid
+
+    # Actionable scan resolution surfaced after an ambiguous scan (POST → PRG).
+    stored = session.delete(:pos_scan_resolution)
+    @scan_resolution = stored if stored.present? && stored["transaction_id"] == @pos_transaction.id
   end
 
   def create
@@ -75,19 +81,14 @@ class PosTransactionsController < ApplicationController
 
     result = Pos::RecallTransaction.call(pos_transaction: @pos_transaction, pos_session: session, actor: Current.user)
     if result.success?
-      notices = []
-      alerts = []
-      if result.changes.any?
-        notices << "Recall refreshed commercial values: " + result.changes.map { |c|
-          "line #{c.pos_line_item_id} #{c.field} #{c.from} → #{c.to}"
-        }.join("; ")
-      end
-      notices.concat(result.warnings) if result.warnings.any?
-      alerts.concat(result.blockers.map { |b| "Eligibility blocker: #{b}" }) if result.blockers.any?
+      # Structured recall detail is surfaced on the transaction show page
+      # (see pos_transactions/_recall_summary) rather than crammed into flash text.
+      changes = result.changes.map { |c| "Line #{c.pos_line_item_id}: #{c.field} #{c.from} → #{c.to}" }
+      flash[:recall_changes] = changes if changes.any?
+      flash[:recall_warnings] = result.warnings if result.warnings.any?
+      flash[:recall_blockers] = result.blockers if result.blockers.any?
 
-      redirect_opts = { notice: notices.presence&.join(" | ") || (alerts.empty? ? "Transaction recalled." : nil) }
-      redirect_opts[:alert] = alerts.join(" | ") if alerts.any?
-      redirect_to pos_transaction_path(result.pos_transaction), redirect_opts.compact
+      redirect_to pos_transaction_path(result.pos_transaction), notice: "Transaction recalled."
     else
       redirect_to register_path, alert: result.error
     end
