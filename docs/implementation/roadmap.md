@@ -52,7 +52,7 @@ flowchart TD
 | 1 | Organization and authorization | Complete | [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) |
 | 2 | Configuration and catalog | Complete | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
-| 4 | Point of sale (4a–4e) | In progress (4a implemented on `phase/p4-point-of-sale`) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
+| 4 | Point of sale (4a–4e) | In progress (4a–4c implemented on `phase/p4-point-of-sale`) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
 
 | 5 | Supply and demand | Not started | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |

@@ -143,6 +143,7 @@ Store tax rates and store tax rules with `treatment`, denormalized `store_id`, e
 
 ## Phase 4c — Tender and atomic completion
 
+**Landed** on `phase/p4-point-of-sale`: the D1 inventory sale bridge (`Inventory::PostLedgerEntry` / `Inventory::CalculateQuantityCost` extended for outbound `sale`, OD-014 provisional `moving_average`/`last_known`/`unknown` cost with zero/negative asset value; `Inventory::ConvertReservation` locking balance → reservation, verifying the source line, posting the sale, decrementing `reserved`, and marking the Reservation `converted` — never post-then-Release; deterministic `pos_line_item:<id>:sale` posting key; cost snapshot on the Line at conversion); the D2 completion schema (`stores.next_receipt_sequence`, `pos_tenders`, `pos_cash_movements`, completion fields on `pos_transactions`); the five 4c permission keys; the Tender-state lock (`PosTransaction#editable?`/`#unresolved_tenders?`, enforced with fresh post-lock rechecks in every 4a/4b commercial-editing service, `Pos::AddLine`/`Pos::AddOpenRingLine` transaction-locked against new lines); `Pos::AddCashTender`, `Pos::AddCardTender`, `Pos::RemoveTender`, `Pos::CreateCashMovement`; `Pos::CompleteTransaction` (atomic + idempotent per ADR-0009); `Pos::SuspendTransaction` and `Pos::CancelTransaction` hardened against unresolved Tenders; `Pos::CloseSession` blocked while it controls an open Transaction (which unresolved Tenders always imply); and register UI for the Tender panel, completion, commercial lock messaging, and receipt display (see [service-catalog.md](../service-catalog.md)).
 
 ### Tables
 
@@ -177,21 +178,21 @@ Double-submit of the same completion request must not duplicate postings.
 
 ### Exit
 
-- [ ] Successful completion posts inventory and assigns receipt number
-- [ ] Failed completion leaves no partial inventory/tender/receipt effects
-- [ ] Idempotency key prevents duplicate completion
-- [ ] Quantity negative-sale warning path tested
-- [ ] Tender lock blocks commercial edits while authorized/pending tender exists
-- [ ] Authorized card tender remains visible after failed internal completion
-- [ ] Concurrent completion vs edit/recall tested
+- [x] Successful completion posts inventory and assigns receipt number (`test/services/pos/complete_transaction_test.rb`)
+- [x] Failed completion leaves no partial inventory/tender/receipt effects (same file; tender-mismatch and department cases)
+- [x] Idempotency key prevents duplicate completion (same file; replay + different-key-on-completed cases)
+- [x] Quantity negative-sale warning path tested (same file; provisional `last_known` cost + `available` negative warning)
+- [x] Tender lock blocks commercial edits while authorized/pending tender exists (same file; `RemoveLine` denial while pending, restored after `RemoveTender`)
+- [x] Authorized card tender remains visible after failed internal completion (same file)
+- [x] Concurrent completion vs edit/recall tested (`test/services/pos/concurrency_complete_vs_edit_test.rb`; Recall cannot race Complete because Suspend is itself blocked while an unresolved Tender exists — see file comment)
 
 ### UX acceptance (4c)
 
-- [ ] Tender panel and balance-due presentation; shortcuts request completion only
-- [ ] Commercial fields locked while unresolved tenders exist; clear path to resume editing
-- [ ] Completion in-progress / failed / retry UI aligned with idempotency (no duplicate-submit ambiguity)
-- [ ] Receipt presentation after successful completion
-- [ ] Critical browser paths covered by system tests (not pixel snapshots)
+- [x] Tender panel and balance-due presentation; shortcuts request completion only (`app/views/pos_transactions/show.html.erb`)
+- [x] Commercial fields locked while unresolved tenders exist; clear path to resume editing (warning banner + `Pos::RemoveTender` affordance)
+- [x] Completion in-progress / failed / retry UI aligned with idempotency (no duplicate-submit ambiguity) (stable per-render `completion_idempotency_key` hidden field)
+- [x] Receipt presentation after successful completion (receipt number/date/net banner on the transaction page)
+- [ ] Critical browser paths covered by system tests (not pixel snapshots) — carried gap from 4a/4b; no `test/system` harness wired up yet in this repo
 
 ### Must not
 

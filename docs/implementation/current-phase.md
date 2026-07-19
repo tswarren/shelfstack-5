@@ -1,18 +1,20 @@
 # Current Phase
 
-**Active delivery phase:** Phase 4b — Price, tax, discounts, approvals  
-**Status:** 4a and 4b implemented on `phase/p4-point-of-sale`; not merged to `main` pending manual testing per the Phase 4 delivery plan's merge gate  
+**Active delivery phase:** Phase 4c — Tender and atomic completion  
+**Status:** 4a, 4b, and 4c implemented on `phase/p4-point-of-sale`; not merged to `main` pending manual testing per the Phase 4 delivery plan's merge gate  
 **Design docs:** [../design/README.md](../design/README.md)  
 **Plan document:** [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md)
 
 ## Immediate next work
 
-1. Manually test Phase 4a and 4b on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
+1. Manually test Phase 4a–4c on `phase/p4-point-of-sale` before any merge to `main` (automated tests alone are not sufficient per the delivery plan's merge gate).
 2. ~~Land store tax rates/rules (`treatment` on rules, not Tax Category status) and ADR-0014 fixtures before Phase 4b~~ — done on `phase/p4-point-of-sale`: `store_tax_rates` / `store_tax_rules` schema, admin CRUD, the pure `Tax::CalculateTransaction` service, ADR-0014 fixtures/tests, and demo seed data. See [phase-04-tax-schema.md](phase-04-tax-schema.md), [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md), and [service-catalog.md](service-catalog.md).
 3. ~~Begin the remainder of Phase 4b (discount allocation, `Pos::RecalculateTransaction` persisting `pos_line_item_taxes`, approvals)~~ — done on `phase/p4-point-of-sale`: `pos_discounts`/`pos_discount_allocations`/`pos_line_item_taxes`/`pos_tax_exemptions`/`pos_approvals` schema; the five 4b permission keys; `Pos::AuthorizeAction`, `Pos::OverridePrice`, `Pos::ApplyDiscount`, `Pos::OverrideTaxCategory`, `Pos::ApplyTaxExemption`, `Pos::RecalculateTransaction`; recalculation wired into every line-mutating 4a service; and register UI for price/discount/tax-category-override/exemption with approver deny paths. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4b exit criteria and [service-catalog.md](service-catalog.md).
-4. Begin Phase 4c (tender and atomic completion) — the first demo milestone.
-5. Keep [OD-014](open-decisions.md) open for deficit allocation until Phase 4c / Phase 5 producers need it.
-6. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+4. ~~Begin Phase 4c (tender and atomic completion) — the first demo milestone~~ — done on `phase/p4-point-of-sale`: the D1 inventory sale bridge (`Inventory::ConvertReservation`, OD-014 provisional sale cost), D2 completion schema (`pos_tenders`, `pos_cash_movements`, `stores.next_receipt_sequence`, completion fields on `pos_transactions`), the five 4c permission keys, the Tender-state lock, `Pos::CompleteTransaction` (atomic + idempotent per ADR-0009), and register UI for tenders/completion/receipt. OD-014's Phase 4c interim (no settlement/variance tables) is exercised, not re-opened. See [phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) 4c exit criteria and [service-catalog.md](service-catalog.md).
+5. Begin Phase 4d (individually tracked inventory) or Phase 4e (simple linked returns) — both now unblocked; Phase 5 is unblocked at a 4c minimum per the roadmap, but 4d/4e are recommended first.
+6. Keep [OD-014](open-decisions.md)'s full settlement/variance representation open for Phase 5; the Phase 4c interim is closed as accepted and implemented.
+7. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+8. Wire up a `test/system` (Capybara/Selenium) harness before claiming the 4c "critical browser paths" UX-acceptance item — carried gap from 4a/4b, not newly introduced.
 
 ### UX readiness gate (complete)
 

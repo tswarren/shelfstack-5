@@ -130,11 +130,29 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - `Pos::AuthorizeAction` centralizes ADR-0011 permission/authority/approval evaluation for all restricted 4b actions: the requester's own numeric authority (`EvaluateAuthority`, membership-override columns per OD-013 interim) is checked first when a `limit_key` is given; an approver must differ from the requester, authenticate with their own PIN (`authenticate_pin`, not the requester's), hold the approving permission, and (for numeric actions) independently have authority covering the requested value.
 - Completion-time blocker revalidation under a Transaction lock (`Pos::CompleteTransaction`) is Phase 4c work.
 
+## Phase 4c — Inventory sale bridge, tender, and atomic completion
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Inventory::ConvertReservation` | Receiving and Inventory | 4c | Yes | Yes (posting key) | Balance, then Reservation (Reserve/ReleaseReservation order) | POS line, posted-by actor | Posts an outbound `sale` via `PostLedgerEntry`; decrements `reserved`; marks Reservation `converted`; snapshots `cost_unit_cost_cents`/`cost_extended_cents`/`cost_method_snapshot`/`cost_quality_snapshot` on the line; warns on negative resulting `available` |
+| `Pos::AddCashTender` | Point of Sale | 4c | Yes | No | Transaction (`lock`) | Transaction, cash Tender Type, amount tendered, actor | `pending` `PosTender` capped at balance due; change computed; does not itself require the Transaction to be `editable?` |
+| `Pos::AddCardTender` | Point of Sale | 4c | Yes | No | Transaction (`lock`) | Transaction, card Tender Type, amount, authorization code, optional terminal reference, actor | `authorized` `PosTender` (external approval already confirmed by the cashier; ADR-0009 standalone-terminal limitation) |
+| `Pos::RemoveTender` | Point of Sale | 4c | Yes | No | Tender (`lock`) | Tender, actor, optional reason | `pending` → `removed`; `authorized` → `voided`; restores `PosTransaction#editable?` |
+| `Pos::CreateCashMovement` | Point of Sale | 4c | Yes | No | None (session-scoped, not Transaction-scoped) | Session, Cash Movement Type, amount, actor, optional reason/reference/approver | `PosCashMovement`; escalates through `Pos::AuthorizeAction` (`maximum_paid_out_cents`) when the type `requires_approval` |
+| `Pos::CompleteTransaction` | Point of Sale | 4c | Yes | Yes (`completion_idempotency_key`) | Transaction, Session, pending Lines, unresolved Tenders (all `lock`); Balance/Reservation via `Inventory::ConvertReservation`; Store (`lock`, receipt sequence) | Transaction, completing Session, actor, idempotency key | Revalidates tax under lock (blockers fail completion); converts Reservations / posts sale movements; finalizes Lines and Tenders; assigns `receipt_number`/`receipt_sequence` only on success; marks Transaction `completed`; replays the prior result for a repeated key on an already-completed Transaction |
+
+### Phase 4c notes
+
+- **Tender-state lock:** `PosTransaction#editable?` is `open? && !unresolved_tenders?` (`pending`/`authorized` Tenders lock lines, prices, discounts, tax category, and exemptions). Every 4a/4b commercial-editing service re-checks `editable?`/line status *after* acquiring its row lock (`Pos::RemoveLine`, `Pos::UpdateLineQty`, `Pos::OverridePrice`, `Pos::OverrideTaxCategory`), and `Pos::AddLine`/`Pos::AddOpenRingLine` lock the Transaction itself before inserting a new Line, so none of them can slip a commercial mutation past a Transaction that `Pos::CompleteTransaction` is concurrently completing.
+- `Pos::SuspendTransaction` and `Pos::CancelTransaction` are hardened against Tenders: Suspend is blocked outright while an unresolved Tender exists (domain: "Suspension ... requires no unresolved Tender activity"); Cancel resolves (removes/voids) any unresolved Tenders itself before cancelling, so no completed Tender can survive a cancelled Transaction (ADR-0008).
+- `Pos::CloseSession`'s pre-existing "blocks while it controls an open Transaction" guard already enforces "Session close blocked by unresolved Tenders," because an unresolved Tender can only exist on a still-`open` Transaction (Suspend's guard above rules out the alternative).
+- `Pos::CompleteTransaction` scope matches phase-04: Product-line tracking modes `quantity` and `none` only; individual units and Stored Value are out of scope (4d/6). Departments are re-checked (`active?`/`postable?`) directly off the persisted Line at completion, independent of `Catalog::SaleEligibility`, since a Department can be deactivated after a Line was added.
+- Receipt Number format (v1, not architecturally locked beyond OD-002's sequence ownership): `"#{store.code}-#{receipt_sequence.to_s.rjust(6, '0')}"`.
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 4c: `Pos::CompleteTransaction`, tender helpers
 - Phase 5: receipt posting, PO placement, allocation services
 - Phase 6: stored-value posting, post-void
 
