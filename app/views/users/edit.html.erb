@@ -1,2 +1,4 @@
-<h1>Edit user</h1>
+<%= render "shared/page_header", title: "Edit user",
+      breadcrumbs: [ { label: "Users", path: users_path }, { label: @user.username, path: user_path(@user) }, { label: "Edit" } ] %>
+
 <%= render "form", user: @user %>

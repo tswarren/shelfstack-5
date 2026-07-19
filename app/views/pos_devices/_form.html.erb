@@ -1,10 +1,29 @@
-<%= form_with model: device do |form| %>
-  <% if device.errors.any? %>
-    <ul><% device.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
-  <% end %>
-  <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :device_type %> <%= form.select :device_type, PosDevice::DEVICE_TYPES %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: device, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: device %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Device details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <%= form.text_field :code, class: "input input-code" %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :device_type, class: "field-label" %>
+        <%= form.select :device_type, PosDevice::DEVICE_TYPES.map { |t| [ t.titleize, t ] } %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Device is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit device.persisted? ? "Update device" : "Create device", class: "button button-primary" %>
+    <%= link_to "Cancel", pos_devices_path, class: "button button-outline" %>
+  </div>
 <% end %>

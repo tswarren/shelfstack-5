@@ -1,2 +1,4 @@
-<h1>Edit Product Format</h1>
+<%= render "shared/page_header", title: "Edit product format",
+      breadcrumbs: [ { label: "Product formats", path: product_formats_path }, { label: @product_format.name, path: product_format_path(@product_format) }, { label: "Edit" } ] %>
+
 <%= render "form", product_format: @product_format %>

@@ -1,2 +1,4 @@
-<h1>New Product Condition</h1>
+<%= render "shared/page_header", title: "New product condition",
+      breadcrumbs: [ { label: "Product conditions", path: product_conditions_path }, { label: "New product condition" } ] %>
+
 <%= render "form", product_condition: @product_condition %>

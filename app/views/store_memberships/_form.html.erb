@@ -1,31 +1,70 @@
-<%= form_with model: membership do |form| %>
-  <% if membership.errors.any? %>
-    <ul><% membership.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
-  <% end %>
-  <% if membership.persisted? %>
-    <div>
-      <%= form.label :user_id, "User" %>
-      <%= membership.user.username %>
+<%= form_with model: membership, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: membership %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Grant</h2>
+    <div class="form-grid">
+      <% if membership.persisted? %>
+        <div class="field">
+          <span class="field-label">User</span>
+          <p><%= membership.user.username %></p>
+        </div>
+      <% else %>
+        <div class="field">
+          <%= form.label :user_id, "User", class: "field-label" %>
+          <%= form.collection_select :user_id, users, :id, :username, include_blank: true %>
+        </div>
+      <% end %>
+      <div class="field">
+        <%= form.label :role_id, "Role", class: "field-label" %>
+        <%= form.collection_select :role_id, roles, :id, :name, include_blank: true %>
+      </div>
+      <div class="field">
+        <%= form.label :starts_on, class: "field-label" %>
+        <%= form.date_field :starts_on, class: "input input-date" %>
+      </div>
+      <div class="field">
+        <%= form.label :ends_on, class: "field-label" %>
+        <%= form.date_field :ends_on, class: "input input-date" %>
+      </div>
     </div>
-  <% else %>
-    <div><%= form.label :user_id %> <%= form.collection_select :user_id, users, :id, :username %></div>
-  <% end %>
-  <div><%= form.label :role_id %> <%= form.collection_select :role_id, roles, :id, :name %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.label :starts_on %> <%= form.date_field :starts_on %></div>
-  <div><%= form.label :ends_on %> <%= form.date_field :ends_on %></div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Membership is active</label>
+    </div>
+  </section>
 
-  <fieldset>
-    <legend>Authority overrides (optional)</legend>
-    <p>Leave blank for unconfigured (deny until set). Rates are decimals from 0 to 1. Money fields are integer cents.</p>
-    <div><%= form.label :maximum_discount_rate %> <%= form.number_field :maximum_discount_rate, step: :any, min: 0, max: 1 %></div>
-    <div><%= form.label :maximum_discount_amount_cents %> <%= form.number_field :maximum_discount_amount_cents, step: 1, min: 0 %></div>
-    <div><%= form.label :maximum_price_override_rate %> <%= form.number_field :maximum_price_override_rate, step: :any, min: 0, max: 1 %></div>
-    <div><%= form.label :maximum_cash_refund_cents %> <%= form.number_field :maximum_cash_refund_cents, step: 1, min: 0 %></div>
-    <div><%= form.label :maximum_no_receipt_return_cents %> <%= form.number_field :maximum_no_receipt_return_cents, step: 1, min: 0 %></div>
-    <div><%= form.label :maximum_paid_out_cents %> <%= form.number_field :maximum_paid_out_cents, step: 1, min: 0 %></div>
-    <div><%= form.label :cash_variance_review_threshold_cents %> <%= form.number_field :cash_variance_review_threshold_cents, step: 1, min: 0 %></div>
-  </fieldset>
+  <section class="form-section">
+    <h2 class="form-section-title">Authority overrides (optional)</h2>
+    <p class="field-hint">Leave blank to deny until configured. Rates are entered as percentages; amounts as dollars.</p>
+    <div class="form-grid">
+      <%= render "shared/percent_field", name: "store_membership[maximum_discount_rate_percent]",
+            label: "Maximum discount rate", id: "store_membership_maximum_discount_rate",
+            value_percent: format_rate_as_percent(membership.maximum_discount_rate),
+            hint: "e.g. 20 for 20%." %>
+      <%= render "shared/percent_field", name: "store_membership[maximum_price_override_rate_percent]",
+            label: "Maximum price override rate", id: "store_membership_maximum_price_override_rate",
+            value_percent: format_rate_as_percent(membership.maximum_price_override_rate),
+            hint: "e.g. 15 for 15%." %>
+      <%= render "shared/money_field", name: "store_membership[maximum_discount_amount]",
+            label: "Maximum discount amount", id: "store_membership_maximum_discount_amount",
+            value_cents: membership.maximum_discount_amount_cents %>
+      <%= render "shared/money_field", name: "store_membership[maximum_cash_refund]",
+            label: "Maximum cash refund", id: "store_membership_maximum_cash_refund",
+            value_cents: membership.maximum_cash_refund_cents %>
+      <%= render "shared/money_field", name: "store_membership[maximum_no_receipt_return]",
+            label: "Maximum no-receipt return", id: "store_membership_maximum_no_receipt_return",
+            value_cents: membership.maximum_no_receipt_return_cents %>
+      <%= render "shared/money_field", name: "store_membership[maximum_paid_out]",
+            label: "Maximum paid out", id: "store_membership_maximum_paid_out",
+            value_cents: membership.maximum_paid_out_cents %>
+      <%= render "shared/money_field", name: "store_membership[cash_variance_review_threshold]",
+            label: "Cash variance review threshold", id: "store_membership_cash_variance_review_threshold",
+            value_cents: membership.cash_variance_review_threshold_cents %>
+    </div>
+  </section>
 
-  <div><%= form.submit %></div>
+  <div class="form-actions">
+    <%= form.submit membership.persisted? ? "Update membership" : "Create membership", class: "button button-primary" %>
+    <%= link_to "Cancel", store_memberships_path, class: "button button-outline" %>
+  </div>
 <% end %>

@@ -56,9 +56,19 @@ class DiscountReasonsController < ApplicationController
   end
 
   def discount_reason_params
-    params.require(:discount_reason).permit(
+    attrs = params.require(:discount_reason).permit(
       :code, :name, :default_calculation_method, :default_rate_bps, :default_amount_cents,
       :maximum_rate_bps, :requires_approval, :resulting_return_policy_id, :active
     )
+
+    # Rates are entered as percentages and the amount as decimal dollars in the UI,
+    # then converted to basis points / integer cents. Direct column input
+    # (API/tests) still works when the human-readable field is absent.
+    raw = params[:discount_reason] || {}
+    attrs[:default_rate_bps] = helpers.parse_percent_to_bps(raw[:default_rate_percent]) if raw.key?(:default_rate_percent)
+    attrs[:maximum_rate_bps] = helpers.parse_percent_to_bps(raw[:maximum_rate_percent]) if raw.key?(:maximum_rate_percent)
+    attrs[:default_amount_cents] = helpers.parse_money_to_cents(raw[:default_amount]) if raw.key?(:default_amount)
+
+    attrs
   end
 end

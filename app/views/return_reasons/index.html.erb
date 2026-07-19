@@ -1,8 +1,36 @@
-<h1>Return Reasons</h1>
-<p><%= link_to "New return reason", new_return_reason_path if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
-<ul>
-  <% @return_reasons.each do |return_reason| %>
-    <li><%= link_to "#{return_reason.code} — #{return_reason.name}", return_reason %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Return reasons",
+      subtitle: "Reasons captured when merchandise is returned.",
+      actions: capture {
+        if Current.user.can?("classification.reason.manage", store: Current.store)
+          concat link_to("New return reason", new_return_reason_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @return_reasons.empty? %>
+  <%= render "shared/empty_state", title: "No return reasons yet",
+        body: "Create your first return reason to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Return reasons</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Default disposition</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @return_reasons.each do |return_reason| %>
+          <tr class="<%= "is-inactive" unless return_reason.active? %>">
+            <td><code><%= return_reason.code %></code></td>
+            <td><%= link_to return_reason.name, return_reason %></td>
+            <td><%= return_reason.default_return_disposition.presence&.titleize || "—" %></td>
+            <td><%= boolean_status return_reason.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

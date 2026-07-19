@@ -1,2 +1,4 @@
-<h1>Edit drawer</h1>
+<%= render "shared/page_header", title: "Edit cash drawer",
+      breadcrumbs: [ { label: "Cash drawers", path: cash_drawers_path }, { label: @drawer.name.presence || @drawer.code, path: edit_cash_drawer_path(@drawer) }, { label: "Edit" } ] %>
+
 <%= render "form", drawer: @drawer %>

@@ -1,2 +1,4 @@
-<h1>Edit Department</h1>
+<%= render "shared/page_header", title: "Edit department",
+      breadcrumbs: [ { label: "Departments", path: departments_path }, { label: @department.name, path: department_path(@department) }, { label: "Edit" } ] %>
+
 <%= render "form", department: @department, parent_departments: @parent_departments, tax_categories: @tax_categories, return_policies: @return_policies %>

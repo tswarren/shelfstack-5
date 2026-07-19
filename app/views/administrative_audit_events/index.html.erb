@@ -1,17 +1,30 @@
-<h1>Administrative audit</h1>
-<table>
-  <thead>
-    <tr><th>When</th><th>Actor</th><th>Action</th><th>Subject</th></tr>
-  </thead>
-  <tbody>
-    <% @events.each do |event| %>
-      <tr>
-        <td><%= event.created_at %></td>
-        <td><%= event.actor_user.username %></td>
-        <td><%= event.action %></td>
-        <td><%= event.subject_type %> #<%= event.subject_id %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Administrative audit",
+      subtitle: "Most recent administrative changes (latest 100)." %>
+
+<% if @events.empty? %>
+  <%= render "shared/empty_state", title: "No audit events recorded" %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Administrative audit events</caption>
+      <thead>
+        <tr>
+          <th scope="col">When</th>
+          <th scope="col">Actor</th>
+          <th scope="col">Action</th>
+          <th scope="col">Subject</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @events.each do |event| %>
+          <tr>
+            <td><%= formatted_datetime event.created_at %></td>
+            <td><%= event.actor_user&.username || "—" %></td>
+            <td><code><%= event.action %></code></td>
+            <td><%= event.subject_type %> #<%= event.subject_id %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

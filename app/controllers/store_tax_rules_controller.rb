@@ -59,9 +59,17 @@ class StoreTaxRulesController < ApplicationController
   end
 
   def store_tax_rule_params
-    params.require(:store_tax_rule).permit(
+    attrs = params.require(:store_tax_rule).permit(
       :tax_category_id, :store_tax_rate_id, :component_code, :treatment, :taxable_fraction,
       :calculation_order, :compounds_on_prior_tax, :effective_from, :effective_to, :active
     )
+
+    # The taxable portion is entered as a percentage in the UI and converted to the
+    # domain's decimal-fraction storage. Direct `taxable_fraction` input (API/tests)
+    # still works when the percent field is absent.
+    raw = params[:store_tax_rule] || {}
+    attrs[:taxable_fraction] = helpers.parse_percent_to_rate(raw[:taxable_fraction_percent]) if raw.key?(:taxable_fraction_percent)
+
+    attrs
   end
 end

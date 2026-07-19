@@ -59,7 +59,7 @@ class DepartmentsController < ApplicationController
   end
 
   def department_params
-    params.require(:department).permit(
+    attrs = params.require(:department).permit(
       :code, :department_number, :name, :parent_department_id, :postable,
       :inventory_asset_gl_account_code, :sales_revenue_gl_account_code,
       :sales_returns_gl_account_code, :sales_discounts_gl_account_code,
@@ -69,5 +69,18 @@ class DepartmentsController < ApplicationController
       :default_tax_category_id, :maximum_merchandise_discount, :default_return_policy_id,
       :default_cost_estimation_margin_bps, :active
     )
+
+    # The maximum discount and margin are entered as percentages in the UI and
+    # converted to the domain's decimal-rate / basis-point storage. Direct column
+    # input (API/tests) still works when the percent field is absent.
+    raw = params[:department] || {}
+    if raw.key?(:maximum_merchandise_discount_percent)
+      attrs[:maximum_merchandise_discount] = helpers.parse_percent_to_rate(raw[:maximum_merchandise_discount_percent])
+    end
+    if raw.key?(:default_cost_estimation_margin_percent)
+      attrs[:default_cost_estimation_margin_bps] = helpers.parse_percent_to_bps(raw[:default_cost_estimation_margin_percent])
+    end
+
+    attrs
   end
 end

@@ -1,8 +1,37 @@
-<h1>POS devices — <%= Current.store.name %></h1>
-<p><%= link_to "New device", new_pos_device_path %></p>
-<ul>
-  <% @devices.each do |device| %>
-    <li><%= device.code %> — <%= device.name %> <%= link_to "Edit", edit_pos_device_path(device) %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "POS devices",
+      subtitle: "Point-of-sale devices registered to #{Current.store.name}.",
+      actions: capture {
+        concat link_to("New device", new_pos_device_path, class: "button button-primary")
+      } %>
+
+<% if @devices.empty? %>
+  <%= render "shared/empty_state", title: "No devices yet",
+        body: "Register your first POS device to get started.",
+        actions: capture { concat link_to("New device", new_pos_device_path, class: "button button-primary") } %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">POS devices</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Type</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="row-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @devices.each do |device| %>
+          <tr class="<%= "is-inactive" unless device.active? %>">
+            <td><code><%= device.code %></code></td>
+            <td><%= device.name %></td>
+            <td><%= device.device_type.titleize %></td>
+            <td><%= boolean_status device.active? %></td>
+            <td class="row-actions"><%= link_to "Edit", edit_pos_device_path(device), class: "button button-outline" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

@@ -1,19 +1,34 @@
-<% content_for :title, "Business days" %>
+<%= render "shared/page_header", title: "Business days",
+      subtitle: "Reporting days for #{Current.store.name}.",
+      actions: capture {
+        concat link_to("Back to register", register_path, class: "button button-outline")
+      } %>
 
-<h1>Business days</h1>
-<table>
-  <thead>
-    <tr><th>Reporting date</th><th>Status</th><th>Opened</th><th>Closed</th></tr>
-  </thead>
-  <tbody>
-    <% @business_days.each do |day| %>
-      <tr>
-        <td><%= day.reporting_date %></td>
-        <td><%= day.status %></td>
-        <td><%= day.opened_at.strftime("%Y-%m-%d %H:%M") %></td>
-        <td><%= day.closed_at&.strftime("%Y-%m-%d %H:%M") %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<p><%= link_to "Register", register_path %></p>
+<% if @business_days.empty? %>
+  <%= render "shared/empty_state", title: "No business days yet",
+        body: "Open a business day from the register to begin trading." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Business days</caption>
+      <thead>
+        <tr>
+          <th scope="col">Reporting date</th>
+          <th scope="col">Status</th>
+          <th scope="col">Opened</th>
+          <th scope="col">Closed</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @business_days.each do |day| %>
+          <tr>
+            <td><%= day.reporting_date %></td>
+            <td><%= status_badge day.status.titleize, variant: day.status == "open" ? :success : :neutral %></td>
+            <td><%= formatted_datetime day.opened_at %></td>
+            <td><%= formatted_datetime day.closed_at %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

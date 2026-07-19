@@ -1,5 +1,18 @@
-<h1><%= @tax_category.name %></h1>
-<p>Code: <%= @tax_category.code %></p>
-<p>Active: <%= @tax_category.active %></p>
-<p><%= link_to "Edit", edit_tax_category_path(@tax_category) if Current.user.can?("classification.tax_category.manage", store: Current.store) %></p>
-<p><%= link_to "All tax categories", tax_categories_path %></p>
+<%= render "shared/page_header",
+      title: @tax_category.name,
+      breadcrumbs: [ { label: "Tax categories", path: tax_categories_path }, { label: @tax_category.name } ],
+      actions: capture {
+        if Current.user.can?("classification.tax_category.manage", store: Current.store)
+          concat link_to("Edit", edit_tax_category_path(@tax_category), class: "button button-primary")
+        end
+        concat link_to("Back to tax categories", tax_categories_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@tax_category.code) ],
+    [ "Name", @tax_category.name ],
+    [ "Status", boolean_status(@tax_category.active?) ]
+  ] %>
+</section>

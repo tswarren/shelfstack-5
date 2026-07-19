@@ -1,11 +1,39 @@
-<h1>Store memberships — <%= Current.store.name %></h1>
-<p><%= link_to "New membership", new_store_membership_path %></p>
-<ul>
-  <% @memberships.each do |membership| %>
-    <li>
-      <%= membership.user.username %> / <%= membership.role.code %>
-      <%= link_to "Edit", edit_store_membership_path(membership) %>
-    </li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Store memberships",
+      subtitle: "Access grants for #{Current.store.name}.",
+      actions: capture {
+        concat link_to("New membership", new_store_membership_path, class: "button button-primary")
+      } %>
+
+<% if @memberships.empty? %>
+  <%= render "shared/empty_state", title: "No memberships yet",
+        body: "Grant a user access to this store to get started.",
+        actions: capture { concat link_to("New membership", new_store_membership_path, class: "button button-primary") } %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Store memberships</caption>
+      <thead>
+        <tr>
+          <th scope="col">User</th>
+          <th scope="col">Role</th>
+          <th scope="col">Effective from</th>
+          <th scope="col">Effective to</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="row-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @memberships.each do |membership| %>
+          <tr class="<%= "is-inactive" unless membership.active? %>">
+            <td><%= membership.user.username %></td>
+            <td><code><%= membership.role.code %></code> — <%= membership.role.name %></td>
+            <td><%= membership.starts_on || "—" %></td>
+            <td><%= membership.ends_on || "—" %></td>
+            <td><%= boolean_status membership.active? %></td>
+            <td class="row-actions"><%= link_to "Edit", edit_store_membership_path(membership), class: "button button-outline" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

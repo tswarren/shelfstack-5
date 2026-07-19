@@ -58,22 +58,54 @@ class StoreMembershipsController < ApplicationController
   end
 
   def membership_params
-    params.require(:store_membership).permit(
+    attrs = params.require(:store_membership).permit(
       :user_id, :role_id, :active, :starts_on, :ends_on,
       :maximum_discount_rate, :maximum_discount_amount_cents,
       :maximum_price_override_rate, :maximum_cash_refund_cents,
       :maximum_no_receipt_return_cents, :maximum_paid_out_cents,
       :cash_variance_review_threshold_cents
     )
+    apply_human_readable_authority(attrs)
   end
 
   def membership_update_params
-    params.require(:store_membership).permit(
+    attrs = params.require(:store_membership).permit(
       :role_id, :active, :starts_on, :ends_on,
       :maximum_discount_rate, :maximum_discount_amount_cents,
       :maximum_price_override_rate, :maximum_cash_refund_cents,
       :maximum_no_receipt_return_cents, :maximum_paid_out_cents,
       :cash_variance_review_threshold_cents
     )
+    apply_human_readable_authority(attrs)
+  end
+
+  # Rates are entered as percentages and money as decimal dollars in the UI, then
+  # converted to the domain's decimal-rate / integer-cents storage. Direct column
+  # input (API/tests) still works when the human-readable field is absent.
+  def apply_human_readable_authority(attrs)
+    raw = params[:store_membership] || {}
+
+    {
+      maximum_discount_rate_percent: :maximum_discount_rate,
+      maximum_price_override_rate_percent: :maximum_price_override_rate
+    }.each do |input_key, column|
+      next unless raw.key?(input_key)
+
+      attrs[column] = helpers.parse_percent_to_rate(raw[input_key])
+    end
+
+    {
+      maximum_discount_amount: :maximum_discount_amount_cents,
+      maximum_cash_refund: :maximum_cash_refund_cents,
+      maximum_no_receipt_return: :maximum_no_receipt_return_cents,
+      maximum_paid_out: :maximum_paid_out_cents,
+      cash_variance_review_threshold: :cash_variance_review_threshold_cents
+    }.each do |input_key, column|
+      next unless raw.key?(input_key)
+
+      attrs[column] = helpers.parse_money_to_cents(raw[input_key])
+    end
+
+    attrs
   end
 end

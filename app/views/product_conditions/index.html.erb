@@ -1,8 +1,36 @@
-<h1>Product Conditions</h1>
-<p><%= link_to "New product condition", new_product_condition_path if Current.user.can?("catalog.condition.manage", store: Current.store) %></p>
-<ul>
-  <% @product_conditions.each do |product_condition| %>
-    <li><%= link_to "#{product_condition.code} — #{product_condition.name}", product_condition %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Product conditions",
+      subtitle: "Condition grades applied to individually tracked copies.",
+      actions: capture {
+        if Current.user.can?("catalog.condition.manage", store: Current.store)
+          concat link_to("New product condition", new_product_condition_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @product_conditions.empty? %>
+  <%= render "shared/empty_state", title: "No product conditions yet",
+        body: "Create your first product condition to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Product conditions</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col" class="num">Position</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @product_conditions.each do |product_condition| %>
+          <tr class="<%= "is-inactive" unless product_condition.active? %>">
+            <td><code><%= product_condition.code %></code></td>
+            <td><%= link_to product_condition.name, product_condition %></td>
+            <td class="num"><%= product_condition.position %></td>
+            <td><%= boolean_status product_condition.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

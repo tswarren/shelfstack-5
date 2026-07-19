@@ -1,8 +1,34 @@
-<h1>Tax Categories</h1>
-<p><%= link_to "New tax category", new_tax_category_path if Current.user.can?("classification.tax_category.manage", store: Current.store) %></p>
-<ul>
-  <% @tax_categories.each do |tax_category| %>
-    <li><%= link_to "#{tax_category.code} — #{tax_category.name}", tax_category %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Tax categories",
+      subtitle: "Merchandise tax classifications resolved by store tax rules.",
+      actions: capture {
+        if Current.user.can?("classification.tax_category.manage", store: Current.store)
+          concat link_to("New tax category", new_tax_category_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @tax_categories.empty? %>
+  <%= render "shared/empty_state", title: "No tax categories yet",
+        body: "Create your first tax category to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Tax categories</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @tax_categories.each do |tax_category| %>
+          <tr class="<%= "is-inactive" unless tax_category.active? %>">
+            <td><code><%= tax_category.code %></code></td>
+            <td><%= link_to tax_category.name, tax_category %></td>
+            <td><%= boolean_status tax_category.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

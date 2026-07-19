@@ -1,2 +1,4 @@
-<h1>New store</h1>
+<%= render "shared/page_header", title: "New store",
+      breadcrumbs: [ { label: "Stores", path: stores_path }, { label: "New store" } ] %>
+
 <%= render "form", store: @store %>

@@ -1,2 +1,4 @@
-<h1>Edit Store Tax Rule</h1>
+<%= render "shared/page_header", title: "Edit store tax rule",
+      breadcrumbs: [ { label: "Store tax rules", path: store_tax_rules_path }, { label: @store_tax_rule.component_code }, { label: "Edit" } ] %>
+
 <%= render "form", store_tax_rule: @store_tax_rule %>

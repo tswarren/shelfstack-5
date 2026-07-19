@@ -1,8 +1,38 @@
-<h1>Discount Reasons</h1>
-<p><%= link_to "New discount reason", new_discount_reason_path if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
-<ul>
-  <% @discount_reasons.each do |discount_reason| %>
-    <li><%= link_to "#{discount_reason.code} — #{discount_reason.name}", discount_reason %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Discount reasons",
+      subtitle: "Reasons and default rates available when applying discounts.",
+      actions: capture {
+        if Current.user.can?("classification.reason.manage", store: Current.store)
+          concat link_to("New discount reason", new_discount_reason_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @discount_reasons.empty? %>
+  <%= render "shared/empty_state", title: "No discount reasons yet",
+        body: "Create your first discount reason to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Discount reasons</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Method</th>
+          <th scope="col">Requires approval</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @discount_reasons.each do |discount_reason| %>
+          <tr class="<%= "is-inactive" unless discount_reason.active? %>">
+            <td><code><%= discount_reason.code %></code></td>
+            <td><%= link_to discount_reason.name, discount_reason %></td>
+            <td><%= discount_reason.default_calculation_method.titleize %></td>
+            <td><%= discount_reason.requires_approval? ? "Yes" : "No" %></td>
+            <td><%= boolean_status discount_reason.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

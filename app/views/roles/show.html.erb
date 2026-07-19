@@ -1,9 +1,41 @@
-<h1><%= @role.name %></h1>
-<p>Code: <%= @role.code %></p>
-<ul>
-  <% @role.permissions.order(:code).each do |permission| %>
-    <li><%= permission.code %></li>
+<%= render "shared/page_header",
+      title: @role.name,
+      breadcrumbs: [ { label: "Roles", path: roles_path }, { label: @role.name } ],
+      actions: capture {
+        concat link_to("Edit", edit_role_path(@role), class: "button button-primary")
+        concat link_to("Back to roles", roles_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@role.code) ],
+    [ "Name", @role.name ],
+    [ "Description", @role.description.presence || "—" ],
+    [ "Status", boolean_status(@role.active?) ]
+  ] %>
+</section>
+
+<section class="record-section">
+  <h2>Permissions</h2>
+  <% granted = @role.permissions.order(:code) %>
+  <% if granted.empty? %>
+    <p class="muted">No permissions granted.</p>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Granted permissions</caption>
+        <thead>
+          <tr>
+            <th scope="col">Permission</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% granted.each do |permission| %>
+            <tr><td><code><%= permission.code %></code></td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   <% end %>
-</ul>
-<p><%= link_to "Edit", edit_role_path(@role) %></p>
-<p><%= link_to "All roles", roles_path %></p>
+</section>

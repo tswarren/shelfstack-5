@@ -1,2 +1,4 @@
-<h1>Edit Merchandise Class</h1>
+<%= render "shared/page_header", title: "Edit merchandise class",
+      breadcrumbs: [ { label: "Merchandise classes", path: merchandise_classes_path }, { label: @merchandise_class.name, path: merchandise_class_path(@merchandise_class) }, { label: "Edit" } ] %>
+
 <%= render "form", merchandise_class: @merchandise_class, parent_classes: @parent_classes, departments: @departments, tax_categories: @tax_categories %>

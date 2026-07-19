@@ -1,18 +1,34 @@
-<%= form_with model: return_reason do |form| %>
-  <% if return_reason.errors.any? %>
-    <ul>
-      <% return_reason.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if return_reason.persisted? %>
-    <div><%= form.label :code %> <%= return_reason.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :default_return_disposition %> <%= form.text_field :default_return_disposition %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: return_reason, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: return_reason %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if return_reason.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :default_return_disposition, class: "field-label" %>
+        <%= form.text_field :default_return_disposition, class: "input" %>
+        <p class="field-hint">Default disposition applied to returned merchandise for this reason.</p>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Return reason is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit return_reason.persisted? ? "Update return reason" : "Create return reason", class: "button button-primary" %>
+    <%= link_to "Cancel", return_reason.persisted? ? return_reason_path(return_reason) : return_reasons_path, class: "button button-outline" %>
+  </div>
 <% end %>

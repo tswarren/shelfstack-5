@@ -1,23 +1,60 @@
-<%= form_with model: discount_reason do |form| %>
-  <% if discount_reason.errors.any? %>
-    <ul>
-      <% discount_reason.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if discount_reason.persisted? %>
-    <div><%= form.label :code %> <%= discount_reason.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :default_calculation_method %> <%= form.select :default_calculation_method, DiscountReason::CALCULATION_METHODS %></div>
-  <div><%= form.label :default_rate_bps %> <%= form.number_field :default_rate_bps %></div>
-  <div><%= form.label :default_amount_cents %> <%= form.number_field :default_amount_cents %></div>
-  <div><%= form.label :maximum_rate_bps %> <%= form.number_field :maximum_rate_bps %></div>
-  <div><%= form.label :requires_approval %> <%= form.check_box :requires_approval %></div>
-  <div><%= form.label :resulting_return_policy_id, "Resulting return policy" %> <%= form.collection_select :resulting_return_policy_id, return_policies, :id, :code, include_blank: true %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: discount_reason, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: discount_reason %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if discount_reason.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :default_calculation_method, "Calculation method", class: "field-label" %>
+        <%= form.select :default_calculation_method, DiscountReason::CALCULATION_METHODS.map { |m| [ m.titleize, m ] } %>
+      </div>
+      <div class="field">
+        <%= form.label :resulting_return_policy_id, "Resulting return policy", class: "field-label" %>
+        <%= form.collection_select :resulting_return_policy_id, return_policies, :id, :code, include_blank: true %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Default values</h2>
+    <div class="form-grid">
+      <%= render "shared/percent_field", name: "discount_reason[default_rate_percent]",
+            label: "Default rate", id: "discount_reason_default_rate",
+            value_percent: format_bps_as_percent(discount_reason.default_rate_bps),
+            hint: "Used for percentage discounts, e.g. 10 for 10%." %>
+      <%= render "shared/money_field", name: "discount_reason[default_amount]",
+            label: "Default amount", id: "discount_reason_default_amount",
+            value_cents: discount_reason.default_amount_cents,
+            hint: "Used for fixed-amount discounts." %>
+      <%= render "shared/percent_field", name: "discount_reason[maximum_rate_percent]",
+            label: "Maximum rate", id: "discount_reason_maximum_rate",
+            value_percent: format_bps_as_percent(discount_reason.maximum_rate_bps),
+            hint: "Largest percentage discount allowed for this reason." %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Status</h2>
+    <div class="checkbox-group">
+      <label><%= form.check_box :requires_approval %> Requires approval</label>
+      <label><%= form.check_box :active %> Discount reason is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit discount_reason.persisted? ? "Update discount reason" : "Create discount reason", class: "button button-primary" %>
+    <%= link_to "Cancel", discount_reason.persisted? ? discount_reason_path(discount_reason) : discount_reasons_path, class: "button button-outline" %>
+  </div>
 <% end %>

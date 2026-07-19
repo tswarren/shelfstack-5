@@ -1,8 +1,38 @@
-<h1>Return Policies</h1>
-<p><%= link_to "New return policy", new_return_policy_path if Current.user.can?("classification.return_policy.manage", store: Current.store) %></p>
-<ul>
-  <% @return_policies.each do |return_policy| %>
-    <li><%= link_to "#{return_policy.code} — #{return_policy.name}", return_policy %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Return policies",
+      subtitle: "Return windows and final-sale rules referenced by departments and products.",
+      actions: capture {
+        if Current.user.can?("classification.return_policy.manage", store: Current.store)
+          concat link_to("New return policy", new_return_policy_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @return_policies.empty? %>
+  <%= render "shared/empty_state", title: "No return policies yet",
+        body: "Create your first return policy to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Return policies</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Final sale</th>
+          <th scope="col" class="num">Return window (days)</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @return_policies.each do |return_policy| %>
+          <tr class="<%= "is-inactive" unless return_policy.active? %>">
+            <td><code><%= return_policy.code %></code></td>
+            <td><%= link_to return_policy.name, return_policy %></td>
+            <td><%= return_policy.final_sale? ? "Yes" : "No" %></td>
+            <td class="num"><%= return_policy.return_window_days || "—" %></td>
+            <td><%= boolean_status return_policy.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

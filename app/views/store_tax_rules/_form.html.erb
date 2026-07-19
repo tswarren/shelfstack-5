@@ -1,31 +1,66 @@
-<%= form_with model: store_tax_rule do |form| %>
-  <% if store_tax_rule.errors.any? %>
-    <ul>
-      <% store_tax_rule.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <div>
-    <%= form.label :tax_category_id %>
-    <%= form.select :tax_category_id, @tax_categories.map { |c| [ "#{c.code} — #{c.name}", c.id ] } %>
+<%= form_with model: store_tax_rule, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: store_tax_rule %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Applicability</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
+        <%= form.select :tax_category_id, @tax_categories.map { |c| [ "#{c.code} — #{c.name}", c.id ] } %>
+      </div>
+      <div class="field">
+        <%= form.label :store_tax_rate_id, "Store tax rate", class: "field-label" %>
+        <%= form.select :store_tax_rate_id, @store_tax_rates.map { |r| [ "#{r.code} — #{r.name}", r.id ] }, include_blank: true %>
+        <p class="field-hint">Leave blank for exempt or not-applicable treatments.</p>
+      </div>
+      <div class="field">
+        <%= form.label :component_code, class: "field-label" %>
+        <%= form.text_field :component_code, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :treatment, class: "field-label" %>
+        <%= form.select :treatment, StoreTaxRule::TREATMENTS.map { |t| [ t.titleize, t ] } %>
+        <p class="field-hint">Taxable and zero-rated require a rate; exempt and not-applicable may omit it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Calculation</h2>
+    <div class="form-grid">
+      <%= render "shared/percent_field", name: "store_tax_rule[taxable_fraction_percent]",
+            label: "Taxable portion", id: "store_tax_rule_taxable_fraction",
+            value_percent: format_rate_as_percent(store_tax_rule.taxable_fraction),
+            hint: "Portion of the price that is taxable, e.g. 100 for fully taxable." %>
+      <div class="field">
+        <%= form.label :calculation_order, class: "field-label" %>
+        <%= form.number_field :calculation_order, class: "input", min: 0 %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :compounds_on_prior_tax %> Compounds on prior tax</label>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Effective period</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :effective_from, class: "field-label" %>
+        <%= form.date_field :effective_from, class: "input input-date" %>
+      </div>
+      <div class="field">
+        <%= form.label :effective_to, class: "field-label" %>
+        <%= form.date_field :effective_to, class: "input input-date" %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Tax rule is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit store_tax_rule.persisted? ? "Update store tax rule" : "Create store tax rule", class: "button button-primary" %>
+    <%= link_to "Cancel", store_tax_rules_path, class: "button button-outline" %>
   </div>
-  <div>
-    <%= form.label :store_tax_rate_id, "Store tax rate (blank for exempt / not applicable)" %>
-    <%= form.select :store_tax_rate_id, @store_tax_rates.map { |r| [ "#{r.code} — #{r.name}", r.id ] },
-                     include_blank: true %>
-  </div>
-  <div><%= form.label :component_code %> <%= form.text_field :component_code %></div>
-  <div>
-    <%= form.label :treatment %>
-    <%= form.select :treatment, StoreTaxRule::TREATMENTS %>
-    <p class="hint">taxable / zero_rated require a rate; exempt and not_applicable may omit it.</p>
-  </div>
-  <div><%= form.label :taxable_fraction %> <%= form.text_field :taxable_fraction %></div>
-  <div><%= form.label :calculation_order %> <%= form.number_field :calculation_order %></div>
-  <div><%= form.label :compounds_on_prior_tax %> <%= form.check_box :compounds_on_prior_tax %></div>
-  <div><%= form.label :effective_from %> <%= form.date_field :effective_from %></div>
-  <div><%= form.label :effective_to %> <%= form.date_field :effective_to %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
 <% end %>

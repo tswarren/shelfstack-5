@@ -51,8 +51,16 @@ class StoreTaxRatesController < ApplicationController
   end
 
   def store_tax_rate_params
-    params.require(:store_tax_rate).permit(
+    attrs = params.require(:store_tax_rate).permit(
       :code, :name, :receipt_code, :jurisdiction_name, :rate, :effective_from, :effective_to, :active
     )
+
+    # The rate is entered as a percentage in the UI and converted to the domain's
+    # decimal-fraction storage. Direct `rate` input (API/tests) still works when
+    # the percent field is absent.
+    raw = params[:store_tax_rate] || {}
+    attrs[:rate] = helpers.parse_percent_to_rate(raw[:rate_percent]) if raw.key?(:rate_percent)
+
+    attrs
   end
 end

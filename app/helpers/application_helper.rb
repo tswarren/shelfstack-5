@@ -155,6 +155,22 @@ module ApplicationHelper
     format("%g%%", bps.to_i / 100.0)
   end
 
+  # Parse user-facing percent (`13`, `13%`) to a decimal-fraction rate (`0.13`).
+  # Returns nil if blank/invalid. Domain columns storing rates as 0–1 decimals.
+  def parse_percent_to_rate(value)
+    bps = parse_percent_to_bps(value)
+    return nil if bps.nil?
+
+    BigDecimal(bps.to_s) / 10_000
+  end
+
+  # Format a decimal-fraction rate (`0.13`) as a percent string (`13%`).
+  def format_rate_as_percent(rate)
+    return "" if rate.nil?
+
+    format_bps_as_percent((BigDecimal(rate.to_s) * 10_000).round)
+  end
+
   def field_error_id(object_name, method)
     "#{object_name}_#{method}_error"
   end

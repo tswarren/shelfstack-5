@@ -1,6 +1,21 @@
-<h1><%= @merchandise_class.name %></h1>
-<p>Code: <%= @merchandise_class.code %></p>
-<p>Level: <%= @merchandise_class.level %></p>
-<p>Active: <%= @merchandise_class.active %></p>
-<p><%= link_to "Edit", edit_merchandise_class_path(@merchandise_class) if Current.user.can?("classification.merchandise_class.manage", store: Current.store) %></p>
-<p><%= link_to "All merchandise classes", merchandise_classes_path %></p>
+<%= render "shared/page_header",
+      title: @merchandise_class.name,
+      breadcrumbs: [ { label: "Merchandise classes", path: merchandise_classes_path }, { label: @merchandise_class.name } ],
+      actions: capture {
+        if Current.user.can?("classification.merchandise_class.manage", store: Current.store)
+          concat link_to("Edit", edit_merchandise_class_path(@merchandise_class), class: "button button-primary")
+        end
+        concat link_to("Back to merchandise classes", merchandise_classes_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@merchandise_class.code) ],
+    [ "Name", @merchandise_class.name ],
+    [ "Level", @merchandise_class.level.titleize ],
+    [ "Parent class", @merchandise_class.parent&.code || "—" ],
+    [ "Position", @merchandise_class.position || "—" ],
+    [ "Status", boolean_status(@merchandise_class.active?) ]
+  ] %>
+</section>

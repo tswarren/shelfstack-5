@@ -1,8 +1,38 @@
-<h1>Inventory adjustment reasons</h1>
-<p><%= link_to "New reason", new_inventory_adjustment_reason_path if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
-<ul>
-  <% @inventory_adjustment_reasons.each do |reason| %>
-    <li><%= link_to "#{reason.qualified_code} — #{reason.name}", reason %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Inventory adjustment reasons",
+      subtitle: "Reasons available when posting inventory adjustments.",
+      actions: capture {
+        if Current.user.can?("classification.reason.manage", store: Current.store)
+          concat link_to("New reason", new_inventory_adjustment_reason_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @inventory_adjustment_reasons.empty? %>
+  <%= render "shared/empty_state", title: "No adjustment reasons yet",
+        body: "Create your first inventory adjustment reason to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Inventory adjustment reasons</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Kind</th>
+          <th scope="col" class="num">Position</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @inventory_adjustment_reasons.each do |reason| %>
+          <tr class="<%= "is-inactive" unless reason.active? %>">
+            <td><code><%= reason.qualified_code %></code></td>
+            <td><%= link_to reason.name, reason %></td>
+            <td><%= reason.adjustment_kind.titleize %></td>
+            <td class="num"><%= reason.position %></td>
+            <td><%= boolean_status reason.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

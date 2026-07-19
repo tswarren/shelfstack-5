@@ -1,12 +1,36 @@
-<h1>Merchandise Classes</h1>
-<p><%= link_to "New merchandise class", new_merchandise_class_path if Current.user.can?("classification.merchandise_class.manage", store: Current.store) %></p>
-<ul>
-  <% indent_for = { "primary" => 0, "secondary" => 1, "minor" => 2 } %>
-  <% @merchandise_classes.each do |merchandise_class| %>
-    <li style="margin-left: <%= indent_for.fetch(merchandise_class.level, 0) * 1.5 %>em">
-      <%= link_to "#{merchandise_class.code} — #{merchandise_class.name}", merchandise_class %>
-      <small>(<%= merchandise_class.level %>)</small>
-    </li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Merchandise classes",
+      subtitle: "Hierarchical merchandise classification for shelving, browsing, and reporting.",
+      actions: capture {
+        if Current.user.can?("classification.merchandise_class.manage", store: Current.store)
+          concat link_to("New merchandise class", new_merchandise_class_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @merchandise_classes.empty? %>
+  <%= render "shared/empty_state", title: "No merchandise classes yet",
+        body: "Create your first merchandise class to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Merchandise classes</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Level</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @merchandise_classes.each do |merchandise_class| %>
+          <tr class="<%= "is-inactive" unless merchandise_class.active? %>">
+            <td><code><%= merchandise_class.code %></code></td>
+            <td><%= link_to merchandise_class.name, merchandise_class %></td>
+            <td><%= merchandise_class.level.titleize %></td>
+            <td><%= boolean_status merchandise_class.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

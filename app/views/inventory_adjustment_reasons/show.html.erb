@@ -1,11 +1,22 @@
-<h1><%= @inventory_adjustment_reason.qualified_code %></h1>
-<ul>
-  <li>Name: <%= @inventory_adjustment_reason.name %></li>
-  <li>Kind: <%= @inventory_adjustment_reason.adjustment_kind %></li>
-  <li>Requires note: <%= @inventory_adjustment_reason.requires_note %></li>
-  <li>Active: <%= @inventory_adjustment_reason.active %></li>
-  <li>Position: <%= @inventory_adjustment_reason.position %></li>
-  <li>Description: <%= @inventory_adjustment_reason.description %></li>
-</ul>
-<p><%= link_to "Edit", edit_inventory_adjustment_reason_path(@inventory_adjustment_reason) if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
-<p><%= link_to "Reasons", inventory_adjustment_reasons_path %></p>
+<%= render "shared/page_header",
+      title: @inventory_adjustment_reason.name,
+      breadcrumbs: [ { label: "Inventory adjustment reasons", path: inventory_adjustment_reasons_path }, { label: @inventory_adjustment_reason.name } ],
+      actions: capture {
+        if Current.user.can?("classification.reason.manage", store: Current.store)
+          concat link_to("Edit", edit_inventory_adjustment_reason_path(@inventory_adjustment_reason), class: "button button-primary")
+        end
+        concat link_to("Back to reasons", inventory_adjustment_reasons_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@inventory_adjustment_reason.qualified_code) ],
+    [ "Name", @inventory_adjustment_reason.name ],
+    [ "Kind", @inventory_adjustment_reason.adjustment_kind.titleize ],
+    [ "Requires note", @inventory_adjustment_reason.requires_note? ? "Yes" : "No" ],
+    [ "Position", @inventory_adjustment_reason.position ],
+    [ "Description", @inventory_adjustment_reason.description.presence || "—" ],
+    [ "Status", boolean_status(@inventory_adjustment_reason.active?) ]
+  ] %>
+</section>

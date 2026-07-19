@@ -1,6 +1,20 @@
-<h1><%= @product_condition.name %></h1>
-<p>Code: <%= @product_condition.code %></p>
-<p>Position: <%= @product_condition.position %></p>
-<p>Active: <%= @product_condition.active %></p>
-<p><%= link_to "Edit", edit_product_condition_path(@product_condition) if Current.user.can?("catalog.condition.manage", store: Current.store) %></p>
-<p><%= link_to "All product conditions", product_conditions_path %></p>
+<%= render "shared/page_header",
+      title: @product_condition.name,
+      breadcrumbs: [ { label: "Product conditions", path: product_conditions_path }, { label: @product_condition.name } ],
+      actions: capture {
+        if Current.user.can?("catalog.condition.manage", store: Current.store)
+          concat link_to("Edit", edit_product_condition_path(@product_condition), class: "button button-primary")
+        end
+        concat link_to("Back to product conditions", product_conditions_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@product_condition.code) ],
+    [ "Name", @product_condition.name ],
+    [ "Description", @product_condition.description.presence || "—" ],
+    [ "Position", @product_condition.position ],
+    [ "Status", boolean_status(@product_condition.active?) ]
+  ] %>
+</section>

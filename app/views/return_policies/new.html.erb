@@ -1,2 +1,4 @@
-<h1>New Return Policy</h1>
+<%= render "shared/page_header", title: "New return policy",
+      breadcrumbs: [ { label: "Return policies", path: return_policies_path }, { label: "New return policy" } ] %>
+
 <%= render "form", return_policy: @return_policy %>

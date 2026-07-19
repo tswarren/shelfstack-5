@@ -1,47 +1,93 @@
-<%= form_with model: department do |form| %>
-  <% if department.errors.any? %>
-    <ul>
-      <% department.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
+<%= form_with model: department, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: department %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if department.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :department_number, class: "field-label" %>
+        <% if department.persisted? %>
+          <%= form.text_field :department_number, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.number_field :department_number, class: "input" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :parent_department_id, "Parent department", class: "field-label" %>
+        <%= form.collection_select :parent_department_id, parent_departments.reject { |d| d.id == department.id }, :id, :code, include_blank: true %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :postable %> Department is postable</label>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Policy &amp; pricing</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :default_tax_category_id, "Default tax category", class: "field-label" %>
+        <%= form.collection_select :default_tax_category_id, tax_categories, :id, :code, include_blank: true %>
+      </div>
+      <div class="field">
+        <%= form.label :default_return_policy_id, "Default return policy", class: "field-label" %>
+        <%= form.collection_select :default_return_policy_id, return_policies, :id, :code, include_blank: true %>
+      </div>
+      <%= render "shared/percent_field", name: "department[maximum_merchandise_discount_percent]",
+            label: "Maximum merchandise discount", id: "department_maximum_merchandise_discount",
+            value_percent: format_rate_as_percent(department.maximum_merchandise_discount),
+            hint: "Largest discount allowed on items in this department, e.g. 20 for 20%." %>
+      <%= render "shared/percent_field", name: "department[default_cost_estimation_margin_percent]",
+            label: "Default cost estimation margin", id: "department_default_cost_estimation_margin",
+            value_percent: format_bps_as_percent(department.default_cost_estimation_margin_bps),
+            hint: "Assumed gross margin used to estimate cost, e.g. 40 for 40%." %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">GL account codes</h2>
+    <div class="form-grid">
+      <% [
+        [ :inventory_asset_gl_account_code, "Inventory asset" ],
+        [ :sales_revenue_gl_account_code, "Sales revenue" ],
+        [ :sales_returns_gl_account_code, "Sales returns" ],
+        [ :sales_discounts_gl_account_code, "Sales discounts" ],
+        [ :cogs_gl_account_code, "COGS" ],
+        [ :vendor_returns_gl_account_code, "Vendor returns" ],
+        [ :inventory_shrinkage_gl_account_code, "Inventory shrinkage" ],
+        [ :inventory_write_down_gl_account_code, "Inventory write-down" ],
+        [ :inventory_adjustment_gl_account_code, "Inventory adjustment" ],
+        [ :freight_in_gl_account_code, "Freight in" ]
+      ].each do |attribute, label| %>
+        <div class="field">
+          <%= form.label attribute, label, class: "field-label" %>
+          <%= form.text_field attribute, class: "input input-code", maxlength: 20 %>
+        </div>
       <% end %>
-    </ul>
-  <% end %>
-  <% if department.persisted? %>
-    <div><%= form.label :code %> <%= department.code %></div>
-    <div><%= form.label :department_number %> <%= department.department_number %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-    <div><%= form.label :department_number %> <%= form.number_field :department_number %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :parent_department_id, "Parent department" %> <%= form.collection_select :parent_department_id, parent_departments.reject { |d| d.id == department.id }, :id, :code, include_blank: true %></div>
-  <div><%= form.label :postable %> <%= form.check_box :postable %></div>
-  <div><%= form.label :default_tax_category_id, "Default tax category" %> <%= form.collection_select :default_tax_category_id, tax_categories, :id, :code, include_blank: true %></div>
-  <div><%= form.label :default_return_policy_id, "Default return policy" %> <%= form.collection_select :default_return_policy_id, return_policies, :id, :code, include_blank: true %></div>
-  <div><%= form.label :maximum_merchandise_discount %> <%= form.text_field :maximum_merchandise_discount %></div>
-  <div>
-    <%= form.label :default_cost_estimation_margin_bps, "Default cost estimation margin (bps)" %>
-    <%= form.number_field :default_cost_estimation_margin_bps %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Status</h2>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Department is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit department.persisted? ? "Update department" : "Create department", class: "button button-primary" %>
+    <%= link_to "Cancel", department.persisted? ? department_path(department) : departments_path, class: "button button-outline" %>
   </div>
-
-  <fieldset>
-    <legend>GL account codes</legend>
-    <% [
-      :inventory_asset_gl_account_code,
-      :sales_revenue_gl_account_code,
-      :sales_returns_gl_account_code,
-      :sales_discounts_gl_account_code,
-      :cogs_gl_account_code,
-      :vendor_returns_gl_account_code,
-      :inventory_shrinkage_gl_account_code,
-      :inventory_write_down_gl_account_code,
-      :inventory_adjustment_gl_account_code,
-      :freight_in_gl_account_code
-    ].each do |attribute| %>
-      <div><%= form.label attribute %> <%= form.text_field attribute %></div>
-    <% end %>
-  </fieldset>
-
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
 <% end %>

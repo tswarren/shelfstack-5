@@ -1,6 +1,19 @@
-<h1><%= @return_reason.name %></h1>
-<p>Code: <%= @return_reason.code %></p>
-<p>Default disposition: <%= @return_reason.default_return_disposition %></p>
-<p>Active: <%= @return_reason.active %></p>
-<p><%= link_to "Edit", edit_return_reason_path(@return_reason) if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
-<p><%= link_to "All return reasons", return_reasons_path %></p>
+<%= render "shared/page_header",
+      title: @return_reason.name,
+      breadcrumbs: [ { label: "Return reasons", path: return_reasons_path }, { label: @return_reason.name } ],
+      actions: capture {
+        if Current.user.can?("classification.reason.manage", store: Current.store)
+          concat link_to("Edit", edit_return_reason_path(@return_reason), class: "button button-primary")
+        end
+        concat link_to("Back to return reasons", return_reasons_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@return_reason.code) ],
+    [ "Name", @return_reason.name ],
+    [ "Default disposition", @return_reason.default_return_disposition.presence&.titleize || "—" ],
+    [ "Status", boolean_status(@return_reason.active?) ]
+  ] %>
+</section>
