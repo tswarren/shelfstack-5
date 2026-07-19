@@ -5,7 +5,7 @@ module Pos
   # active reservation. Never deletes the row.
   class RemoveLine < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_line_item, :success?, :error)
+    Result = Data.define(:pos_line_item, :success?, :error, :warnings)
 
     def initialize(pos_line_item:, actor:, reason: nil)
       @pos_line_item = pos_line_item
@@ -36,10 +36,13 @@ module Pos
           remove_reason: @reason
         )
 
-        Result.new(pos_line_item: line, success?: true, error: nil)
+        recalculation = Pos::RecalculateTransaction.call(pos_transaction: line.pos_transaction)
+
+        Result.new(pos_line_item: line, success?: true, error: nil,
+                   warnings: (recalculation.blockers + recalculation.warnings).uniq)
       end
     rescue Error, ActiveRecord::RecordInvalid => e
-      Result.new(pos_line_item: nil, success?: false, error: e.message)
+      Result.new(pos_line_item: nil, success?: false, error: e.message, warnings: [])
     end
   end
 end

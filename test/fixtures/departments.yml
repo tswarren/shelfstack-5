@@ -24,3 +24,12 @@ non_postable:
   postable: false
   default_tax_category: physical_book
   active: true
+
+unconfigured_tax_department:
+  organization: acme
+  department_number: "800"
+  code: unconfigured_tax_department
+  name: Unconfigured Tax Department
+  postable: true
+  default_tax_category: unconfigured_category
+  active: true

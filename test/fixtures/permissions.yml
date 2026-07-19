@@ -279,3 +279,33 @@ pos_line_remove:
   name: Remove pending lines
   permission_group: pos
   active: true
+
+pos_price_override:
+  code: pos.price.override
+  name: Override selling price
+  permission_group: pos
+  active: true
+
+pos_discount_apply:
+  code: pos.discount.apply
+  name: Apply discounts
+  permission_group: pos
+  active: true
+
+pos_discount_approve:
+  code: pos.discount.approve
+  name: Approve discounts beyond requester authority
+  permission_group: pos
+  active: true
+
+pos_tax_exempt:
+  code: pos.tax.exempt
+  name: Apply whole-transaction tax exemption
+  permission_group: pos
+  active: true
+
+pos_tax_category_override:
+  code: pos.tax_category.override
+  name: Override effective Tax Category on a POS line
+  permission_group: pos
+  active: true

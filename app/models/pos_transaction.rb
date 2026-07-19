@@ -9,6 +9,9 @@ class PosTransaction < ApplicationRecord
   belongs_to :cashier_user, class_name: "User"
   belongs_to :cancelled_by_user, class_name: "User", optional: true
   has_many :pos_line_items, dependent: :restrict_with_exception
+  has_many :pos_discounts, dependent: :restrict_with_exception
+  has_many :pos_tax_exemptions, dependent: :restrict_with_exception
+  has_many :pos_approvals, dependent: :restrict_with_exception
 
   before_validation :assign_public_id, on: :create
 
@@ -37,6 +40,10 @@ class PosTransaction < ApplicationRecord
 
   def editable?
     open?
+  end
+
+  def tax_exempt?
+    pos_tax_exemptions.exists?
   end
 
   private

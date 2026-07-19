@@ -6,7 +6,7 @@ module Pos
   # description resolves (and is snapshotted) as the Department name.
   class AddOpenRingLine < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_line_item, :success?, :error)
+    Result = Data.define(:pos_line_item, :success?, :error, :warnings)
 
     def initialize(pos_transaction:, department:, unit_price_cents:, actor:, quantity: 1, description: nil)
       @pos_transaction = pos_transaction
@@ -45,9 +45,12 @@ module Pos
         created_by_user: @actor
       )
 
-      Result.new(pos_line_item: line, success?: true, error: nil)
+      recalculation = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
+
+      Result.new(pos_line_item: line, success?: true, error: nil,
+                 warnings: (recalculation.blockers + recalculation.warnings).uniq)
     rescue Error, ActiveRecord::RecordInvalid => e
-      Result.new(pos_line_item: nil, success?: false, error: e.message)
+      Result.new(pos_line_item: nil, success?: false, error: e.message, warnings: [])
     end
 
     private

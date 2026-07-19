@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -324,6 +324,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
     t.index ["code"], name: "index_permissions_on_code", unique: true
   end
 
+  create_table "pos_approvals", force: :cascade do |t|
+    t.string "action_type", null: false
+    t.datetime "approved_at", null: false
+    t.bigint "approved_by_user_id", null: false
+    t.decimal "approved_value", precision: 18, scale: 8
+    t.decimal "authorization_limit_snapshot", precision: 18, scale: 8
+    t.datetime "created_at", null: false
+    t.bigint "pos_line_item_id"
+    t.bigint "pos_session_id"
+    t.bigint "pos_transaction_id"
+    t.text "reason", null: false
+    t.bigint "requested_by_user_id", null: false
+    t.decimal "requested_value", precision: 18, scale: 8
+    t.bigint "store_id", null: false
+    t.index ["approved_by_user_id"], name: "index_pos_approvals_on_approved_by_user_id"
+    t.index ["pos_line_item_id"], name: "index_pos_approvals_on_pos_line_item_id"
+    t.index ["pos_session_id"], name: "index_pos_approvals_on_pos_session_id"
+    t.index ["pos_transaction_id"], name: "index_pos_approvals_on_pos_transaction_id"
+    t.index ["requested_by_user_id"], name: "index_pos_approvals_on_requested_by_user_id"
+    t.index ["store_id"], name: "index_pos_approvals_on_store_id"
+    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying, 'discount_apply'::character varying, 'tax_exemption'::character varying, 'tax_category_override'::character varying]::text[])", name: "pos_approvals_action_type_check"
+  end
+
   create_table "pos_devices", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
@@ -337,12 +360,77 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
     t.index ["store_id"], name: "index_pos_devices_on_store_id"
   end
 
+  create_table "pos_discount_allocations", force: :cascade do |t|
+    t.integer "allocated_amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.integer "eligible_amount_cents"
+    t.bigint "pos_discount_id", null: false
+    t.bigint "pos_line_item_id", null: false
+    t.index ["pos_discount_id", "pos_line_item_id"], name: "index_pos_discount_allocations_on_discount_and_line", unique: true
+    t.index ["pos_discount_id"], name: "index_pos_discount_allocations_on_pos_discount_id"
+    t.index ["pos_line_item_id"], name: "index_pos_discount_allocations_on_pos_line_item_id"
+    t.check_constraint "allocated_amount_cents >= 0", name: "pos_discount_allocations_amount_non_negative"
+    t.check_constraint "eligible_amount_cents IS NULL OR eligible_amount_cents >= 0", name: "pos_discount_allocations_eligible_non_negative"
+  end
+
+  create_table "pos_discounts", force: :cascade do |t|
+    t.integer "applied_amount_cents", null: false
+    t.integer "base_amount_cents"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.bigint "discount_reason_id"
+    t.string "method", null: false
+    t.bigint "pos_transaction_id", null: false
+    t.integer "position", default: 0, null: false
+    t.integer "rate_bps"
+    t.integer "requested_amount_cents"
+    t.string "scope", null: false
+    t.bigint "target_pos_line_item_id"
+    t.string "tax_treatment", default: "reduces_taxable_base", null: false
+    t.index ["created_by_user_id"], name: "index_pos_discounts_on_created_by_user_id"
+    t.index ["discount_reason_id"], name: "index_pos_discounts_on_discount_reason_id"
+    t.index ["pos_transaction_id"], name: "index_pos_discounts_on_pos_transaction_id"
+    t.index ["target_pos_line_item_id"], name: "index_pos_discounts_on_target_pos_line_item_id"
+    t.check_constraint "applied_amount_cents >= 0", name: "pos_discounts_applied_amount_non_negative"
+    t.check_constraint "base_amount_cents IS NULL OR base_amount_cents >= 0", name: "pos_discounts_base_amount_non_negative"
+    t.check_constraint "method::text = ANY (ARRAY['percentage'::character varying, 'fixed_amount'::character varying, 'fixed_price'::character varying]::text[])", name: "pos_discounts_method_check"
+    t.check_constraint "rate_bps IS NULL OR rate_bps >= 0", name: "pos_discounts_rate_bps_non_negative"
+    t.check_constraint "requested_amount_cents IS NULL OR requested_amount_cents >= 0", name: "pos_discounts_requested_amount_non_negative"
+    t.check_constraint "scope::text = 'line'::text AND target_pos_line_item_id IS NOT NULL OR scope::text = 'transaction'::text AND target_pos_line_item_id IS NULL", name: "pos_discounts_target_matches_scope"
+    t.check_constraint "scope::text = ANY (ARRAY['line'::character varying, 'transaction'::character varying]::text[])", name: "pos_discounts_scope_check"
+    t.check_constraint "tax_treatment::text = ANY (ARRAY['reduces_taxable_base'::character varying, 'does_not_reduce_taxable_base'::character varying]::text[])", name: "pos_discounts_tax_treatment_check"
+  end
+
+  create_table "pos_line_item_taxes", force: :cascade do |t|
+    t.integer "amount_cents", default: 0, null: false
+    t.boolean "compounds_on_prior_tax_snapshot", default: false, null: false
+    t.datetime "created_at", null: false
+    t.bigint "pos_line_item_id", null: false
+    t.integer "position", default: 0, null: false
+    t.decimal "rate", precision: 10, scale: 8
+    t.string "receipt_code_snapshot"
+    t.bigint "store_tax_rate_id"
+    t.bigint "store_tax_rule_id", null: false
+    t.bigint "tax_category_id", null: false
+    t.integer "taxable_amount_cents", default: 0, null: false
+    t.decimal "taxable_fraction_snapshot", precision: 10, scale: 8, null: false
+    t.string "treatment_snapshot", null: false
+    t.index ["pos_line_item_id"], name: "index_pos_line_item_taxes_on_pos_line_item_id"
+    t.index ["store_tax_rate_id"], name: "index_pos_line_item_taxes_on_store_tax_rate_id"
+    t.index ["store_tax_rule_id"], name: "index_pos_line_item_taxes_on_store_tax_rule_id"
+    t.index ["tax_category_id"], name: "index_pos_line_item_taxes_on_tax_category_id"
+    t.check_constraint "amount_cents >= 0", name: "pos_line_item_taxes_amount_non_negative"
+    t.check_constraint "taxable_amount_cents >= 0", name: "pos_line_item_taxes_taxable_amount_non_negative"
+    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying]::text[])", name: "pos_line_item_taxes_treatment_check"
+  end
+
   create_table "pos_line_items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "created_by_user_id", null: false
     t.bigint "department_id", null: false
     t.string "description_snapshot"
     t.string "line_kind", null: false
+    t.bigint "original_tax_category_id"
     t.bigint "pos_transaction_id", null: false
     t.integer "position", default: 0, null: false
     t.bigint "product_variant_id"
@@ -352,14 +440,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
     t.bigint "removed_by_user_id"
     t.string "status", default: "pending", null: false
     t.bigint "tax_category_id"
+    t.datetime "tax_category_overridden_at"
+    t.bigint "tax_category_overridden_by_user_id"
+    t.text "tax_category_override_reason"
     t.integer "unit_price_cents", null: false
     t.datetime "updated_at", null: false
     t.index ["created_by_user_id"], name: "index_pos_line_items_on_created_by_user_id"
     t.index ["department_id"], name: "index_pos_line_items_on_department_id"
+    t.index ["original_tax_category_id"], name: "index_pos_line_items_on_original_tax_category_id"
     t.index ["pos_transaction_id"], name: "index_pos_line_items_on_pos_transaction_id"
     t.index ["product_variant_id"], name: "index_pos_line_items_on_product_variant_id"
     t.index ["removed_by_user_id"], name: "index_pos_line_items_on_removed_by_user_id"
     t.index ["tax_category_id"], name: "index_pos_line_items_on_tax_category_id"
+    t.index ["tax_category_overridden_by_user_id"], name: "index_pos_line_items_on_tax_category_overridden_by_user_id"
     t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL", name: "pos_line_items_product_variant_matches_kind"
     t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying, 'open_ring'::character varying]::text[])", name: "pos_line_items_line_kind_check"
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
@@ -390,6 +483,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
     t.index ["pos_device_id"], name: "index_pos_sessions_one_open_per_device", unique: true, where: "((status)::text = 'open'::text)"
     t.index ["store_id"], name: "index_pos_sessions_on_store_id"
     t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'closed'::character varying]::text[])", name: "pos_sessions_status_check"
+  end
+
+  create_table "pos_tax_exemptions", force: :cascade do |t|
+    t.string "coverage", default: "whole_transaction", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.string "exemption_type", null: false
+    t.text "notes"
+    t.bigint "pos_transaction_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_user_id"], name: "index_pos_tax_exemptions_on_created_by_user_id"
+    t.index ["pos_transaction_id"], name: "index_pos_tax_exemptions_on_pos_transaction_id"
+    t.index ["pos_transaction_id"], name: "index_pos_tax_exemptions_one_per_transaction", unique: true
+    t.check_constraint "coverage::text = 'whole_transaction'::text", name: "pos_tax_exemptions_coverage_check"
   end
 
   create_table "pos_transactions", force: :cascade do |t|
@@ -791,13 +898,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
   add_foreign_key "merchandise_classes", "merchandise_classes", column: "parent_id"
   add_foreign_key "merchandise_classes", "organizations"
   add_foreign_key "merchandise_classes", "tax_categories", column: "default_tax_category_id"
+  add_foreign_key "pos_approvals", "pos_line_items", on_delete: :restrict
+  add_foreign_key "pos_approvals", "pos_sessions", on_delete: :restrict
+  add_foreign_key "pos_approvals", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_approvals", "stores", on_delete: :restrict
+  add_foreign_key "pos_approvals", "users", column: "approved_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_approvals", "users", column: "requested_by_user_id", on_delete: :restrict
   add_foreign_key "pos_devices", "stores", on_delete: :restrict
+  add_foreign_key "pos_discount_allocations", "pos_discounts", on_delete: :restrict
+  add_foreign_key "pos_discount_allocations", "pos_line_items", on_delete: :restrict
+  add_foreign_key "pos_discounts", "discount_reasons", on_delete: :restrict
+  add_foreign_key "pos_discounts", "pos_line_items", column: "target_pos_line_item_id", on_delete: :restrict
+  add_foreign_key "pos_discounts", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_discounts", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_line_item_taxes", "pos_line_items", on_delete: :restrict
+  add_foreign_key "pos_line_item_taxes", "store_tax_rates", on_delete: :restrict
+  add_foreign_key "pos_line_item_taxes", "store_tax_rules", on_delete: :restrict
+  add_foreign_key "pos_line_item_taxes", "tax_categories", on_delete: :restrict
   add_foreign_key "pos_line_items", "departments", on_delete: :restrict
   add_foreign_key "pos_line_items", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_line_items", "product_variants", on_delete: :restrict
+  add_foreign_key "pos_line_items", "tax_categories", column: "original_tax_category_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "removed_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_line_items", "users", column: "tax_category_overridden_by_user_id", on_delete: :restrict
   add_foreign_key "pos_sessions", "business_days", on_delete: :restrict
   add_foreign_key "pos_sessions", "cash_drawers", on_delete: :restrict
   add_foreign_key "pos_sessions", "pos_devices", on_delete: :restrict
@@ -805,6 +930,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_040000) do
   add_foreign_key "pos_sessions", "users", column: "cashier_user_id", on_delete: :restrict
   add_foreign_key "pos_sessions", "users", column: "closed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_sessions", "users", column: "opened_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tax_exemptions", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_tax_exemptions", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "active_pos_session_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "origin_pos_session_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "stores", on_delete: :restrict

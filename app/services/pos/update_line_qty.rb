@@ -37,6 +37,9 @@ module Pos
 
         line.update!(quantity: @quantity)
 
+        recalculation = Pos::RecalculateTransaction.call(pos_transaction: line.pos_transaction)
+        warnings.concat(recalculation.blockers).concat(recalculation.warnings)
+
         Result.new(pos_line_item: line, success?: true, error: nil, warnings: warnings.uniq)
       end
     rescue Error, ActiveRecord::RecordInvalid => e

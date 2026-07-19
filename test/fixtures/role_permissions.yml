@@ -186,6 +186,26 @@ admin_pos_line_remove:
   role: administrator
   permission: pos_line_remove
 
+admin_pos_price_override:
+  role: administrator
+  permission: pos_price_override
+
+admin_pos_discount_apply:
+  role: administrator
+  permission: pos_discount_apply
+
+admin_pos_discount_approve:
+  role: administrator
+  permission: pos_discount_approve
+
+admin_pos_tax_exempt:
+  role: administrator
+  permission: pos_tax_exempt
+
+admin_pos_tax_category_override:
+  role: administrator
+  permission: pos_tax_category_override
+
 clerk_pos_access:
   role: associate
   permission: pos_access
@@ -201,6 +221,14 @@ clerk_pos_transaction_suspend:
 clerk_pos_transaction_recall:
   role: associate
   permission: pos_transaction_recall
+
+clerk_pos_price_override:
+  role: associate
+  permission: pos_price_override
+
+clerk_pos_discount_apply:
+  role: associate
+  permission: pos_discount_apply
 
 catalog_editor_product_view:
   role: catalog_editor

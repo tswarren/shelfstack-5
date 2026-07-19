@@ -6,6 +6,7 @@ admin_main_street:
   starts_on: <%= Date.current - 30 %>
   maximum_discount_rate: 0.10
   maximum_discount_amount_cents: 5000
+  maximum_price_override_rate: 0.50
 
 clerk_main_street:
   user: clerk

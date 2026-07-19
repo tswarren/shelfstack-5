@@ -6,6 +6,7 @@ admin:
   last_name: Admin
   email: admin@example.com
   password_digest: <%= BCrypt::Password.create("password123", cost: 4) %>
+  pin_digest: <%= BCrypt::Password.create("1234", cost: 4) %>
   default_store: main_street
   active: true
   failed_login_attempts: 0
@@ -25,6 +26,7 @@ catalog_editor:
   first_name: Pat
   last_name: Editor
   password_digest: <%= BCrypt::Password.create("password123", cost: 4) %>
+  pin_digest: <%= BCrypt::Password.create("5678", cost: 4) %>
   default_store: main_street
   active: true
   failed_login_attempts: 0
