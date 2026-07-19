@@ -18,6 +18,10 @@ module Pos
           return Result.new(pos_session: session, success?: true, error: nil, replayed: true)
         end
 
+        # Session close blocked by unresolved Tenders: a Transaction holding a
+        # pending/authorized Tender is always still `open` (Suspend itself is
+        # blocked while unresolved Tenders exist — see Pos::SuspendTransaction),
+        # so the open-transaction guard above already enforces this invariant.
         if PosTransaction.where(active_pos_session_id: session.id, status: "open").exists?
           raise Error, "cannot close session while it controls an open transaction"
         end

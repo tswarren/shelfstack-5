@@ -50,6 +50,7 @@ module Pos
       ActiveRecord::Base.transaction do
         line = PosLineItem.lock.find(@pos_line_item.id)
         raise Error, "line is not pending" unless line.pending?
+        raise Error, "transaction is not open for editing" unless line.pos_transaction.editable?
 
         line.update!(unit_price_cents: @requested_unit_price_cents)
 

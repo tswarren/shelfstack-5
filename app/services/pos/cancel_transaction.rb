@@ -32,6 +32,15 @@ module Pos
           raise Error, released.error unless released.success?
         end
 
+        # ADR-0008: cancellation resolves provisional Tender activity (no completed
+        # Tender may survive a cancelled Transaction).
+        transaction.pos_tenders.unresolved.find_each do |tender|
+          removed = Pos::RemoveTender.call(
+            pos_tender: tender, actor: @actor, reason: @reason || "transaction cancelled"
+          )
+          raise Error, removed.error unless removed.success?
+        end
+
         transaction.update!(
           status: "cancelled",
           cancelled_at: Time.current,

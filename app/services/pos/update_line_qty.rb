@@ -20,6 +20,8 @@ module Pos
 
       ActiveRecord::Base.transaction do
         line = PosLineItem.lock.find(@pos_line_item.id)
+        raise Error, "line is not pending" unless line.pending?
+        raise Error, "transaction is not open for editing" unless line.pos_transaction.editable?
 
         if line.line_kind == "product" && line.product_variant.inventory_tracking_mode == "quantity"
           reservation = Inventory::Reserve.call(

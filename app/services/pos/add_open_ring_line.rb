@@ -31,24 +31,29 @@ module Pos
       tax_category = @department.default_tax_category
       raise Error, "department has no default tax category" if tax_category.blank?
 
-      line = PosLineItem.create!(
-        pos_transaction: @pos_transaction,
-        line_kind: "open_ring",
-        status: "pending",
-        product_variant: nil,
-        department: @department,
-        tax_category: tax_category,
-        description_snapshot: @description.presence || @department.name,
-        quantity: @quantity,
-        unit_price_cents: @unit_price_cents,
-        position: next_position,
-        created_by_user: @actor
-      )
+      ActiveRecord::Base.transaction do
+        transaction = PosTransaction.lock.find(@pos_transaction.id)
+        raise Error, "transaction is not open for editing" unless transaction.editable?
 
-      recalculation = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
+        line = PosLineItem.create!(
+          pos_transaction: transaction,
+          line_kind: "open_ring",
+          status: "pending",
+          product_variant: nil,
+          department: @department,
+          tax_category: tax_category,
+          description_snapshot: @description.presence || @department.name,
+          quantity: @quantity,
+          unit_price_cents: @unit_price_cents,
+          position: next_position,
+          created_by_user: @actor
+        )
 
-      Result.new(pos_line_item: line, success?: true, error: nil,
-                 warnings: (recalculation.blockers + recalculation.warnings).uniq)
+        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
+
+        Result.new(pos_line_item: line, success?: true, error: nil,
+                   warnings: (recalculation.blockers + recalculation.warnings).uniq)
+      end
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_line_item: nil, success?: false, error: e.message, warnings: [])
     end

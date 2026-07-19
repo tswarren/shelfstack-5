@@ -47,6 +47,7 @@ module Pos
       ActiveRecord::Base.transaction do
         line = PosLineItem.lock.find(@pos_line_item.id)
         raise Error, "line is not pending" unless line.pending?
+        raise Error, "transaction is not open for editing" unless line.pos_transaction.editable?
 
         original_tax_category_id = line.original_tax_category_id || line.tax_category_id
         line.update!(

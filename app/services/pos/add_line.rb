@@ -29,8 +29,11 @@ module Pos
       warnings = eligibility.warnings.dup
 
       ActiveRecord::Base.transaction do
+        transaction = PosTransaction.lock.find(@pos_transaction.id)
+        raise Error, "transaction is not open for editing" unless transaction.editable?
+
         line = PosLineItem.create!(
-          pos_transaction: @pos_transaction,
+          pos_transaction: transaction,
           line_kind: "product",
           status: "pending",
           product_variant: @product_variant,

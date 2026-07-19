@@ -16,6 +16,7 @@ module Pos
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "only open transactions may be suspended" unless transaction.open?
+        raise Error, "cannot suspend while unresolved tenders exist" if transaction.unresolved_tenders?
 
         transaction.update!(
           status: "suspended",
