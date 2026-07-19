@@ -11,7 +11,7 @@
     <%= form.select :tax_category_id, @tax_categories.map { |c| [ "#{c.code} — #{c.name}", c.id ] } %>
   </div>
   <div>
-    <%= form.label :store_tax_rate_id, "Store tax rate (blank for exempt)" %>
+    <%= form.label :store_tax_rate_id, "Store tax rate (blank for exempt / not applicable)" %>
     <%= form.select :store_tax_rate_id, @store_tax_rates.map { |r| [ "#{r.code} — #{r.name}", r.id ] },
                      include_blank: true %>
   </div>
@@ -19,6 +19,7 @@
   <div>
     <%= form.label :treatment %>
     <%= form.select :treatment, StoreTaxRule::TREATMENTS %>
+    <p class="hint">taxable / zero_rated require a rate; exempt and not_applicable may omit it.</p>
   </div>
   <div><%= form.label :taxable_fraction %> <%= form.text_field :taxable_fraction %></div>
   <div><%= form.label :calculation_order %> <%= form.number_field :calculation_order %></div>

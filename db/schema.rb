@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_021000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -902,11 +902,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_020000) do
     t.index ["store_id"], name: "index_store_tax_rules_on_store_id"
     t.index ["store_tax_rate_id"], name: "index_store_tax_rules_on_store_tax_rate_id"
     t.index ["tax_category_id"], name: "index_store_tax_rules_on_tax_category_id"
-    t.check_constraint "(treatment::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying]::text[])) AND store_tax_rate_id IS NOT NULL OR treatment::text = 'exempt'::text", name: "store_tax_rules_rate_required_unless_exempt"
+    t.check_constraint "(treatment::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying]::text[])) AND store_tax_rate_id IS NOT NULL OR (treatment::text = ANY (ARRAY['exempt'::character varying, 'not_applicable'::character varying]::text[]))", name: "store_tax_rules_rate_required_unless_non_collecting"
     t.check_constraint "calculation_order >= 0", name: "store_tax_rules_calculation_order_non_negative"
     t.check_constraint "effective_from IS NULL OR effective_to IS NULL OR effective_from <= effective_to", name: "store_tax_rules_effective_period_order"
     t.check_constraint "taxable_fraction >= 0::numeric AND taxable_fraction <= 1::numeric", name: "store_tax_rules_taxable_fraction_range"
-    t.check_constraint "treatment::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying]::text[])", name: "store_tax_rules_treatment_check"
+    t.check_constraint "treatment::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying, 'not_applicable'::character varying]::text[])", name: "store_tax_rules_treatment_check"
   end
 
   create_table "stores", force: :cascade do |t|

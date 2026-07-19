@@ -75,7 +75,7 @@ Before Phase 4b code begins, implement at least:
 
 - store tax rates;
 - store tax rules linking tax category to store (and rate when applicable);
-- Store Tax Rule `treatment` (`taxable` / `zero_rated` / `exempt`) — not a global Tax Category status;
+- Store Tax Rule `treatment` (`taxable` / `zero_rated` / `exempt` / `not_applicable`) — not a global Tax Category status;
 - denormalized `store_id` on store tax rules;
 - effective dates with non-overlapping periods per `(store_id, tax_category_id, component code)`;
 - taxable fraction;

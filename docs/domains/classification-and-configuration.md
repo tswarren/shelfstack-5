@@ -197,11 +197,13 @@ Connects Store, Tax Category, optional Store Tax Rate, treatment, taxable fracti
 taxable
 zero_rated
 exempt
+not_applicable
 ```
 
 * `taxable` requires an effective Store Tax Rate with a nonnegative rate;
-* `zero_rated` requires an explicit 0% Store Tax Rate and produces a 0% historical component for reporting;
-* `exempt` creates no collectible tax, retains the treatment snapshot, and may omit `store_tax_rate_id`.
+* `zero_rated` requires an explicit 0% Store Tax Rate and produces a 0% historical component for reporting (VAT/GST-style; uncommon in the US demo);
+* `exempt` creates no collectible tax because the component is legally excluded for that merchandise or purchaser; may omit `store_tax_rate_id`;
+* `not_applicable` creates no collectible tax because the component is outside merchandise scope (for example Food/Beverage Tax on books); may omit `store_tax_rate_id`.
 
 Rules carry a denormalized `store_id` so Store-scoped queries and overlap validation remain clear even when `store_tax_rate_id` is null for exempt treatment.
 

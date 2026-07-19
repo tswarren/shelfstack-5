@@ -44,6 +44,13 @@ class StoreTaxRuleTest < ActiveSupport::TestCase
     assert rule.valid?
   end
 
+  test "not_applicable treatment may omit the store tax rate" do
+    rule = StoreTaxRule.new(
+      valid_attributes(treatment: "not_applicable", store_tax_rate: nil, component_code: "FOOD125", taxable_fraction: 0)
+    )
+    assert rule.valid?
+  end
+
   test "component_code must equal the referenced rate's code" do
     rule = StoreTaxRule.new(valid_attributes(component_code: "WRONG"))
     refute rule.valid?

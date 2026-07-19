@@ -16,6 +16,7 @@ module Tax
   class CalculateTransaction < ApplicationService
     DIRECTIONS = %w[sale return].freeze
     COMPONENT_TREATMENTS = %w[taxable zero_rated].freeze
+    NON_COLLECTING_TREATMENTS = %w[exempt not_applicable].freeze
 
     # id:                                  caller-supplied identifier (used for tie-breaks; must be comparable)
     # tax_category_id:                     resolved Tax Category for the line
@@ -163,12 +164,12 @@ module Tax
           )
         end
 
-        exempt_components = rules.select { |rule| rule.treatment == "exempt" }.map do |rule|
+        exempt_components = rules.select { |rule| NON_COLLECTING_TREATMENTS.include?(rule.treatment) }.map do |rule|
           ExemptComponentResult.new(
             store_tax_rule_id: rule.id,
             tax_category_id: rule.tax_category_id,
             component_code: rule.component_code,
-            treatment_snapshot: "exempt"
+            treatment_snapshot: rule.treatment
           )
         end
 
@@ -186,8 +187,8 @@ module Tax
     end
 
     # Groups (line, rule) pairs into transaction tax components identified by
-    # store_tax_rate_id + calculation_order + compounds_on_prior_tax (ADR-0014). Exempt
-    # rules never form a component: exempt treatment collects no tax and creates no row.
+    # store_tax_rate_id + calculation_order + compounds_on_prior_tax (ADR-0014).
+    # Non-collecting treatments (exempt, not_applicable) never form a collecting component.
     def build_component_groups(direction_lines, rules_by_line)
       groups = {}
       direction_lines.each do |line|

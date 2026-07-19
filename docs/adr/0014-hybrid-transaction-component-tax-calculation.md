@@ -165,14 +165,18 @@ Each Store Tax Rule carries an explicit `treatment`:
 taxable
 zero_rated
 exempt
+not_applicable
 ```
 
 Interpretation:
 
 * `taxable` must reference an effective Store Tax Rate with a nonnegative rate;
-* `zero_rated` requires an explicit 0% Store Tax Rate and creates an explicit 0% component row for reporting (`amount_cents = 0`);
-* `exempt` creates no collectible tax, retains the treatment snapshot, and may omit `store_tax_rate_id`;
+* `zero_rated` requires an explicit 0% Store Tax Rate and creates an explicit 0% component row for reporting (`amount_cents = 0`) — primarily VAT/GST jurisdictions; uncommon in the US bookstore demo;
+* `exempt` creates no collectible tax because statute or purchaser status excludes an otherwise relevant component; may omit `store_tax_rate_id`;
+* `not_applicable` creates no collectible tax because the component is outside the merchandise scope (for example a food tax on books); may omit `store_tax_rate_id`;
 * missing an effective Store Tax Rule for a line’s Tax Category at Completion is a configuration error and completion blocker — not an exemption.
+
+Non-collecting treatments (`exempt`, `not_applicable`) are still snapshotted on completed lines so reporting can distinguish *why* no tax was collected.
 
 A transaction Tax Exemption is separate from a Store Tax Rule with `treatment = exempt`. It records why an otherwise rule-taxable line or component was exempted for that transaction. Reusable tax-exemption master records remain deferred.
 
@@ -202,7 +206,7 @@ store_id
 tax_category_id
 store_tax_rate_id   # required for taxable and zero_rated; nullable for exempt
 component_code      # equals rate.code when rate present; required for exempt
-treatment           # taxable | zero_rated | exempt
+treatment           # taxable | zero_rated | exempt | not_applicable
 taxable_fraction
 calculation_order
 compounds_on_prior_tax

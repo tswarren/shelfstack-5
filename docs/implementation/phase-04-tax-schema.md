@@ -13,7 +13,7 @@ store_id              FK stores, null: false (denormalized; required even when r
 tax_category_id       FK tax_categories, null: false
 store_tax_rate_id     FK store_tax_rates, null: true
 component_code        string, null: false   # equals rate.code when rate present; required for exempt
-treatment             string, null: false   # taxable | zero_rated | exempt
+treatment             string, null: false   # taxable | zero_rated | exempt | not_applicable
 taxable_fraction      decimal(10,8), null: false, default 1
 calculation_order     smallint, null: false, default 0
 compounds_on_prior_tax boolean, null: false, default false
@@ -25,11 +25,14 @@ timestamps
 
 ### Treatment and rate nullability
 
-| treatment | `store_tax_rate_id` | Rate value |
+| treatment | `store_tax_rate_id` | Rate value / fraction |
 | --- | --- | --- |
-| `taxable` | required | nonnegative |
-| `zero_rated` | required | explicit 0% |
-| `exempt` | nullable | no collectible tax |
+| `taxable` | required | nonnegative rate; fraction usually `1` |
+| `zero_rated` | required | explicit 0% rate |
+| `exempt` | nullable | no collectible tax; fraction usually `0` |
+| `not_applicable` | nullable | no collectible tax; fraction usually `0` |
+
+Demo bootstrap seed (`db/seeds/phase4b_store_tax.rb`) uses two non-compounding rates — `STATE6` (6%) and `FOOD125` (1.25%) — with an explicit per-category treatment matrix.
 
 When `store_tax_rate_id` is present, `store_id` must match the rate’s Store and `component_code` must equal the rate’s `code`.
 

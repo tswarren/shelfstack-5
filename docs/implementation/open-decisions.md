@@ -119,7 +119,7 @@ Accepted behavior:
 - ordered components; compounding uses finalized (allocated) prior line tax amounts; taxable fraction applies to merchandise first;
 - sale and return directions are separate rounding pools;
 - tax effective date = store-local calendar date at completion (not Business Day `reporting_date`);
-- Store Tax Rule `treatment` distinguishes `taxable`, `zero_rated`, and `exempt` (not a global Tax Category status); missing effective rules for a line’s Tax Category block completion;
+- Store Tax Rule `treatment` distinguishes `taxable`, `zero_rated`, `exempt`, and `not_applicable` (not a global Tax Category status); missing effective rules for a line’s Tax Category block completion;
 - linked returns and post-voids reverse stored tax components exactly;
 - tax-exclusive prices in initial release; tax-inclusive pricing and jurisdiction-configurable line-level rounding remain deferred;
 - reusable tax-exemption masters remain deferred; transaction-scoped exemptions may exist earlier.

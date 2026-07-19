@@ -90,7 +90,9 @@ module Tax
       assert_equal 1, line.components.size
       assert_equal "taxable", line.components.first.treatment_snapshot
       assert_equal 130, line.components.first.amount_cents
-      assert_empty line.exempt_components
+      assert_equal 130, line.tax_amount_cents
+      # FOOD125 not_applicable may still snapshot as a non-collecting companion rule.
+      assert_empty line.exempt_components.select { |c| c.treatment_snapshot == "exempt" }
     end
 
     test "zero_rated treatment produces an explicit zero-amount component with a taxable base" do
@@ -122,6 +124,22 @@ module Tax
       assert_equal "exempt", line.exempt_components.first.treatment_snapshot
     end
 
+    test "not_applicable treatment is snapshotted without collecting tax alongside taxable components" do
+      category = tax_categories(:physical_book)
+      lines = [ { id: 1, tax_category_id: category.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 0 } ]
+
+      result = CalculateTransaction.call(store: @store, lines: lines, completion_date: @completion_date)
+
+      assert result.success?
+      line = result.lines.first
+      assert_equal 1, line.components.size
+      assert_equal "GST13", line.components.first.component_code
+      assert_equal 130, line.tax_amount_cents
+      na = line.exempt_components.find { |c| c.treatment_snapshot == "not_applicable" }
+      assert na, "expected a not_applicable non-collecting snapshot for FOOD125"
+      assert_equal "FOOD125", na.component_code
+    end
+
     test "missing effective store tax rule is a blocker, not an exemption" do
       category = tax_categories(:unconfigured_category)
       lines = [ { id: 1, tax_category_id: category.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 0 } ]
@@ -139,8 +157,8 @@ module Tax
 
     test "an effective period outside the completion date is not resolved" do
       category = tax_categories(:physical_book)
-      rule = store_tax_rules(:physical_book_gst)
-      rule.update!(effective_from: Date.new(2030, 1, 1))
+      store_tax_rules(:physical_book_gst).update!(effective_from: Date.new(2030, 1, 1))
+      store_tax_rules(:physical_book_food_not_applicable).update!(effective_from: Date.new(2030, 1, 1))
 
       lines = [ { id: 1, tax_category_id: category.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 0 } ]
       result = CalculateTransaction.call(store: @store, lines: lines, completion_date: @completion_date)

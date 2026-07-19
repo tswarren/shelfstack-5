@@ -3,9 +3,16 @@
 # Connects a Store, Tax Category, and (when applicable) a Store Tax Rate under an explicit
 # `treatment`. Tax Category never carries a global taxable/zero-rated/exempt status (ADR-0014);
 # actual treatment always depends on the Store Tax Rule.
+#
+# Treatments:
+# - taxable — statutory rate applies; collect tax
+# - zero_rated — within the tax system at an explicit 0% rate (VAT/GST-style; uncommon in US demo)
+# - exempt — tax would ordinarily be relevant but statute/customer excludes the sale
+# - not_applicable — component is outside the scope of this merchandise (e.g. food tax on books)
 class StoreTaxRule < ApplicationRecord
-  TREATMENTS = %w[taxable zero_rated exempt].freeze
+  TREATMENTS = %w[taxable zero_rated exempt not_applicable].freeze
   RATE_REQUIRED_TREATMENTS = %w[taxable zero_rated].freeze
+  NON_COLLECTING_TREATMENTS = %w[exempt not_applicable].freeze
 
   belongs_to :store
   belongs_to :tax_category

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 # Persisted ADR-0014 hybrid tax-component snapshot for a pending POS line, written by
-# Pos::RecalculateTransaction from Tax::CalculateTransaction results. Only `taxable`
-# and `zero_rated` treatments create rows; `exempt` collects no tax and is not
-# persisted here (see Tax::CalculateTransaction).
+# Pos::RecalculateTransaction from Tax::CalculateTransaction results. Collecting
+# treatments (`taxable`, `zero_rated`) carry amounts; non-collecting treatments
+# (`exempt`, `not_applicable`) are snapshotted at $0 for audit/reporting.
 class PosLineItemTax < ApplicationRecord
-  TREATMENTS = %w[taxable zero_rated exempt].freeze
+  TREATMENTS = %w[taxable zero_rated exempt not_applicable].freeze
 
   belongs_to :pos_line_item
   belongs_to :store_tax_rule

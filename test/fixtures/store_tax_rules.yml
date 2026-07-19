@@ -25,8 +25,18 @@ digital_service_exempt:
   tax_category: digital_service
   component_code: EXEMPT
   treatment: exempt
-  taxable_fraction: 1.00000000
+  taxable_fraction: 0.00000000
   calculation_order: 0
+  compounds_on_prior_tax: false
+  active: true
+
+physical_book_food_not_applicable:
+  store: main_street
+  tax_category: physical_book
+  component_code: FOOD125
+  treatment: not_applicable
+  taxable_fraction: 0.00000000
+  calculation_order: 1
   compounds_on_prior_tax: false
   active: true
 
