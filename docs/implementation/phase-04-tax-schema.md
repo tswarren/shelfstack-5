@@ -54,14 +54,14 @@ In addition to proforma amount/rate/taxable-base fields, retain:
 
 ```text
 store_tax_rule_id
-store_tax_rate_id              # nullable when rule treatment is exempt
+store_tax_rate_id              # nullable when rule treatment is exempt/not_applicable
 tax_category_id
-treatment_snapshot             # taxable | zero_rated | exempt
+treatment_snapshot             # taxable | zero_rated | exempt | not_applicable
 receipt_code_snapshot
 position
 taxable_amount_cents
 taxable_fraction_snapshot
-rate                           # nullable when exempt without rate
+rate                           # nullable when non-collecting without rate
 compounds_on_prior_tax_snapshot
 amount_cents
 ```

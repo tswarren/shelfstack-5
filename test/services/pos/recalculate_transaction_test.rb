@@ -35,16 +35,19 @@ module Pos
       )
 
       persisted = PosLineItemTax.where(pos_line_item: line).order(:position)
-      assert_equal 1, persisted.count
+      collecting = persisted.where(treatment_snapshot: %w[taxable zero_rated])
       expected_component = expected.lines.first.components.first
-      row = persisted.first
+      row = collecting.first
 
+      assert_equal 1, collecting.count
       assert_equal expected_component.store_tax_rule_id, row.store_tax_rule_id
       assert_equal expected_component.store_tax_rate_id, row.store_tax_rate_id
       assert_equal expected_component.treatment_snapshot, row.treatment_snapshot
       assert_equal expected_component.taxable_amount_cents, row.taxable_amount_cents
       assert_equal expected_component.amount_cents, row.amount_cents
       assert_equal expected.total_tax_cents_by_direction.fetch("sale"), persisted.sum(&:amount_cents)
+      assert_equal expected.lines.first.exempt_components.size,
+                   persisted.where(treatment_snapshot: %w[exempt not_applicable]).count
     end
 
     test "exempt store tax rule persists a zero-amount exempt snapshot row" do
@@ -60,6 +63,19 @@ module Pos
       assert_equal "exempt", row.treatment_snapshot
       assert_equal 0, row.amount_cents
       assert_nil row.store_tax_rate_id
+    end
+
+    test "not_applicable store tax rule persists a zero-amount snapshot alongside taxable tax" do
+      line = AddOpenRingLine.call(
+        pos_transaction: @transaction, department: @books_department, unit_price_cents: 800, actor: @admin
+      ).pos_line_item
+
+      rows = PosLineItemTax.where(pos_line_item: line).order(:position)
+      assert_includes rows.map(&:treatment_snapshot), "taxable"
+      na = rows.find { |r| r.treatment_snapshot == "not_applicable" }
+      assert na, "expected a persisted not_applicable FOOD125 snapshot"
+      assert_equal 0, na.amount_cents
+      assert_nil na.store_tax_rate_id
     end
 
     test "a missing effective store tax rule blocks recalculation instead of implicitly exempting" do

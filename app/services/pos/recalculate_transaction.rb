@@ -20,32 +20,35 @@ module Pos
         sale_lines = lines.select { |line| line.direction == "sale" }
         return_lines = lines.select { |line| line.direction == "return" }
 
-        PosLineItemTax.where(pos_line_item_id: transaction.pos_line_items.where.not(status: "completed").select(:id)).delete_all
-
         sale_subtotal = sale_lines.sum(&:extended_price_cents)
         return_subtotal = return_lines.sum(&:extended_price_cents)
         sale_discounts = discount_total_for(sale_lines)
         return_discounts = discount_total_for(return_lines)
+        provisional_net = (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts)
 
         if transaction.tax_exempt?
-          net = (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts)
+          clear_pending_tax_rows!(transaction)
           return Result.new(success?: true, blockers: [], warnings: [],
                             subtotal_cents: sale_subtotal - return_subtotal,
                             discount_total_cents: sale_discounts - return_discounts,
-                            tax_total_cents: 0, net_total_cents: net, tax_exempt?: true)
+                            tax_total_cents: 0, net_total_cents: provisional_net, tax_exempt?: true)
         end
 
-        sale_tax_result = calculate_sale_tax(transaction, sale_lines)
+        sale_tax_result = calculate_sale_tax(transaction, sale_lines, persist: false)
         if sale_tax_result[:blockers].any?
+          # Do not wipe previously persisted provisional tax when calculation is blocked.
+          existing_tax = pending_tax_total_cents(transaction)
           return Result.new(success?: false, blockers: sale_tax_result[:blockers],
                             warnings: sale_tax_result[:warnings],
                             subtotal_cents: sale_subtotal - return_subtotal,
                             discount_total_cents: sale_discounts - return_discounts,
-                            tax_total_cents: 0,
-                            net_total_cents: (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts),
+                            tax_total_cents: existing_tax,
+                            net_total_cents: provisional_net + existing_tax,
                             tax_exempt?: false)
         end
 
+        clear_pending_tax_rows!(transaction)
+        persist_tax_components(sale_tax_result[:line_results])
         return_tax_cents = persist_return_tax!(return_lines)
         sale_tax_cents = sale_tax_result[:tax_cents]
         tax_total = sale_tax_cents - return_tax_cents
@@ -60,21 +63,36 @@ module Pos
 
     private
 
+    def clear_pending_tax_rows!(transaction)
+      PosLineItemTax.where(pos_line_item_id: transaction.pos_line_items.where.not(status: "completed").select(:id)).delete_all
+    end
+
+    def pending_tax_total_cents(transaction)
+      PosLineItemTax.where(pos_line_item_id: transaction.pos_line_items.pending.select(:id)).sum(:amount_cents)
+    end
+
     def discount_total_for(lines)
       return 0 if lines.empty?
 
       PosDiscountAllocation.joins(:pos_discount).where(pos_line_item_id: lines.map(&:id)).sum(:allocated_amount_cents)
     end
 
-    def calculate_sale_tax(transaction, sale_lines)
-      return { tax_cents: 0, blockers: [], warnings: [] } if sale_lines.empty?
+    def calculate_sale_tax(transaction, sale_lines, persist: true)
+      return { tax_cents: 0, blockers: [], warnings: [], line_results: [] } if sale_lines.empty?
 
       tax_lines = sale_lines.map { |line| tax_input_line(line) }
       calculation = Tax::CalculateTransaction.call(store: transaction.store, lines: tax_lines)
-      return { tax_cents: 0, blockers: calculation.blockers, warnings: calculation.warnings } if calculation.blockers.any?
+      if calculation.blockers.any?
+        return { tax_cents: 0, blockers: calculation.blockers, warnings: calculation.warnings, line_results: [] }
+      end
 
-      persist_tax_components(calculation.lines)
-      { tax_cents: calculation.total_tax_cents_by_direction.fetch("sale", 0), blockers: [], warnings: calculation.warnings }
+      persist_tax_components(calculation.lines) if persist
+      {
+        tax_cents: calculation.total_tax_cents_by_direction.fetch("sale", 0),
+        blockers: [],
+        warnings: calculation.warnings,
+        line_results: calculation.lines
+      }
     end
 
     def persist_return_tax!(return_lines)

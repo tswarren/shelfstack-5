@@ -114,20 +114,24 @@ module Tax
 
       ordered_keys.each do |key|
         group = component_groups[key]
-        rule = group[:rule]
-        rate = rule.store_tax_rate.rate
+        representative_rule = group[:rule]
+        rate = representative_rule.store_tax_rate.rate
 
+        # Each line keeps its own Store Tax Rule (and taxable_fraction); lines only share
+        # the transaction-component identity (rate + order + compounding) for rounding.
         taxable_items = group[:entries].map do |entry|
           line = entry[:line]
-          exact_cents = BigDecimal(line.taxable_merchandise_amount_cents) * rule.taxable_fraction
+          entry_rule = entry[:rule]
+          exact_cents = BigDecimal(line.taxable_merchandise_amount_cents) * entry_rule.taxable_fraction
           { key: line.id, exact_cents: exact_cents, position: line.position, id: line.id }
         end
         taxable_allocation = allocate_largest_remainder(taxable_items, round_half_up(sum_exact(taxable_items)))
 
         tax_items = group[:entries].map do |entry|
           line = entry[:line]
+          entry_rule = entry[:rule]
           base = taxable_allocation.fetch(line.id)
-          base += finalized_tax_by_line[line.id] if rule.compounds_on_prior_tax
+          base += finalized_tax_by_line[line.id] if entry_rule.compounds_on_prior_tax
           exact_cents = BigDecimal(base) * rate
           { key: line.id, exact_cents: exact_cents, position: line.position, id: line.id }
         end
@@ -135,10 +139,11 @@ module Tax
 
         group[:entries].each do |entry|
           line = entry[:line]
+          entry_rule = entry[:rule]
           amount_cents = tax_allocation.fetch(line.id)
           finalized_tax_by_line[line.id] += amount_cents
-          taxable_amount_by_line_component[[ line.id, rule.id ]] = taxable_allocation.fetch(line.id)
-          amount_by_line_component[[ line.id, rule.id ]] = amount_cents
+          taxable_amount_by_line_component[[ line.id, entry_rule.id ]] = taxable_allocation.fetch(line.id)
+          amount_by_line_component[[ line.id, entry_rule.id ]] = amount_cents
         end
       end
 

@@ -155,6 +155,41 @@ module Tax
       assert_equal 0, line.tax_amount_cents
     end
 
+    test "lines that share a rate but use different store tax rules each receive their allocated tax" do
+      book = tax_categories(:physical_book)
+      mixed = tax_categories(:mixed_use_item)
+      lines = [
+        { id: 1, tax_category_id: book.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 0 },
+        { id: 2, tax_category_id: mixed.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 1 }
+      ]
+
+      result = CalculateTransaction.call(store: @store, lines: lines, completion_date: @completion_date)
+
+      assert result.success?
+      book_line = result.lines.find { |l| l.line_id == 1 }
+      mixed_line = result.lines.find { |l| l.line_id == 2 }
+
+      # Book: 1000 * 13% = 130. Mixed (half taxable): 500 * 13% = 65.
+      assert_equal 130, book_line.tax_amount_cents
+      assert_equal 65, mixed_line.tax_amount_cents
+      assert_equal 195, result.total_tax_cents_by_direction["sale"]
+    end
+
+    test "an exempt line before a taxable line does not suppress tax on the taxable line" do
+      digital = tax_categories(:digital_service)
+      book = tax_categories(:physical_book)
+      lines = [
+        { id: 1, tax_category_id: digital.id, direction: "sale", taxable_merchandise_amount_cents: 500, position: 0 },
+        { id: 2, tax_category_id: book.id, direction: "sale", taxable_merchandise_amount_cents: 1000, position: 1 }
+      ]
+
+      result = CalculateTransaction.call(store: @store, lines: lines, completion_date: @completion_date)
+
+      assert result.success?
+      assert_equal 0, result.lines.find { |l| l.line_id == 1 }.tax_amount_cents
+      assert_equal 130, result.lines.find { |l| l.line_id == 2 }.tax_amount_cents
+    end
+
     test "an effective period outside the completion date is not resolved" do
       category = tax_categories(:physical_book)
       store_tax_rules(:physical_book_gst).update!(effective_from: Date.new(2030, 1, 1))
