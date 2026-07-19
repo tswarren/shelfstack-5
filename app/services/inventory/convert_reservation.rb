@@ -130,7 +130,7 @@ module Inventory
         raise Error, "reservation is not active" unless reservation.status == "active"
         raise Error, "unit is not reserved" unless unit.status == "reserved"
 
-        unit.update!(status: "sold", sold_at: @posted_at, sold_pos_line_item: line)
+        unit.update!(status: "sold", sold_at: @posted_at)
         reservation.update!(status: "converted", converted_at: @posted_at)
 
         line.update!(

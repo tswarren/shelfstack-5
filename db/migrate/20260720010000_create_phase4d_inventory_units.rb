@@ -13,34 +13,23 @@ class CreatePhase4dInventoryUnits < ActiveRecord::Migration[8.1]
       t.references :product_condition, foreign_key: { on_delete: :restrict }
       t.integer :acquisition_cost_cents
       t.integer :unit_price_cents
-      t.string :description
-      t.text :internal_notes
-      t.string :acquisition_source_type
-      t.bigint :acquisition_source_id
+      t.string :acquisition_source
       t.datetime :acquired_at, null: false
+      t.text :notes
       t.references :created_by_user, null: false, foreign_key: { to_table: :users, on_delete: :restrict }
       t.datetime :sold_at
-      t.references :sold_pos_line_item, foreign_key: { to_table: :pos_line_items, on_delete: :restrict }
 
       t.timestamps
     end
 
     add_index :inventory_units, :unit_identifier, unique: true
     add_index :inventory_units, [ :store_id, :product_variant_id, :status ]
-    # Phase 4 baseline (available/reserved/sold/inspection/damaged/discarded) plus
-    # deferred-capable values reserved without implementing their workflows
-    # (rtv/in_transfer — see docs/implementation/deferred-capabilities.md).
-    add_check_constraint :inventory_units,
-                          "status IN ('available', 'reserved', 'sold', 'inspection', 'damaged', 'discarded', 'rtv', 'in_transfer')",
+    add_check_constraint :inventory_units, "status IN ('available', 'reserved', 'sold')",
                           name: "inventory_units_status_check"
     add_check_constraint :inventory_units, "acquisition_cost_cents IS NULL OR acquisition_cost_cents >= 0",
                           name: "inventory_units_acquisition_cost_non_negative"
     add_check_constraint :inventory_units, "unit_price_cents IS NULL OR unit_price_cents >= 0",
                           name: "inventory_units_unit_price_non_negative"
-    add_check_constraint :inventory_units,
-                          "acquisition_source_type IS NULL OR acquisition_source_type IN ('receipt_line', 'return_line', 'buyback', 'adjustment', 'other')",
-                          name: "inventory_units_acquisition_source_type_check"
-    add_index :inventory_units, [ :acquisition_source_type, :acquisition_source_id ]
 
     # Reservation and POS-line FKs to the exact Unit (ADR-0006: "an individually
     # tracked reservation identifies the exact inventory unit"; "one inventory
@@ -54,7 +43,5 @@ class CreatePhase4dInventoryUnits < ActiveRecord::Migration[8.1]
     add_reference :pos_line_items, :inventory_unit, foreign_key: { on_delete: :restrict }
     add_check_constraint :pos_line_items, "inventory_unit_id IS NULL OR quantity = 1",
                           name: "pos_line_items_unit_quantity_one"
-    add_check_constraint :pos_line_items, "inventory_unit_id IS NULL OR line_kind = 'product'",
-                          name: "pos_line_items_unit_matches_kind"
   end
 end

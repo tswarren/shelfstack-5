@@ -26,7 +26,7 @@ class InventoryUnitsControllerTest < ActionDispatch::IntegrationTest
         post inventory_units_path, params: {
           inventory_unit: {
             product_variant_id: variant.id, acquisition_cost_cents: 1200,
-            acquisition_source_type: "other", description: "Signed by author"
+            acquisition_source: "other", notes: "Signed by author"
           }
         }
       end
