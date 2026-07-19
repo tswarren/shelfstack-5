@@ -23,6 +23,15 @@ module Administration
         end
 
         added = @role.permissions.reload.pluck(:code).sort - previous_codes
+
+        # OD-013 interim: permissions alone do not authorize numeric POS actions.
+        # Fill unconfigured (null) authority overrides on administrator memberships.
+        authority_filled = []
+        StoreMembership.where(role_id: @role.id).find_each do |membership|
+          filled = Authorization::AuthorityLimits.apply_administrator_defaults!(membership)
+          authority_filled.concat(filled.map(&:to_s)) if filled.any?
+        end
+
         RecordAuditEvent.call(
           actor: @actor,
           organization: @organization,
@@ -32,7 +41,8 @@ module Administration
           metadata: {
             "code" => @role.code,
             "permission_codes_added" => added,
-            "permission_codes_removed" => []
+            "permission_codes_removed" => [],
+            "authority_limits_filled" => authority_filled.uniq
           }
         )
       end

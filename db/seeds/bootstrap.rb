@@ -104,12 +104,16 @@ end
 membership = StoreMembership.find_or_initialize_by(user: admin_user, store: store)
 if membership.new_record?
   membership.assign_attributes(
-    role: admin_role,
-    active: true,
-    starts_on: Date.current - 1.year,
-    assigned_by_user: admin_user
+    {
+      role: admin_role,
+      active: true,
+      starts_on: Date.current - 1.year,
+      assigned_by_user: admin_user
+    }.merge(Authorization::AuthorityLimits::ADMINISTRATOR_UNCONFIGURED_DEFAULTS)
   )
   membership.save!
+elsif membership.role_id == admin_role.id
+  Authorization::AuthorityLimits.apply_administrator_defaults!(membership)
 end
 
 if Rails.env.development?
