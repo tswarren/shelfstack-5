@@ -10,15 +10,18 @@ module Inventory
     Result = Data.define(:inventory_unit, :success?, :error)
 
     def initialize(store:, product_variant:, actor:, acquisition_cost_cents: nil, product_condition: nil,
-                    unit_price_cents: nil, acquisition_source: nil, notes: nil, acquired_at: nil)
+                    unit_price_cents: nil, acquisition_source_type: nil, acquisition_source_id: nil,
+                    description: nil, internal_notes: nil, acquired_at: nil)
       @store = store
       @product_variant = product_variant
       @actor = actor
       @acquisition_cost_cents = acquisition_cost_cents
       @product_condition = product_condition
       @unit_price_cents = unit_price_cents
-      @acquisition_source = acquisition_source
-      @notes = notes
+      @acquisition_source_type = acquisition_source_type
+      @acquisition_source_id = acquisition_source_id
+      @description = description
+      @internal_notes = internal_notes
       @acquired_at = acquired_at || Time.current
     end
 
@@ -44,8 +47,10 @@ module Inventory
           product_condition: @product_condition,
           acquisition_cost_cents: @acquisition_cost_cents,
           unit_price_cents: @unit_price_cents,
-          acquisition_source: @acquisition_source,
-          notes: @notes,
+          acquisition_source_type: @acquisition_source_type,
+          acquisition_source_id: @acquisition_source_id,
+          description: @description,
+          internal_notes: @internal_notes,
           acquired_at: @acquired_at,
           created_by_user: @actor
         )

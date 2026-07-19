@@ -33,14 +33,25 @@
     </select>
   </div>
   <div>
-    <label for="inventory_unit_acquisition_source">Acquisition source</label>
-    <input type="text" name="inventory_unit[acquisition_source]" id="inventory_unit_acquisition_source"
-           value="<%= @inventory_unit.acquisition_source %>">
+    <label for="inventory_unit_acquisition_source_type">Acquisition source</label>
+    <select name="inventory_unit[acquisition_source_type]" id="inventory_unit_acquisition_source_type">
+      <option value=""></option>
+      <% InventoryUnit::ACQUISITION_SOURCE_TYPES.each do |source_type| %>
+        <option value="<%= source_type %>" <%= "selected" if @inventory_unit.acquisition_source_type == source_type %>>
+          <%= source_type.humanize %>
+        </option>
+      <% end %>
+    </select>
   </div>
   <div>
-    <label for="inventory_unit_notes">Notes</label>
-    <input type="text" name="inventory_unit[notes]" id="inventory_unit_notes"
-           value="<%= @inventory_unit.notes %>">
+    <label for="inventory_unit_description">Description</label>
+    <input type="text" name="inventory_unit[description]" id="inventory_unit_description"
+           value="<%= @inventory_unit.description %>">
+  </div>
+  <div>
+    <label for="inventory_unit_internal_notes">Internal notes</label>
+    <input type="text" name="inventory_unit[internal_notes]" id="inventory_unit_internal_notes"
+           value="<%= @inventory_unit.internal_notes %>">
   </div>
   <%= submit_tag "Create unit" %>
 <% end %>

@@ -34,8 +34,9 @@ class InventoryUnitsController < ApplicationController
       acquisition_cost_cents: unit_params[:acquisition_cost_cents].presence,
       product_condition: Current.organization.product_conditions.find_by(id: unit_params[:product_condition_id]),
       unit_price_cents: unit_params[:unit_price_cents].presence,
-      acquisition_source: unit_params[:acquisition_source].presence,
-      notes: unit_params[:notes].presence
+      acquisition_source_type: unit_params[:acquisition_source_type].presence,
+      description: unit_params[:description].presence,
+      internal_notes: unit_params[:internal_notes].presence
     )
 
     if result.success?
@@ -64,7 +65,7 @@ class InventoryUnitsController < ApplicationController
   def unit_params
     params.require(:inventory_unit).permit(
       :product_variant_id, :acquisition_cost_cents, :unit_price_cents,
-      :product_condition_id, :acquisition_source, :notes
+      :product_condition_id, :acquisition_source_type, :description, :internal_notes
     )
   end
 end
