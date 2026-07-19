@@ -84,6 +84,10 @@ Also: failed/ambiguous scan; negative-availability warning; approval-required ac
 - Scan-resolution polish beyond the actionable baseline region
 - Fixed-point currency mask outside POS/operational cash fields
 
-## Exit
+## Gate status
 
-Merge to `main` only after gate sign-off. Then update [../current-phase.md](../current-phase.md) toward Phase 5.
+Automated portions of the UX Baseline Gate are implemented on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin).
+
+**Merge to `main` requires manual walkthrough sign-off** (see Manual walkthrough above). Do not treat automated tests alone as gate completion.
+
+After merge to `main`, update [../current-phase.md](../current-phase.md) toward Phase 5.

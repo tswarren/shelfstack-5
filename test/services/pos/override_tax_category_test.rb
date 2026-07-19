@@ -44,19 +44,21 @@ module Pos
       )
 
       refute result.success?
-      assert_equal "tax category override requires approval", result.error
+      assert_match(/missing permission pos\.tax_category\.override/, result.error)
       @line.reload
       refute @line.tax_category_overridden?
     end
 
-    test "escalating to an approver who also lacks the permission is denied" do
+    test "an approver cannot bypass a requester who lacks the permission" do
       result = OverrideTaxCategory.call(
         pos_line_item: @line, tax_category: tax_categories(:stationery), reason: "miscategorized at intake",
-        actor: @clerk, approver: @clerk, approver_pin: "irrelevant"
+        actor: @clerk, approver: @admin, approver_pin: "1234"
       )
 
       refute result.success?
-      assert_match(/differ/, result.error)
+      assert_match(/missing permission pos\.tax_category\.override/, result.error)
+      @line.reload
+      refute @line.tax_category_overridden?
     end
 
     test "an override reason is required" do
