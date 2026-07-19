@@ -70,7 +70,9 @@ module Inventory
           incoming_unit_cost_cents: @incoming_unit_cost_cents,
           incoming_cost_method: @incoming_cost_method,
           incoming_cost_quality: @incoming_cost_quality,
-          corrected_inventory_value_cents: @corrected_inventory_value_cents
+          corrected_inventory_value_cents: @corrected_inventory_value_cents,
+          prior_last_known_unit_cost_cents: balance.last_known_unit_cost_cents,
+          prior_last_known_cost_quality: balance.last_known_cost_quality
         )
 
         entry = InventoryLedgerEntry.create!(
@@ -128,6 +130,7 @@ module Inventory
       when "opening_inventory" then :opening_inventory
       when "quantity_adjustment" then :quantity_only
       when "cost_correction" then :cost_correction
+      when "sale" then :sale
       else
         raise Error, "unsupported movement_type: #{@movement_type}"
       end
@@ -187,7 +190,7 @@ module Inventory
           existing.cost_quality == (@incoming_cost_quality.presence || "actual").to_s
       when :opening_inventory
         opening_inputs_match?(existing)
-      when :quantity_only
+      when :quantity_only, :sale
         true
       else
         false
