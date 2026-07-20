@@ -3,8 +3,13 @@
 <%= render "shared/page_header", title: "Close cash session" %>
 
 <%= render "shared/record_summary", rows: [
-      [ "Opening cash", pos_money(@session.opening_cash_cents) ],
-      [ "Expected cash", pos_money(@expected_cash_cents) ],
+      [ "Opening cash", pos_money(@expected_cash.opening_cash_cents) ],
+      [ "Cash received", pos_money(@expected_cash.cash_received_cents) ],
+      [ "Change given", pos_money(@expected_cash.change_given_cents) ],
+      [ "Cash refunded", pos_money(@expected_cash.cash_refunded_cents) ],
+      ([ "Cash movements in", pos_money(@expected_cash.cash_movement_in_cents) ] if @expected_cash.cash_movement_in_cents.positive?),
+      ([ "Cash movements out", pos_money(@expected_cash.cash_movement_out_cents) ] if @expected_cash.cash_movement_out_cents.positive?),
+      [ "Expected cash", pos_money(@expected_cash.expected_cash_cents) ],
       ([ "Last recorded count", "#{pos_money(@closing_count.total_cents)} (#{@closing_count.count_type.humanize})" ] if @closing_count)
     ].compact %>
 

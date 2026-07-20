@@ -290,5 +290,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "body.layout-pos"
     assert_select "input.input-currency"
+    assert_match "Cash received", response.body
+    assert_match "Change given", response.body
+    assert_match "Cash refunded", response.body
+    assert_match "Expected cash", response.body
   end
 end

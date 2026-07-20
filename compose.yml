@@ -10,6 +10,8 @@ services:
       - bundle:/bundle
     ports:
       - "3000:3000"
+    # Chromium in Docker needs more than the default 64MB /dev/shm.
+    shm_size: "256mb"
     environment:
       RAILS_ENV: development
       DATABASE_HOST: db
@@ -18,6 +20,8 @@ services:
       DATABASE_PASSWORD: postgres
       DATABASE_NAME: shelfstack_development
       TEST_DATABASE_NAME: shelfstack_test
+      CHROME_BIN: /usr/bin/chromium
+      CHROMEDRIVER_PATH: /usr/bin/chromedriver
     depends_on:
       - db
     stdin_open: true

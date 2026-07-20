@@ -48,7 +48,8 @@ class PosSessionsController < ApplicationController
       return
     end
 
-    @expected_cash_cents = Pos::CalculateExpectedCash.call(pos_session: @session).expected_cash_cents
+    @expected_cash = Pos::CalculateExpectedCash.call(pos_session: @session)
+    @expected_cash_cents = @expected_cash.expected_cash_cents
     @closing_count = PosSessionCashCount
       .where(pos_session_id: @session.id, count_type: %w[closing manager_recount])
       .order(:id)

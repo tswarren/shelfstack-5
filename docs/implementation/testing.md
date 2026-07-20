@@ -86,11 +86,19 @@ Force a failure after a mid-step (stub/raise inside the service) and assert:
 
 Mandatory when changing end-to-end cashier or receiving browser paths. Not required for pure service/model work already covered by focused tests.
 
+Capybara / Selenium use headless Chrome. In Docker Compose, `Dockerfile.dev` installs Debian Chromium (`CHROME_BIN` / `CHROMEDRIVER_PATH`); `web` sets `shm_size: 256mb`. GitHub Actions `system-test` uses the runner’s Chrome via Selenium Manager. System tests remain explicit — not part of `bin/ci` today.
+
 Run explicitly:
 
 ```bash
 bin/rails test:system
-# or Docker equivalent from AGENTS.md
+```
+
+Inside Docker:
+
+```bash
+docker compose run --rm -e RAILS_ENV=test web \
+  bin/rails db:test:prepare test:system
 ```
 
 ## Commands
