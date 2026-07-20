@@ -15,15 +15,18 @@ For the current classification model, [ADR-0003](../../adr/0003-merchandise-clas
 - no `display_categories` table or active `display_category_id` foreign key should be scaffolded;
 - Departments remain a separate financial and policy classification.
 
-For demand and supply commitments, [ADR-0005](../../adr/0005-demand-allocations-and-reservations.md) and [ADR-0006](../../adr/0006-inventory-quantities-and-reservation-records.md) govern:
+For demand and supply commitments, [ADR-0015](../../adr/0015-product-backed-demand-and-customer-supply-commitments.md) (supersedes ADR-0005), [OD-007](../../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md), and [ADR-0006](../../adr/0006-inventory-quantities-and-reservation-records.md) govern:
 
-- `product_requests` record demand;
-- `purchase_order_allocations` commit expected future supply;
+- every `product_requests` row references an existing Product (`product_id` required);
+- four request types: customer request, staff suggestion, stock replenishment, frontlist selection;
+- `purchase_order_allocations` commit expected future supply **only** to Customer Requests;
+- remaining allocation quantity is derived from append-only `purchase_order_allocation_events` (conversion/release); do not use allocation statuses `received` / `fulfilled`;
+- final Customer Request fulfilment is a separate `product_request_fulfillments` fact;
 - `inventory_reservations` commit physically present supply;
-- Purchase Orders record acquisition intent;
+- Purchase Orders record acquisition intent (`draft` / `ordered` / `closed` / `cancelled`);
 - Receipts record delivered and accepted supply.
 
-The Phase 3 proforma must include Product Requests and Purchase-Order Allocations even when an older export grouped customer demand under Purchasing.
+The reconciled dictionary and table summary should reflect ADR-0015 / OD-007 even when older workbook rows still say ADR-0005.
 
 The actual implemented database structure is defined by Rails migrations and `db/schema.rb`. An implementation conflict with a governing ADR or Domain Specification must be resolved explicitly rather than silently treating the current database as the intended architecture.
 

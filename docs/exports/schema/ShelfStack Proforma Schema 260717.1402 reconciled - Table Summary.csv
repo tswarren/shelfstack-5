@@ -29,12 +29,14 @@ Catalog and Products,product_variants,"Exact sellable configuration used by pric
 Catalog and Products,product_options,Option dimensions used by option and matrix product structures.,Recommended,6
 Catalog and Products,product_option_values,Permitted values within one product option.,Recommended,6
 Catalog and Products,product_variant_option_values,Join assigning exact option values to a variant.,Recommended,5
-Product Requests,product_requests,"Store-scoped customer demand or staff purchasing suggestion, separate from supply allocations and inventory reservations.",Recommended — required Phase 3 table under ADR-0005,16
+Product Requests,product_requests,"Store-scoped product-backed demand (four types); separate from supply allocations and inventory reservations.",Recommended — ADR-0015; product_id required,21
+Product Requests,product_request_fulfillments,Separate Customer Request fulfilment fact linked to reservation and/or POS line.,Recommended — OD-007,8
 Vendors and Purchasing,vendors,Organizations from which the bookstore purchases merchandise.,Recommended — domain expansion beyond earlier dictionary scope,14
 Vendors and Purchasing,product_variant_vendors,"Vendor-specific source, cost, ordering, and returnability information for a variant.",Recommended — aligns with purchasing plan,18
-Vendors and Purchasing,purchase_orders,Store-specific intent to acquire merchandise from one vendor.,Recommended table; status enum remains Proposed,16
-Vendors and Purchasing,purchase_order_lines,"Variant-level ordered quantity, expected cost, snapshots, and fulfilment totals.",Recommended — special_order_quantity and tbo_required removed,18
-Vendors and Purchasing,purchase_order_allocations,Commitment of expected Purchase-Order-Line quantity to a Product Request.,Recommended — required Phase 3 table under ADR-0005,11
+Vendors and Purchasing,purchase_orders,Store-specific intent to acquire merchandise from one vendor.,Recommended — Phase 5 statuses draft/ordered/closed/cancelled,14
+Vendors and Purchasing,purchase_order_lines,"Variant-level ordered quantity, expected cost, snapshots, and fulfilment totals.",Recommended — cost_entry_method and cost provenance,21
+Vendors and Purchasing,purchase_order_allocations,Commitment of expected Purchase-Order-Line quantity to a Customer Request only.,Recommended — ADR-0015; remaining qty from events,7
+Vendors and Purchasing,purchase_order_allocation_events,Append-only conversion to reservation or release of allocated quantity.,Recommended — OD-007,10
 Receiving and Inventory,receipts,One Store/Vendor shipment or receiving event; PO linkage occurs only on Receipt Lines.,Recommended table; correction/status details remain Proposed,14
 Receiving and Inventory,receipt_lines,"Accepted, rejected, damaged, and inspection quantities and actual received cost.",Recommended,18
 Receiving and Inventory,stock_balances,Current store-and-variant inventory summary.,Recommended — core later inventory decision,12

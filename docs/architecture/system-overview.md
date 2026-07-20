@@ -786,29 +786,34 @@ A request may originate from:
 * a staff member;  
 * a future automated replenishment process.
 
-Initial request types should include:
+Initial request types include:
 
 ```
 customer_request
 staff_suggestion
+stock_replenishment
+frontlist_selection
 ```
 
-A customer request indicates that the store is attempting to supply merchandise for a particular customer.
+Every product request must reference an existing ShelfStack product ([ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)). Free-text notes may preserve context but do not substitute for product identity. Product variant may remain unresolved until purchasing or exact fulfilment requires it.
 
-A staff suggestion indicates that a buyer should consider purchasing an item, but it does not by itself commit stock to a customer.
+A customer request indicates that the store is attempting to supply merchandise for a particular customer (v1: opaque `customer_reference`, not a Customer master).
 
-A product request may identify:
+Staff suggestions, stock replenishment, and frontlist selections are buyer-decision records. They do not create customer obligations and do not ordinarily retain purchase-order allocations after the buyer acts.
+
+A product request identifies:
 
 * store;  
-* customer, where applicable;  
-* product;  
-* product variant, where known;  
+* request type;  
+* product (required);  
+* product variant, when known;  
 * requested quantity;  
-* priority;  
-* needed-by date;  
+* priority and needed-by date (especially for customer requests);  
 * requesting user;  
+* customer reference, when applicable;  
 * notes;  
-* current status.
+* current status;  
+* buyer resolution details for non-customer requests.
 
 ### Inventory reservation
 
@@ -836,16 +841,15 @@ A reservation:
 
 ### Purchase-order allocation
 
-A purchase-order allocation commits expected incoming merchandise to a customer request.
+A purchase-order allocation commits expected incoming merchandise to a **customer request** only (ADR-0015).
 
-It does not create on-hand or reserved inventory because the merchandise has not yet been received.
+It does not create on-hand or reserved inventory because the merchandise has not yet been received. Remaining allocation quantity is derived from conversion and release events rather than `received` / `fulfilled` statuses ([OD-007](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md)).
 
 The allocation identifies:
 
 * customer request;  
 * purchase-order line;  
-* allocated quantity;  
-* current allocation status.
+* allocated quantity.
 
 Staff suggestions do not ordinarily create purchase-order allocations that make incoming stock unavailable to other customers.
 

@@ -48,7 +48,7 @@ Creating demand does not increase On Hand or On Order. Creating an allocation do
 
 ## Build order
 
-1. Reconcile governing docs (done for ADR-0015, OD-007, OD-014, domains; continue schema exports / permission catalog as scaffolding approaches).
+1. Reconcile governing docs (done for ADR-0015, OD-007, OD-014, domains, schema exports, and permission catalog).
 2. Vendors and variant-vendor sources (expected-cost method and provenance).
 3. Purchase orders and lines (numbering, draft/place, snapshots, cancelled quantities, statuses, derived `on_order`).
 4. Receipts and receipt lines (multi-PO, quantity dimensions, atomic posting).

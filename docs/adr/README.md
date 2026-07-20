@@ -195,7 +195,7 @@ A Domain Specification explains how a domain behaves under those decisions.
 For example:
 
 * ADR-0001 governs the Catalog, Purchasing, Inventory, and POS domains.
-* ADR-0005 governs Product Requests, Purchasing, and Inventory.
+* ADR-0015 governs Product Requests, Purchasing allocations, and related Inventory/POS fulfilment coordination (supersedes ADR-0005).
 * ADR-0008 governs POS, Inventory, Stored Value, and Reporting.
 * ADR-0011 governs authorization throughout the system.
 

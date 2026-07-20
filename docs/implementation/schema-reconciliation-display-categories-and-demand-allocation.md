@@ -1,7 +1,7 @@
 # Schema Reconciliation: Merchandise Classes and Demand Allocation
 
 **Status:** Decisions confirmed for the pre-scaffolding schema pass  
-**Authority:** ADR-0003, ADR-0005, ADR-0006  
+**Authority:** ADR-0003, ADR-0015 (supersedes ADR-0005), ADR-0006, OD-007  
 **Scope:** Display-category removal, Product Requests, Purchase-Order Allocations, and directly related proforma cleanup
 
 ## Confirmed decisions

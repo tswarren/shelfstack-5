@@ -119,6 +119,7 @@ Legacy names in [organization-and-authorization.md](organization-and-authorizati
 | `inventory.reservation.release` | Release active reservations | store | 3 | — | no | yes |
 | `inventory.receipt.create` | Create receiving drafts | store | 5 | — | no | yes |
 | `inventory.receipt.post` | Post receipts | store | 5 | — | yes when policy requires | yes |
+| `inventory.receipt.receive_unlinked` | Receive unexpected deliveries not linked to a PO line (reason required) | store | 5 | — | yes when policy requires | yes |
 | `inventory.unit.manage` | Create/manage inventory units | store | 4d | — | no | yes |
 
 Do not use `inventory.adjustment.post` alone to post cost corrections.
@@ -168,14 +169,54 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.receipt.reprint` | Reprint receipts | store | 4c | — | no | yes |
 | `pos.post_void.create` | Create post-void corrections | store | 6 | — | yes | yes |
 
-## Purchasing, requests, stored value, reporting
+## Purchasing (Phase 5)
+
+Canonical keys for Vendors and Purchasing. Domain lists must match this catalog.
+
+| Key | Description | Scope | Phase | Authority | Approvals | Audit |
+| --- | --- | --- | --- | --- | --- | --- |
+| `purchasing.vendor.view` | View vendors | organization | 5 | — | no | no |
+| `purchasing.vendor.manage` | Create/edit/deactivate vendors | organization | 5 | — | no | yes |
+| `purchasing.vendor_source.view` | View product-variant vendor sources | organization | 5 | — | no | no |
+| `purchasing.vendor_source.manage` | Create/edit/deactivate vendor sources | organization | 5 | — | no | yes |
+| `purchasing.purchase_order.view` | View purchase orders | store | 5 | — | no | no |
+| `purchasing.purchase_order.create` | Create draft purchase orders | store | 5 | — | no | yes |
+| `purchasing.purchase_order.edit_draft` | Edit draft purchase orders and lines | store | 5 | — | no | yes |
+| `purchasing.purchase_order.place` | Place (order) a draft purchase order | store | 5 | — | yes when policy requires | yes |
+| `purchasing.purchase_order.cancel` | Cancel a purchase order | store | 5 | — | yes when policy requires | yes |
+| `purchasing.purchase_order.close` | Close a purchase order | store | 5 | — | no | yes |
+| `purchasing.allocation.create` | Allocate expected PO-line supply to a Customer Request | store | 5 | — | no | yes |
+| `purchasing.allocation.release` | Release remaining allocated quantity (with reason) | store | 5 | — | no | yes |
+| `purchasing.cost.view` | View purchasing expected cost and vendor cost fields | store | 5 | — | no | no |
+
+Unexpected deliveries use `inventory.receipt.receive_unlinked` (Receiving), not a purchasing key.
+
+## Product Requests (Phase 5)
+
+Canonical keys for Product Requests. Allocating on-order supply uses `purchasing.allocation.create`.
+
+| Key | Description | Scope | Phase | Authority | Approvals | Audit |
+| --- | --- | --- | --- | --- | --- | --- |
+| `requests.request.view` | View product requests and buyer-review queue | store | 5 | — | no | no |
+| `requests.customer_request.create` | Create customer requests | store | 5 | — | no | yes |
+| `requests.staff_suggestion.create` | Create staff suggestions | store | 5 | — | no | yes |
+| `requests.stock_replenishment.create` | Create stock replenishment requests | store | 5 | — | no | yes |
+| `requests.frontlist_selection.create` | Create frontlist selection requests | store | 5 | — | no | yes |
+| `requests.request.edit` | Edit open requests (product, quantity, priority, notes) | store | 5 | — | no | yes |
+| `requests.request.assign_buyer` | Assign or reassign buyer | store | 5 | — | no | yes |
+| `requests.reservation.create` | Reserve physically confirmed in-house inventory for a Customer Request | store | 5 | — | no | yes |
+| `requests.request.resolve` | Resolve non-customer requests (ordered / declined / deferred / etc.) | store | 5 | — | no | yes |
+| `requests.request.decline` | Decline a request | store | 5 | — | no | yes |
+| `requests.request.cancel` | Cancel a request | store | 5 | — | no | yes |
+| `requests.request.close` | Close a request | store | 5 | — | no | yes |
+| `requests.request.fulfill` | Record Customer Request fulfilment fact | store | 5 | — | no | yes |
+
+## Stored value and reporting
 
 Seed when the owning phase begins. Canonicalize domain lists to this grammar at that time:
 
 | Namespace | Phase | Source domain list to normalize |
 | --- | --- | --- |
-| `purchasing.*` | 5 | [vendors-and-purchasing.md](vendors-and-purchasing.md) |
-| `requests.*` | 5 | [product-requests.md](product-requests.md) |
 | `stored_value.*` | 6 | [stored-value.md](stored-value.md) |
 | `reporting.*` | 7 | [reporting-and-reconciliation.md](reporting-and-reconciliation.md) |
 

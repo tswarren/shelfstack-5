@@ -301,21 +301,25 @@ Close when all expected quantity has been accepted or cancelled and no further d
 
 ## Permissions
 
+Canonical keys: [authorization-permissions.md](authorization-permissions.md).
+
 ```text
-purchasing.view_vendors
-purchasing.manage_vendors
-purchasing.view_vendor_sources
-purchasing.manage_vendor_sources
-purchasing.view_purchase_orders
-purchasing.create_purchase_order
-purchasing.edit_draft_purchase_order
-purchasing.place_purchase_order
-purchasing.allocate_supply
-purchasing.cancel_purchase_order
-purchasing.close_purchase_order
-purchasing.view_cost
-purchasing.receive_unlinked   # unexpected deliveries with reason
+purchasing.vendor.view
+purchasing.vendor.manage
+purchasing.vendor_source.view
+purchasing.vendor_source.manage
+purchasing.purchase_order.view
+purchasing.purchase_order.create
+purchasing.purchase_order.edit_draft
+purchasing.purchase_order.place
+purchasing.purchase_order.cancel
+purchasing.purchase_order.close
+purchasing.allocation.create
+purchasing.allocation.release
+purchasing.cost.view
 ```
+
+Unexpected deliveries: `inventory.receipt.receive_unlinked`.
 
 ## Audit requirements
 

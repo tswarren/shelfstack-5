@@ -470,40 +470,45 @@ When allocated merchandise is accepted, Phase 5 should:
 * release redundant allocations;  
 * leave excess quantity available as general stock.
 
-Whether allocation states such as `received` or `fulfilled` are persisted or derived may remain open.
+Allocation `received` / `fulfilled` statuses are not used; see OD-007.
 
 ## 3.19 Permissions
 
-An initial permission set should cover:
+Canonical keys: [authorization-permissions.md](../domains/authorization-permissions.md). Phase 5 covers:
 
 ```
-requests.view
-requests.create_customer_request
-requests.create_staff_suggestion
-requests.edit_open_request
-requests.assign_buyer
-requests.reserve_in_house_inventory
-requests.allocate_on_order_supply
-requests.decline
-requests.cancel
-requests.close
+requests.request.view
+requests.customer_request.create
+requests.staff_suggestion.create
+requests.stock_replenishment.create
+requests.frontlist_selection.create
+requests.request.edit
+requests.request.assign_buyer
+requests.reservation.create
+requests.request.resolve
+requests.request.decline
+requests.request.cancel
+requests.request.close
+requests.request.fulfill
 
-purchasing.view_vendors
-purchasing.manage_vendors
-purchasing.view_vendor_sources
-purchasing.manage_vendor_sources
-purchasing.view_purchase_orders
-purchasing.create_purchase_order
-purchasing.edit_draft_purchase_order
-purchasing.place_purchase_order
-purchasing.allocate_supply
-purchasing.cancel_purchase_order
-purchasing.close_purchase_order
-purchasing.view_cost
+purchasing.vendor.view
+purchasing.vendor.manage
+purchasing.vendor_source.view
+purchasing.vendor_source.manage
+purchasing.purchase_order.view
+purchasing.purchase_order.create
+purchasing.purchase_order.edit_draft
+purchasing.purchase_order.place
+purchasing.purchase_order.cancel
+purchasing.purchase_order.close
+purchasing.allocation.create
+purchasing.allocation.release
+purchasing.cost.view
 
-inventory.receive
-inventory.post_receipt
-inventory.view_cost
+inventory.receipt.create
+inventory.receipt.post
+inventory.receipt.receive_unlinked
+inventory.cost.view
 ```
 
 ## 3.20 Audit and concurrency

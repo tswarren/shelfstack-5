@@ -398,6 +398,8 @@ It answers:
 ```text
 customer_request
 staff_suggestion
+stock_replenishment
+frontlist_selection
 ```
 
 A future type may include:
@@ -406,43 +408,48 @@ A future type may include:
 system_replenishment_suggestion
 ```
 
+Every Product Request requires an existing Product (`product_id`). Variant may be nullable until purchasing or exact fulfilment requires it ([ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)).
+
 ### References but does not own
 
 * Product and Product Variant;
-* Customer, when later implemented;
+* Customer, when later implemented (v1 uses opaque `customer_reference`);
 * Inventory Reservations;
-* Purchase-Order Allocations;
+* Purchase-Order Allocations (Customer Requests only);
 * Purchase Orders;
 * Receipts;
-* POS Transactions used to fulfil requests.
+* POS Transactions / fulfilment facts used to fulfil requests.
 
 ### Supply coverage
 
-A Product Request may be covered by:
+A **Customer Request** may be covered by:
 
 1. confirmed in-house Inventory Reservations;
-2. active Purchase-Order Allocations;
+2. remaining Purchase-Order Allocations;
 3. remaining unfulfilled quantity sent to buyer review.
 
 ```text
 unfulfilled request quantity =
 requested quantity
 - confirmed in-house reservations
-- active purchase-order allocations
+- remaining purchase-order allocations
 ```
+
+Non-customer requests do not ordinarily retain Purchase-Order Allocations after the buyer resolves them.
 
 ### Principal invariants
 
 * A Product Request represents demand, not supply.
+* Every Product Request references an existing Product.
 * A Customer Request does not prove that inventory exists.
-* A Staff Suggestion does not create a customer obligation.
+* Staff Suggestions, stock replenishment, and frontlist selections do not create customer obligations.
 * In-house inventory must be physically confirmed before Reservation.
-* Future supply is represented by a Purchase-Order Allocation, not an Inventory Reservation.
+* Future supply committed to a customer is represented by a Purchase-Order Allocation, not an Inventory Reservation.
 * Supply may not be committed beyond its available or unallocated quantity.
 
 ### Governing ADRs
 
-* [ADR-0005: Demand, Allocations, and Reservations](../adr/0005-demand-allocations-and-reservations.md)
+* [ADR-0015: Product-Backed Demand and Customer Supply Commitments](../adr/0015-product-backed-demand-and-customer-supply-commitments.md) (supersedes ADR-0005)
 * [ADR-0006: Inventory Quantities and Reservation Records](../adr/0006-inventory-quantities-and-reservation-records.md)
 
 ---
@@ -524,7 +531,7 @@ It does not create:
 
 ### Governing ADRs
 
-* [ADR-0005: Demand, Allocations, and Reservations](../adr/0005-demand-allocations-and-reservations.md)
+* [ADR-0015: Product-Backed Demand and Customer Supply Commitments](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)
 * [ADR-0007: Purchasing, Receiving, and Inventory Events](../adr/0007-purchasing-receiving-and-inventory-events.md)
 * [ADR-0011: Permissions, Authority, and Approvals](../adr/0011-permissions-authority-and-approvals.md)
 
@@ -645,7 +652,7 @@ It may be created for:
 * [ADR-0001: Product, Product Variant, and Inventory Unit](../adr/0001-product-variant-inventory-unit.md)
 * [ADR-0002: Canonical Identifiers and Namespaces](../adr/0002-canonical-identifiers-and-namespaces.md)
 * [ADR-0004: Store-Level Inventory Boundary](../adr/0004-store-level-inventory-boundary.md)
-* [ADR-0005: Demand, Allocations, and Reservations](../adr/0005-demand-allocations-and-reservations.md)
+* [ADR-0015: Product-Backed Demand and Customer Supply Commitments](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)
 * [ADR-0006: Inventory Quantities and Reservation Records](../adr/0006-inventory-quantities-and-reservation-records.md)
 * [ADR-0007: Purchasing, Receiving, and Inventory Events](../adr/0007-purchasing-receiving-and-inventory-events.md)
 

@@ -385,20 +385,32 @@ Catalog and Products,product_variant_option_values,created_at,datetime,null: fal
 Catalog and Products,product_variant_option_values,updated_at,datetime,null: false,Rails timestamp.
 Product Requests,product_requests,id,bigint,"primary key, auto-increment",
 Product Requests,product_requests,store_id,bigint,"FK: stores, null: false",Store scope; Organization is implied by Store.
-Product Requests,product_requests,request_type,string,null: false,"customer_request, staff_suggestion."
+Product Requests,product_requests,request_type,string,null: false,"customer_request, staff_suggestion, stock_replenishment, frontlist_selection (ADR-0015)."
 Product Requests,product_requests,status,string,"null: false, default: open","open, fulfilled, declined, cancelled, closed."
-Product Requests,product_requests,product_id,bigint,FK: products,Nullable until the requested Product is resolved.
-Product Requests,product_requests,product_variant_id,bigint,FK: product_variants,Nullable until an exact Variant is required or resolved.
-Product Requests,product_requests,requested_description,string,,Required when product_id is null; preserves the staff/customer wording used to begin the request.
-Product Requests,product_requests,requested_quantity,integer,null: false,Must be greater than zero. Active Reservation plus Allocation coverage must not exceed this value without an explicit quantity change.
-Product Requests,product_requests,priority,string,"null: false, default: normal","normal, high, urgent."
+Product Requests,product_requests,product_id,bigint,"FK: products, null: false",Required; every acquisition-demand record references an existing Product (ADR-0015).
+Product Requests,product_requests,product_variant_id,bigint,FK: product_variants,Nullable until an exact Variant is required or resolved; mandatory before PO line.
+Product Requests,product_requests,requested_quantity,integer,null: false,Must be greater than zero. For Customer Requests; Reservation plus remaining Allocation coverage must not exceed this value without an explicit quantity change.
+Product Requests,product_requests,priority,string,"null: false, default: normal","normal, high, urgent. Especially meaningful for customer_request."
 Product Requests,product_requests,needed_by_on,date,,
-Product Requests,product_requests,customer_reference,string,,Nullable opaque v1 customer reference; no customers table is implemented in this phase.
+Product Requests,product_requests,customer_reference,string,,Nullable opaque v1 customer reference; no customers table (OD-006 / ADR-0015).
 Product Requests,product_requests,requested_by_user_id,bigint,"FK: users, null: false",
 Product Requests,product_requests,assigned_buyer_user_id,bigint,FK: users,
-Product Requests,product_requests,notes,text,,
+Product Requests,product_requests,resolution,string,,"Non-customer buyer resolution: ordered, declined, deferred, duplicate, superseded, no_longer_needed. Planning default: columns on product_requests."
+Product Requests,product_requests,resolved_quantity,integer,,Buyer-selected quantity when resolution is ordered.
+Product Requests,product_requests,resolved_at,datetime,,
+Product Requests,product_requests,resolved_by_user_id,bigint,FK: users,
+Product Requests,product_requests,resolution_note,text,,
+Product Requests,product_requests,notes,text,,Free-text context only; not a substitute for product_id.
 Product Requests,product_requests,created_at,datetime,null: false,Rails timestamp.
 Product Requests,product_requests,updated_at,datetime,null: false,Rails timestamp.
+Product Requests,product_request_fulfillments,id,bigint,"primary key, auto-increment",Separate fulfilment fact (OD-007); not an allocation status.
+Product Requests,product_request_fulfillments,product_request_id,bigint,"FK: product_requests, null: false",
+Product Requests,product_request_fulfillments,inventory_reservation_id,bigint,FK: inventory_reservations,
+Product Requests,product_request_fulfillments,pos_line_item_id,bigint,FK: pos_line_items,Phase 5 baseline fulfilment source; may generalize later.
+Product Requests,product_request_fulfillments,quantity,integer,null: false,
+Product Requests,product_request_fulfillments,fulfilled_at,datetime,null: false,
+Product Requests,product_request_fulfillments,fulfilled_by_user_id,bigint,"FK: users, null: false",
+Product Requests,product_request_fulfillments,created_at,datetime,null: false,Rails timestamp.
 Vendors and Purchasing,vendors,id,bigint,"primary key, auto-increment",
 Vendors and Purchasing,vendors,organization_id,bigint,"FK: organizations, null: false",
 Vendors and Purchasing,vendors,code,string,null: false; unique with organization_id,
@@ -435,11 +447,10 @@ Vendors and Purchasing,purchase_orders,id,bigint,"primary key, auto-increment",
 Vendors and Purchasing,purchase_orders,store_id,bigint,"FK: stores, null: false",
 Vendors and Purchasing,purchase_orders,vendor_id,bigint,"FK: vendors, null: false",
 Vendors and Purchasing,purchase_orders,purchase_order_number,string,null: false; unique with store_id,
-Vendors and Purchasing,purchase_orders,status,string,"null: false, default: draft","Proposed only: draft, submitted, ordered, received, closed, cancelled. Final PO status model remains Open; do not scaffold as settled."
+Vendors and Purchasing,purchase_orders,status,string,"null: false, default: draft","Phase 5 baseline: draft, ordered, closed, cancelled. Receiving progress is derived separately. No submitted/received commercial statuses; no reopen."
 Vendors and Purchasing,purchase_orders,ordered_on,date,,
 Vendors and Purchasing,purchase_orders,expected_on,date,,
-Vendors and Purchasing,purchase_orders,submitted_at,datetime,,
-Vendors and Purchasing,purchase_orders,submitted_by_user_id,bigint,FK: users,
+Vendors and Purchasing,purchase_orders,currency_code,string,null: false,Snapshotted; Phase 5 requires store operating currency.
 Vendors and Purchasing,purchase_orders,ordered_at,datetime,,
 Vendors and Purchasing,purchase_orders,ordered_by_user_id,bigint,FK: users,
 Vendors and Purchasing,purchase_orders,buyer_user_id,bigint,FK: users,
@@ -458,24 +469,33 @@ Vendors and Purchasing,purchase_order_lines,vendor_item_code_snapshot,string,,
 Vendors and Purchasing,purchase_order_lines,ordered_quantity,integer,null: false,
 Vendors and Purchasing,purchase_order_lines,cancelled_quantity,integer,"null: false, default: 0",
 Vendors and Purchasing,purchase_order_lines,received_quantity,integer,"null: false, default: 0",Derived from posted accepted receipt lines where feasible.
-Vendors and Purchasing,purchase_order_lines,list_cost_cents,integer,,
+Vendors and Purchasing,purchase_order_lines,cost_entry_method,string,null: false,"discount_from_list or direct_net_cost."
+Vendors and Purchasing,purchase_order_lines,list_cost_cents,integer,,Vendor list / cost basis; historical purchasing snapshot.
 Vendors and Purchasing,purchase_order_lines,discount_bps,integer,,
-Vendors and Purchasing,purchase_order_lines,expected_unit_cost_cents,integer,,
+Vendors and Purchasing,purchase_order_lines,expected_unit_cost_cents,integer,null: false,
+Vendors and Purchasing,purchase_order_lines,expected_extended_cost_cents,integer,,
+Vendors and Purchasing,purchase_order_lines,cost_provenance,string,,How expected cost was derived or entered.
 Vendors and Purchasing,purchase_order_lines,returnable_snapshot,boolean,,
 Vendors and Purchasing,purchase_order_lines,notes,text,,
 Vendors and Purchasing,purchase_order_lines,created_at,datetime,null: false,Rails timestamp.
 Vendors and Purchasing,purchase_order_lines,updated_at,datetime,null: false,Rails timestamp.
-Vendors and Purchasing,purchase_order_allocations,id,bigint,"primary key, auto-increment",
+Vendors and Purchasing,purchase_order_allocations,id,bigint,"primary key, auto-increment",Customer Requests only (ADR-0015).
 Vendors and Purchasing,purchase_order_allocations,purchase_order_line_id,bigint,"FK: purchase_order_lines, null: false; unique with product_request_id",
-Vendors and Purchasing,purchase_order_allocations,product_request_id,bigint,"FK: product_requests, null: false; unique with purchase_order_line_id",
-Vendors and Purchasing,purchase_order_allocations,quantity,integer,null: false,Must be greater than zero. Sum of active allocations must not exceed PO-Line open quantity or Product-Request remaining quantity.
-Vendors and Purchasing,purchase_order_allocations,status,string,"null: false, default: active","Phase 3: active, cancelled. received and fulfilled are deferred until Phase 4 posting rules exist."
+Vendors and Purchasing,purchase_order_allocations,product_request_id,bigint,"FK: product_requests, null: false; unique with purchase_order_line_id",Must be a customer_request.
+Vendors and Purchasing,purchase_order_allocations,quantity,integer,null: false,Original allocated quantity. Remaining quantity is derived from allocation events (OD-007).
 Vendors and Purchasing,purchase_order_allocations,created_by_user_id,bigint,"FK: users, null: false",
-Vendors and Purchasing,purchase_order_allocations,cancelled_at,datetime,,
-Vendors and Purchasing,purchase_order_allocations,cancelled_by_user_id,bigint,FK: users,
-Vendors and Purchasing,purchase_order_allocations,cancellation_reason,text,,Required when status is cancelled.
 Vendors and Purchasing,purchase_order_allocations,created_at,datetime,null: false,Rails timestamp.
 Vendors and Purchasing,purchase_order_allocations,updated_at,datetime,null: false,Rails timestamp.
+Vendors and Purchasing,purchase_order_allocation_events,id,bigint,"primary key, auto-increment",Append-only conversion/release events (OD-007).
+Vendors and Purchasing,purchase_order_allocation_events,purchase_order_allocation_id,bigint,"FK: purchase_order_allocations, null: false",
+Vendors and Purchasing,purchase_order_allocation_events,event_type,string,null: false,"converted_to_reservation or released."
+Vendors and Purchasing,purchase_order_allocation_events,quantity,integer,null: false,
+Vendors and Purchasing,purchase_order_allocation_events,receipt_line_id,bigint,FK: receipt_lines,Required for converted_to_reservation when from receipt posting.
+Vendors and Purchasing,purchase_order_allocation_events,inventory_reservation_id,bigint,FK: inventory_reservations,
+Vendors and Purchasing,purchase_order_allocation_events,reason,string,,Release reason codes per OD-007.
+Vendors and Purchasing,purchase_order_allocation_events,occurred_at,datetime,null: false,
+Vendors and Purchasing,purchase_order_allocation_events,user_id,bigint,"FK: users, null: false",
+Vendors and Purchasing,purchase_order_allocation_events,created_at,datetime,null: false,Rails timestamp.
 Receiving and Inventory,receipts,id,bigint,"primary key, auto-increment",
 Receiving and Inventory,receipts,store_id,bigint,"FK: stores, null: false",
 Receiving and Inventory,receipts,vendor_id,bigint,FK: vendors,

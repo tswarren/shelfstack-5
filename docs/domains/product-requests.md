@@ -179,22 +179,25 @@ Derived projection over open Product Requests and coverage. Not a PO-line flag, 
 
 ## Permissions
 
+Canonical keys: [authorization-permissions.md](authorization-permissions.md).
+
 ```text
-requests.view
-requests.create_customer_request
-requests.create_staff_suggestion
-requests.create_stock_replenishment
-requests.create_frontlist_selection
-requests.edit_open_request
-requests.assign_buyer
-requests.reserve_in_house_inventory
-requests.allocate_on_order_supply
-requests.resolve_non_customer_request
-requests.decline
-requests.cancel
-requests.close
-requests.fulfil
+requests.request.view
+requests.customer_request.create
+requests.staff_suggestion.create
+requests.stock_replenishment.create
+requests.frontlist_selection.create
+requests.request.edit
+requests.request.assign_buyer
+requests.reservation.create
+requests.request.resolve
+requests.request.decline
+requests.request.cancel
+requests.request.close
+requests.request.fulfill
 ```
+
+On-order supply allocation uses `purchasing.allocation.create` / `purchasing.allocation.release`.
 
 ## Audit requirements
 

@@ -26,3 +26,4 @@ Expanded source model,inventory_reservations.source_type,Reservations may be own
 Replaced deferred FK,pos_transactions.customer_id → customer_reference,V1 uses an opaque nullable reference without a Customers table.
 Removed field,receipts.purchase_order_id,A Receipt may fulfil several Purchase Orders; linkage belongs at Receipt-Line level.
 Aligned domains,Schema Dictionary Domain column,Labels now match the nine architecture domains.
+Phase 5 reconcile,product_requests / allocations / events / fulfilments,"ADR-0015 and OD-007: required product_id; four request types; customer-only allocations; allocation events instead of received/fulfilled statuses; product_request_fulfillments; PO statuses draft/ordered/closed/cancelled; removed submitted_* and requested_description."

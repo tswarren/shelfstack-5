@@ -488,14 +488,17 @@ The buyer’s selected quantity supersedes the proposal unless the buyer explici
 
 ## Open details
 
-The following details remain to be resolved in the applicable Domain Specifications or implementation decisions:
+Settled elsewhere (do not reopen):
 
-* whether non-customer resolution fields are stored directly on `product_requests` or through a request-resolution event;
-* whether a lightweight audit correlation between a resolved non-customer request and a PO line is useful;
-* whether partially ordered non-customer requests always create a follow-up request or may be split in place;
+* Allocation conversion and release use append-only quantity events; `received` / `fulfilled` are not allocation statuses — [OD-007](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md).
+* Final Customer Request fulfilment is a separate Product Request Fulfilment fact, typically linked to a POS line — OD-007.
+
+The following remain for Domain Specifications or implementation decisions:
+
+* whether non-customer resolution fields are stored directly on `product_requests` or through a request-resolution event (Phase 5 planning default: columns on `product_requests`);
+* whether a lightweight non-authoritative audit/navigation correlation between a resolved non-customer request and a PO line is useful;
+* whether partially ordered non-customer requests always create a follow-up request or may be split in place (ADR preference: close original + follow-up request);
 * how request supersession relationships are represented;
-* whether allocation conversion after receipt is persisted as statuses, quantity events, or separate fulfilment records;
-* how final Customer Request fulfilment is linked to POS or another delivery workflow;
 * how substitutions are authorized;
 * how unclaimed customer reservations are released.
 

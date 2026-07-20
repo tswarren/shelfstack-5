@@ -473,9 +473,13 @@ inventory.adjustment.post
 inventory.cost_correction.post
 inventory.reservation.view
 inventory.reservation.release
+inventory.receipt.create
+inventory.receipt.post
+inventory.receipt.receive_unlinked
+inventory.unit.manage
 ```
 
-Later phases add receipt, unit, transfer, RTV, and count permissions when designed.
+Transfer, RTV, and count permissions remain deferred until those workflows are designed.
 
 ## Audit requirements
 
