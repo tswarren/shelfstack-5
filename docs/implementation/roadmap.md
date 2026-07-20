@@ -59,8 +59,9 @@ flowchart TD
 | 1 | Organization and authorization | Complete | [phases/phase-01-organization-and-authorization.md](phases/phase-01-organization-and-authorization.md) |
 | 2 | Configuration and catalog | Complete | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
-| 4 | Point of sale (4a–4e) | Implemented on `phase/p4-point-of-sale` (not merged to `main` pending manual testing) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md) |
-| 5 | Supply and demand | Not started — **Option B unlock:** foundational purchasing after 4c; unit-dependent fulfilment after 4d (both gates satisfied on the Phase 4 branch) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
+| 4 | Point of sale (4a–4e) + UX Baseline (4f) | Complete — manually accepted; PR #30 pending merge | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) |
+| 4g | Test hardening | Next after PR #30 merge — integrity gate before substantive Phase 5 | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
+| 5 | Supply and demand | Not started — gated by 4f merge + Phase 4g integrity/security/browser checklist | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
@@ -93,21 +94,23 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–4 (Phase 4a–4e Point of Sale on `main`).
+Completed: Phases 0–4 product delivery (4a–4e Point of Sale on `main`; 4f UX Baseline Gate manually accepted, PR #30 pending merge).
 
-**Active:** Phase 4f — UX Baseline Gate on `phase/ux-baseline`. See [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md).
+**Next:** Phase 4g — Test Hardening after PR #30 merges. See [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md).
 
-**Phase 5 unlock (Option B — accepted; gated by UX baseline):**
+**Phase 5 unlock (Option B — accepted; gated by UX baseline merge + 4g integrity):**
 
 | Phase 5 work | Gate | Status |
 | --- | --- | --- |
-| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** + **UX Baseline Gate** | Domain gate satisfied; start after 4f merges |
-| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + **UX Baseline Gate** | Domain gate satisfied; start after 4f merges |
-| Return/refund-oriented fulfilment paths | **4e** recommended + **UX Baseline Gate** | Domain gate satisfied; start after 4f merges |
+| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** + **UX Baseline merge** + **4g-1–3 integrity gate** | Domain gate satisfied; start after checklist in phase-04g |
+| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Domain gate satisfied; start after checklist |
+| Return/refund-oriented fulfilment paths | **4e** recommended + same | Domain gate satisfied; start after checklist |
 
-1. Complete Phase 4f UX Baseline Gate on `phase/ux-baseline` (four milestone PRs + manual walkthrough) before merge to `main`
-2. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`)
-3. Phases 6–7 as separate epics
+1. Merge PR #30 (`phase/ux-baseline` → `main`)
+2. Complete Phase 4g-1 through 4g-3 (completion integrity, critical endpoints, critical system paths) before the first substantive Phase 5 PR
+3. 4g-4/4g-5 broader coverage may continue alongside Phase 5
+4. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`)
+5. Phases 6–7 as separate epics
 
 
 

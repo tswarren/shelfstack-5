@@ -1,8 +1,9 @@
 # Phase 4f — UX Baseline Gate
 
-**Status:** Active on `phase/ux-baseline`  
+**Status:** Complete — manually accepted and ready for merge (PR #30)  
 **Branch starting SHA:** `a8b1304ba98ec1696a57a056d64e3c4faa937309` (recorded when `phase/ux-baseline` was cut from `main`)  
-**Design authority:** [../../design/README.md](../../design/README.md)
+**Design authority:** [../../design/README.md](../../design/README.md)  
+**Walkthrough:** Accepted 2026-07-20. Expected-cash correction and Docker Chromium system-test support landed on `phase/ux-baseline` before merge.
 
 ## Purpose
 
@@ -70,29 +71,31 @@ Merge `phase/ux-baseline` → `main` only when automated coverage and the manual
 
 ### P0 correctness / usability
 
-- [ ] Store-local calendar date and display time use the store time zone (business-day default, midnight/DST covered by tests)
-- [ ] User admin can set/reset an Approval PIN (4–8 digits; blank on edit preserves; status only, never display the PIN)
-- [ ] Register shows one dominant primary CTA (open day / open session / Resume transaction / New transaction)
-- [ ] POS header **Main workspace** navigates to the home workspace; open-transaction indicator remains
-- [ ] Payment panel shows tendered, remaining balance or refund due, and change due; completed summary has no dead Print control; **Back to register** is the next action
-- [ ] Linked returns start from receipt-number lookup with selectable returnable lines (no raw line-ID entry)
+- [x] Store-local calendar date and display time use the store time zone (business-day default, midnight/DST covered by tests)
+- [x] User admin can set/reset an Approval PIN (4–8 digits; blank on edit preserves; status only, never display the PIN)
+- [x] Register shows one dominant primary CTA (open day / open session / Resume transaction / New transaction)
+- [x] POS header **Main workspace** navigates to the home workspace; open-transaction indicator remains
+- [x] Payment panel shows tendered, remaining balance or refund due, and change due; completed summary has no dead Print control; **Back to register** is the next action
+- [x] Linked returns start from receipt-number lookup with selectable returnable lines (no raw line-ID entry)
 
 ### P1 presentation / comprehension
 
-- [ ] Variant selects and key inventory lists use shared Product — Variant · SKU labels
-- [ ] Department / merchandise-class selectors show hierarchy path labels; related selectors are name-first with codes secondary
-- [ ] Product show displays Configured / Effective / Source classification defaults via shared resolver
-- [ ] Open-ring fields order: Department → Price → Quantity → Description
-- [ ] Store tax rules index/form use treatment labels, name-first category, and a per-rule summary sentence
+- [x] Variant selects and key inventory lists use shared Product — Variant · SKU labels
+- [x] Department / merchandise-class selectors show hierarchy path labels; related selectors are name-first with codes secondary
+- [x] Product show displays Configured / Effective / Source classification defaults via shared resolver
+- [x] Open-ring fields order: Department → Price → Quantity → Description
+- [x] Store tax rules index/form use treatment labels, name-first category, and a per-rule summary sentence
 
 ### Manual walkthrough
 
-Separate transactions for:
+**Accepted 2026-07-20.** Separate transactions for:
 
 1. Scan → tender → complete
 2. Scan → suspend → recall → cancel or complete
 
 Also: failed/ambiguous scan; negative-availability warning; approval-required action; failed completion; cash session close; keyboard-only pass; narrow laptop back-office pass.
+
+Walkthrough follow-up validated before merge: over-tender with change, cash refund, and session-close expected cash (service tests + `bin/ci` + Docker `test:system`).
 
 ## Deferred UX
 
@@ -114,11 +117,13 @@ Also: failed/ambiguous scan; negative-availability warning; approval-required ac
 
 ## Gate status
 
-Automated portions of the UX Baseline Gate are implemented on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin → review fixes). Observation-gate work lands via `…-06-p0-gate` and `…-07-p1-labels`.
+**Manually accepted and ready for merge** via PR #30 (`phase/ux-baseline` → `main`). After merge, record the merge SHA here and in [../current-phase.md](../current-phase.md); next delivery phase is [phase-04g-test-hardening.md](phase-04g-test-hardening.md) (integrity gate before substantive Phase 5).
+
+Automated portions landed on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin → review/observation fixes → expected-cash / Docker system-test follow-up).
 
 ### Review fixes (pre-merge)
 
-Follow-up branch `phase/ux-baseline-05-review-fixes` addresses merge-blocking review findings:
+Follow-up work addressed merge-blocking review findings and walkthrough cash accounting:
 
 * Server-side store-switch guard shared with sign-out (`Pos::CurrentOpenTransaction`); POS header hides Switch store when `@open_transaction` is set
 * Named currency fields submit decimal dollars; server parses to cents (JS mask enhances only)
@@ -126,7 +131,5 @@ Follow-up branch `phase/ux-baseline-05-review-fixes` addresses merge-blocking re
 * Ambiguous scan preserves quantity with a slim session payload; failed scans keep the query via explicit `scan_outcome`
 * Form error summary IDs, field ARIA, store `currency_code`, POS percent/qty CSS
 * Browser system coverage for store-switch, currency, scan, tender/complete, and keyboard disclosure
-
-**Merge to `main` requires manual walkthrough sign-off** (see Manual walkthrough above). Do not treat automated tests alone as gate completion.
-
-After merge to `main`, update [../current-phase.md](../current-phase.md) toward Phase 5.
+* Expected cash = opening + amount tendered − change − refunds ± movements; close form shows the breakdown
+* Docker Chromium + `shm_size` so Compose can run `test:system`
