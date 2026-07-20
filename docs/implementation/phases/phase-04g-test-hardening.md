@@ -1,6 +1,6 @@
 # Phase 4g — Test Hardening
 
-**Status:** Complete for Phase 5 gate on `phase/4g-test-hardening` (awaiting merge to `main`); residual 4g-5 backlog may continue alongside Phase 5  
+**Status:** Complete — merged to `main` at `c51dcca823e4476b7f0f62441301d451e83307b2` (PR #31); residual 4g-5 backlog may continue alongside Phase 5  
 **Depends on:** Phase 4f UX Baseline Gate merged to `main` at `34f371f5590c6942f5291c5bd750a1d98756d13f`  
 **Governing docs:** [../testing/test-review-2026-07-19.md](../testing/test-review-2026-07-19.md), [../testing.md](../testing.md), [AGENTS.md](../../../AGENTS.md) §9
 

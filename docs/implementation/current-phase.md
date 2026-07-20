@@ -1,27 +1,27 @@
 # Current Phase
 
-**Active delivery phase:** Phase 4g — Test Hardening  
-**Status:** In progress on `phase/4g-test-hardening`  
+**Active delivery phase:** Phase 5 — Supply and Demand  
+**Status:** Ready to begin (Phase 4g gate merged)  
+**Phase 4g merge:** `c51dcca823e4476b7f0f62441301d451e83307b2` (PR #31)  
 **Phase 4f merge:** `34f371f5590c6942f5291c5bd750a1d98756d13f` (PR #30)  
 **Design docs:** [../design/README.md](../design/README.md)  
-**Plan document:** [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md)
+**Plan document:** [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)
 
 ## Immediate next work
 
-1. Merge Phase 4g to `main` (Phase 5 gate checklist is green on this branch).
-2. After merge, substantive Phase 5 PRs may land; continue residual 4g-5 backlog (exhaustive admin CRUD / remaining static models) in parallel as needed.
+1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns.
+2. Continue residual 4g-5 backlog (exhaustive admin CRUD / remaining static models) in parallel as needed.
 3. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
 4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
 ## Completed recently
 
 - Phase 4a–4e (Point of Sale) and Phase 4f UX Baseline Gate merged to `main` (PR #30).
+- Phase 4g test hardening merged to `main` (PR #31) — Phase 5 integrity/security/browser gate satisfied.
 - Walkthrough follow-up: expected-cash formula and Docker Chromium for `test:system`.
-- Phase 4g first pass: completion integrity (4g-1), critical endpoint security + seed-drift (4g-2), critical system workflows (4g-3), high-integrity model invariants (4g-4), and an initial 4g-5 backlog slice.
 
 ## Do not start yet
 
-- Substantive Phase 5 migrations or domain PRs before the Phase 4g integrity/security/browser gate checklist.
 - Inventing Phase 5 deficit settlement tables beyond the accepted OD-014 interim.
 - Closing [OD-013](open-decisions.md) role/store authority defaults without an accepted decision.
 - Deferred capabilities in [deferred-capabilities.md](deferred-capabilities.md).

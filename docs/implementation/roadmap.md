@@ -60,8 +60,8 @@ flowchart TD
 | 2 | Configuration and catalog | Complete | [phases/phase-02-configuration-and-catalog.md](phases/phase-02-configuration-and-catalog.md) |
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
 | 4 | Point of sale (4a–4e) + UX Baseline (4f) | Complete — merged to `main` at `34f371f` (PR #30) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) |
-| 4g | Test hardening | In progress — integrity gate before substantive Phase 5 | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
-| 5 | Supply and demand | Not started — gated by Phase 4g integrity/security/browser checklist | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
+| 4g | Test hardening | Complete — merged to `main` at `c51dcca` (PR #31) | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
+| 5 | Supply and demand | Ready to begin — Phase 4g gate satisfied | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
@@ -94,22 +94,21 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged to `main` at `34f371f`, PR #30).
+Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged to `main` at `34f371f`, PR #30) and Phase 4g test hardening (merged to `main` at `c51dcca`, PR #31).
 
-**Active:** Phase 4g — Test Hardening. See [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md).
+**Active:** Phase 5 — Supply and Demand. See [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
 
-**Phase 5 unlock (Option B — accepted; gated by 4g integrity):**
+**Phase 5 unlock (Option B — accepted; 4g gate satisfied):**
 
 | Phase 5 work | Gate | Status |
 | --- | --- | --- |
-| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** + **UX Baseline merge** + **4g-1–3 integrity gate** | Domain gate satisfied; start after checklist in phase-04g |
-| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Domain gate satisfied; start after checklist |
-| Return/refund-oriented fulfilment paths | **4e** recommended + same | Domain gate satisfied; start after checklist |
+| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** + **UX Baseline merge** + **4g-1–3 integrity gate** | Unlocked |
+| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Unlocked |
+| Return/refund-oriented fulfilment paths | **4e** recommended + same | Unlocked |
 
-1. Complete Phase 4g-1 through 4g-3 (completion integrity, critical endpoints, critical system paths) before the first substantive Phase 5 PR
-2. 4g-4/4g-5 broader coverage may continue alongside Phase 5
-3. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`)
-4. Phases 6–7 as separate epics
+1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`)
+2. Residual 4g-5 broader coverage may continue alongside Phase 5
+3. Phases 6–7 as separate epics
 
 
 

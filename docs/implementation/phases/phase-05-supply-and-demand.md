@@ -1,8 +1,8 @@
 # Phase 5 — Supply and Demand
 
-**Status:** Not started  
+**Status:** Ready to begin  
 **Depends on:** Phase 4c (first completed sale) for foundational purchasing; Phase 4d before individual-item supply fulfilment; Phase 4e recommended before return-oriented fulfilment paths  
-**Phase 4 gate status:** 4a–4e and 4f UX Baseline Gate merged to `main` (`34f371f`, PR #30). Foundational and unit-dependent Phase 5 paths unlock after the Phase 4g integrity/security/browser checklist passes ([phase-04g-test-hardening.md](phase-04g-test-hardening.md)).  
+**Phase 4 gate status:** 4a–4e, 4f UX Baseline (PR #30, `34f371f`), and 4g test hardening (PR #31, `c51dcca`) are merged to `main`. Phase 5 integrity/security/browser gate is satisfied.  
 **Unlocks:** richer ops reporting in Phase 7; request fulfilment against POS  
 **Governing docs:** ADR-0005, ADR-0007; [vendors-and-purchasing](../../domains/vendors-and-purchasing.md); [product-requests](../../domains/product-requests.md); [architectural-locks](../architectural-locks.md)
 
