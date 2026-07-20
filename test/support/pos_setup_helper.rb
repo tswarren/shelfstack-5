@@ -1,0 +1,73 @@
+# frozen_string_literal: true
+
+# Shared builders for POS / inventory operational graphs in tests.
+# Prefer calling application services over inserting half-valid rows.
+module PosSetupHelper
+  def pos_open_inventory(store:, variant:, quantity:, unit_cost_cents:, actor:)
+    opening = InventoryAdjustment.create!(
+      store: store, kind: "opening_inventory", status: "draft",
+      inventory_adjustment_reason: inventory_adjustment_reasons(:opening_initial),
+      created_by_user: actor
+    )
+    InventoryAdjustmentLine.create!(
+      inventory_adjustment: opening, product_variant: variant, position: 0,
+      quantity_delta: quantity, input_unit_cost_cents: unit_cost_cents,
+      input_cost_method: "explicit", input_cost_quality: "actual"
+    )
+    result = Inventory::PostAdjustment.call(adjustment: opening, actor: actor, store: store)
+    raise "open inventory failed: #{result.error}" unless result.success?
+
+    opening
+  end
+
+  def pos_open_cash_session(store:, device:, drawer:, actor:, opening_cash_cents: 0)
+    day_result = Pos::OpenBusinessDay.call(store: store, actor: actor)
+    day = if day_result.success?
+      day_result.business_day
+    else
+      # Leftover open day from a prior non-transactional concurrency test.
+      BusinessDay.find_by(store_id: store.id, status: "open").tap do |existing|
+        raise "open business day failed: #{day_result.error}" if existing.blank?
+      end
+    end
+
+    session_result = Pos::OpenSession.call(
+      business_day: day, store: store, pos_device: device, cash_drawer: drawer,
+      opening_cash_cents: opening_cash_cents, cashier: actor, actor: actor
+    )
+    unless session_result.success?
+      existing = PosSession.find_by(pos_device_id: device.id, status: "open")
+      raise "open session failed: #{session_result.error}" if existing.blank?
+
+      return [ day, existing ]
+    end
+
+    [ day, session_result.pos_session ]
+  end
+
+  def pos_complete_cash_sale(session:, variant:, quantity:, actor:, cash:, key:)
+    txn = Pos::OpenTransaction.call(pos_session: session, actor: actor).pos_transaction
+    line = Pos::AddLine.call(
+      pos_transaction: txn, product_variant: variant, quantity: quantity, actor: actor
+    ).pos_line_item
+    net = Pos::RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: txn, tender_type: cash, amount_tendered_cents: net, actor: actor
+    )
+    result = Pos::CompleteTransaction.call(
+      pos_transaction: txn, pos_session: session, actor: actor, completion_idempotency_key: key
+    )
+    raise "complete failed: #{result.error}" unless result.success?
+
+    [ txn.reload, line.reload, net ]
+  end
+
+  def with_stubbed_singleton_call(klass, raiser)
+    klass.singleton_class.alias_method :__original_call, :call
+    klass.define_singleton_method(:call, raiser)
+    yield
+  ensure
+    klass.singleton_class.alias_method :call, :__original_call
+    klass.singleton_class.remove_method :__original_call
+  end
+end

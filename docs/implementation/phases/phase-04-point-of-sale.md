@@ -1,6 +1,6 @@
 # Phase 4 — Point of Sale
 
-**Status:** Complete — manually accepted and ready for merge (4a–4e on `main`; 4f UX Baseline Gate accepted on `phase/ux-baseline`, PR #30)  
+**Status:** Complete — merged to `main` (4a–4e; 4f UX Baseline Gate at `34f371f5590c6942f5291c5bd750a1d98756d13f`, PR #30)  
 **Depends on:** Phase 3 (complete); [UX readiness gate](../../design/README.md) before 4a coding; store tax rates/rules before 4b  
 
 **Unlocks:** Phase 5 foundational purchasing after 4c + UX Baseline merge + Phase 4g integrity gate (see [phase-04g-test-hardening.md](phase-04g-test-hardening.md)); complete 4d before individual-item Phase 5 work; 4e recommended before return-oriented fulfilment (see [roadmap.md](../roadmap.md))  

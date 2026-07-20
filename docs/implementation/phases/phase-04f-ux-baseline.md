@@ -1,9 +1,9 @@
 # Phase 4f — UX Baseline Gate
 
-**Status:** Complete — manually accepted and ready for merge (PR #30)  
+**Status:** Complete — merged to `main` at `34f371f5590c6942f5291c5bd750a1d98756d13f` (PR #30)  
 **Branch starting SHA:** `a8b1304ba98ec1696a57a056d64e3c4faa937309` (recorded when `phase/ux-baseline` was cut from `main`)  
 **Design authority:** [../../design/README.md](../../design/README.md)  
-**Walkthrough:** Accepted 2026-07-20. Expected-cash correction and Docker Chromium system-test support landed on `phase/ux-baseline` before merge.
+**Walkthrough:** Accepted 2026-07-20. Expected-cash correction and Docker Chromium system-test support included in the merge.
 
 ## Purpose
 
@@ -117,9 +117,9 @@ Walkthrough follow-up validated before merge: over-tender with change, cash refu
 
 ## Gate status
 
-**Manually accepted and ready for merge** via PR #30 (`phase/ux-baseline` → `main`). After merge, record the merge SHA here and in [../current-phase.md](../current-phase.md); next delivery phase is [phase-04g-test-hardening.md](phase-04g-test-hardening.md) (integrity gate before substantive Phase 5).
+**Merged to `main` at `34f371f5590c6942f5291c5bd750a1d98756d13f` (PR #30).** Next delivery phase is [phase-04g-test-hardening.md](phase-04g-test-hardening.md) (integrity gate before substantive Phase 5).
 
-Automated portions landed on `phase/ux-baseline` (foundation → POS → catalog/inventory → admin → review/observation fixes → expected-cash / Docker system-test follow-up).
+Automated portions landed via foundation → POS → catalog/inventory → admin → review/observation fixes → expected-cash / Docker system-test follow-up.
 
 ### Review fixes (pre-merge)
 
