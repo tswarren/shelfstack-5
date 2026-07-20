@@ -477,39 +477,40 @@ Allocation `received` / `fulfilled` statuses are not used; see OD-007.
 Canonical keys: [authorization-permissions.md](../domains/authorization-permissions.md). Phase 5 covers:
 
 ```
-requests.request.view
-requests.customer_request.create
-requests.staff_suggestion.create
-requests.stock_replenishment.create
-requests.frontlist_selection.create
-requests.request.edit
-requests.request.assign_buyer
-requests.reservation.create
-requests.request.resolve
-requests.request.decline
-requests.request.cancel
-requests.request.close
-requests.request.fulfill
+requests.product_request.view
+requests.product_request.create
+requests.product_request.edit
+requests.product_request.assign
+requests.product_request.resolve
+requests.product_request.cancel
+requests.customer_request.reserve
+requests.customer_request.fulfill
 
 purchasing.vendor.view
 purchasing.vendor.manage
 purchasing.vendor_source.view
 purchasing.vendor_source.manage
+purchasing.cost.view
 purchasing.purchase_order.view
 purchasing.purchase_order.create
-purchasing.purchase_order.edit_draft
+purchasing.purchase_order.edit
 purchasing.purchase_order.place
+purchasing.purchase_order.amend
 purchasing.purchase_order.cancel
 purchasing.purchase_order.close
 purchasing.allocation.create
 purchasing.allocation.release
-purchasing.cost.view
 
+inventory.receipt.view
 inventory.receipt.create
 inventory.receipt.post
 inventory.receipt.receive_unlinked
+inventory.receipt.over_receive
 inventory.cost.view
+inventory.reservation.release
 ```
+
+`inventory.receipt.correct` is deferred until the posted-receipt correction workflow is accepted.
 
 ## 3.20 Audit and concurrency
 

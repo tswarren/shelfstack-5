@@ -182,26 +182,21 @@ Derived projection over open Product Requests and coverage. Not a PO-line flag, 
 Canonical keys: [authorization-permissions.md](authorization-permissions.md).
 
 ```text
-requests.request.view
-requests.customer_request.create
-requests.staff_suggestion.create
-requests.stock_replenishment.create
-requests.frontlist_selection.create
-requests.request.edit
-requests.request.assign_buyer
-requests.reservation.create
-requests.request.resolve
-requests.request.decline
-requests.request.cancel
-requests.request.close
-requests.request.fulfill
+requests.product_request.view
+requests.product_request.create
+requests.product_request.edit
+requests.product_request.assign
+requests.product_request.resolve
+requests.product_request.cancel
+requests.customer_request.reserve
+requests.customer_request.fulfill
 ```
 
-On-order supply allocation uses `purchasing.allocation.create` / `purchasing.allocation.release`.
+`resolve` records the buyer’s terminal decision for the applicable request type (including decline). There is no separate decline or close permission; fulfilment or resolve drives terminal status. On-order allocation uses `purchasing.allocation.create` / `purchasing.allocation.release`. Unclaimed holds use `inventory.reservation.release`.
 
 ## Audit requirements
 
-Audit Request creation, Product/quantity changes, priority and needed-by changes, buyer assignment, non-customer resolution, Allocation and Reservation references, fulfilment, decline, Cancellation, close, User, and reason. Product creation from demand entry is audited in Catalog.
+Audit Request creation, Product/quantity changes, priority and needed-by changes, buyer assignment, buyer resolution (including decline), Allocation and Reservation references, fulfilment, Cancellation, User, and reason. Product creation from demand entry is audited in Catalog.
 
 ## Invariants
 

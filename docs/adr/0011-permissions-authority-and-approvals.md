@@ -64,10 +64,10 @@ Application logic does not test these role names.
 A permission is a stable machine-readable capability such as:
 
 ```
-pos.complete_transaction
-pos.process_no_receipt_return
-inventory.adjust_stock
-purchasing.place_purchase_order
+pos.transaction.complete
+pos.return.no_receipt
+inventory.adjustment.post
+purchasing.purchase_order.place
 stored_value.adjust
 ```
 

@@ -158,11 +158,12 @@ Receiving progress is derived from accepted and cancelled quantities. Do not put
 
 ### Mutability after placement
 
-After placement, Vendor, Store, currency, and historical line identity are immutable. Do not freely edit ordered quantities or costs in place.
+After placement, Vendor, Store, currency, and historical line identity are immutable. Do not freely edit ordered quantities or costs in place. Permitted changes require `purchasing.purchase_order.amend`.
 
 - Reduce expected quantity through explicit `cancelled_quantity` (with user, time, reason).
 - Increase ordered quantity by creating a new line or an explicit amendment operation.
 - Changing vendors after placement preserves the original line, cancels or releases unsupplied quantity, returns uncovered Customer Request demand to buyer review, and creates a new PO line as needed (ADR-0015).
+- Whole-PO `purchasing.purchase_order.cancel` applies only when nothing has been received; remaining open quantity on a partially received PO is reduced through amend.
 
 ### Closing and reopening
 
@@ -308,22 +309,23 @@ purchasing.vendor.view
 purchasing.vendor.manage
 purchasing.vendor_source.view
 purchasing.vendor_source.manage
+purchasing.cost.view
 purchasing.purchase_order.view
 purchasing.purchase_order.create
-purchasing.purchase_order.edit_draft
+purchasing.purchase_order.edit
 purchasing.purchase_order.place
+purchasing.purchase_order.amend
 purchasing.purchase_order.cancel
 purchasing.purchase_order.close
 purchasing.allocation.create
 purchasing.allocation.release
-purchasing.cost.view
 ```
 
-Unexpected deliveries: `inventory.receipt.receive_unlinked`.
+Receiving: `inventory.receipt.receive_unlinked`, `inventory.receipt.over_receive`.
 
 ## Audit requirements
 
-Audit Vendor and Vendor-Source changes, Purchase-Order creation, line additions and removals, quantity and expected-cost changes, bulk discount edits, order placement, Allocation creation/release coordination, closure, Cancellation, User, and reason.
+Audit Vendor and Vendor-Source changes, Purchase-Order creation, draft edits, order placement, placed-order amendments (including cancelled quantity), Allocation creation/release coordination, closure, whole-PO Cancellation, User, and reason.
 
 ## Invariants
 

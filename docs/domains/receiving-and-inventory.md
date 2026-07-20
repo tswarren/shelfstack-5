@@ -473,13 +473,15 @@ inventory.adjustment.post
 inventory.cost_correction.post
 inventory.reservation.view
 inventory.reservation.release
+inventory.receipt.view
 inventory.receipt.create
 inventory.receipt.post
 inventory.receipt.receive_unlinked
+inventory.receipt.over_receive
 inventory.unit.manage
 ```
 
-Transfer, RTV, and count permissions remain deferred until those workflows are designed.
+Transfer, RTV, count, and `inventory.receipt.correct` remain deferred until those workflows are designed.
 
 ## Audit requirements
 
@@ -521,7 +523,7 @@ Audit Receipt posting and corrections, accepted and rejected quantities, cost ap
 
 - What quantities beyond delivered, accepted, and rejected are required?
 - How is accepted damaged or inspection quantity represented?
-- What is the posted Receipt correction workflow?
+- What is the posted Receipt correction workflow? (`inventory.receipt.correct` is reserved and must not be seeded until that workflow is accepted.)
 - Is Available stored or calculated?
 - Are unavailable quantities cached by status?
 - Negative-inventory deficit allocation and settlement representation — accepted; [OD-014 decision](../implementation/decisions/od-014-negative-inventory-settlement.md).

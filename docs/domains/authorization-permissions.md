@@ -106,7 +106,7 @@ Legacy names in [organization-and-authorization.md](organization-and-authorizati
 | `catalog.condition.manage` | Manage product conditions | organization | 2 | — | no | yes |
 | `catalog.label.print` | Print labels | store | 2 | — | no | no |
 
-## Inventory (Phases 3–4)
+## Inventory (Phases 3–5)
 
 | Key | Description | Scope | Phase | Authority | Approvals | Audit |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -117,9 +117,11 @@ Legacy names in [organization-and-authorization.md](organization-and-authorizati
 | `inventory.cost_correction.post` | Post inventory cost corrections | store | 3 | — | no (Phase 3); may require Approval later | yes |
 | `inventory.reservation.view` | Review reservations | store | 3 | — | no | no |
 | `inventory.reservation.release` | Release active reservations | store | 3 | — | no | yes |
+| `inventory.receipt.view` | View receipts; receipt cost only when also authorized (`inventory.cost.view` and/or `purchasing.cost.view` as applicable) | store | 5 | — | no | no |
 | `inventory.receipt.create` | Create receiving drafts | store | 5 | — | no | yes |
 | `inventory.receipt.post` | Post receipts | store | 5 | — | yes when policy requires | yes |
-| `inventory.receipt.receive_unlinked` | Receive unexpected deliveries not linked to a PO line (reason required) | store | 5 | — | yes when policy requires | yes |
+| `inventory.receipt.receive_unlinked` | Add a receipt line without a PO-line reference (reason required) | store | 5 | — | yes when policy requires | yes |
+| `inventory.receipt.over_receive` | Accept quantity above the PO open quantity | store | 5 | — | yes when policy requires | yes |
 | `inventory.unit.manage` | Create/manage inventory units | store | 4d | — | no | yes |
 
 Do not use `inventory.adjustment.post` alone to post cost corrections.
@@ -138,7 +140,7 @@ Do **not** add `inventory.cost_correction.approve` or require Approval records i
 
 After seeding new permissions, existing installs need `bin/rails shelfstack:sync_admin_permissions` (see [bootstrap-and-seed.md](../implementation/bootstrap-and-seed.md)).
 
-Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document permissions, count permissions.
+Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document permissions, count permissions, `inventory.receipt.correct` (posted-receipt correction document remains open).
 
 ## POS (Phases 4a–4e)
 
@@ -176,40 +178,48 @@ Canonical keys for Vendors and Purchasing. Domain lists must match this catalog.
 | Key | Description | Scope | Phase | Authority | Approvals | Audit |
 | --- | --- | --- | --- | --- | --- | --- |
 | `purchasing.vendor.view` | View vendors | organization | 5 | — | no | no |
-| `purchasing.vendor.manage` | Create/edit/deactivate vendors | organization | 5 | — | no | yes |
-| `purchasing.vendor_source.view` | View product-variant vendor sources | organization | 5 | — | no | no |
-| `purchasing.vendor_source.manage` | Create/edit/deactivate vendor sources | organization | 5 | — | no | yes |
+| `purchasing.vendor.manage` | Create, edit, and deactivate vendors | organization | 5 | — | no | yes |
+| `purchasing.vendor_source.view` | View variant–vendor sources and expected costs (cost fields also require `purchasing.cost.view`) | organization | 5 | — | no | no |
+| `purchasing.vendor_source.manage` | Create, edit, and deactivate variant–vendor sources | organization | 5 | — | no | yes |
+| `purchasing.cost.view` | View vendor and expected acquisition cost | store | 5 | — | no | no |
 | `purchasing.purchase_order.view` | View purchase orders | store | 5 | — | no | no |
 | `purchasing.purchase_order.create` | Create draft purchase orders | store | 5 | — | no | yes |
-| `purchasing.purchase_order.edit_draft` | Edit draft purchase orders and lines | store | 5 | — | no | yes |
-| `purchasing.purchase_order.place` | Place (order) a draft purchase order | store | 5 | — | yes when policy requires | yes |
-| `purchasing.purchase_order.cancel` | Cancel a purchase order | store | 5 | — | yes when policy requires | yes |
-| `purchasing.purchase_order.close` | Close a purchase order | store | 5 | — | no | yes |
-| `purchasing.allocation.create` | Allocate expected PO-line supply to a Customer Request | store | 5 | — | no | yes |
-| `purchasing.allocation.release` | Release remaining allocated quantity (with reason) | store | 5 | — | no | yes |
-| `purchasing.cost.view` | View purchasing expected cost and vendor cost fields | store | 5 | — | no | no |
+| `purchasing.purchase_order.edit` | Edit draft purchase orders and lines | store | 5 | — | no | yes |
+| `purchasing.purchase_order.place` | Transition a draft PO to ordered | store | 5 | — | yes when policy requires | yes |
+| `purchasing.purchase_order.amend` | Cancel placed-line quantity, increase ordered quantity, or other permitted placed-order amendments | store | 5 | — | yes when policy requires | yes |
+| `purchasing.purchase_order.cancel` | Cancel an entirely unreceived PO | store | 5 | — | yes when policy requires | yes |
+| `purchasing.purchase_order.close` | Close a fully resolved PO | store | 5 | — | no | yes |
+| `purchasing.allocation.create` | Commit open PO quantity to a Customer Request | store | 5 | — | no | yes |
+| `purchasing.allocation.release` | Release customer allocation quantity (with reason) | store | 5 | — | no | yes |
 
-Unexpected deliveries use `inventory.receipt.receive_unlinked` (Receiving), not a purchasing key.
+### Purchasing evaluation
+
+- Draft mutability: `purchasing.purchase_order.edit` only while status is `draft`.
+- After placement, reduce or increase open quantity through `purchasing.purchase_order.amend` (including `cancelled_quantity` and permitted line additions). Do not use `edit` on placed POs.
+- Whole-PO `cancel` applies only when nothing has been received. Remaining open quantity on a partially received PO is reduced through `amend`, not `cancel`.
+- Unexpected deliveries and over-receipt use Receiving keys (`inventory.receipt.receive_unlinked`, `inventory.receipt.over_receive`), not purchasing keys.
 
 ## Product Requests (Phase 5)
 
-Canonical keys for Product Requests. Allocating on-order supply uses `purchasing.allocation.create`.
+Canonical keys for Product Requests. On-order allocation uses `purchasing.allocation.create` / `purchasing.allocation.release`. Unclaimed holds use existing `inventory.reservation.release`.
 
 | Key | Description | Scope | Phase | Authority | Approvals | Audit |
 | --- | --- | --- | --- | --- | --- | --- |
-| `requests.request.view` | View product requests and buyer-review queue | store | 5 | — | no | no |
-| `requests.customer_request.create` | Create customer requests | store | 5 | — | no | yes |
-| `requests.staff_suggestion.create` | Create staff suggestions | store | 5 | — | no | yes |
-| `requests.stock_replenishment.create` | Create stock replenishment requests | store | 5 | — | no | yes |
-| `requests.frontlist_selection.create` | Create frontlist selection requests | store | 5 | — | no | yes |
-| `requests.request.edit` | Edit open requests (product, quantity, priority, notes) | store | 5 | — | no | yes |
-| `requests.request.assign_buyer` | Assign or reassign buyer | store | 5 | — | no | yes |
-| `requests.reservation.create` | Reserve physically confirmed in-house inventory for a Customer Request | store | 5 | — | no | yes |
-| `requests.request.resolve` | Resolve non-customer requests (ordered / declined / deferred / etc.) | store | 5 | — | no | yes |
-| `requests.request.decline` | Decline a request | store | 5 | — | no | yes |
-| `requests.request.cancel` | Cancel a request | store | 5 | — | no | yes |
-| `requests.request.close` | Close a request | store | 5 | — | no | yes |
-| `requests.request.fulfill` | Record Customer Request fulfilment fact | store | 5 | — | no | yes |
+| `requests.product_request.view` | View Product Requests and buyer review | store | 5 | — | no | no |
+| `requests.product_request.create` | Create Product Requests (any type the UI allows) | store | 5 | — | no | yes |
+| `requests.product_request.edit` | Edit open requests | store | 5 | — | no | yes |
+| `requests.product_request.assign` | Assign or reassign a buyer | store | 5 | — | no | yes |
+| `requests.product_request.resolve` | Record the buyer’s terminal decision (ordered, declined, deferred, etc.) | store | 5 | — | no | yes |
+| `requests.product_request.cancel` | Cancel a request | store | 5 | — | no | yes |
+| `requests.customer_request.reserve` | Commit physically confirmed inventory to a Customer Request | store | 5 | — | no | yes |
+| `requests.customer_request.fulfill` | Record Customer Request fulfilment (reservation and/or POS completion link) | store | 5 | — | no | yes |
+
+### Product Request evaluation
+
+- Request type determines which resolution and coverage rules apply; do not add type-specific resolve keys such as `resolve_non_customer_request`.
+- Decline, defer, ordered, duplicate, superseded, and no-longer-needed are outcomes of `resolve` (or automatic close from fulfilment), not separate permissions. There is no `requests.product_request.close` key.
+- `create` covers all four Phase 5 types. Split into type-scoped create keys only if role design later requires different creators for customer vs buyer-decision demand.
+- Customer-only actions use `requests.customer_request.*`. Non-customer requests do not reserve or fulfil through those keys.
 
 ## Stored value and reporting
 
