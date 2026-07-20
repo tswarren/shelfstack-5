@@ -1,8 +1,26 @@
-<h1>Permissions</h1>
-<p>Permission definitions are code-managed. This list is read-only.</p>
-<ul>
-  <% @permissions.each do |permission| %>
-    <li><code><%= permission.code %></code> — <%= permission.name %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Permissions",
+      subtitle: "Permission definitions are code-managed and read-only." %>
+
+<% if @permissions.empty? %>
+  <%= render "shared/empty_state", title: "No permissions defined" %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Permissions</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @permissions.each do |permission| %>
+          <tr>
+            <td><code><%= permission.code %></code></td>
+            <td><%= permission.name %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

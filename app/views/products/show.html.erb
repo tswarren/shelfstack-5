@@ -1,28 +1,124 @@
 <% content_for :title, @product.name %>
 
-<h1><%= @product.name %></h1>
+<%= render "shared/page_header",
+      title: @product.name,
+      subtitle: @product.subtitle.presence,
+      breadcrumbs: [ { label: "Products", path: products_path }, { label: @product.name } ],
+      actions: capture {
+        if Current.user.can?("catalog.product.edit", store: Current.store)
+          concat link_to("Edit", edit_product_path(@product), class: "button button-primary")
+        end
+        concat link_to("Back to products", products_path, class: "button button-outline")
+      } %>
 
-<p><strong>Identifier:</strong> <%= @product.identifier %></p>
-<% if @product.alternate_identifier.present? %>
-  <p><strong>Alternate identifier:</strong> <%= @product.alternate_identifier %></p>
-<% end %>
-<p><strong>Status:</strong> <%= @product.status %></p>
-<p><strong>Sellable:</strong> <%= @product.sellable? %></p>
-<% if @product.identifier_warning.present? %>
-  <p><strong>Identifier warning:</strong> <%= @product.identifier_warning %></p>
-<% end %>
-
-<h2>Variants</h2>
-<ul>
-  <% @variants.each do |variant| %>
-    <li>
-      <%= variant.name %> — SKU <%= variant.sku %>
-      (<%= variant.inventory_tracking_mode %>, <%= variant.status %>)
-    </li>
+<section class="record-section">
+  <h2>Identity</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Identifier", tag.code(@product.identifier) ],
+    [ "Alternate identifier", @product.alternate_identifier.presence || "—" ],
+    [ "Product type", @product.product_type&.titleize || "—" ],
+    [ "Publisher / manufacturer", @product.publisher_or_manufacturer_name.presence || "—" ],
+    [ "Imprint / brand", @product.imprint_or_brand_name.presence || "—" ]
+  ] %>
+  <% if @product.identifier_warning.present? %>
+    <div class="ss-alert ss-alert-warning" role="status">
+      <div><strong>Identifier warning:</strong> <%= @product.identifier_warning %></div>
+    </div>
   <% end %>
-</ul>
+</section>
 
-<p><%= link_to "Back", products_path %></p>
-<% if Current.user.can?("catalog.product.edit", store: Current.store) %>
-  <p><%= link_to "Edit", edit_product_path(@product) %></p>
+<section class="record-section">
+  <h2>Status</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Status", status_badge(@product.status.titleize, variant: product_status_variant(@product.status)) ],
+    [ "Sellable", boolean_status(@product.sellable?, true_label: "Sellable", false_label: "Not sellable") ]
+  ] %>
+</section>
+
+<section class="record-section">
+  <h2>Classification</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Format", @product.product_format&.name || "—" ],
+    [ "Merchandise class", @product.merchandise_class&.name || "—" ],
+    [ "Default department", @product.default_department&.name || "—" ],
+    [ "Default tax category", @product.default_tax_category&.name || "—" ]
+  ] %>
+</section>
+
+<%
+  standard = @variants.first
+  effective = Catalog::ResolveClassification.call(product: @product, variant: standard)
+%>
+<section class="record-section">
+  <h2>Effective defaults</h2>
+  <p class="muted">
+    Resolved for <%= standard ? variant_option_label(standard) : "the first variant" %> using inheritance.
+    Configured overrides are shown alongside the effective result.
+  </p>
+  <%= render "shared/record_summary", rows: [
+    [ "Merchandise class",
+      "Configured: #{configured_override_label(@product.merchandise_class)} · " \
+      "Effective: #{effective.merchandise_class&.name || "—"} · " \
+      "Source: #{effective.merchandise_class_source || "—"}" ],
+    [ "Department",
+      "Configured: #{configured_override_label(@product.default_department)} · " \
+      "Effective: #{effective.department&.name || "—"} · " \
+      "Source: #{effective.department_source || "—"}" ],
+    [ "Tax category",
+      "Configured: #{configured_override_label(@product.default_tax_category)} · " \
+      "Effective: #{effective.tax_category&.name || "—"} · " \
+      "Source: #{effective.tax_category_source || "—"}" ]
+  ] %>
+</section>
+
+<section class="record-section">
+  <h2>Pricing &amp; availability</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "List price", @product.list_price_cents ? format_money(@product.list_price_cents) : "—" ],
+    [ "Available from", @product.available_from&.to_fs(:long) || "—" ],
+    [ "Available until", @product.available_until&.to_fs(:long) || "—" ]
+  ] %>
+</section>
+
+<% if @product.description.present? %>
+  <section class="record-section">
+    <h2>Description</h2>
+    <p><%= simple_format(@product.description) %></p>
+  </section>
 <% end %>
+
+<section class="record-section">
+  <h2>Variants</h2>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Product variants</caption>
+      <thead>
+        <tr>
+          <th scope="col">SKU</th>
+          <th scope="col">Name</th>
+          <th scope="col">Tracking</th>
+          <th scope="col">Status</th>
+          <th scope="col">Sellable</th>
+          <th scope="col" class="num">Regular price</th>
+          <th scope="col" class="num">On hand</th>
+          <th scope="col" class="num">Available</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @variants.each do |variant| %>
+          <% balance = @stock_balances[variant.id] %>
+          <tr>
+            <td><code><%= variant.sku %></code></td>
+            <td><%= variant.name %></td>
+            <td><%= variant.inventory_tracking_mode.titleize %></td>
+            <td><%= status_badge variant.status.titleize, variant: product_status_variant(variant.status) %></td>
+            <td><%= boolean_status variant.sellable?, true_label: "Sellable", false_label: "Not sellable" %></td>
+            <td class="num"><%= variant.regular_price_cents ? format_money(variant.regular_price_cents) : "—" %></td>
+            <td class="num"><%= balance ? balance.on_hand : "—" %></td>
+            <td class="num"><%= balance ? balance.available : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

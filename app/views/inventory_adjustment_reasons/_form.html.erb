@@ -1,22 +1,46 @@
-<%= form_with model: inventory_adjustment_reason do |form| %>
-  <% if inventory_adjustment_reason.errors.any? %>
-    <ul>
-      <% inventory_adjustment_reason.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if inventory_adjustment_reason.persisted? %>
-    <div><%= form.label :adjustment_kind %> <%= inventory_adjustment_reason.adjustment_kind %></div>
-    <div><%= form.label :code %> <%= inventory_adjustment_reason.code %></div>
-  <% else %>
-    <div><%= form.label :adjustment_kind %> <%= form.select :adjustment_kind, InventoryAdjustmentReason::ADJUSTMENT_KINDS %></div>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :description %> <%= form.text_area :description %></div>
-  <div><%= form.label :requires_note %> <%= form.check_box :requires_note %></div>
-  <div><%= form.label :position %> <%= form.number_field :position %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: inventory_adjustment_reason, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: inventory_adjustment_reason %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :adjustment_kind, class: "field-label" %>
+        <% if inventory_adjustment_reason.persisted? %>
+          <p><%= inventory_adjustment_reason.adjustment_kind.titleize %></p>
+        <% else %>
+          <%= form.select :adjustment_kind, InventoryAdjustmentReason::ADJUSTMENT_KINDS.map { |k| [ k.titleize, k ] } %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if inventory_adjustment_reason.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :position, class: "field-label" %>
+        <%= form.number_field :position, class: "input" %>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.label :description, class: "field-label" %>
+      <%= form.text_area :description, class: "input", rows: 3 %>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :requires_note %> Requires a note when used</label>
+      <label><%= form.check_box :active %> Reason is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit inventory_adjustment_reason.persisted? ? "Update reason" : "Create reason", class: "button button-primary" %>
+    <%= link_to "Cancel", inventory_adjustment_reason.persisted? ? inventory_adjustment_reason_path(inventory_adjustment_reason) : inventory_adjustment_reasons_path, class: "button button-outline" %>
+  </div>
 <% end %>

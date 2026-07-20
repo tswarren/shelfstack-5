@@ -1,8 +1,10 @@
 # Test Review — 2026-07-19
 
-**Status:** Assessment  
+**Status:** Accepted — drives [Phase 4g test hardening](../phases/phase-04g-test-hardening.md)  
 **Scope reviewed:** application models, controllers, services, route surface, existing Minitest files, and governing architecture/testing guidance.  
 **Purpose:** Identify tests that should be added, changed, or removed without changing application behavior.
+
+**Phase 4g sequencing note:** The audit’s largest *volume* gaps are request and model coverage (High #1–2). The highest *risk* items for gating Phase 5 are completion atomicity, concurrency, immutability, and historical integrity (High #5–8). Phase 4g therefore executes integrity first (4g-1), then critical endpoint security including permission seed-drift (4g-2), then critical system workflows (4g-3). Broader classification CRUD and static model coverage remain backlog (4g-4/4g-5) and may continue alongside Phase 5.
 
 ## Executive summary
 

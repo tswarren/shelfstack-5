@@ -1,23 +1,42 @@
-<%= form_with model: role do |form| %>
-  <% if role.errors.any? %>
-    <ul>
-      <% role.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
+<%= form_with model: role, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: role %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <%= form.text_field :code, class: "input input-code" %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.label :description, class: "field-label" %>
+      <%= form.text_area :description, class: "input", rows: 3 %>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Role is active</label>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Permissions</h2>
+    <p class="field-hint">Select the permissions this role grants.</p>
+    <div class="checkbox-group">
+      <% permissions.each do |permission| %>
+        <label>
+          <%= check_box_tag "permission_ids[]", permission.id, role.permission_ids.include?(permission.id), id: "permission_#{permission.id}" %>
+          <code><%= permission.code %></code>
+        </label>
       <% end %>
-    </ul>
-  <% end %>
-  <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :description %> <%= form.text_area :description %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <fieldset>
-    <legend>Permissions</legend>
-    <% permissions.each do |permission| %>
-      <label>
-        <%= check_box_tag "permission_ids[]", permission.id, role.permission_ids.include?(permission.id) %>
-        <%= permission.code %>
-      </label><br>
-    <% end %>
-  </fieldset>
-  <div><%= form.submit %></div>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit role.persisted? ? "Update role" : "Create role", class: "button button-primary" %>
+    <%= link_to "Cancel", role.persisted? ? role_path(role) : roles_path, class: "button button-outline" %>
+  </div>
 <% end %>

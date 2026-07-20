@@ -1,2 +1,4 @@
-<h1>New Tax Category</h1>
+<%= render "shared/page_header", title: "New tax category",
+      breadcrumbs: [ { label: "Tax categories", path: tax_categories_path }, { label: "New tax category" } ] %>
+
 <%= render "form", tax_category: @tax_category %>

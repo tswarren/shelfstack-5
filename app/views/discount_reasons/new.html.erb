@@ -1,2 +1,4 @@
-<h1>New Discount Reason</h1>
+<%= render "shared/page_header", title: "New discount reason",
+      breadcrumbs: [ { label: "Discount reasons", path: discount_reasons_path }, { label: "New discount reason" } ] %>
+
 <%= render "form", discount_reason: @discount_reason, return_policies: @return_policies %>

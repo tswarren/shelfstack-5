@@ -1,2 +1,4 @@
-<h1>Edit Return Reason</h1>
+<%= render "shared/page_header", title: "Edit return reason",
+      breadcrumbs: [ { label: "Return reasons", path: return_reasons_path }, { label: @return_reason.name, path: return_reason_path(@return_reason) }, { label: "Edit" } ] %>
+
 <%= render "form", return_reason: @return_reason %>

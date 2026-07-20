@@ -1,0 +1,45 @@
+<%# locals: object:, id: nil %>
+<% if object.errors.any? %>
+  <%
+    summary_id = local_assigns[:id].presence || "form-errors-#{object.model_name.param_key}"
+    # Domain attrs → presentation field ids used by money/percent partials.
+    field_id_map = {
+      list_price_cents: "list_price",
+      regular_price_cents: "regular_price",
+      unit_price_cents: "unit_price",
+      unit_cost_cents: "unit_cost",
+      default_amount_cents: "default_amount",
+      maximum_discount_amount_cents: "maximum_discount_amount",
+      maximum_cash_refund_cents: "maximum_cash_refund",
+      maximum_no_receipt_return_cents: "maximum_no_receipt_return",
+      maximum_paid_out_cents: "maximum_paid_out",
+      cash_variance_review_threshold_cents: "cash_variance_review_threshold",
+      default_margin_bps: "default_margin",
+      default_discount_bps: "default_discount",
+      default_cost_estimation_margin_bps: "default_cost_estimation_margin",
+      maximum_merchandise_discount: "maximum_merchandise_discount",
+      rate: "rate",
+      pin: "pin",
+      pin_confirmation: "pin_confirmation"
+    }.with_indifferent_access
+  %>
+  <div class="ss-alert ss-alert-danger form-errors" role="alert" tabindex="-1" id="<%= summary_id %>">
+    <div>
+      <p><strong><%= pluralize(object.errors.count, "error") %> prevented this record from being saved:</strong></p>
+      <ul>
+        <% object.errors.each do |error| %>
+          <% attr = error.attribute %>
+          <% mapped = field_id_map[attr] || attr %>
+          <% field_id = attr == :base ? nil : "#{object.model_name.param_key}_#{mapped}" %>
+          <li>
+            <% if field_id %>
+              <a href="#<%= field_id %>"><%= error.full_message %></a>
+            <% else %>
+              <%= error.full_message %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>

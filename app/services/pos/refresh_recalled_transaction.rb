@@ -50,7 +50,7 @@ module Pos
             end
           end
 
-          department = resolved_department(variant)
+          department = classification_for(variant).department
           if department && department.id != line.department_id
             changes << Change.new(pos_line_item_id: line.id, field: "department_id",
                                   from: line.department_id, to: department.id)
@@ -58,7 +58,7 @@ module Pos
           end
 
           unless line.tax_category_overridden_at.present?
-            tax_category = resolved_tax_category(variant, department || line.department)
+            tax_category = classification_for(variant).tax_category
             if tax_category&.id != line.tax_category_id
               changes << Change.new(pos_line_item_id: line.id, field: "tax_category_id",
                                     from: line.tax_category_id, to: tax_category&.id)
@@ -96,23 +96,8 @@ module Pos
       end
     end
 
-    def resolved_merchandise_class(variant)
-      variant.merchandise_class || variant.product.merchandise_class
-    end
-
-    def resolved_department(variant)
-      merchandise_class = resolved_merchandise_class(variant)
-      variant.department ||
-        variant.product.default_department ||
-        merchandise_class&.default_department
-    end
-
-    def resolved_tax_category(variant, department)
-      merchandise_class = resolved_merchandise_class(variant)
-      variant.tax_category ||
-        variant.product.default_tax_category ||
-        merchandise_class&.default_tax_category ||
-        department&.default_tax_category
+    def classification_for(variant)
+      Catalog::ResolveClassification.call(product: variant.product, variant: variant)
     end
   end
 end

@@ -37,6 +37,7 @@ class UsersController < ApplicationController
   def update
     attrs = user_params
     attrs = attrs.except(:password, :password_confirmation) if attrs[:password].blank?
+    attrs = attrs.except(:pin, :pin_confirmation) if attrs[:pin].blank?
     if Administration::UpdateUser.call(
       user: @user,
       attributes: attrs.to_h,
@@ -59,7 +60,8 @@ class UsersController < ApplicationController
   def user_params
     params.require(:user).permit(
       :username, :user_number, :first_name, :last_name, :email,
-      :password, :password_confirmation, :default_store_id, :active
+      :password, :password_confirmation, :pin, :pin_confirmation,
+      :default_store_id, :active
     )
   end
 end

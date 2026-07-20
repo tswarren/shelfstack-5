@@ -11,6 +11,36 @@ module Hierarchical
       @hierarchy_parent_association = association_name if association_name
       @hierarchy_parent_association || :parent
     end
+
+    # Depth-first order: each parent, then its children.
+    # Sibling order: position, then department_number (when present), then name.
+    def sorted_hierarchically(scope = all)
+      records = scope.respond_to?(:to_a) ? scope.to_a : Array(scope)
+      parent_fk = :"#{hierarchy_parent_association}_id"
+      by_parent = records.group_by { |record| record.public_send(parent_fk) }
+      sort_key = ->(record) {
+        number = record.try(:department_number)
+        [
+          record.try(:position) || Float::INFINITY,
+          number.present? ? number.to_s : "",
+          record.name.to_s.downcase,
+          record.id
+        ]
+      }
+
+      ordered = []
+      walk = lambda do |parent_id|
+        (by_parent[parent_id] || []).sort_by(&sort_key).each do |record|
+          ordered << record
+          walk.call(record.id)
+        end
+      end
+      walk.call(nil)
+
+      # Keep records whose parent is outside the collection (orphaned subset).
+      (records - ordered).sort_by(&sort_key).each { |record| ordered << record }
+      ordered
+    end
   end
 
   included do

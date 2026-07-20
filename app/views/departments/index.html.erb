@@ -1,8 +1,38 @@
-<h1>Departments</h1>
-<p><%= link_to "New department", new_department_path if Current.user.can?("classification.department.manage", store: Current.store) %></p>
-<ul>
-  <% @departments.each do |department| %>
-    <li><%= link_to "#{department.department_number} — #{department.name}", department %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Departments",
+      subtitle: "Financial and selling-policy departments for merchandise.",
+      actions: capture {
+        if Current.user.can?("classification.department.manage", store: Current.store)
+          concat link_to("New department", new_department_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @departments.empty? %>
+  <%= render "shared/empty_state", title: "No departments yet",
+        body: "Create your first department to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Departments</caption>
+      <thead>
+        <tr>
+          <th scope="col">Number</th>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Postable</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @departments.each do |department| %>
+          <tr class="<%= "is-inactive" unless department.active? %>">
+            <td><%= department.department_number %></td>
+            <td><code><%= department.code %></code></td>
+            <td><%= link_to department.name, department %></td>
+            <td><%= department.postable? ? "Yes" : "No" %></td>
+            <td><%= boolean_status department.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

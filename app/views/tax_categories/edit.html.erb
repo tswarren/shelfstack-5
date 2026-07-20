@@ -1,2 +1,4 @@
-<h1>Edit Tax Category</h1>
+<%= render "shared/page_header", title: "Edit tax category",
+      breadcrumbs: [ { label: "Tax categories", path: tax_categories_path }, { label: @tax_category.name, path: tax_category_path(@tax_category) }, { label: "Edit" } ] %>
+
 <%= render "form", tax_category: @tax_category %>

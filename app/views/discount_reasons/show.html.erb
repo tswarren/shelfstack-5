@@ -1,7 +1,24 @@
-<h1><%= @discount_reason.name %></h1>
-<p>Code: <%= @discount_reason.code %></p>
-<p>Method: <%= @discount_reason.default_calculation_method %></p>
-<p>Requires approval: <%= @discount_reason.requires_approval %></p>
-<p>Active: <%= @discount_reason.active %></p>
-<p><%= link_to "Edit", edit_discount_reason_path(@discount_reason) if Current.user.can?("classification.reason.manage", store: Current.store) %></p>
-<p><%= link_to "All discount reasons", discount_reasons_path %></p>
+<%= render "shared/page_header",
+      title: @discount_reason.name,
+      breadcrumbs: [ { label: "Discount reasons", path: discount_reasons_path }, { label: @discount_reason.name } ],
+      actions: capture {
+        if Current.user.can?("classification.reason.manage", store: Current.store)
+          concat link_to("Edit", edit_discount_reason_path(@discount_reason), class: "button button-primary")
+        end
+        concat link_to("Back to discount reasons", discount_reasons_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@discount_reason.code) ],
+    [ "Name", @discount_reason.name ],
+    [ "Calculation method", @discount_reason.default_calculation_method.titleize ],
+    [ "Default rate", @discount_reason.default_rate_bps ? format_bps_as_percent(@discount_reason.default_rate_bps) : "—" ],
+    [ "Default amount", @discount_reason.default_amount_cents ? format_money(@discount_reason.default_amount_cents) : "—" ],
+    [ "Maximum rate", @discount_reason.maximum_rate_bps ? format_bps_as_percent(@discount_reason.maximum_rate_bps) : "—" ],
+    [ "Requires approval", @discount_reason.requires_approval? ? "Yes" : "No" ],
+    [ "Resulting return policy", @discount_reason.resulting_return_policy&.code || "—" ],
+    [ "Status", boolean_status(@discount_reason.active?) ]
+  ] %>
+</section>

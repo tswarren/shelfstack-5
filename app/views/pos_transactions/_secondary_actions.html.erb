@@ -1,0 +1,80 @@
+<% if @pos_transaction.editable? %>
+  <details class="pos-panel" <%= "open" if @transaction_discounts.present? %>>
+    <summary>Transaction-wide discount</summary>
+    <% if @transaction_discounts.present? %>
+      <ul class="pos-resolution-list">
+        <% @transaction_discounts.each do |discount| %>
+          <li>
+            <p>
+              <strong>Transaction discount</strong>
+              <span class="muted">· <%= pos_discount_summary(discount) %></span>
+            </p>
+            <% if Current.user.can?("pos.discount.apply", store: Current.store) %>
+              <%= button_to "Remove discount",
+                    pos_transaction_pos_discount_path(@pos_transaction, discount),
+                    method: :delete,
+                    class: "button button-small button-danger",
+                    form: { data: { turbo_confirm: "Remove this transaction discount?" } } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
+    <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <%= hidden_field_tag :scope, "transaction" %>
+      <div class="field">
+        <%= form.label :method, "Method", class: "field-label" %>
+        <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ] ], {}, class: "input" %>
+      </div>
+      <%= render "shared/percent_field", name: "rate_percent", label: "Rate (for percentage)",
+            id: "txn_discount_rate", hint: "e.g. 10 for 10%" %>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "txn_discount_amount_cents" %>
+      <div class="field">
+        <%= form.label :discount_reason_id, "Reason code", class: "field-label" %>
+        <%= form.collection_select :discount_reason_id, @discount_reasons, :id, :name, { include_blank: "No reason" }, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :reason, "Reason note", class: "field-label" %>
+        <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
+      </div>
+      <%= render "shared/approval_fields", prefix: "txn_discount" %>
+      <div class="form-actions">
+        <%= form.submit "Apply discount", class: "button button-outline" %>
+      </div>
+    <% end %>
+  </details>
+
+  <% unless @pos_transaction.tax_exempt? %>
+    <details class="pos-panel">
+      <summary>Tax exemption</summary>
+      <%= form_with url: pos_transaction_pos_tax_exemption_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <div class="field">
+          <%= form.label :exemption_type, "Exemption type", class: "field-label" %>
+          <%= form.text_field :exemption_type, placeholder: "e.g. resale_certificate", class: "input" %>
+        </div>
+        <div class="field">
+          <%= form.label :notes, "Notes", class: "field-label" %>
+          <%= form.text_field :notes, class: "input" %>
+        </div>
+        <%= render "shared/approval_fields", prefix: "tax_exemption" %>
+        <div class="form-actions">
+          <%= form.submit "Apply whole-transaction exemption", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+<% elsif @pos_transaction.tax_exempt? %>
+  <p class="muted">Exempt: <%= @pos_transaction.pos_tax_exemptions.first&.exemption_type %></p>
+<% end %>
+
+<% if @removed_line_items.any? %>
+  <details class="pos-panel">
+    <summary>Removed lines (<%= @removed_line_items.size %>)</summary>
+    <ul>
+      <% @removed_line_items.each do |line| %>
+        <li><%= line.effective_description %> — removed <%= formatted_datetime(line.removed_at, format: :short) %></li>
+      <% end %>
+    </ul>
+  </details>
+<% end %>

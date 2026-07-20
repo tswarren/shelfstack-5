@@ -1,0 +1,44 @@
+<%# locals: mode: :back_office | :pos %>
+<% mode ||= :back_office %>
+<% if Current.user && Current.store %>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-header-start">
+        <% if mode == :back_office %>
+          <button type="button"
+                  class="sidebar-toggle button button-small button-ghost"
+                  data-action="sidebar#toggle"
+                  data-sidebar-target="toggle"
+                  aria-controls="app-sidebar"
+                  aria-expanded="false">
+            Menu
+          </button>
+        <% end %>
+        <%= link_to (mode == :pos ? register_path : root_path), class: "app-brand" do %>
+          ShelfStack<% if mode == :pos %> <span class="muted">POS</span><% end %>
+        <% end %>
+      </div>
+      <div class="app-context">
+        <span>
+          <strong><%= Current.store.name %></strong>
+          <span class="muted">(<%= Current.organization.name %>)</span>
+        </span>
+        <span>Signed in as <strong><%= Current.user.username %></strong></span>
+        <% show_switch = effective_memberships_for(Current.user).many? %>
+        <% if mode == :pos %>
+          <%= link_to "Main workspace", root_path, class: "button button-small button-outline" %>
+          <% active_txn = local_assigns[:active_transaction] %>
+          <% if active_txn %>
+            <%= status_badge "Open transaction", variant: :warning %>
+          <% end %>
+          <% if show_switch && !active_txn %>
+            <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-outline" %>
+          <% end %>
+        <% elsif show_switch %>
+          <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-outline" %>
+        <% end %>
+        <%= button_to "Sign out", session_path, method: :delete, class: "button button-small button-ghost" %>
+      </div>
+    </div>
+  </header>
+<% end %>

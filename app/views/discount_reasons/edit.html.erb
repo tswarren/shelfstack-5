@@ -1,2 +1,4 @@
-<h1>Edit Discount Reason</h1>
+<%= render "shared/page_header", title: "Edit discount reason",
+      breadcrumbs: [ { label: "Discount reasons", path: discount_reasons_path }, { label: @discount_reason.name, path: discount_reason_path(@discount_reason) }, { label: "Edit" } ] %>
+
 <%= render "form", discount_reason: @discount_reason, return_policies: @return_policies %>

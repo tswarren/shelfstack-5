@@ -1,5 +1,21 @@
-<h1><%= @user.username %></h1>
-<p><%= @user.first_name %> <%= @user.last_name %></p>
-<p>Active: <%= @user.active %></p>
-<p><%= link_to "Edit", edit_user_path(@user) if Current.user.can?("administration.user.manage", store: Current.store) %></p>
-<p><%= link_to "All users", users_path %></p>
+<%= render "shared/page_header",
+      title: @user.username,
+      breadcrumbs: [ { label: "Users", path: users_path }, { label: @user.username } ],
+      actions: capture {
+        if Current.user.can?("administration.user.manage", store: Current.store)
+          concat link_to("Edit", edit_user_path(@user), class: "button button-primary")
+        end
+        concat link_to("Back to users", users_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Username", @user.username ],
+    [ "First name", @user.first_name.presence || "—" ],
+    [ "Last name", @user.last_name.presence || "—" ],
+    [ "Email", @user.email.presence || "—" ],
+    [ "Approval PIN", @user.pin_configured? ? "Set" : "Not set" ],
+    [ "Status", boolean_status(@user.active?) ]
+  ] %>
+</section>

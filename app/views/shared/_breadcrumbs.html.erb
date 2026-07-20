@@ -1,0 +1,16 @@
+<%# locals: items: [{label:, path:}] %>
+<% if items.present? %>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      <% items.each_with_index do |item, index| %>
+        <li>
+          <% if index < items.length - 1 && item[:path].present? %>
+            <%= link_to item[:label], item[:path] %>
+          <% else %>
+            <span aria-current="page"><%= item[:label] %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ol>
+  </nav>
+<% end %>

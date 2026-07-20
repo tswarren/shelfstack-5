@@ -16,19 +16,22 @@ class StoreMembershipsController < ApplicationController
   end
 
   def create
-    @membership = Current.store.store_memberships.new(membership_params)
+    attrs = membership_params
+    @membership = Current.store.store_memberships.new(attrs)
     @membership.assigned_by_user = Current.user
-    if Administration::CreateStoreMembership.call(
+    copy_human_readable_param_errors!(@membership)
+
+    if @membership.errors.any? || !Administration::CreateStoreMembership.call(
       membership: @membership,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
     )
-      redirect_to store_memberships_path, notice: "Membership created."
-    else
       @users = User.order(:username)
       @roles = Current.organization.roles.order(:code)
       render :new, status: :unprocessable_entity
+    else
+      redirect_to store_memberships_path, notice: "Membership created."
     end
   end
 
@@ -37,9 +40,18 @@ class StoreMembershipsController < ApplicationController
   end
 
   def update
+    attrs = membership_update_params.to_h
+    if human_readable_params_invalid?
+      @membership.assign_attributes(attrs)
+      copy_human_readable_param_errors!(@membership)
+      @roles = Current.organization.roles.order(:code)
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if Administration::UpdateStoreMembership.call(
       membership: @membership,
-      attributes: membership_update_params.to_h,
+      attributes: attrs,
       actor: Current.user,
       organization: Current.organization,
       store: Current.store
@@ -58,22 +70,54 @@ class StoreMembershipsController < ApplicationController
   end
 
   def membership_params
-    params.require(:store_membership).permit(
+    attrs = params.require(:store_membership).permit(
       :user_id, :role_id, :active, :starts_on, :ends_on,
       :maximum_discount_rate, :maximum_discount_amount_cents,
       :maximum_price_override_rate, :maximum_cash_refund_cents,
       :maximum_no_receipt_return_cents, :maximum_paid_out_cents,
       :cash_variance_review_threshold_cents
     )
+    apply_human_readable_authority(attrs)
   end
 
   def membership_update_params
-    params.require(:store_membership).permit(
+    attrs = params.require(:store_membership).permit(
       :role_id, :active, :starts_on, :ends_on,
       :maximum_discount_rate, :maximum_discount_amount_cents,
       :maximum_price_override_rate, :maximum_cash_refund_cents,
       :maximum_no_receipt_return_cents, :maximum_paid_out_cents,
       :cash_variance_review_threshold_cents
     )
+    apply_human_readable_authority(attrs)
+  end
+
+  # Rates are entered as percentages and money as decimal dollars in the UI, then
+  # converted to the domain's decimal-rate / integer-cents storage. Direct column
+  # input (API/tests) still works when the human-readable field is absent.
+  def apply_human_readable_authority(attrs)
+    raw = params[:store_membership] || {}
+
+    {
+      maximum_discount_rate_percent: :maximum_discount_rate,
+      maximum_price_override_rate_percent: :maximum_price_override_rate
+    }.each do |input_key, column|
+      next unless raw.key?(input_key)
+
+      write_parsed_attr!(attrs, column, parse_percent_rate_param(raw[input_key]))
+    end
+
+    {
+      maximum_discount_amount: :maximum_discount_amount_cents,
+      maximum_cash_refund: :maximum_cash_refund_cents,
+      maximum_no_receipt_return: :maximum_no_receipt_return_cents,
+      maximum_paid_out: :maximum_paid_out_cents,
+      cash_variance_review_threshold: :cash_variance_review_threshold_cents
+    }.each do |input_key, column|
+      next unless raw.key?(input_key)
+
+      write_parsed_attr!(attrs, column, parse_money_param(raw[input_key]))
+    end
+
+    attrs
   end
 end

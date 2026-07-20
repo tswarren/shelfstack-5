@@ -1,0 +1,40 @@
+<%# locals: name:, label:, value_percent: nil, value: nil, id: nil, hint: nil, required: false, describedby: nil, error: nil, object: nil, error_attr: nil %>
+<%
+  field_id = local_assigns[:id].presence || "pf_#{name.to_s.gsub(/\W+/, "_")}"
+  raw_value = local_assigns.key?(:value) ? local_assigns[:value] : nil
+  value = if raw_value.nil?
+    local_assigns[:value_percent].to_s.delete("%").strip
+  else
+    raw_value.to_s.delete("%").strip
+  end
+  object = local_assigns[:object]
+  err_attr = local_assigns[:error_attr]
+  error_text = local_assigns[:error]
+  if error_text.blank? && object && err_attr && object.errors[err_attr].present?
+    error_text = object.errors[err_attr].to_sentence
+  end
+  describedby_ids = []
+  describedby_ids << "#{field_id}_hint" if local_assigns[:hint].present?
+  describedby_ids << "#{field_id}_error" if error_text.present?
+  describedby_ids << local_assigns[:describedby] if local_assigns[:describedby].present?
+%>
+<div class="field">
+  <label class="field-label" for="<%= field_id %>"><%= label %></label>
+  <div class="input-affix">
+    <input id="<%= field_id %>" type="text" inputmode="decimal" autocomplete="off"
+           class="input input-percent"
+           name="<%= name %>"
+           value="<%= value %>"
+           placeholder="0"
+           <%= "required" if local_assigns[:required] %>
+           <%= "aria-invalid=true" if error_text.present? %>
+           <%= "aria-describedby=\"#{describedby_ids.join(" ")}\"".html_safe if describedby_ids.any? %>>
+    <span class="affix" aria-hidden="true">%</span>
+  </div>
+  <% if local_assigns[:hint].present? %>
+    <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
+  <% end %>
+  <% if error_text.present? %>
+    <p class="field-error" id="<%= field_id %>_error"><%= error_text %></p>
+  <% end %>
+</div>

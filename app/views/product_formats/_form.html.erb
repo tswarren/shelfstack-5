@@ -1,20 +1,41 @@
-<%= form_with model: product_format do |form| %>
-  <% if product_format.errors.any? %>
-    <ul>
-      <% product_format.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if product_format.persisted? %>
-    <div><%= form.label :code %> <%= product_format.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :short_code %> <%= form.text_field :short_code %></div>
-  <div><%= form.label :format_family %> <%= form.text_field :format_family %></div>
-  <div><%= form.label :default_inventory_tracking_mode, "Tracking mode" %> <%= form.select :default_inventory_tracking_mode, ProductFormat::INVENTORY_TRACKING_MODES %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: product_format, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: product_format %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if product_format.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :short_code, class: "field-label" %>
+        <%= form.text_field :short_code, class: "input input-code" %>
+      </div>
+      <div class="field">
+        <%= form.label :format_family, class: "field-label" %>
+        <%= form.text_field :format_family, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :default_inventory_tracking_mode, "Tracking mode", class: "field-label" %>
+        <%= form.select :default_inventory_tracking_mode, ProductFormat::TRACKING_MODES.map { |m| [ m.titleize, m ] } %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Format is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit product_format.persisted? ? "Update product format" : "Create product format", class: "button button-primary" %>
+    <%= link_to "Cancel", product_format.persisted? ? product_format_path(product_format) : product_formats_path, class: "button button-outline" %>
+  </div>
 <% end %>

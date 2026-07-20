@@ -1,2 +1,4 @@
-<h1>New drawer</h1>
+<%= render "shared/page_header", title: "New cash drawer",
+      breadcrumbs: [ { label: "Cash drawers", path: cash_drawers_path }, { label: "New drawer" } ] %>
+
 <%= render "form", drawer: @drawer %>

@@ -1,0 +1,3 @@
+<%# locals: text:, variant: :neutral %>
+<% variant = local_assigns.fetch(:variant, :neutral).to_s %>
+<span class="badge badge-<%= variant %>"><%= text %></span>

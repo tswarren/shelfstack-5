@@ -1,19 +1,37 @@
-<%= form_with model: product_condition do |form| %>
-  <% if product_condition.errors.any? %>
-    <ul>
-      <% product_condition.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if product_condition.persisted? %>
-    <div><%= form.label :code %> <%= product_condition.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :description %> <%= form.text_area :description %></div>
-  <div><%= form.label :position %> <%= form.number_field :position %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: product_condition, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: product_condition %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if product_condition.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :position, class: "field-label" %>
+        <%= form.number_field :position, class: "input" %>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.label :description, class: "field-label" %>
+      <%= form.text_area :description, class: "input", rows: 3 %>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Condition is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit product_condition.persisted? ? "Update product condition" : "Create product condition", class: "button button-primary" %>
+    <%= link_to "Cancel", product_condition.persisted? ? product_condition_path(product_condition) : product_conditions_path, class: "button button-outline" %>
+  </div>
 <% end %>

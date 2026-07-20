@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for?(:title) ? "#{content_for(:title)} · ShelfStack" : "ShelfStack POS" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="ShelfStack">
+    <meta name="mobile-web-app-capable" content="yes">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <%= shelfstack_stylesheet_tags %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="layout-pos">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <%# Hide the store switch while the cashier is mid-sale (header is UX only;
+        StoreSelectionsController enforces the same rule server-side). %>
+    <% active_txn = (@pos_transaction if @pos_transaction&.open?) || (@open_transaction if @open_transaction&.open?) %>
+    <%= render "shared/app_header", mode: :pos, active_transaction: active_txn %>
+    <main class="pos-main" id="main-content" tabindex="-1">
+      <%= render "shared/flash_messages" %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

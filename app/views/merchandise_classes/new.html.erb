@@ -1,2 +1,4 @@
-<h1>New Merchandise Class</h1>
+<%= render "shared/page_header", title: "New merchandise class",
+      breadcrumbs: [ { label: "Merchandise classes", path: merchandise_classes_path }, { label: "New merchandise class" } ] %>
+
 <%= render "form", merchandise_class: @merchandise_class, parent_classes: @parent_classes, departments: @departments, tax_categories: @tax_categories %>

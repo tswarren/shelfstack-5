@@ -1,0 +1,75 @@
+/* Tables */
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.data-table caption {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 650;
+  caption-side: top;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-table th {
+  background: var(--bg-200);
+  color: var(--text-secondary);
+  font-weight: 680;
+  white-space: nowrap;
+}
+
+.data-table .num,
+.data-table td.num,
+.data-table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table.compact th,
+.data-table.compact td {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.88rem;
+}
+
+.data-table tr.is-selected {
+  background: var(--surface-selected);
+}
+
+.data-table tr.is-warning {
+  background: var(--surface-warning);
+}
+
+.data-table tr.is-return {
+  background: var(--warning-bg);
+}
+
+.data-table tr.is-inactive,
+.data-table tr.is-disabled {
+  color: var(--text-muted);
+}
+
+.data-table .row-actions {
+  white-space: nowrap;
+}
+
+.table-empty {
+  padding: 1.5rem;
+}

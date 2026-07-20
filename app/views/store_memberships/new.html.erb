@@ -1,2 +1,4 @@
-<h1>New membership</h1>
+<%= render "shared/page_header", title: "New membership",
+      breadcrumbs: [ { label: "Store memberships", path: store_memberships_path }, { label: "New membership" } ] %>
+
 <%= render "form", membership: @membership, users: @users, roles: @roles %>

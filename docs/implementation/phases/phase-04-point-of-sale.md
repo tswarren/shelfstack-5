@@ -1,9 +1,9 @@
 # Phase 4 — Point of Sale
 
-**Status:** Implemented on `phase/p4-point-of-sale` (4a–4e); not merged to `main` pending manual testing  
+**Status:** Complete — manually accepted and ready for merge (4a–4e on `main`; 4f UX Baseline Gate accepted on `phase/ux-baseline`, PR #30)  
 **Depends on:** Phase 3 (complete); [UX readiness gate](../../design/README.md) before 4a coding; store tax rates/rules before 4b  
 
-**Unlocks:** Phase 5 foundational purchasing after 4c; complete 4d before individual-item Phase 5 work; 4e recommended before return-oriented fulfilment (see [roadmap.md](../roadmap.md))  
+**Unlocks:** Phase 5 foundational purchasing after 4c + UX Baseline merge + Phase 4g integrity gate (see [phase-04g-test-hardening.md](phase-04g-test-hardening.md)); complete 4d before individual-item Phase 5 work; 4e recommended before return-oriented fulfilment (see [roadmap.md](../roadmap.md))  
 **Governing docs:** ADR-0008, ADR-0009, ADR-0010, ADR-0011, [ADR-0014](../../adr/0014-hybrid-transaction-component-tax-calculation.md); [point-of-sale](../../domains/point-of-sale.md); [architectural-locks](../architectural-locks.md); [phase-04-tax-schema.md](../phase-04-tax-schema.md); [pos-register-ui](../../design/pos-register-ui.md); [scanner-and-hotkeys](../../design/scanner-and-hotkeys.md)
 
 ## Goal

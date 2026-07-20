@@ -74,4 +74,29 @@ class MerchandiseClassTest < ActiveSupport::TestCase
 
     assert_raises(ActiveRecord::ReadonlyAttributeError) { merchandise_class.code = "changed" }
   end
+
+  test "sorted_hierarchically is depth-first by position then name" do
+    zebra = @organization.merchandise_classes.create!(
+      code: "z_primary", name: "Zebra", level: "primary",
+      position: 2, default_department: @postable_department, active: true
+    )
+    alpha = @organization.merchandise_classes.create!(
+      code: "a_primary", name: "Alpha", level: "primary",
+      position: 1, default_department: @postable_department, active: true
+    )
+    child_b = @organization.merchandise_classes.create!(
+      code: "a_primary.b", name: "Beta child", level: "secondary",
+      parent: alpha, position: 2, default_department: @postable_department, active: true
+    )
+    child_a = @organization.merchandise_classes.create!(
+      code: "a_primary.a", name: "Alpha child", level: "secondary",
+      parent: alpha, position: 1, default_department: @postable_department, active: true
+    )
+
+    ordered = MerchandiseClass.sorted_hierarchically(
+      @organization.merchandise_classes.where(id: [ zebra.id, alpha.id, child_a.id, child_b.id ])
+    )
+
+    assert_equal [ alpha, child_a, child_b, zebra ].map(&:id), ordered.map(&:id)
+  end
 end

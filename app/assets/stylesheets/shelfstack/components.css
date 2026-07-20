@@ -82,6 +82,42 @@ input[type="submit"].button:hover {
   color: var(--success-text);
 }
 
+.badge-neutral {
+  border-color: var(--border-default);
+  background: var(--bg-200);
+  color: var(--text-secondary);
+}
+
+.badge-primary {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
+}
+
+.badge-info {
+  border-color: var(--info-border);
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.badge-warning {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.badge-danger {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+.badge-inactive {
+  border-color: var(--border-default);
+  background: var(--surface-disabled);
+  color: var(--text-disabled);
+}
+
 .ss-alert {
   display: flex;
   gap: 0.75rem;
@@ -96,6 +132,12 @@ input[type="submit"].button:hover {
   border-color: var(--info-border);
   background: var(--info-bg);
   color: var(--info-text);
+}
+
+.ss-alert-success {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-text);
 }
 
 .ss-alert-warning {

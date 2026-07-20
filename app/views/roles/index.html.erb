@@ -1,8 +1,30 @@
-<h1>Roles</h1>
-<p><%= link_to "New role", new_role_path %></p>
-<ul>
-  <% @roles.each do |role| %>
-    <li><%= link_to "#{role.code} — #{role.name}", role %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Roles", subtitle: "Named permission sets granted through store memberships.", actions: capture {
+  concat link_to("New role", new_role_path, class: "button button-primary")
+} %>
+
+<% if @roles.empty? %>
+  <%= render "shared/empty_state", title: "No roles yet",
+        body: "Create your first role to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Roles</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @roles.each do |role| %>
+          <tr class="<%= "is-inactive" unless role.active? %>">
+            <td><code><%= role.code %></code></td>
+            <td><%= link_to role.name, role %></td>
+            <td><%= boolean_status role.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

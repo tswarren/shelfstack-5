@@ -1,2 +1,4 @@
-<h1>New device</h1>
+<%= render "shared/page_header", title: "New POS device",
+      breadcrumbs: [ { label: "POS devices", path: pos_devices_path }, { label: "New device" } ] %>
+
 <%= render "form", device: @device %>

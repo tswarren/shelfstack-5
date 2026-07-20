@@ -36,7 +36,7 @@ class PosLineItemsController < ApplicationController
   def override_price
     result = Pos::OverridePrice.call(
       pos_line_item: @line_item,
-      requested_unit_price_cents: params[:requested_unit_price_cents],
+      requested_unit_price_cents: money_param_to_cents(params[:requested_unit_price_cents], label: "New unit price"),
       actor: Current.user,
       reason: params[:reason],
       **approver_params
@@ -46,6 +46,8 @@ class PosLineItemsController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def override_tax_category
@@ -79,25 +81,68 @@ class PosLineItemsController < ApplicationController
   end
 
   def create_product_line
-    resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)
-    if resolved.variant.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: scan_error_message(resolved)
+    # Explicit selection from the scan-resolution region resolves an exact
+    # variant directly, bypassing the ambiguous free-text lookup.
+    if params[:product_variant_id].present?
+      add_selected_variant
       return
     end
 
+    resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)
+    if resolved.variant.blank?
+      if resolved.error == "ambiguous_match"
+        store_scan_resolution(params[:query], params[:quantity])
+        redirect_to pos_transaction_path(@pos_transaction),
+          alert: scan_error_message(resolved),
+          flash: { scan_outcome: "ambiguous", scan_query: params[:query].to_s }
+      else
+        redirect_to pos_transaction_path(@pos_transaction),
+          alert: scan_error_message(resolved),
+          flash: { scan_outcome: "failed", scan_query: params[:query].to_s }
+      end
+      return
+    end
+
+    add_line(resolved.variant, inventory_unit: resolved.inventory_unit)
+  end
+
+  def add_selected_variant
+    variant = ProductVariant.joins(:product)
+                            .where(products: { organization_id: Current.organization.id })
+                            .find_by(id: params[:product_variant_id])
+    if variant.blank?
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a valid product variant."
+      return
+    end
+
+    add_line(variant)
+  end
+
+  def add_line(variant, inventory_unit: nil)
     result = Pos::AddLine.call(
       pos_transaction: @pos_transaction,
-      product_variant: resolved.variant,
+      product_variant: variant,
       quantity: params[:quantity].presence || 1,
-      inventory_unit: resolved.inventory_unit,
+      inventory_unit: inventory_unit,
       actor: Current.user
     )
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Line added."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to pos_transaction_path(@pos_transaction), notice: notice, flash: { scan_outcome: "added" }
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction),
+        alert: result.error,
+        flash: { scan_outcome: "failed", scan_query: params[:query].to_s }
     end
+  end
+
+  # Slim session payload; candidates are rebuilt on the transaction show GET.
+  def store_scan_resolution(query, quantity)
+    session[:pos_scan_resolution] = {
+      "transaction_id" => @pos_transaction.id,
+      "query" => query.to_s,
+      "quantity" => (quantity.presence || 1).to_i
+    }
   end
 
   def create_open_ring_line
@@ -110,7 +155,7 @@ class PosLineItemsController < ApplicationController
     result = Pos::AddOpenRingLine.call(
       pos_transaction: @pos_transaction,
       department: department,
-      unit_price_cents: params[:unit_price_cents],
+      unit_price_cents: money_param_to_cents(params[:unit_price_cents], label: "Price"),
       description: params[:description],
       quantity: params[:quantity].presence || 1,
       actor: Current.user
@@ -120,6 +165,8 @@ class PosLineItemsController < ApplicationController
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def scan_error_message(resolved)

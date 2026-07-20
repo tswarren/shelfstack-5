@@ -1,0 +1,29 @@
+<% if @scan_resolution.present? && @scan_resolution["candidates"].present? %>
+  <div class="ss-alert ss-alert-warning pos-scan-resolution" role="alert">
+    <p>
+      <strong>Multiple products matched
+      "<%= @scan_resolution["query"] %>".</strong>
+      Choose the exact item to add.
+    </p>
+    <ul class="pos-resolution-list">
+      <% qty = @scan_resolution["quantity"].presence || 1 %>
+      <% @scan_resolution["candidates"].each do |candidate| %>
+        <li>
+          <p>
+            <strong><%= candidate["title"] %></strong>
+            <span class="muted">· <%= candidate["identifier"] %></span>
+          </p>
+          <div class="action-group">
+            <% candidate["variants"].each do |variant| %>
+              <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
+                <%= hidden_field_tag :product_variant_id, variant["id"] %>
+                <%= hidden_field_tag :quantity, qty %>
+                <%= form.submit "Add #{variant["label"]}", class: "button button-small button-outline" %>
+              <% end %>
+            <% end %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

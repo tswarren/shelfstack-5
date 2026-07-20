@@ -1,24 +1,79 @@
 <% content_for :title, "Products" %>
 
-<h1>Products</h1>
+<%= render "shared/page_header", title: "Products", subtitle: "Catalog products and their standard variant.", actions: capture {
+  if Current.user.can?("catalog.product.create", store: Current.store)
+    concat link_to("New product", new_product_path, class: "button button-primary")
+  end
+} %>
 
-<%= form_with url: products_path, method: :get do |form| %>
-  <div>
-    <%= form.label :q, "Search by identifier, SKU, or name" %>
-    <%= form.search_field :q, value: @query %>
-    <%= form.submit "Search" %>
+<form class="toolbar" role="search" action="<%= products_path %>" method="get">
+  <div class="field">
+    <label class="field-label" for="q">Search by identifier, SKU, or name</label>
+    <input type="search" name="q" id="q" value="<%= @query %>" class="input" placeholder="ISBN, SKU, or name">
+  </div>
+  <% if params[:limit].present? %>
+    <input type="hidden" name="limit" value="<%= params[:limit] %>">
+  <% end %>
+  <div class="field">
+    <span class="field-label" aria-hidden="true">&nbsp;</span>
+    <div class="action-group">
+      <button type="submit" class="button button-primary">Search</button>
+      <% if @query.present? %>
+        <%= link_to "Clear", products_path, class: "button button-outline" %>
+      <% end %>
+    </div>
+  </div>
+</form>
+
+<% if @lookup_ambiguous %>
+  <div class="ss-alert ss-alert-warning" role="status">
+    <div>
+      <strong>Multiple products share that identifier.</strong>
+      Review the matches below and open the correct one.
+    </div>
   </div>
 <% end %>
 
-<% if Current.user.can?("catalog.product.create", store: Current.store) %>
-  <p><%= link_to "New product", new_product_path %></p>
-<% end %>
+<% if @products.empty? %>
+  <%= render "shared/empty_state",
+        title: @query.present? ? "No products match your search" : "No products yet",
+        body: @query.present? ? "Try a different identifier, SKU, or name." : "Create your first catalog product to get started.",
+        actions: (capture do
+          if Current.user.can?("catalog.product.create", store: Current.store)
+            concat link_to("New product", new_product_path, class: "button button-primary")
+          end
+        end) %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Products</caption>
+      <thead>
+        <tr>
+          <th scope="col">Identifier</th>
+          <th scope="col">Name</th>
+          <th scope="col">Format</th>
+          <th scope="col">Merchandise class</th>
+          <th scope="col">Status</th>
+          <th scope="col">Sellable</th>
+          <th scope="col" class="num">Standard price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @products.each do |product| %>
+          <% variant = product.product_variants.min_by(&:name) %>
+          <tr class="<%= "is-inactive" unless product.status == "active" %>">
+            <td><code><%= product.identifier %></code></td>
+            <td><%= link_to product.name, product_path(product) %></td>
+            <td><%= product.product_format&.name || "—" %></td>
+            <td><%= product.merchandise_class&.name || "—" %></td>
+            <td><%= status_badge product.status.titleize, variant: product_status_variant(product.status) %></td>
+            <td><%= boolean_status product.sellable?, true_label: "Sellable", false_label: "Not sellable" %></td>
+            <td class="num"><%= variant&.regular_price_cents ? format_money(variant.regular_price_cents) : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 
-<ul>
-  <% @products.each do |product| %>
-    <li>
-      <%= link_to product.name, product_path(product) %>
-      — <%= product.identifier %>
-    </li>
-  <% end %>
-</ul>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "product" %>
+<% end %>

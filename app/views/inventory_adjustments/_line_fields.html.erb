@@ -1,0 +1,70 @@
+<%# locals: f:, variants: %>
+<fieldset class="adjustment-line" data-inventory-adjustment-form-target="line">
+  <div class="adjustment-line-header">
+    <span class="adjustment-line-title">Line</span>
+    <div class="action-group">
+      <button type="button" class="button button-small button-outline"
+              data-action="inventory-adjustment-form#moveUp" aria-label="Move line up">&uarr;</button>
+      <button type="button" class="button button-small button-outline"
+              data-action="inventory-adjustment-form#moveDown" aria-label="Move line down">&darr;</button>
+      <button type="button" class="button button-small button-danger"
+              data-inventory-adjustment-form-target="removeButton"
+              data-action="inventory-adjustment-form#removeLine">Remove</button>
+    </div>
+  </div>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= f.label :product_variant_id, "Variant", class: "field-label" %>
+      <%= f.select :product_variant_id,
+            variants.map { |v| [ variant_option_label(v), v.id ] },
+            { include_blank: true },
+            class: "input" %>
+    </div>
+
+    <div class="field" data-inventory-adjustment-form-target="lineFields"
+         data-for-kinds="opening_inventory,quantity_only">
+      <%= f.label :quantity_delta, "Quantity Δ", class: "field-label" %>
+      <%= f.number_field :quantity_delta, class: "input" %>
+    </div>
+
+    <div data-inventory-adjustment-form-target="lineFields" data-for-kinds="opening_inventory">
+      <%= render "shared/money_field",
+            name: "#{f.object_name}[input_unit_cost]",
+            label: "Input unit cost",
+            value_cents: f.object.input_unit_cost_cents,
+            value: f.object.input_unit_cost_input,
+            object: f.object,
+            error_attr: :input_unit_cost,
+            hint: "Opening value at post = quantity × unit cost (or estimate/unknown)." %>
+    </div>
+
+    <div class="field" data-inventory-adjustment-form-target="lineFields" data-for-kinds="opening_inventory">
+      <%= f.label :input_cost_method, "Cost method", class: "field-label" %>
+      <%= f.select :input_cost_method, InventoryAdjustmentLine::COST_METHODS - %w[moving_average], include_blank: true %>
+    </div>
+
+    <div class="field" data-inventory-adjustment-form-target="lineFields" data-for-kinds="opening_inventory">
+      <%= f.label :input_cost_quality, "Cost quality", class: "field-label" %>
+      <%= f.select :input_cost_quality, InventoryAdjustmentLine::COST_QUALITIES - %w[mixed], include_blank: true %>
+    </div>
+
+    <div data-inventory-adjustment-form-target="lineFields" data-for-kinds="cost_correction">
+      <%= render "shared/money_field",
+            name: "#{f.object_name}[corrected_inventory_value]",
+            label: "Corrected inventory value",
+            value_cents: f.object.corrected_inventory_value_cents,
+            value: f.object.corrected_inventory_value_input,
+            object: f.object,
+            error_attr: :corrected_inventory_value %>
+    </div>
+
+    <div class="field" data-inventory-adjustment-form-target="lineFields" data-for-kinds="cost_correction">
+      <%= f.label :input_cost_quality, "Corrected cost quality", class: "field-label" %>
+      <%= f.select :input_cost_quality, %w[actual estimated], include_blank: true %>
+    </div>
+  </div>
+
+  <%= f.hidden_field :id if f.object.id.present? %>
+  <%= f.hidden_field :position, data: { inventory_adjustment_form_target: "position" } %>
+</fieldset>

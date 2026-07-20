@@ -18,15 +18,18 @@ class DepartmentsController < ApplicationController
   end
 
   def create
-    @department = Current.organization.departments.new(department_params)
-    if Classification::CreateDepartment.call(
+    attrs = department_params
+    @department = Current.organization.departments.new(attrs)
+    copy_human_readable_param_errors!(@department)
+
+    if @department.errors.any? || !Classification::CreateDepartment.call(
       department: @department,
       actor: Current.user,
       organization: Current.organization
     )
-      redirect_to @department, notice: "Department created."
-    else
       render :new, status: :unprocessable_entity
+    else
+      redirect_to @department, notice: "Department created."
     end
   end
 
@@ -34,9 +37,17 @@ class DepartmentsController < ApplicationController
   end
 
   def update
+    attrs = department_params.to_h
+    if human_readable_params_invalid?
+      @department.assign_attributes(attrs)
+      copy_human_readable_param_errors!(@department)
+      render :edit, status: :unprocessable_entity
+      return
+    end
+
     if Classification::UpdateDepartment.call(
       department: @department,
-      attributes: department_params.to_h,
+      attributes: attrs,
       actor: Current.user,
       organization: Current.organization
     )
@@ -53,13 +64,15 @@ class DepartmentsController < ApplicationController
   end
 
   def load_form_collections
-    @parent_departments = Current.organization.departments.order(:department_number)
-    @tax_categories = Current.organization.tax_categories.order(:code)
-    @return_policies = Current.organization.return_policies.order(:code)
+    @parent_departments = Department.sorted_hierarchically(
+      Current.organization.departments.includes(:parent_department)
+    )
+    @tax_categories = Current.organization.tax_categories.order(:name)
+    @return_policies = Current.organization.return_policies.order(:name)
   end
 
   def department_params
-    params.require(:department).permit(
+    attrs = params.require(:department).permit(
       :code, :department_number, :name, :parent_department_id, :postable,
       :inventory_asset_gl_account_code, :sales_revenue_gl_account_code,
       :sales_returns_gl_account_code, :sales_discounts_gl_account_code,
@@ -69,5 +82,24 @@ class DepartmentsController < ApplicationController
       :default_tax_category_id, :maximum_merchandise_discount, :default_return_policy_id,
       :default_cost_estimation_margin_bps, :active
     )
+
+    # The maximum discount and margin are entered as percentages in the UI and
+    # converted to the domain's decimal-rate / basis-point storage. Direct column
+    # input (API/tests) still works when the percent field is absent.
+    raw = params[:department] || {}
+    if raw.key?(:maximum_merchandise_discount_percent)
+      write_parsed_attr!(
+        attrs, :maximum_merchandise_discount,
+        parse_percent_rate_param(raw[:maximum_merchandise_discount_percent])
+      )
+    end
+    if raw.key?(:default_cost_estimation_margin_percent)
+      write_parsed_attr!(
+        attrs, :default_cost_estimation_margin_bps,
+        parse_percent_bps_param(raw[:default_cost_estimation_margin_percent])
+      )
+    end
+
+    attrs
   end
 end

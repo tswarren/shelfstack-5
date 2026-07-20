@@ -7,6 +7,12 @@ Rails.application.routes.draw do
   resource :store_selection, only: %i[new create]
   get "no_store_access", to: "no_store_accesses#show", as: :no_store_access
 
+  unless Rails.env.production?
+    namespace :development do
+      get "ui_gallery", to: "ui_gallery#show", as: :ui_gallery
+    end
+  end
+
   resources :stores, except: %i[destroy]
   resources :users, except: %i[destroy]
   resources :roles, except: %i[destroy]
@@ -68,8 +74,12 @@ Rails.application.routes.draw do
         patch :override_tax_category
       end
     end
-    resources :pos_return_lines, only: %i[create]
-    resources :pos_discounts, only: %i[create]
+    resources :pos_return_lines, only: %i[create] do
+      collection do
+        post :lookup
+      end
+    end
+    resources :pos_discounts, only: %i[create destroy]
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
     resources :pos_tenders, only: %i[create destroy]
   end

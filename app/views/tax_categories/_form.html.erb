@@ -1,17 +1,29 @@
-<%= form_with model: tax_category do |form| %>
-  <% if tax_category.errors.any? %>
-    <ul>
-      <% tax_category.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if tax_category.persisted? %>
-    <div><%= form.label :code %> <%= tax_category.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: tax_category, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: tax_category %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if tax_category.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Tax category is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit tax_category.persisted? ? "Update tax category" : "Create tax category", class: "button button-primary" %>
+    <%= link_to "Cancel", tax_category.persisted? ? tax_category_path(tax_category) : tax_categories_path, class: "button button-outline" %>
+  </div>
 <% end %>

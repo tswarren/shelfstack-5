@@ -3,6 +3,8 @@
 class PosSessionsController < ApplicationController
   include PosHelper
 
+  layout "pos"
+
   before_action -> { require_permission!("pos.session.open") }, only: %i[new create]
   before_action -> { require_permission!("pos.session.close") }, only: %i[close close_form]
   before_action :set_session, only: %i[close close_form]
@@ -18,14 +20,16 @@ class PosSessionsController < ApplicationController
     device = Current.store.pos_devices.find(params.dig(:pos_session, :pos_device_id))
     drawer_id = params.dig(:pos_session, :cash_drawer_id)
     drawer = drawer_id.presence && Current.store.cash_drawers.find(drawer_id)
-    opening_cash = params.dig(:pos_session, :opening_cash_cents)
+    opening_cash = if drawer.present?
+      money_param_to_cents(params.dig(:pos_session, :opening_cash_cents), label: "Opening cash")
+    end
 
     result = Pos::OpenSession.call(
       business_day: business_day,
       store: Current.store,
       pos_device: device,
       cash_drawer: drawer,
-      opening_cash_cents: drawer.present? ? opening_cash : nil,
+      opening_cash_cents: opening_cash,
       cashier: Current.user,
       actor: Current.user
     )
@@ -34,6 +38,8 @@ class PosSessionsController < ApplicationController
     else
       redirect_to new_pos_session_path(business_day_id: business_day.id), alert: result.error
     end
+  rescue ArgumentError => e
+    redirect_to new_pos_session_path(business_day_id: business_day.id), alert: e.message
   end
 
   def close_form
@@ -42,7 +48,8 @@ class PosSessionsController < ApplicationController
       return
     end
 
-    @expected_cash_cents = Pos::CalculateExpectedCash.call(pos_session: @session).expected_cash_cents
+    @expected_cash = Pos::CalculateExpectedCash.call(pos_session: @session)
+    @expected_cash_cents = @expected_cash.expected_cash_cents
     @closing_count = PosSessionCashCount
       .where(pos_session_id: @session.id, count_type: %w[closing manager_recount])
       .order(:id)
@@ -50,10 +57,14 @@ class PosSessionsController < ApplicationController
   end
 
   def close
+    counted = if @session.cash_enabled?
+      money_param_to_cents(params[:counted_cash_cents], label: "Counted cash")
+    end
+
     result = Pos::CloseSession.call(
       pos_session: @session,
       actor: Current.user,
-      counted_cash_cents: params[:counted_cash_cents]
+      counted_cash_cents: counted
     )
     if result.success?
       notice = if result.replayed
@@ -68,6 +79,9 @@ class PosSessionsController < ApplicationController
       target = @session.cash_enabled? ? close_form_pos_session_path(@session) : register_path
       redirect_to target, alert: result.error
     end
+  rescue ArgumentError => e
+    target = @session.cash_enabled? ? close_form_pos_session_path(@session) : register_path
+    redirect_to target, alert: e.message
   end
 
   private

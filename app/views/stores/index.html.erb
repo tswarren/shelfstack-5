@@ -1,8 +1,34 @@
-<h1>Stores</h1>
-<p><%= link_to "New store", new_store_path if Current.user.can?("administration.store.manage", store: Current.store) %></p>
-<ul>
-  <% @stores.each do |store| %>
-    <li><%= link_to "#{store.code} — #{store.name}", store %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Stores", subtitle: "Store locations in this organization.", actions: capture {
+  if Current.user.can?("administration.store.manage", store: Current.store)
+    concat link_to("New store", new_store_path, class: "button button-primary")
+  end
+} %>
+
+<% if @stores.empty? %>
+  <%= render "shared/empty_state", title: "No stores yet",
+        body: "Create your first store to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Stores</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Currency</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @stores.each do |store| %>
+          <tr class="<%= "is-inactive" unless store.active? %>">
+            <td><code><%= store.code %></code></td>
+            <td><%= link_to store.name, store %></td>
+            <td><%= store.currency_code %></td>
+            <td><%= boolean_status store.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

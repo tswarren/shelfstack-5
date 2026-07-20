@@ -1,10 +1,9 @@
 /*
- * ShelfStack application styles.
- * Tokens and shell primitives implement docs/design/ visual guidance.
- * Propshaft serves each file; load order follows these imports.
+ * ShelfStack application styles entrypoint.
+ *
+ * Propshaft does not rewrite bare `@import "…"`. Nested files are linked
+ * explicitly from layouts via `shelfstack_stylesheet_tags` so digests resolve.
+ * Keep this file as a lightweight marker / future global overrides only.
  */
 
-@import "shelfstack/tokens.css";
-@import "shelfstack/base.css";
-@import "shelfstack/components.css";
-@import "shelfstack/shell.css";
+/* Global overrides that do not belong in a component sheet can go here. */

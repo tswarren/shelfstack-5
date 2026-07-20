@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosTransactionsController < ApplicationController
+  layout "pos"
+
   before_action -> { require_permission!("pos.access") }, only: %i[index show]
   before_action -> { require_permission!("pos.transaction.open") }, only: %i[create]
   before_action -> { require_permission!("pos.transaction.suspend") }, only: %i[suspend]
@@ -30,7 +32,16 @@ class PosTransactionsController < ApplicationController
     # Load lines after recalculation so provisional tax associations are fresh.
     @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position)
     @removed_line_items = @pos_transaction.pos_line_items.where(status: "removed").order(:position)
-    @departments = Current.organization.departments.where(active: true, postable: true).order(:name)
+    @pos_discounts = @pos_transaction.pos_discounts
+      .includes(:discount_reason, :target_pos_line_item, :pos_discount_allocations)
+      .order(:position, :id)
+    @line_discounts_by_line_id = @pos_discounts.select { |d| d.scope == "line" }.group_by(&:target_pos_line_item_id)
+    @transaction_discounts = @pos_discounts.select { |d| d.scope == "transaction" }
+    # Sort the full hierarchy (including non-postable parents), then offer only
+    # active postable departments so open-ring children keep parent-relative order.
+    @departments = Department.sorted_hierarchically(
+      Current.organization.departments.includes(:parent_department)
+    ).select { |d| d.active? && d.postable? }
     @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
     @discount_reasons = Current.organization.discount_reasons.where(active: true).order(:name)
     @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
@@ -43,9 +54,21 @@ class PosTransactionsController < ApplicationController
       @pos_transaction.pos_tenders.where(status: "completed", direction: "refunded").sum(:amount_cents)
     @tendered_total_cents = received - refunded
     @balance_due_cents = @net_total_cents - @tendered_total_cents
+    @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid
+
+    # Actionable scan resolution after an ambiguous scan (POST → PRG).
+    # Session stores only { transaction_id, query, quantity }; candidates rebuilt here.
+    stored = session.delete(:pos_scan_resolution)
+    if stored.present? && stored["transaction_id"] == @pos_transaction.id
+      @scan_resolution = rebuild_scan_resolution(stored)
+    end
+    @scan_outcome = flash[:scan_outcome]
+    @scan_query = flash[:scan_query]
+
+    load_return_lookup!
   end
 
   def create
@@ -75,19 +98,14 @@ class PosTransactionsController < ApplicationController
 
     result = Pos::RecallTransaction.call(pos_transaction: @pos_transaction, pos_session: session, actor: Current.user)
     if result.success?
-      notices = []
-      alerts = []
-      if result.changes.any?
-        notices << "Recall refreshed commercial values: " + result.changes.map { |c|
-          "line #{c.pos_line_item_id} #{c.field} #{c.from} → #{c.to}"
-        }.join("; ")
-      end
-      notices.concat(result.warnings) if result.warnings.any?
-      alerts.concat(result.blockers.map { |b| "Eligibility blocker: #{b}" }) if result.blockers.any?
+      # Structured recall detail is surfaced on the transaction show page
+      # (see pos_transactions/_recall_summary) rather than crammed into flash text.
+      changes = result.changes.map { |c| "Line #{c.pos_line_item_id}: #{c.field} #{c.from} → #{c.to}" }
+      flash[:recall_changes] = changes if changes.any?
+      flash[:recall_warnings] = result.warnings if result.warnings.any?
+      flash[:recall_blockers] = result.blockers if result.blockers.any?
 
-      redirect_opts = { notice: notices.presence&.join(" | ") || (alerts.empty? ? "Transaction recalled." : nil) }
-      redirect_opts[:alert] = alerts.join(" | ") if alerts.any?
-      redirect_to pos_transaction_path(result.pos_transaction), redirect_opts.compact
+      redirect_to pos_transaction_path(result.pos_transaction), notice: "Transaction recalled."
     else
       redirect_to register_path, alert: result.error
     end
@@ -128,5 +146,44 @@ class PosTransactionsController < ApplicationController
     session = Current.store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
     redirect_to register_path, alert: "Open a POS session first." if session.blank?
     session
+  end
+
+  def rebuild_scan_resolution(stored)
+    lookup = Catalog::Lookup.call(organization: Current.organization, query: stored["query"])
+    candidates = lookup.products.first(10).map do |product|
+      {
+        "product_id" => product.id,
+        "title" => product.name,
+        "identifier" => product.identifier,
+        "variants" => product.product_variants.map { |v|
+          label = "#{v.name.presence || 'Standard'} · SKU #{v.sku}"
+          { "id" => v.id, "sku" => v.sku, "label" => label }
+        }
+      }
+    end
+
+    {
+      "query" => stored["query"].to_s,
+      "quantity" => (stored["quantity"].presence || 1).to_i,
+      "candidates" => candidates
+    }
+  end
+
+  def load_return_lookup!
+    stored = session[:pos_return_lookup]
+    return if stored.blank? || stored["for_transaction_id"] != @pos_transaction.id
+
+    original_txn = Current.store.pos_transactions.completed.find_by(id: stored["original_transaction_id"])
+    if original_txn.blank?
+      session.delete(:pos_return_lookup)
+      return
+    end
+
+    @return_lookup_transaction = original_txn
+    @return_lookup_lines = original_txn.pos_line_items
+      .where(status: "completed", direction: "sale")
+      .includes(:inventory_unit, product_variant: :product)
+      .order(:position)
+      .select { |line| line.remaining_returnable_quantity.positive? }
   end
 end

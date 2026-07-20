@@ -1,22 +1,58 @@
-<%= form_with model: store_tax_rate do |form| %>
-  <% if store_tax_rate.errors.any? %>
-    <ul>
-      <% store_tax_rate.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if store_tax_rate.persisted? %>
-    <div><%= form.label :code %> <%= store_tax_rate.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :rate %> <%= form.text_field :rate %> (e.g. 0.13000000 for 13%)</div>
-  <div><%= form.label :receipt_code %> <%= form.text_field :receipt_code, maxlength: 3 %></div>
-  <div><%= form.label :jurisdiction_name %> <%= form.text_field :jurisdiction_name %></div>
-  <div><%= form.label :effective_from %> <%= form.date_field :effective_from %></div>
-  <div><%= form.label :effective_to %> <%= form.date_field :effective_to %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: store_tax_rate, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: store_tax_rate %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Rate</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if store_tax_rate.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <%= render "shared/percent_field", name: "store_tax_rate[rate_percent]",
+            label: "Rate", id: "store_tax_rate_rate",
+            value_percent: format_rate_as_percent(store_tax_rate.rate),
+            value: params.dig(:store_tax_rate, :rate_percent),
+            object: store_tax_rate, error_attr: :rate, required: true,
+            hint: "Tax rate as a percentage, e.g. 13 for 13%." %>
+      <div class="field">
+        <%= form.label :receipt_code, class: "field-label" %>
+        <%= form.text_field :receipt_code, class: "input input-code", maxlength: 3 %>
+        <p class="field-hint">Short code printed on receipts, e.g. HST.</p>
+      </div>
+      <div class="field">
+        <%= form.label :jurisdiction_name, class: "field-label" %>
+        <%= form.text_field :jurisdiction_name, class: "input" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Effective period</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :effective_from, class: "field-label" %>
+        <%= form.date_field :effective_from, class: "input input-date" %>
+      </div>
+      <div class="field">
+        <%= form.label :effective_to, class: "field-label" %>
+        <%= form.date_field :effective_to, class: "input input-date" %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Tax rate is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit store_tax_rate.persisted? ? "Update store tax rate" : "Create store tax rate", class: "button button-primary" %>
+    <%= link_to "Cancel", store_tax_rates_path, class: "button button-outline" %>
+  </div>
 <% end %>

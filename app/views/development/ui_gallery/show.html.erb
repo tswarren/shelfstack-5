@@ -1,0 +1,76 @@
+<% content_for :title, "UI gallery" %>
+
+<%= render "shared/page_header", title: "UI gallery", subtitle: "Development-only component samples." %>
+
+<section class="record-section">
+  <h2>Badges</h2>
+  <p>
+    <%= status_badge("Neutral", variant: :neutral) %>
+    <%= status_badge("Primary", variant: :primary) %>
+    <%= status_badge("Info", variant: :info) %>
+    <%= status_badge("Success", variant: :success) %>
+    <%= status_badge("Warning", variant: :warning) %>
+    <%= status_badge("Danger", variant: :danger) %>
+    <%= status_badge("Inactive", variant: :inactive) %>
+  </p>
+</section>
+
+<section class="record-section">
+  <h2>Alerts</h2>
+  <div class="ss-alert ss-alert-info" role="status"><p>Informational message</p></div>
+  <div class="ss-alert ss-alert-warning" role="status"><p>Warning message</p></div>
+  <div class="ss-alert ss-alert-danger" role="alert"><p>Danger message</p></div>
+</section>
+
+<section class="record-section">
+  <h2>Buttons</h2>
+  <div class="action-group">
+    <button type="button" class="button button-primary">Primary</button>
+    <button type="button" class="button button-secondary">Secondary</button>
+    <button type="button" class="button button-outline">Outline</button>
+    <button type="button" class="button button-ghost">Ghost</button>
+    <button type="button" class="button button-danger">Danger</button>
+  </div>
+</section>
+
+<section class="record-section">
+  <h2>Empty state</h2>
+  <%= render "shared/empty_state", title: "Nothing here yet", body: "Use this pattern for empty indexes.",
+        actions: link_to("Primary action", "#", class: "button button-primary") %>
+</section>
+
+<section class="record-section">
+  <h2>Currency mask</h2>
+  <div data-controller="currency-mask" class="field" style="max-width:12rem">
+    <label class="field-label" for="gallery_currency">Amount</label>
+    <input id="gallery_currency" type="text" inputmode="numeric" autocomplete="off"
+           class="input input-currency"
+           data-currency-mask-target="display"
+           data-action="input->currency-mask#handleInput paste->currency-mask#handlePaste">
+    <input type="hidden" data-currency-mask-target="cents" name="gallery_cents" value="0">
+    <p class="field-hint">Type digits as cents (1200 → $12.00).</p>
+  </div>
+</section>
+
+<section class="record-section">
+  <h2>Table</h2>
+  <div class="table-container">
+    <table class="data-table">
+      <caption>Sample products</caption>
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col" class="num">Price</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Sample book</td>
+          <td class="num">$19.95</td>
+          <td><%= status_badge("Active", variant: :success) %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

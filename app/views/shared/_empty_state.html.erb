@@ -1,0 +1,10 @@
+<%# locals: title:, body: nil, actions: nil %>
+<div class="empty-state">
+  <h2 class="empty-state-title"><%= title %></h2>
+  <% if local_assigns[:body].present? %>
+    <p class="muted"><%= body %></p>
+  <% end %>
+  <% if local_assigns[:actions].present? %>
+    <div class="empty-state-actions"><%= actions %></div>
+  <% end %>
+</div>

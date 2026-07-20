@@ -28,7 +28,7 @@ module Pos
         raise Error, "unit belongs to a different store" unless @inventory_unit.store_id == @pos_transaction.store_id
       end
 
-      department = resolved_department
+      department = classification.department
       raise Error, "no postable department resolved for variant" if department.blank?
 
       warnings = eligibility.warnings.dup
@@ -44,7 +44,7 @@ module Pos
           product_variant: @product_variant,
           inventory_unit: individual ? @inventory_unit : nil,
           department: department,
-          tax_category: resolved_tax_category(department),
+          tax_category: classification.tax_category,
           quantity: @quantity,
           unit_price_cents: resolved_unit_price_cents(individual),
           position: next_position,
@@ -101,25 +101,12 @@ module Pos
       @inventory_unit.unit_price_cents || @product_variant.regular_price_cents
     end
 
-    # Mirrors Catalog::SaleEligibility resolution order (variant override → product
-    # default → merchandise class default; tax additionally falls back to department).
-    def resolved_merchandise_class
-      @product_variant.merchandise_class || @product_variant.product.merchandise_class
-    end
-
-    def resolved_department
-      merchandise_class = resolved_merchandise_class
-      @product_variant.department ||
-        @product_variant.product.default_department ||
-        merchandise_class&.default_department
-    end
-
-    def resolved_tax_category(department)
-      merchandise_class = resolved_merchandise_class
-      @product_variant.tax_category ||
-        @product_variant.product.default_tax_category ||
-        merchandise_class&.default_tax_category ||
-        department&.default_tax_category
+    # Classification resolves via Catalog::ResolveClassification (variant → product → MC → department).
+    def classification
+      @classification ||= Catalog::ResolveClassification.call(
+        product: @product_variant.product,
+        variant: @product_variant
+      )
     end
   end
 end

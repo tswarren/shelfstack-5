@@ -36,9 +36,7 @@ module Pos
 
     # OD-001 v1: reporting date defaults to the store-local calendar date at open.
     def default_reporting_date
-      return Date.current if @store.timezone.blank?
-
-      Time.current.in_time_zone(@store.timezone).to_date
+      StoreTime.today(@store)
     end
   end
 end

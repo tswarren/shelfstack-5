@@ -1,59 +1,75 @@
-<h1>New inventory unit</h1>
+<% content_for :title, "New inventory unit" %>
 
-<%= form_with url: inventory_units_path, method: :post do %>
-  <div>
-    <label for="inventory_unit_product_variant_id">Variant</label>
-    <select name="inventory_unit[product_variant_id]" id="inventory_unit_product_variant_id">
-      <% @variants.each do |variant| %>
-        <option value="<%= variant.id %>" <%= "selected" if @inventory_unit.product_variant_id == variant.id %>>
-          <%= variant.sku %> — <%= variant.name %>
-        </option>
-      <% end %>
-    </select>
+<%= render "shared/page_header", title: "New inventory unit",
+      breadcrumbs: [ { label: "Inventory units", path: inventory_units_path }, { label: "New" } ] %>
+
+<%= form_with model: @inventory_unit, url: inventory_units_path, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: @inventory_unit %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :product_variant_id, "Variant", class: "field-label" %>
+        <% variant_error = @inventory_unit.errors[:product_variant_id].presence&.to_sentence %>
+        <%= form.select :product_variant_id,
+              @variants.map { |v| [ variant_option_label(v, include_tracking: true), v.id ] },
+              { include_blank: true },
+              class: "input",
+              aria: {
+                invalid: (variant_error.present? || nil),
+                describedby: [
+                  "inventory_unit_product_variant_id_hint",
+                  (variant_error.present? ? "inventory_unit_product_variant_id_error" : nil)
+                ].compact.join(" ").presence
+              } %>
+        <p class="field-hint" id="inventory_unit_product_variant_id_hint">Only individually tracked variants are eligible.</p>
+        <% if variant_error.present? %>
+          <p class="field-error" id="inventory_unit_product_variant_id_error"><%= variant_error %></p>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :product_condition_id, "Condition", class: "field-label" %>
+        <%= form.collection_select :product_condition_id, @product_conditions, :id, :name, include_blank: true %>
+      </div>
+      <div class="field">
+        <%= form.label :acquisition_source_type, "Acquisition source", class: "field-label" %>
+        <%= form.select :acquisition_source_type,
+              InventoryUnit::ACQUISITION_SOURCE_TYPES.map { |s| [ s.titleize, s ] }, include_blank: true %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Cost &amp; pricing</h2>
+    <div class="form-grid">
+      <%= render "shared/money_field", name: "inventory_unit[acquisition_cost]", label: "Acquisition cost",
+            value_cents: @inventory_unit.acquisition_cost_cents, id: "inventory_unit_acquisition_cost",
+            value: params.dig(:inventory_unit, :acquisition_cost),
+            object: @inventory_unit, error_attr: :acquisition_cost,
+            hint: "Exact cost for this copy. Enter dollars, e.g. 8.50." %>
+      <%= render "shared/money_field", name: "inventory_unit[unit_price]", label: "Unit price override",
+            value_cents: @inventory_unit.unit_price_cents, id: "inventory_unit_unit_price",
+            value: params.dig(:inventory_unit, :unit_price),
+            object: @inventory_unit, error_attr: :unit_price,
+            hint: "Optional price override for this copy." %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Notes</h2>
+    <div class="field">
+      <%= form.label :description, class: "field-label" %>
+      <%= form.text_field :description, class: "input" %>
+    </div>
+    <div class="field">
+      <%= form.label :internal_notes, class: "field-label" %>
+      <%= form.text_area :internal_notes, class: "input", rows: 3 %>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit "Create unit", class: "button button-primary" %>
+    <%= link_to "Cancel", inventory_units_path, class: "button button-outline" %>
   </div>
-  <div>
-    <label for="inventory_unit_acquisition_cost_cents">Acquisition cost (cents)</label>
-    <input type="number" name="inventory_unit[acquisition_cost_cents]" id="inventory_unit_acquisition_cost_cents"
-           value="<%= @inventory_unit.acquisition_cost_cents %>">
-  </div>
-  <div>
-    <label for="inventory_unit_unit_price_cents">Unit price override (cents)</label>
-    <input type="number" name="inventory_unit[unit_price_cents]" id="inventory_unit_unit_price_cents"
-           value="<%= @inventory_unit.unit_price_cents %>">
-  </div>
-  <div>
-    <label for="inventory_unit_product_condition_id">Condition</label>
-    <select name="inventory_unit[product_condition_id]" id="inventory_unit_product_condition_id">
-      <option value=""></option>
-      <% @product_conditions.each do |condition| %>
-        <option value="<%= condition.id %>" <%= "selected" if @inventory_unit.product_condition_id == condition.id %>>
-          <%= condition.name %>
-        </option>
-      <% end %>
-    </select>
-  </div>
-  <div>
-    <label for="inventory_unit_acquisition_source_type">Acquisition source</label>
-    <select name="inventory_unit[acquisition_source_type]" id="inventory_unit_acquisition_source_type">
-      <option value=""></option>
-      <% InventoryUnit::ACQUISITION_SOURCE_TYPES.each do |source_type| %>
-        <option value="<%= source_type %>" <%= "selected" if @inventory_unit.acquisition_source_type == source_type %>>
-          <%= source_type.humanize %>
-        </option>
-      <% end %>
-    </select>
-  </div>
-  <div>
-    <label for="inventory_unit_description">Description</label>
-    <input type="text" name="inventory_unit[description]" id="inventory_unit_description"
-           value="<%= @inventory_unit.description %>">
-  </div>
-  <div>
-    <label for="inventory_unit_internal_notes">Internal notes</label>
-    <input type="text" name="inventory_unit[internal_notes]" id="inventory_unit_internal_notes"
-           value="<%= @inventory_unit.internal_notes %>">
-  </div>
-  <%= submit_tag "Create unit" %>
 <% end %>
-
-<p><%= link_to "Cancel", inventory_units_path %></p>

@@ -1,9 +1,25 @@
-<%= form_with model: drawer do |form| %>
-  <% if drawer.errors.any? %>
-    <ul><% drawer.errors.full_messages.each do |m| %><li><%= m %></li><% end %></ul>
-  <% end %>
-  <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: drawer, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: drawer %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Drawer details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <%= form.text_field :code, class: "input input-code" %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Drawer is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit drawer.persisted? ? "Update drawer" : "Create drawer", class: "button button-primary" %>
+    <%= link_to "Cancel", cash_drawers_path, class: "button button-outline" %>
+  </div>
 <% end %>

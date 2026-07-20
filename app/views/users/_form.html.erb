@@ -1,17 +1,96 @@
-<%= form_with model: user do |form| %>
-  <% if user.errors.any? %>
-    <ul>
-      <% user.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <div><%= form.label :username %> <%= form.text_field :username %></div>
-  <div><%= form.label :first_name %> <%= form.text_field :first_name %></div>
-  <div><%= form.label :last_name %> <%= form.text_field :last_name %></div>
-  <div><%= form.label :email %> <%= form.email_field :email %></div>
-  <div><%= form.label :password %> <%= form.password_field :password %></div>
-  <div><%= form.label :password_confirmation %> <%= form.password_field :password_confirmation %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: user, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: user %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :username, class: "field-label" %>
+        <%= form.text_field :username, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :first_name, class: "field-label" %>
+        <%= form.text_field :first_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :last_name, class: "field-label" %>
+        <%= form.text_field :last_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :email, class: "field-label" %>
+        <%= form.email_field :email, class: "input" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Password</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :password, class: "field-label" %>
+        <%= form.password_field :password, class: "input", autocomplete: "new-password" %>
+        <% if user.persisted? %>
+          <p class="field-hint">Leave blank to keep the current password.</p>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :password_confirmation, class: "field-label" %>
+        <%= form.password_field :password_confirmation, class: "input", autocomplete: "new-password" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Approval PIN</h2>
+    <p class="muted">Optional. Required only for users who approve restricted POS actions. Digits only, <%= User::PIN_MIN_LENGTH %>–<%= User::PIN_MAX_LENGTH %> characters.</p>
+    <% if user.persisted? %>
+      <p><%= user.pin_configured? ? status_badge("PIN set", variant: :success) : status_badge("No PIN", variant: :inactive) %></p>
+    <% end %>
+    <div class="form-grid">
+      <%
+        pin_hint_id = "user_pin_hint"
+        pin_error = user.errors[:pin].presence&.to_sentence
+        pin_describedby = [ pin_hint_id, (pin_error ? "user_pin_error" : nil) ].compact.join(" ")
+      %>
+      <div class="field">
+        <%= form.label :pin, "PIN", class: "field-label" %>
+        <%= form.password_field :pin, class: "input input-code", autocomplete: "new-password",
+              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH,
+              aria: { invalid: pin_error.present? || nil, describedby: pin_describedby } %>
+        <% if user.persisted? %>
+          <p class="field-hint" id="<%= pin_hint_id %>">Leave blank to keep the current PIN.</p>
+        <% else %>
+          <p class="field-hint" id="<%= pin_hint_id %>">Digits only.</p>
+        <% end %>
+        <% if pin_error %>
+          <p class="field-error" id="user_pin_error"><%= pin_error %></p>
+        <% end %>
+      </div>
+      <%
+        pin_conf_error = user.errors[:pin_confirmation].presence&.to_sentence
+        pin_conf_describedby = pin_conf_error ? "user_pin_confirmation_error" : nil
+      %>
+      <div class="field">
+        <%= form.label :pin_confirmation, "PIN confirmation", class: "field-label" %>
+        <%= form.password_field :pin_confirmation, class: "input input-code", autocomplete: "new-password",
+              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH,
+              aria: { invalid: pin_conf_error.present? || nil, describedby: pin_conf_describedby } %>
+        <% if pin_conf_error %>
+          <p class="field-error" id="user_pin_confirmation_error"><%= pin_conf_error %></p>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Status</h2>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> User is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit user.persisted? ? "Update user" : "Create user", class: "button button-primary" %>
+    <%= link_to "Cancel", user.persisted? ? user_path(user) : users_path, class: "button button-outline" %>
+  </div>
 <% end %>

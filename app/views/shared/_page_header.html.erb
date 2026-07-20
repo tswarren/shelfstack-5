@@ -1,0 +1,20 @@
+<%# locals: title:, subtitle: nil, actions: nil, breadcrumbs: nil %>
+<header class="page-header">
+  <% if local_assigns[:breadcrumbs].present? %>
+    <%= render "shared/breadcrumbs", items: breadcrumbs %>
+  <% end %>
+  <div class="page-header-row">
+    <div class="page-header-text">
+      <% if local_assigns[:title].present? %>
+        <% content_for :title, title unless content_for?(:title) %>
+        <h1><%= title %></h1>
+      <% end %>
+      <% if local_assigns[:subtitle].present? %>
+        <p class="muted"><%= subtitle %></p>
+      <% end %>
+    </div>
+    <% if local_assigns[:actions].present? %>
+      <div class="page-actions"><%= actions %></div>
+    <% end %>
+  </div>
+</header>

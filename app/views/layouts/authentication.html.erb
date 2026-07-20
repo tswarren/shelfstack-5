@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for?(:title) ? "#{content_for(:title)} · ShelfStack" : "ShelfStack" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <%= shelfstack_stylesheet_tags %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="layout-authentication">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <main class="auth-main" id="main-content" tabindex="-1">
+      <div class="auth-card">
+        <p class="auth-brand">ShelfStack</p>
+        <%= render "shared/flash_messages" %>
+        <%= yield %>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,3 +1,4 @@
-<h1>Edit inventory adjustment reason</h1>
+<%= render "shared/page_header", title: "Edit inventory adjustment reason",
+      breadcrumbs: [ { label: "Inventory adjustment reasons", path: inventory_adjustment_reasons_path }, { label: @inventory_adjustment_reason.name, path: inventory_adjustment_reason_path(@inventory_adjustment_reason) }, { label: "Edit" } ] %>
+
 <%= render "form", inventory_adjustment_reason: @inventory_adjustment_reason %>
-<p><%= link_to "Cancel", @inventory_adjustment_reason %></p>

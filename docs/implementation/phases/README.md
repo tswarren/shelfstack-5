@@ -9,6 +9,7 @@ Each phase document defines goals, principal tables, services, exit criteria, an
 | 2 | [phase-02-configuration-and-catalog.md](phase-02-configuration-and-catalog.md) |
 | 3 | [phase-03-quantity-inventory-bootstrap.md](phase-03-quantity-inventory-bootstrap.md) |
 | 4 | [phase-04-point-of-sale.md](phase-04-point-of-sale.md) |
+| 4f | [phase-04f-ux-baseline.md](phase-04f-ux-baseline.md) |
 | 5 | [phase-05-supply-and-demand.md](phase-05-supply-and-demand.md) |
 | 6 | [phase-06-corrections-and-stored-value.md](phase-06-corrections-and-stored-value.md) |
 | 7 | [phase-07-reporting-and-reconciliation.md](phase-07-reporting-and-reconciliation.md) |

@@ -18,15 +18,22 @@ module Administration
       ActiveRecord::Base.transaction do
         before = ChangeMetadata.snapshot(@user, TRACKED_ATTRIBUTES)
         password_changing = password_present?
+        pin_changing = pin_present?
+        had_pin = @user.pin_digest.present?
 
         @user.assign_attributes(@attributes)
         @user.password_changed_at = Time.current if password_changing
+        @user.pin_changed_at = Time.current if pin_changing
         @user.save!
 
         metadata = {
           "username" => @user.username
         }.merge(ChangeMetadata.diff(before, ChangeMetadata.snapshot(@user, TRACKED_ATTRIBUTES)))
         metadata["password_changed"] = true if password_changing
+        if pin_changing
+          metadata["pin_changed"] = true
+          metadata["pin_action"] = had_pin ? "reset" : "set"
+        end
 
         RecordAuditEvent.call(
           actor: @actor,
@@ -45,8 +52,11 @@ module Administration
     private
 
     def password_present?
-      password = @attributes["password"]
-      password.present?
+      @attributes["password"].present?
+    end
+
+    def pin_present?
+      @attributes["pin"].present?
     end
   end
 end

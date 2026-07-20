@@ -1,19 +1,35 @@
-<%= form_with model: return_policy do |form| %>
-  <% if return_policy.errors.any? %>
-    <ul>
-      <% return_policy.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
-  <% end %>
-  <% if return_policy.persisted? %>
-    <div><%= form.label :code %> <%= return_policy.code %></div>
-  <% else %>
-    <div><%= form.label :code %> <%= form.text_field :code %></div>
-  <% end %>
-  <div><%= form.label :name %> <%= form.text_field :name %></div>
-  <div><%= form.label :final_sale %> <%= form.check_box :final_sale %></div>
-  <div><%= form.label :return_window_days %> <%= form.number_field :return_window_days %></div>
-  <div><%= form.label :active %> <%= form.check_box :active %></div>
-  <div><%= form.submit %></div>
+<%= form_with model: return_policy, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: return_policy %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Details</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code, class: "field-label" %>
+        <% if return_policy.persisted? %>
+          <%= form.text_field :code, class: "input input-code", disabled: true %>
+        <% else %>
+          <%= form.text_field :code, class: "input input-code" %>
+        <% end %>
+      </div>
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :return_window_days, class: "field-label" %>
+        <%= form.number_field :return_window_days, class: "input", min: 0 %>
+        <p class="field-hint">Number of days a return is accepted. Leave blank if not time-limited.</p>
+      </div>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :final_sale %> Final sale (no returns)</label>
+      <label><%= form.check_box :active %> Return policy is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit return_policy.persisted? ? "Update return policy" : "Create return policy", class: "button button-primary" %>
+    <%= link_to "Cancel", return_policy.persisted? ? return_policy_path(return_policy) : return_policies_path, class: "button button-outline" %>
+  </div>
 <% end %>

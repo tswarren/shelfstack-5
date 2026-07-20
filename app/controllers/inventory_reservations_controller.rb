@@ -5,10 +5,15 @@ class InventoryReservationsController < ApplicationController
   before_action -> { require_permission!("inventory.reservation.release") }, only: %i[release]
   before_action :set_reservation, only: %i[release]
 
+  STATUS_FILTERS = %w[active released].freeze
+
   def index
-    @inventory_reservations = InventoryReservation.where(store_id: Current.store.id)
-      .includes(:product_variant)
+    @status = params[:status].to_s.presence_in(STATUS_FILTERS)
+    scope = InventoryReservation.where(store_id: Current.store.id)
+      .includes(product_variant: :product)
       .order(Arel.sql("CASE status WHEN 'active' THEN 0 ELSE 1 END"), reserved_at: :desc)
+    scope = scope.where(status: @status) if @status
+    @pagy, @inventory_reservations = pagy(scope, limit: pagy_limit)
   end
 
   def release

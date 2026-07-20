@@ -1,18 +1,15 @@
 <% content_for :title, "Open business day" %>
 
-<h1>Open business day</h1>
+<%= render "shared/page_header", title: "Open business day" %>
 
-<% if flash[:alert].present? %>
-  <div class="ss-alert ss-alert-danger"><p><%= flash[:alert] %></p></div>
-<% end %>
-
-<%= form_with url: business_days_path, model: @business_day, scope: :business_day do |form| %>
-  <div>
-    <%= form.label :reporting_date %>
-    <%= form.date_field :reporting_date %>
-    <p class="hint">Defaults to today in the store's time zone if left as-is.</p>
+<%= form_with url: business_days_path, model: @business_day, scope: :business_day, class: "form" do |form| %>
+  <div class="field">
+    <%= form.label :reporting_date, class: "field-label" %>
+    <%= form.date_field :reporting_date, class: "input input-date" %>
+    <p class="field-hint">Defaults to today in the store's time zone if left as-is.</p>
   </div>
-  <div><%= form.submit "Open business day", class: "button button-primary" %></div>
+  <div class="form-actions">
+    <%= form.submit "Open business day", class: "button button-primary" %>
+    <%= link_to "Cancel", register_path, class: "button button-ghost" %>
+  </div>
 <% end %>
-
-<p><%= link_to "Back to register", register_path %></p>

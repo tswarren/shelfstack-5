@@ -1,14 +1,45 @@
-<h1>Store tax rates — <%= Current.store.name %></h1>
-<p><%= link_to "New store tax rate", new_store_tax_rate_path if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %></p>
-<ul>
-  <% @store_tax_rates.each do |rate| %>
-    <li>
-      <%= rate.code %> — <%= rate.name %> — <%= number_to_percentage(rate.rate * 100, precision: 4) %>
-      <% if rate.receipt_code.present? %>(<%= rate.receipt_code %>)<% end %>
-      <%= "(inactive)" unless rate.active? %>
-      <%= link_to "Edit", edit_store_tax_rate_path(rate) if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %>
-    </li>
-  <% end %>
-</ul>
-<p><%= link_to "Store tax rules", store_tax_rules_path %></p>
-<p><%= link_to "Home", root_path %></p>
+<%= render "shared/page_header", title: "Store tax rates",
+      subtitle: "Tax rates for #{Current.store.name}.",
+      actions: capture {
+        if Current.user.can?("classification.store_tax_rule.manage", store: Current.store)
+          concat link_to("New store tax rate", new_store_tax_rate_path, class: "button button-primary")
+        end
+        concat link_to("Store tax rules", store_tax_rules_path, class: "button button-outline")
+      } %>
+
+<% if @store_tax_rates.empty? %>
+  <%= render "shared/empty_state", title: "No store tax rates yet",
+        body: "Create your first store tax rate to get started." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Store tax rates</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col" class="num">Rate</th>
+          <th scope="col">Receipt code</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="row-actions"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @store_tax_rates.each do |rate| %>
+          <tr class="<%= "is-inactive" unless rate.active? %>">
+            <td><code><%= rate.code %></code></td>
+            <td><%= rate.name %></td>
+            <td class="num"><%= format_rate_as_percent(rate.rate) %></td>
+            <td><%= rate.receipt_code.presence || "—" %></td>
+            <td><%= boolean_status rate.active? %></td>
+            <td class="row-actions">
+              <% if Current.user.can?("classification.store_tax_rule.manage", store: Current.store) %>
+                <%= link_to "Edit", edit_store_tax_rate_path(rate), class: "button button-outline" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

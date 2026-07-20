@@ -1,2 +1,4 @@
-<h1>Edit device</h1>
+<%= render "shared/page_header", title: "Edit POS device",
+      breadcrumbs: [ { label: "POS devices", path: pos_devices_path }, { label: @device.name.presence || @device.code, path: edit_pos_device_path(@device) }, { label: "Edit" } ] %>
+
 <%= render "form", device: @device %>

@@ -1,49 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title><%= content_for(:title) || "ShelfStack" %></title>
+    <title><%= content_for?(:title) ? "#{content_for(:title)} · ShelfStack" : "ShelfStack" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="application-name" content="ShelfStack">
     <meta name="mobile-web-app-capable" content="yes">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
     <%= yield :head %>
-
     <link rel="icon" href="/icon.png" type="image/png">
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
-
-    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
-
+    <%= shelfstack_stylesheet_tags %>
     <%= javascript_importmap_tags %>
   </head>
-
-  <body>
-    <% if Current.user && Current.store %>
-      <header class="app-header">
-        <div class="app-header-inner">
-          <%= link_to root_path, class: "app-brand" do %>
-            ShelfStack
-          <% end %>
-          <div class="app-context">
-            <span>
-              <strong><%= Current.store.name %></strong>
-              <span class="muted">(<%= Current.organization.name %>)</span>
-            </span>
-            <span>Signed in as <strong><%= Current.user.username %></strong></span>
-            <% if effective_memberships_for(Current.user).many? %>
-              <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-outline" %>
-            <% end %>
-            <%= button_to "Sign out", session_path, method: :delete, class: "button button-small button-ghost" %>
-          </div>
+  <body class="layout-application" data-controller="sidebar">
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <%= render "shared/app_header", mode: :back_office %>
+    <div class="app-shell">
+      <%= render "shared/sidebar" %>
+      <div class="app-shell-main">
+        <div class="app-main" id="main-content" tabindex="-1">
+          <%= render "shared/flash_messages" %>
+          <%= yield %>
         </div>
-      </header>
-    <% end %>
-
-    <div class="app-main">
-      <%= yield %>
+      </div>
     </div>
   </body>
 </html>

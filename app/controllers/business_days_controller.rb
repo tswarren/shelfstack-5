@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class BusinessDaysController < ApplicationController
+  # Open/close forms are part of the operational register flow; history lists
+  # stay on the back-office `application` layout (phase-04f-ux-baseline.md).
+  layout -> { action_name.in?(%w[new create close]) ? "pos" : "application" }
+
   before_action -> { require_permission!("pos.access") }, only: %i[index]
   before_action -> { require_permission!("pos.business_day.open") }, only: %i[new create]
   before_action -> { require_permission!("pos.business_day.close") }, only: %i[close]
@@ -11,7 +15,7 @@ class BusinessDaysController < ApplicationController
   end
 
   def new
-    @business_day = Current.store.business_days.new(reporting_date: Date.current)
+    @business_day = Current.store.business_days.new(reporting_date: StoreTime.today(Current.store))
   end
 
   def create
@@ -23,7 +27,7 @@ class BusinessDaysController < ApplicationController
     if result.success?
       redirect_to register_path, notice: "Business day opened."
     else
-      @business_day = Current.store.business_days.new(reporting_date: Date.current)
+      @business_day = Current.store.business_days.new(reporting_date: StoreTime.today(Current.store))
       redirect_to new_business_day_path, alert: result.error
     end
   end

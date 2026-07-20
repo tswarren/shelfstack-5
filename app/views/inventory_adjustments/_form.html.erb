@@ -1,95 +1,70 @@
-<%= form_with model: inventory_adjustment,
+<% lines = local_assigns[:submitted_lines].presence || inventory_adjustment.inventory_adjustment_lines.to_a
+   lines = [ inventory_adjustment.inventory_adjustment_lines.build(quantity_delta: 1, position: 0) ] if lines.empty? %>
+
+<%= form_with model: inventory_adjustment, class: "form",
       data: { controller: "inventory-adjustment-form" } do |form| %>
-  <% if flash[:alert].present? %>
-    <p><%= flash[:alert] %></p>
-  <% end %>
-  <% if inventory_adjustment.errors.any? %>
-    <ul>
-      <% inventory_adjustment.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
+  <%= render "shared/form_errors", object: inventory_adjustment %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Document</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :kind, class: "field-label" %>
+        <%= form.select :kind, InventoryAdjustment::KINDS.map { |k| [ k.titleize, k ] },
+              {},
+              data: {
+                inventory_adjustment_form_target: "kind",
+                action: "change->inventory-adjustment-form#refresh"
+              } %>
+      </div>
+      <div class="field">
+        <%= form.label :inventory_adjustment_reason_id, "Reason", class: "field-label" %>
+        <select name="inventory_adjustment[inventory_adjustment_reason_id]"
+                id="inventory_adjustment_inventory_adjustment_reason_id"
+                data-inventory-adjustment-form-target="reason">
+          <% reasons.each do |reason| %>
+            <option value="<%= reason.id %>"
+                    data-inventory-adjustment-form-target="reasonOption"
+                    data-adjustment-kind="<%= reason.adjustment_kind %>"
+                    <%= "selected" if reason.id == inventory_adjustment.inventory_adjustment_reason_id %>>
+              <%= reason.name %>
+            </option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.label :note, class: "field-label" %>
+      <%= form.text_area :note, class: "input", rows: 3 %>
+      <p class="field-hint">May be blank while drafting; required at post when the reason requires a note.</p>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <div class="page-header-row">
+      <h2 class="form-section-title">Lines</h2>
+      <button type="button" class="button button-outline button-small"
+              data-action="inventory-adjustment-form#addLine">Add line</button>
+    </div>
+
+    <div data-inventory-adjustment-form-target="lines">
+      <% lines.each_with_index do |line, index| %>
+        <%= form.fields_for :inventory_adjustment_lines, line, child_index: index do |line_form| %>
+          <%= render "line_fields", f: line_form, variants: variants %>
+        <% end %>
       <% end %>
-    </ul>
-  <% end %>
+    </div>
 
-  <div>
-    <%= form.label :kind %>
-    <%= form.select :kind, InventoryAdjustment::KINDS,
-          {},
-          data: {
-            inventory_adjustment_form_target: "kind",
-            action: "change->inventory-adjustment-form#refresh"
-          } %>
-  </div>
-  <div>
-    <%= form.label :inventory_adjustment_reason_id, "Reason" %>
-    <select name="inventory_adjustment[inventory_adjustment_reason_id]"
-            id="inventory_adjustment_inventory_adjustment_reason_id"
-            data-inventory-adjustment-form-target="reason">
-      <% reasons.each do |reason| %>
-        <option value="<%= reason.id %>"
-                data-inventory-adjustment-form-target="reasonOption"
-                data-adjustment-kind="<%= reason.adjustment_kind %>"
-                <%= "selected" if reason.id == inventory_adjustment.inventory_adjustment_reason_id %>>
-          <%= reason.name %>
-        </option>
+    <template data-inventory-adjustment-form-target="lineTemplate">
+      <%= form.fields_for :inventory_adjustment_lines, InventoryAdjustmentLine.new(quantity_delta: 1),
+            child_index: "__INDEX__" do |line_form| %>
+        <%= render "line_fields", f: line_form, variants: variants %>
       <% end %>
-    </select>
-  </div>
-  <div>
-    <%= form.label :note %>
-    <%= form.text_area :note %>
-    <p>Note may be left blank while drafting; required at post when the reason requires a note.</p>
-  </div>
+    </template>
+  </section>
 
-  <h2>Lines</h2>
-  <% lines = inventory_adjustment.inventory_adjustment_lines.to_a
-     lines = [ inventory_adjustment.inventory_adjustment_lines.build(quantity_delta: 1) ] if lines.empty? %>
-  <%= form.fields_for :inventory_adjustment_lines, lines do |line_form| %>
-    <fieldset>
-      <div>
-        <%= line_form.label :product_variant_id, "Variant" %>
-        <%= line_form.collection_select :product_variant_id, variants, :id, :sku %>
-      </div>
-      <div data-inventory-adjustment-form-target="lineFields"
-           data-for-kinds="opening_inventory,quantity_only">
-        <%= line_form.label :quantity_delta %>
-        <%= line_form.number_field :quantity_delta %>
-      </div>
-      <div data-inventory-adjustment-form-target="lineFields"
-           data-for-kinds="opening_inventory">
-        <%= line_form.label :input_unit_cost_cents, "Input unit cost (cents)" %>
-        <%= line_form.number_field :input_unit_cost_cents %>
-        <p class="hint">Opening aggregate value is computed at post from quantity × unit cost (or estimate/unknown).</p>
-      </div>
-      <div data-inventory-adjustment-form-target="lineFields"
-           data-for-kinds="opening_inventory">
-        <%= line_form.label :input_cost_method %>
-        <%= line_form.select :input_cost_method,
-              InventoryAdjustmentLine::COST_METHODS - %w[moving_average],
-              include_blank: true %>
-      </div>
-      <div data-inventory-adjustment-form-target="lineFields"
-           data-for-kinds="opening_inventory">
-        <%= line_form.label :input_cost_quality %>
-        <%= line_form.select :input_cost_quality,
-              InventoryAdjustmentLine::COST_QUALITIES - %w[mixed],
-              include_blank: true %>
-      </div>
-      <div data-inventory-adjustment-form-target="lineFields"
-           data-for-kinds="cost_correction">
-        <%= line_form.label :corrected_inventory_value_cents, "Corrected inventory value (cents)" %>
-        <%= line_form.number_field :corrected_inventory_value_cents %>
-      </div>
-      <div data-inventory-adjustment-form-target="lineFields"
-           data-for-kinds="cost_correction">
-        <%= line_form.label :input_cost_quality, "Corrected cost quality" %>
-        <%= line_form.select :input_cost_quality,
-              %w[actual estimated],
-              include_blank: true %>
-      </div>
-      <%= line_form.hidden_field :position, value: line_form.index || 0 %>
-    </fieldset>
-  <% end %>
-
-  <div><%= form.submit %></div>
+  <div class="form-actions">
+    <%= form.submit(inventory_adjustment.persisted? ? "Update draft" : "Create draft", class: "button button-primary") %>
+    <%= link_to "Cancel", inventory_adjustment.persisted? ? inventory_adjustment_path(inventory_adjustment) : inventory_adjustments_path, class: "button button-outline" %>
+  </div>
 <% end %>

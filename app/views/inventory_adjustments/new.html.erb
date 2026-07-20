@@ -1,3 +1,7 @@
-<h1>New inventory adjustment</h1>
-<%= render "form", inventory_adjustment: @inventory_adjustment, reasons: @reasons, variants: @variants %>
-<p><%= link_to "Cancel", inventory_adjustments_path %></p>
+<% content_for :title, "New inventory adjustment" %>
+
+<%= render "shared/page_header", title: "New inventory adjustment",
+      breadcrumbs: [ { label: "Inventory adjustments", path: inventory_adjustments_path }, { label: "New" } ] %>
+
+<%= render "form", inventory_adjustment: @inventory_adjustment, reasons: @reasons, variants: @variants,
+      submitted_lines: @submitted_adjustment_lines %>

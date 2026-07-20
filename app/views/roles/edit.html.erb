@@ -1,2 +1,4 @@
-<h1>Edit role</h1>
+<%= render "shared/page_header", title: "Edit role",
+      breadcrumbs: [ { label: "Roles", path: roles_path }, { label: @role.name, path: role_path(@role) }, { label: "Edit" } ] %>
+
 <%= render "form", role: @role, permissions: @permissions %>

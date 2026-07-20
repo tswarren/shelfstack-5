@@ -1,5 +1,21 @@
-<h1><%= @store.name %></h1>
-<p>Code: <%= @store.code %></p>
-<p>Active: <%= @store.active %></p>
-<p><%= link_to "Edit", edit_store_path(@store) if Current.user.can?("administration.store.manage", store: Current.store) %></p>
-<p><%= link_to "All stores", stores_path %></p>
+<%= render "shared/page_header",
+      title: @store.name,
+      breadcrumbs: [ { label: "Stores", path: stores_path }, { label: @store.name } ],
+      actions: capture {
+        if Current.user.can?("administration.store.manage", store: Current.store)
+          concat link_to("Edit", edit_store_path(@store), class: "button button-primary")
+        end
+        concat link_to("Back to stores", stores_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Details</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Code", tag.code(@store.code) ],
+    [ "Name", @store.name ],
+    [ "Legal name", @store.legal_name.presence || "—" ],
+    [ "Time zone", @store.timezone.presence || "—" ],
+    [ "Currency", @store.currency_code.presence || "—" ],
+    [ "Status", boolean_status(@store.active?) ]
+  ] %>
+</section>

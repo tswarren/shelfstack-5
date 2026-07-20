@@ -1,0 +1,37 @@
+<%
+  recall_changes = @recall_changes || flash[:recall_changes]
+  recall_warnings = @recall_warnings || flash[:recall_warnings]
+  recall_blockers = @recall_blockers || flash[:recall_blockers]
+%>
+<% if recall_changes.present? || recall_warnings.present? || recall_blockers.present? %>
+  <section class="pos-panel" aria-label="Recall summary">
+    <h2>Recall summary</h2>
+    <% if recall_changes.present? %>
+      <p class="muted">Commercial values refreshed on recall:</p>
+      <ul>
+        <% recall_changes.each do |change| %>
+          <li><%= change %></li>
+        <% end %>
+      </ul>
+    <% end %>
+    <% if recall_warnings.present? %>
+      <div class="ss-alert ss-alert-warning" role="status">
+        <ul>
+          <% recall_warnings.each do |warning| %>
+            <li><%= warning %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+    <% if recall_blockers.present? %>
+      <div class="ss-alert ss-alert-danger" role="alert">
+        <p><strong>Eligibility blockers:</strong></p>
+        <ul>
+          <% recall_blockers.each do |blocker| %>
+            <li><%= blocker %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </section>
+<% end %>

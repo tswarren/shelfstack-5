@@ -53,9 +53,13 @@ class MerchandiseClassesController < ApplicationController
   end
 
   def load_form_collections
-    @parent_classes = Current.organization.merchandise_classes.order(:code)
-    @departments = Current.organization.departments.where(postable: true).order(:department_number)
-    @tax_categories = Current.organization.tax_categories.order(:code)
+    @parent_classes = MerchandiseClass.sorted_hierarchically(
+      Current.organization.merchandise_classes.includes(parent: :parent)
+    )
+    @departments = Department.sorted_hierarchically(
+      Current.organization.departments.includes(:parent_department)
+    ).select(&:postable?)
+    @tax_categories = Current.organization.tax_categories.order(:name)
   end
 
   def merchandise_class_params

@@ -26,11 +26,11 @@ module Catalog
       unsupported_variant_structure
     ].freeze
 
-    def initialize(variant:, store: nil, as_of: Date.current)
+    def initialize(variant:, store: nil, as_of: nil)
       @variant = variant
       @product = variant.product
       @store = store
-      @as_of = as_of
+      @as_of = as_of || (store ? StoreTime.today(store) : Date.current)
     end
 
     def call
@@ -51,14 +51,14 @@ module Catalog
       blockers << "missing_tracking_mode" if @variant.inventory_tracking_mode.blank?
       blockers << "missing_price" if @variant.sellable? && @variant.regular_price_cents.nil?
 
-      merchandise_class = resolved_merchandise_class
+      merchandise_class = classification.merchandise_class
       if merchandise_class.nil?
         blockers << "missing_merchandise_class"
       elsif !merchandise_class.active?
         blockers << "merchandise_class_inactive"
       end
 
-      department = resolved_department(merchandise_class)
+      department = classification.department
       if department.nil?
         blockers << "missing_department"
       else
@@ -66,38 +66,20 @@ module Catalog
         blockers << "department_not_postable" unless department.postable?
       end
 
-      tax_category = resolved_tax_category(merchandise_class, department)
+      tax_category = classification.tax_category
       if tax_category.nil?
         blockers << "missing_tax_category"
       elsif !tax_category.active?
         blockers << "tax_category_inactive"
       end
 
-      # Store context is reserved for later POS/store-policy checks.
-      _ = @store
-
       SaleEligibilityResult.new(blockers: blockers.uniq, warnings: warnings.uniq)
     end
 
     private
 
-    # Department: variant override → product default → merchandise class default.
-    def resolved_department(merchandise_class)
-      @variant.department ||
-        @product.default_department ||
-        merchandise_class&.default_department
-    end
-
-    # Tax: variant override → product default → merchandise class default → department default.
-    def resolved_tax_category(merchandise_class, department)
-      @variant.tax_category ||
-        @product.default_tax_category ||
-        merchandise_class&.default_tax_category ||
-        department&.default_tax_category
-    end
-
-    def resolved_merchandise_class
-      @variant.merchandise_class || @product.merchandise_class
+    def classification
+      @classification ||= Catalog::ResolveClassification.call(product: @product, variant: @variant)
     end
 
     def available_on?(record, date)

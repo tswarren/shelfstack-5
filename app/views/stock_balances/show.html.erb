@@ -1,41 +1,82 @@
-<h1>Stock: <%= @stock_balance.product_variant.sku %></h1>
-<p><%= @stock_balance.product_variant.name %></p>
-<ul>
-  <li>On hand: <%= @stock_balance.on_hand %></li>
-  <li>Reserved: <%= @stock_balance.reserved %></li>
-  <li>Unavailable: <%= @stock_balance.unavailable %></li>
-  <li>Available: <%= @stock_balance.available %></li>
-  <% if @can_view_cost %>
-    <li>Inventory value: <%= inventory_money(@stock_balance.inventory_value_cents, quality: @stock_balance.cost_quality) %></li>
-    <li>Moving average: <%= inventory_money(@stock_balance.moving_average_cost_cents, quality: @stock_balance.cost_quality) %></li>
-    <li>Cost quality: <%= @stock_balance.cost_quality %></li>
-  <% end %>
-</ul>
+<% content_for :title, "Stock: #{@stock_balance.product_variant.sku}" %>
 
-<h2>Recent ledger entries</h2>
-<table>
-  <thead>
-    <tr>
-      <th>Posted</th>
-      <th>Type</th>
-      <th>Qty Δ</th>
-      <% if @can_view_cost %><th>Value Δ</th><th>Quality</th><% end %>
-      <th>Reason</th>
-    </tr>
-  </thead>
-  <tbody>
-    <% @ledger_entries.each do |entry| %>
-      <tr>
-        <td><%= entry.posted_at %></td>
-        <td><%= entry.movement_type %></td>
-        <td><%= entry.quantity_delta %></td>
-        <% if @can_view_cost %>
-          <td><%= entry.inventory_value_delta_cents.nil? ? "unknown" : inventory_money(entry.inventory_value_delta_cents) %></td>
-          <td><%= entry.cost_quality %></td>
-        <% end %>
-        <td><%= entry.reason_code %><%= " — #{entry.reason_note}" if entry.reason_note.present? %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
-<p><%= link_to "Stock balances", stock_balances_path %></p>
+<%= render "shared/page_header",
+      title: variant_option_label(@stock_balance.product_variant),
+      subtitle: "Store stock for #{Current.store.name}",
+      breadcrumbs: [ { label: "Stock balances", path: stock_balances_path }, { label: @stock_balance.product_variant.sku } ],
+      actions: capture {
+        if Current.user.can?("inventory.adjustment.create", store: Current.store)
+          concat link_to("New adjustment", new_inventory_adjustment_path, class: "button button-primary")
+        end
+        concat link_to("Back to stock balances", stock_balances_path, class: "button button-outline")
+      } %>
+
+<div class="summary-strip">
+  <div class="metric">
+    <span class="metric-label">On hand</span>
+    <span class="metric-value"><%= @stock_balance.on_hand %></span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Reserved</span>
+    <span class="metric-value"><%= @stock_balance.reserved %></span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Unavailable</span>
+    <span class="metric-value"><%= @stock_balance.unavailable %></span>
+  </div>
+  <div class="metric">
+    <span class="metric-label">Available</span>
+    <span class="metric-value"><%= @stock_balance.available %></span>
+  </div>
+</div>
+
+<% if @can_view_cost %>
+  <section class="record-section">
+    <h2>Cost</h2>
+    <%= render "shared/record_summary", rows: [
+      [ "Inventory value", inventory_money(@stock_balance.inventory_value_cents, quality: @stock_balance.cost_quality) ],
+      [ "Moving average", inventory_money(@stock_balance.moving_average_cost_cents, quality: @stock_balance.cost_quality) ],
+      [ "Cost quality", status_badge(@stock_balance.cost_quality.titleize, variant: cost_quality_variant(@stock_balance.cost_quality)) ]
+    ] %>
+  </section>
+<% end %>
+
+<section class="record-section">
+  <h2>Recent ledger entries</h2>
+  <% if @ledger_entries.empty? %>
+    <%= render "shared/empty_state", title: "No ledger activity yet",
+          body: "Posted movements for this variant will appear here." %>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Ledger entries</caption>
+        <thead>
+          <tr>
+            <th scope="col">Posted</th>
+            <th scope="col">Type</th>
+            <th scope="col" class="num">Qty &Delta;</th>
+            <% if @can_view_cost %>
+              <th scope="col" class="num">Value &Delta;</th>
+              <th scope="col">Quality</th>
+            <% end %>
+            <th scope="col">Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @ledger_entries.each do |entry| %>
+            <tr>
+              <td><%= formatted_datetime(entry.posted_at, format: :short) %></td>
+              <td><%= entry.movement_type.to_s.titleize %></td>
+              <td class="num"><%= entry.quantity_delta %></td>
+              <% if @can_view_cost %>
+                <td class="num"><%= entry.inventory_value_delta_cents.nil? ? "unknown" : inventory_money(entry.inventory_value_delta_cents) %></td>
+                <td><%= entry.cost_quality %></td>
+              <% end %>
+              <td><%= entry.reason_code %><%= " — #{entry.reason_note}" if entry.reason_note.present? %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

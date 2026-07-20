@@ -1,17 +1,42 @@
-<h1>Unit <%= @inventory_unit.unit_identifier %></h1>
-<ul>
-  <li>Variant: <%= @inventory_unit.product_variant.sku %> — <%= @inventory_unit.product_variant.name %></li>
-  <li>Status: <%= @inventory_unit.status %></li>
-  <li>Condition: <%= @inventory_unit.product_condition&.name || "(none)" %></li>
-  <li>Acquisition cost: <%= @inventory_unit.acquisition_cost_cents.nil? ? "—" : inventory_money(@inventory_unit.acquisition_cost_cents) %></li>
-  <li>Unit price override: <%= @inventory_unit.unit_price_cents.nil? ? "—" : inventory_money(@inventory_unit.unit_price_cents) %></li>
-  <li>Acquisition source: <%= @inventory_unit.acquisition_source_type.presence || "(none)" %></li>
-  <li>Acquired at: <%= @inventory_unit.acquired_at %></li>
-  <li>Description: <%= @inventory_unit.description.presence || "(none)" %></li>
-  <li>Internal notes: <%= @inventory_unit.internal_notes.presence || "(none)" %></li>
-  <% if @inventory_unit.sold? %>
-    <li>Sold via line: <%= link_to @inventory_unit.sold_pos_line_item.pos_transaction.public_id, pos_transaction_path(@inventory_unit.sold_pos_line_item.pos_transaction) %></li>
-    <li>Sold at: <%= @inventory_unit.sold_at %></li>
-  <% end %>
-</ul>
-<p><%= link_to "Inventory units", inventory_units_path %></p>
+<% content_for :title, "Unit #{@inventory_unit.unit_identifier}" %>
+
+<%= render "shared/page_header",
+      title: "Unit #{@inventory_unit.unit_identifier}",
+      subtitle: variant_option_label(@inventory_unit.product_variant),
+      breadcrumbs: [ { label: "Inventory units", path: inventory_units_path }, { label: @inventory_unit.unit_identifier } ],
+      actions: capture {
+        concat link_to("Back to units", inventory_units_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Unit</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Status", status_badge(@inventory_unit.status.titleize, variant: inventory_unit_status_variant(@inventory_unit.status)) ],
+    [ "Variant", variant_option_label(@inventory_unit.product_variant) ],
+    [ "Condition", @inventory_unit.product_condition&.name || "—" ],
+    [ "Acquisition cost", @inventory_unit.acquisition_cost_cents.nil? ? "—" : inventory_money(@inventory_unit.acquisition_cost_cents) ],
+    [ "Unit price override", @inventory_unit.unit_price_cents.nil? ? "—" : inventory_money(@inventory_unit.unit_price_cents) ],
+    [ "Acquisition source", @inventory_unit.acquisition_source_type&.titleize || "—" ],
+    [ "Acquired at", formatted_datetime(@inventory_unit.acquired_at, format: :short) ]
+  ] %>
+</section>
+
+<% if @inventory_unit.description.present? || @inventory_unit.internal_notes.present? %>
+  <section class="record-section">
+    <h2>Notes</h2>
+    <%= render "shared/record_summary", rows: [
+      [ "Description", @inventory_unit.description.presence || "—" ],
+      [ "Internal notes", @inventory_unit.internal_notes.presence || "—" ]
+    ] %>
+  </section>
+<% end %>
+
+<% if @inventory_unit.sold? %>
+  <section class="record-section">
+    <h2>Sale</h2>
+    <%= render "shared/record_summary", rows: [
+      [ "Sold via", link_to(@inventory_unit.sold_pos_line_item.pos_transaction.public_id, pos_transaction_path(@inventory_unit.sold_pos_line_item.pos_transaction)) ],
+      [ "Sold at", formatted_datetime(@inventory_unit.sold_at, format: :short) ]
+    ] %>
+  </section>
+<% end %>

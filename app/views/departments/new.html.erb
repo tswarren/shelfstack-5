@@ -1,2 +1,4 @@
-<h1>New Department</h1>
+<%= render "shared/page_header", title: "New department",
+      breadcrumbs: [ { label: "Departments", path: departments_path }, { label: "New department" } ] %>
+
 <%= render "form", department: @department, parent_departments: @parent_departments, tax_categories: @tax_categories, return_policies: @return_policies %>

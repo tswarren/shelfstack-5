@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class SessionsController < ApplicationController
+  layout "authentication"
   allow_unauthenticated_access only: %i[new create]
   skip_store_context only: :destroy
 
@@ -35,6 +36,12 @@ class SessionsController < ApplicationController
   end
 
   def destroy
+    if (open_transaction = Pos::CurrentOpenTransaction.for(user: Current.user, store_id: session[:store_id]))
+      redirect_to pos_transaction_path(open_transaction),
+        alert: "Complete, suspend, or cancel the open transaction before signing out."
+      return
+    end
+
     terminate_session
     redirect_to new_session_path, status: :see_other
   end
