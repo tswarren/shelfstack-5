@@ -35,14 +35,20 @@
       <%= render "shared/percent_field", name: "discount_reason[default_rate_percent]",
             label: "Default rate", id: "discount_reason_default_rate",
             value_percent: format_bps_as_percent(discount_reason.default_rate_bps),
+            value: params.dig(:discount_reason, :default_rate_percent),
+            object: discount_reason, error_attr: :default_rate,
             hint: "Used for percentage discounts, e.g. 10 for 10%." %>
       <%= render "shared/money_field", name: "discount_reason[default_amount]",
             label: "Default amount", id: "discount_reason_default_amount",
             value_cents: discount_reason.default_amount_cents,
+            value: params.dig(:discount_reason, :default_amount),
+            object: discount_reason, error_attr: :default_amount,
             hint: "Used for fixed-amount discounts." %>
       <%= render "shared/percent_field", name: "discount_reason[maximum_rate_percent]",
             label: "Maximum rate", id: "discount_reason_maximum_rate",
             value_percent: format_bps_as_percent(discount_reason.maximum_rate_bps),
+            value: params.dig(:discount_reason, :maximum_rate_percent),
+            object: discount_reason, error_attr: :maximum_rate,
             hint: "Largest percentage discount allowed for this reason." %>
     </div>
   </section>

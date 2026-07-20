@@ -74,6 +74,79 @@ class AdminUxBaselineTest < ActionDispatch::IntegrationTest
     assert_equal "GST 13%", rate.reload.name
   end
 
+  test "invalid discount reason numerics preserve submitted values on update" do
+    reason = DiscountReason.create!(
+      organization: @org,
+      code: "mgr_adj",
+      name: "Manager adjustment",
+      default_calculation_method: "percentage",
+      default_rate_bps: 1000,
+      requires_approval: true,
+      active: true
+    )
+
+    patch discount_reason_path(reason), params: {
+      discount_reason: {
+        name: "Renamed adjustment",
+        default_calculation_method: "fixed_amount",
+        default_rate_percent: "bad",
+        default_amount: "3.50",
+        maximum_rate_percent: "25",
+        requires_approval: "0",
+        active: "1"
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "input[name='discount_reason[name]'][value='Renamed adjustment']"
+    assert_select "input#discount_reason_default_rate[value='bad'][aria-invalid='true']"
+    assert_select "input#discount_reason_default_amount[value='3.50']"
+    assert_equal "Manager adjustment", reason.reload.name
+  end
+
+  test "invalid membership authority preserves submitted role and raw values" do
+    membership = store_memberships(:clerk_main_street)
+    administrator = roles(:administrator)
+
+    patch store_membership_path(membership), params: {
+      store_membership: {
+        role_id: administrator.id,
+        active: "1",
+        starts_on: membership.starts_on || Date.current,
+        maximum_discount_rate_percent: "nope",
+        maximum_cash_refund: "50.00"
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "select#store_membership_role_id option[selected][value=?]", administrator.id.to_s
+    assert_select "input#store_membership_maximum_discount_rate[value='nope'][aria-invalid='true']"
+    assert_select "input#store_membership_maximum_cash_refund[value='50.00']"
+    assert_not_equal administrator.id, membership.reload.role_id
+  end
+
+  test "invalid store tax rule taxable portion preserves submitted values" do
+    rule = store_tax_rules(:physical_book_gst)
+
+    patch store_tax_rule_path(rule), params: {
+      store_tax_rule: {
+        tax_category_id: rule.tax_category_id,
+        store_tax_rate_id: rule.store_tax_rate_id,
+        component_code: "RENAMED",
+        treatment: rule.treatment,
+        taxable_fraction_percent: "half",
+        calculation_order: rule.calculation_order,
+        compounds_on_prior_tax: rule.compounds_on_prior_tax,
+        active: true
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "input[name='store_tax_rule[component_code]'][value='RENAMED']"
+    assert_select "input#store_tax_rule_taxable_fraction[value='half'][aria-invalid='true']"
+    assert_not_equal "RENAMED", rule.reload.component_code
+  end
+
   # --- Human-readable department margin / discount entry -------------------
 
   test "creating a department parses percent margin and maximum discount inputs" do

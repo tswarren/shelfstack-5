@@ -46,6 +46,8 @@
       <%= render "shared/percent_field", name: "store_tax_rule[taxable_fraction_percent]",
             label: "Taxable portion", id: "store_tax_rule_taxable_fraction",
             value_percent: format_rate_as_percent(store_tax_rule.taxable_fraction),
+            value: params.dig(:store_tax_rule, :taxable_fraction_percent),
+            object: store_tax_rule, error_attr: :taxable_fraction,
             hint: "Portion of the price that is taxable, e.g. 100 for fully taxable." %>
       <div class="field">
         <%= form.label :calculation_order, class: "field-label" %>

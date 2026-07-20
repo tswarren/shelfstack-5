@@ -87,5 +87,54 @@ module Pos
       assert_match(/not open for editing/i, result.error)
       assert PosDiscount.exists?(discount.id)
     end
+
+    test "refuses to remove historical linked-return discount reversals" do
+      variant = product_variants(:sample_book_standard)
+      cash = tender_types(:cash)
+      reason = return_reasons(:defective)
+
+      opening = InventoryAdjustment.create!(
+        store: @store, kind: "opening_inventory", status: "draft",
+        inventory_adjustment_reason: inventory_adjustment_reasons(:opening_initial),
+        created_by_user: @admin
+      )
+      InventoryAdjustmentLine.create!(
+        inventory_adjustment: opening, product_variant: variant, position: 0,
+        quantity_delta: 1, input_unit_cost_cents: 500, input_cost_method: "explicit",
+        input_cost_quality: "actual"
+      )
+      assert Inventory::PostAdjustment.call(adjustment: opening, actor: @admin, store: @store).success?
+
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      sale_line = AddLine.call(
+        pos_transaction: sale, product_variant: variant, quantity: 1, actor: @admin
+      ).pos_line_item
+      ApplyDiscount.call(
+        pos_transaction: sale, scope: "line", pos_line_item: sale_line,
+        method: "fixed_amount", amount_cents: 200, actor: @admin
+      )
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(
+        pos_transaction: sale, tender_type: cash, amount_tendered_cents: sale_net, actor: @admin
+      )
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "remove-return-reversal-sale"
+      )
+      sale_line.reload
+
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      return_line = AddLinkedReturnLine.call(
+        pos_transaction: ret_txn, original_pos_line_item: sale_line, quantity: 1,
+        return_reason: reason, return_disposition: "return_to_stock", actor: @admin
+      ).pos_line_item
+      reversal = PosDiscount.find_by!(target_pos_line_item_id: return_line.id)
+
+      result = RemoveDiscount.call(pos_discount: reversal, actor: @admin)
+
+      assert_not result.success?
+      assert_match(/historical return discount reversals cannot be removed/i, result.error)
+      assert PosDiscount.exists?(reversal.id)
+    end
   end
 end

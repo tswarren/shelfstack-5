@@ -138,6 +138,30 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     assert_current_path register_path
   end
 
+  test "Enter on Transaction detail summary toggles disclosure instead of leaving" do
+    open_register_with_transaction!
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
+    )
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: tender_types(:cash),
+      amount_tendered_cents: net, actor: @admin
+    )
+    Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "system-complete-summary-enter"
+    )
+
+    visit pos_transaction_path(@transaction)
+    assert_text "Transaction complete"
+    details = find("details", text: /Transaction detail/i)
+    summary = details.find("summary")
+    summary.send_keys(:return)
+    assert details[:open].present?
+    assert_current_path pos_transaction_path(@transaction)
+  end
+
   test "keyboard path opens a secondary POS disclosure" do
     open_register_with_transaction!
 

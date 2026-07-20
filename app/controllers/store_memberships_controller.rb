@@ -42,6 +42,7 @@ class StoreMembershipsController < ApplicationController
   def update
     attrs = membership_update_params.to_h
     if human_readable_params_invalid?
+      @membership.assign_attributes(attrs)
       copy_human_readable_param_errors!(@membership)
       @roles = Current.organization.roles.order(:code)
       render :edit, status: :unprocessable_entity

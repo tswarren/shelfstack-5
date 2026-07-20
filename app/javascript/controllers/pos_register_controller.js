@@ -57,12 +57,15 @@ export default class extends Controller {
     }
 
     // On the completed summary, Enter returns to the register when focus is not
-    // inside another interactive control.
+    // inside another interactive control (including <summary> disclosures).
     if (this.completedValue && event.key === "Enter" && this.hasBackToRegisterTarget) {
-      const active = document.activeElement
-      if (active && (active.matches("input, textarea, select, button, a") || active.isContentEditable)) {
-        return
-      }
+      if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+
+      const interactive = event.target.closest(
+        "input, textarea, select, button, a, summary, [role='button'], [role='link'], [contenteditable='true']"
+      )
+      if (interactive) return
+
       event.preventDefault()
       this.backToRegisterTarget.click()
     }

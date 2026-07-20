@@ -40,26 +40,40 @@
       <%= render "shared/percent_field", name: "store_membership[maximum_discount_rate_percent]",
             label: "Maximum discount rate", id: "store_membership_maximum_discount_rate",
             value_percent: format_rate_as_percent(membership.maximum_discount_rate),
+            value: params.dig(:store_membership, :maximum_discount_rate_percent),
+            object: membership, error_attr: :maximum_discount_rate,
             hint: "e.g. 20 for 20%." %>
       <%= render "shared/percent_field", name: "store_membership[maximum_price_override_rate_percent]",
             label: "Maximum price override rate", id: "store_membership_maximum_price_override_rate",
             value_percent: format_rate_as_percent(membership.maximum_price_override_rate),
+            value: params.dig(:store_membership, :maximum_price_override_rate_percent),
+            object: membership, error_attr: :maximum_price_override_rate,
             hint: "e.g. 15 for 15%." %>
       <%= render "shared/money_field", name: "store_membership[maximum_discount_amount]",
             label: "Maximum discount amount", id: "store_membership_maximum_discount_amount",
-            value_cents: membership.maximum_discount_amount_cents %>
+            value_cents: membership.maximum_discount_amount_cents,
+            value: params.dig(:store_membership, :maximum_discount_amount),
+            object: membership, error_attr: :maximum_discount_amount_cents %>
       <%= render "shared/money_field", name: "store_membership[maximum_cash_refund]",
             label: "Maximum cash refund", id: "store_membership_maximum_cash_refund",
-            value_cents: membership.maximum_cash_refund_cents %>
+            value_cents: membership.maximum_cash_refund_cents,
+            value: params.dig(:store_membership, :maximum_cash_refund),
+            object: membership, error_attr: :maximum_cash_refund_cents %>
       <%= render "shared/money_field", name: "store_membership[maximum_no_receipt_return]",
             label: "Maximum no-receipt return", id: "store_membership_maximum_no_receipt_return",
-            value_cents: membership.maximum_no_receipt_return_cents %>
+            value_cents: membership.maximum_no_receipt_return_cents,
+            value: params.dig(:store_membership, :maximum_no_receipt_return),
+            object: membership, error_attr: :maximum_no_receipt_return_cents %>
       <%= render "shared/money_field", name: "store_membership[maximum_paid_out]",
             label: "Maximum paid out", id: "store_membership_maximum_paid_out",
-            value_cents: membership.maximum_paid_out_cents %>
+            value_cents: membership.maximum_paid_out_cents,
+            value: params.dig(:store_membership, :maximum_paid_out),
+            object: membership, error_attr: :maximum_paid_out_cents %>
       <%= render "shared/money_field", name: "store_membership[cash_variance_review_threshold]",
             label: "Cash variance review threshold", id: "store_membership_cash_variance_review_threshold",
-            value_cents: membership.cash_variance_review_threshold_cents %>
+            value_cents: membership.cash_variance_review_threshold_cents,
+            value: params.dig(:store_membership, :cash_variance_review_threshold),
+            object: membership, error_attr: :cash_variance_review_threshold_cents %>
     </div>
   </section>
 

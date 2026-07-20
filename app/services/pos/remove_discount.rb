@@ -22,6 +22,9 @@ module Pos
 
         discount = PosDiscount.lock.find(@pos_discount.id)
         raise Error, "discount does not belong to the locked transaction" unless discount.pos_transaction_id == transaction.id
+        if discount.target_pos_line_item&.return?
+          raise Error, "historical return discount reversals cannot be removed"
+        end
 
         store = transaction.store
         metadata = {

@@ -42,6 +42,7 @@ class DiscountReasonsController < ApplicationController
     @return_policies = Current.organization.return_policies.order(:code)
     attrs = discount_reason_params.to_h
     if human_readable_params_invalid?
+      @discount_reason.assign_attributes(attrs)
       copy_human_readable_param_errors!(@discount_reason)
       render :edit, status: :unprocessable_entity
       return
@@ -78,19 +79,19 @@ class DiscountReasonsController < ApplicationController
     if raw.key?(:default_rate_percent)
       write_parsed_attr!(
         attrs, :default_rate_bps, parse_percent_bps_param(raw[:default_rate_percent]),
-        presentation_attr: :default_rate_bps
+        presentation_attr: :default_rate
       )
     end
     if raw.key?(:maximum_rate_percent)
       write_parsed_attr!(
         attrs, :maximum_rate_bps, parse_percent_bps_param(raw[:maximum_rate_percent]),
-        presentation_attr: :maximum_rate_bps
+        presentation_attr: :maximum_rate
       )
     end
     if raw.key?(:default_amount)
       write_parsed_attr!(
         attrs, :default_amount_cents, parse_money_param(raw[:default_amount]),
-        presentation_attr: :default_amount_cents
+        presentation_attr: :default_amount
       )
     end
 

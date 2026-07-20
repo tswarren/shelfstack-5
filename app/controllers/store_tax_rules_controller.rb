@@ -40,6 +40,7 @@ class StoreTaxRulesController < ApplicationController
   def update
     attrs = store_tax_rule_params.to_h
     if human_readable_params_invalid?
+      @store_tax_rule.assign_attributes(attrs)
       copy_human_readable_param_errors!(@store_tax_rule)
       render :edit, status: :unprocessable_entity
       return

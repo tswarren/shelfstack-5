@@ -227,6 +227,55 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_no_match(/Original line ID/i, response.body)
   end
 
+  test "linked return lines hide quantity update and reject crafted quantity patches" do
+    opening = InventoryAdjustment.create!(
+      store: @store, kind: "opening_inventory", status: "draft",
+      inventory_adjustment_reason: inventory_adjustment_reasons(:opening_initial),
+      created_by_user: @admin
+    )
+    InventoryAdjustmentLine.create!(
+      inventory_adjustment: opening, product_variant: @variant, position: 0,
+      quantity_delta: 2, input_unit_cost_cents: 500, input_cost_method: "explicit",
+      input_cost_quality: "actual"
+    )
+    assert Inventory::PostAdjustment.call(adjustment: opening, actor: @admin, store: @store).success?
+
+    sale = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    sale_line = Pos::AddLine.call(
+      pos_transaction: sale, product_variant: @variant, quantity: 2, actor: @admin
+    ).pos_line_item
+    sale_net = Pos::RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin
+    )
+    Pos::CompleteTransaction.call(
+      pos_transaction: sale, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-return-qty-sale"
+    )
+    sale_line.reload
+
+    return_txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    return_line = Pos::AddLinkedReturnLine.call(
+      pos_transaction: return_txn, original_pos_line_item: sale_line, quantity: 1,
+      return_reason: return_reasons(:defective), return_disposition: "return_to_stock",
+      actor: @admin
+    ).pos_line_item
+
+    get pos_transaction_path(return_txn)
+    assert_response :success
+    assert_select "form.pos-inline-form[action=?]", pos_transaction_pos_line_item_path(return_txn, return_line), count: 0
+    assert_select "input[type=submit][value=Update]", count: 0
+
+    patch pos_transaction_pos_line_item_path(return_txn, return_line), params: { quantity: 2 }
+
+    assert_redirected_to pos_transaction_path(return_txn)
+    assert_match(/linked return quantity cannot be edited/i, flash[:alert])
+    assert_equal 1, return_line.reload.quantity
+    assert_equal 0, InventoryReservation.active.where(
+      source_type: "pos_line_item", source_id: return_line.id
+    ).count
+  end
+
   test "operational forms render on the pos layout with currency masks" do
     get new_business_day_path
     assert_response :success

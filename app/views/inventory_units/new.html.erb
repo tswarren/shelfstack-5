@@ -11,9 +11,22 @@
     <div class="form-grid">
       <div class="field">
         <%= form.label :product_variant_id, "Variant", class: "field-label" %>
+        <% variant_error = @inventory_unit.errors[:product_variant_id].presence&.to_sentence %>
         <%= form.select :product_variant_id,
-              @variants.map { |v| [ variant_option_label(v, include_tracking: true), v.id ] }, include_blank: true %>
-        <p class="field-hint">Only individually tracked variants are eligible.</p>
+              @variants.map { |v| [ variant_option_label(v, include_tracking: true), v.id ] },
+              { include_blank: true },
+              class: "input",
+              aria: {
+                invalid: (variant_error.present? || nil),
+                describedby: [
+                  "inventory_unit_product_variant_id_hint",
+                  (variant_error.present? ? "inventory_unit_product_variant_id_error" : nil)
+                ].compact.join(" ").presence
+              } %>
+        <p class="field-hint" id="inventory_unit_product_variant_id_hint">Only individually tracked variants are eligible.</p>
+        <% if variant_error.present? %>
+          <p class="field-error" id="inventory_unit_product_variant_id_error"><%= variant_error %></p>
+        <% end %>
       </div>
       <div class="field">
         <%= form.label :product_condition_id, "Condition", class: "field-label" %>
@@ -32,9 +45,13 @@
     <div class="form-grid">
       <%= render "shared/money_field", name: "inventory_unit[acquisition_cost]", label: "Acquisition cost",
             value_cents: @inventory_unit.acquisition_cost_cents, id: "inventory_unit_acquisition_cost",
+            value: params.dig(:inventory_unit, :acquisition_cost),
+            object: @inventory_unit, error_attr: :acquisition_cost,
             hint: "Exact cost for this copy. Enter dollars, e.g. 8.50." %>
       <%= render "shared/money_field", name: "inventory_unit[unit_price]", label: "Unit price override",
             value_cents: @inventory_unit.unit_price_cents, id: "inventory_unit_unit_price",
+            value: params.dig(:inventory_unit, :unit_price),
+            object: @inventory_unit, error_attr: :unit_price,
             hint: "Optional price override for this copy." %>
     </div>
   </section>

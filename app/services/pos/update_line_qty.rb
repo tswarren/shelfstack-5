@@ -15,6 +15,9 @@ module Pos
       raise Error, "quantity must be positive" unless @quantity.positive?
       raise Error, "line is not pending" unless @pos_line_item.pending?
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
+      if @pos_line_item.return?
+        raise Error, "linked return quantity cannot be edited; remove and re-add the return line"
+      end
       if individually_tracked?(@pos_line_item)
         raise Error, "quantity is fixed at 1 for individually tracked lines"
       end
@@ -29,6 +32,9 @@ module Pos
         line = PosLineItem.lock.find(@pos_line_item.id)
         raise Error, "line is not pending" unless line.pending?
         raise Error, "line does not belong to the locked transaction" unless line.pos_transaction_id == transaction.id
+        if line.return?
+          raise Error, "linked return quantity cannot be edited; remove and re-add the return line"
+        end
 
         if line.line_kind == "product" && line.product_variant.inventory_tracking_mode == "quantity"
           reservation = Inventory::Reserve.call(

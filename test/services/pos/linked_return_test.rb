@@ -133,6 +133,44 @@ module Pos
       assert_equal(-sale_net, return_net)
     end
 
+    test "linked return quantity cannot be edited and creates no outbound reservation" do
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      return_line = AddLinkedReturnLine.call(
+        pos_transaction: ret_txn,
+        original_pos_line_item: @sale_line,
+        quantity: 1,
+        return_reason: @reason,
+        return_disposition: "return_to_stock",
+        actor: @admin
+      ).pos_line_item
+
+      assert_equal 0, InventoryReservation.active.where(
+        source_type: "pos_line_item", source_id: return_line.id
+      ).count
+
+      result = UpdateLineQty.call(pos_line_item: return_line, quantity: 2, actor: @admin)
+
+      assert_not result.success?
+      assert_match(/linked return quantity cannot be edited/i, result.error)
+      assert_equal 1, return_line.reload.quantity
+      assert_equal 0, InventoryReservation.active.where(
+        source_type: "pos_line_item", source_id: return_line.id
+      ).count
+
+      net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
+      AddCashRefundTender.call(
+        pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin
+      )
+      complete = CompleteTransaction.call(
+        pos_transaction: ret_txn, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "ret-qty-immutable"
+      )
+      assert complete.success?, complete.error
+      assert_equal 0, InventoryReservation.active.where(
+        source_type: "pos_line_item", source_id: return_line.id
+      ).count
+    end
+
     test "non-stock disposition restores on_hand as unavailable" do
       ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       result = AddLinkedReturnLine.call(

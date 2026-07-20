@@ -11,7 +11,7 @@ module PosHelper
       rate = discount.rate_bps.to_i / 100.0
       "#{format("%g", rate)}%"
     when "fixed_amount"
-      pos_money(discount.applied_amount_cents)
+      "Fixed amount"
     when "fixed_price"
       "to #{pos_money(discount.requested_amount_cents)}"
     else
