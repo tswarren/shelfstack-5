@@ -9,10 +9,6 @@ module Classification
         value.to_s.strip.upcase == "TRUE"
       end
 
-      def falsy?(value)
-        value.to_s.strip.upcase == "FALSE"
-      end
-
       def blank_value?(value)
         value.nil? || value.to_s.strip.empty?
       end

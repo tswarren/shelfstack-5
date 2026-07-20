@@ -1,6 +1,6 @@
 # Phase 4g — Test Hardening
 
-**Status:** In progress on `phase/4g-test-hardening`  
+**Status:** Complete for Phase 5 gate on `phase/4g-test-hardening` (awaiting merge to `main`); residual 4g-5 backlog may continue alongside Phase 5  
 **Depends on:** Phase 4f UX Baseline Gate merged to `main` at `34f371f5590c6942f5291c5bd750a1d98756d13f`  
 **Governing docs:** [../testing/test-review-2026-07-19.md](../testing/test-review-2026-07-19.md), [../testing.md](../testing.md), [AGENTS.md](../../../AGENTS.md) §9
 
@@ -24,35 +24,30 @@ Close high-risk coverage gaps identified in the 2026-07-19 test review without i
 
 ### 4g-1 — Completion integrity
 
-- Atomicity failure matrix: receipt-number allocation, cost snapshot, reservation conversion, inventory posting, tender finalization — assert no partial completed state
-- Concurrent completion: one winner, one receipt, one sequence increment, one inventory movement set
-- Immutability: completed lines, discounts, taxes, tenders; reject cancel/suspend/recall/commercial edits
-- Historical snapshots: product, department, tax, tender type, cost unchanged after master edits
+- [x] Atomicity failure matrix: receipt-number allocation, cost snapshot, reservation conversion, inventory posting, tender finalization — assert no partial completed state
+- [x] Concurrent completion: one winner, one receipt, one sequence increment, one inventory movement set
+- [x] Immutability: completed lines, discounts, taxes, tenders; reject cancel/suspend/recall/commercial edits
+- [x] Historical snapshots: product, department, tax, tender type, cost unchanged after master edits
 
 ### 4g-2 — Critical endpoint authorization and scoping
 
-POS lines, tenders, suspend/recall/cancel/complete, sessions, cash movements, business days, inventory reservation release, stock balances (including cost visibility).
-
-Per endpoint: permission allowed/denied; cross-store rejected; cross-org rejected where relevant; non-editable/completed rejected.
-
-Include permission seed-drift coverage (every enforced key seeded; administrator sync grants them).
+- [x] Critical POS/session/day/reservation/stock endpoints: permission allowed/denied; cross-store rejected; completed rejected
+- [x] Permission seed-drift coverage (every enforced key seeded; administrator sync grants them)
 
 ### 4g-3 — Critical system workflows
 
-Extend existing Phase 4f system coverage (do not duplicate completed-screen Enter / summary tests):
-
-- scan/add → tender → complete
-- suspend → leave → recall → complete or cancel
-- validation or failed completion → correct → complete
-- one keyboard-only path
+- [x] scan/add → tender → complete
+- [x] suspend → leave → recall → complete
+- [x] validation or failed completion → correct → complete
+- [x] one keyboard-only path (Ctrl+Enter complete)
 
 ### 4g-4 — High-integrity model / DB invariants
 
-`BusinessDay`, `PosSession`, `PosTender`, `PosDiscount`, `PosDiscountAllocation`, `PosCashMovement`, `InventoryReservation`, `StockBalance` (and optionally `PosApproval`, `PosTaxExemption`). Prefer unique indexes, check constraints, FK restrictions, status transitions — not presence-only lookup tests.
+- [x] Focused unique indexes, check constraints, and cross-store shape for BusinessDay, PosSession, PosDiscount/Allocation, PosCashMovement, PosTender, PosTaxExemption, PosApproval, InventoryReservation, StockBalance
 
 ### 4g-5 — Broader backlog (alongside Phase 5)
 
-Classification CRUD request coverage; static lookup models; administrative create/update services; broad active/inactive behavior; import-helper test-or-remove; remaining audit items.
+First slice landed (classification CRUD permission denials; TaxCategory/TenderType/DiscountReason model constraints; CreateCashDrawer / CreateTaxCategory service audits; Import::Helpers unit tests; inactive department open-ring guard). Remaining: exhaustive admin CRUD, remaining static lookups, remaining admin services, broader active/inactive, minor admin system tests.
 
 ## Phase 5 gate
 
@@ -60,16 +55,16 @@ Phase 5 docs, schema exploration, and prototypes may overlap 4g.
 
 **The first substantive Phase 5 migration or domain PR must not merge until:**
 
-- [ ] Concurrent POS completion is covered
-- [ ] Completion rollback/atomicity matrix is covered
-- [ ] Completed transaction mutation endpoints are rejected
-- [ ] Core POS endpoints reject cross-store access
-- [ ] Permission seed-drift coverage exists
-- [ ] Historical snapshot regression coverage exists
-- [ ] Suspend/recall system workflow passes
-- [ ] Failed-completion recovery system workflow passes
-- [ ] `bin/ci` passes
-- [ ] `test:system` passes
+- [x] Concurrent POS completion is covered
+- [x] Completion rollback/atomicity matrix is covered
+- [x] Completed transaction mutation endpoints are rejected
+- [x] Core POS endpoints reject cross-store access
+- [x] Permission seed-drift coverage exists
+- [x] Historical snapshot regression coverage exists
+- [x] Suspend/recall system workflow passes
+- [x] Failed-completion recovery system workflow passes
+- [x] `bin/ci` passes
+- [x] `test:system` passes
 
 That is approximately **4g-1 through 4g-3**.
 
@@ -79,7 +74,7 @@ Completion atomicity; completion concurrency; completed-record immutability; his
 
 ### May remain tracked after Phase 5 begins
 
-Exhaustive admin CRUD; every static lookup model test; all admin service tests; broad active/inactive coverage; import-helper cleanup; minor admin system tests.
+Exhaustive admin CRUD; every static lookup model test; all admin service tests; broad active/inactive coverage; remaining import-helper edge cases; minor admin system tests.
 
 ## Out of scope
 

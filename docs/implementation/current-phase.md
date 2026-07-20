@@ -8,17 +8,16 @@
 
 ## Immediate next work
 
-1. Land 4g-1 completion integrity (atomicity, concurrency, immutability, historical snapshots).
-2. Land 4g-2 critical endpoint authorization/scoping and permission seed-drift.
-3. Land 4g-3 critical system workflows (suspend/recall, failed-completion recovery).
-4. After 4g-1–3 checklist is green, substantive Phase 5 PRs may merge; 4g-4/4g-5 backlog may continue in parallel.
-5. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
-6. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+1. Merge Phase 4g to `main` (Phase 5 gate checklist is green on this branch).
+2. After merge, substantive Phase 5 PRs may land; continue residual 4g-5 backlog (exhaustive admin CRUD / remaining static models) in parallel as needed.
+3. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
+4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
 
 ## Completed recently
 
 - Phase 4a–4e (Point of Sale) and Phase 4f UX Baseline Gate merged to `main` (PR #30).
 - Walkthrough follow-up: expected-cash formula and Docker Chromium for `test:system`.
+- Phase 4g first pass: completion integrity (4g-1), critical endpoint security + seed-drift (4g-2), critical system workflows (4g-3), high-integrity model invariants (4g-4), and an initial 4g-5 backlog slice.
 
 ## Do not start yet
 
