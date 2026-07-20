@@ -116,6 +116,15 @@ See [product-requests.md](../domains/product-requests.md) and [ordering-and-acqu
 - One receipt **header** may contain lines from several purchase orders.
 - Each receipt **line** references **at most one** purchase-order line.
 - One delivered quantity that fulfils several PO lines is recorded as **several receipt lines**.
+- Unlinked receipt lines (no PO line) require receiving authority and a reason.
+
+## Purchase-order commercial lifecycle (Phase 5)
+
+- Commercial statuses: `draft`, `ordered`, `closed`, `cancelled`.
+- Receiving progress is derived separately (`not_received` / `partially_received` / `fully_received`).
+- PO numbers are store-scoped, assigned at draft creation, never reused.
+- After placement: vendor, store, currency, and line identity are immutable; reduce quantity via `cancelled_quantity`; no reopen in Phase 5.
+- Purchase-Order Allocations commit expected supply only to Customer Requests (ADR-0015).
 
 ## On-order quantity
 
@@ -124,9 +133,7 @@ See [product-requests.md](../domains/product-requests.md) and [ordering-and-acqu
 **v1 preference:** derive from purchase-order lines:
 
 ```text
-ordered quantity
-− accepted received quantity
-− cancelled quantity
+max(ordered − accepted received − cancelled, 0)
 ```
 
 If later cached on `stock_balances`, a single purchasing/receiving posting service must own all updates and remain reconcilable to source PO lines.

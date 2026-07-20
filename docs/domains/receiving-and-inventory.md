@@ -8,7 +8,9 @@
 - [ADR-0001: Separate Product, Product Variant, and Inventory Unit](../adr/0001-product-variant-inventory-unit.md)
 - [ADR-0002: Use Canonical Identifiers and Separate Restricted-Circulation Namespaces](../adr/0002-canonical-identifiers-and-namespaces.md)
 - [ADR-0004: Treat the Store as the Authoritative Inventory Boundary](../adr/0004-store-level-inventory-boundary.md)
-- [ADR-0005: Represent Demand, Supply Allocations, and Inventory Reservations Separately](../adr/0005-demand-allocations-and-reservations.md)
+- [ADR-0015: Require Product-Backed Demand and Reserve Supply Allocations for Customer Commitments](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)
+- [OD-007 allocation receipt and fulfilment](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md)
+- [OD-014 negative-inventory settlement](../implementation/decisions/od-014-negative-inventory-settlement.md)
 - [ADR-0006: Use Explicit Inventory Quantities and Reservation Records](../adr/0006-inventory-quantities-and-reservation-records.md)
 - [ADR-0007: Separate Purchasing, Receiving, and Inventory Events](../adr/0007-purchasing-receiving-and-inventory-events.md)
 - [ADR-0013: Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance](../adr/0013-govern-quantity-tracked-inventory-cost.md)
@@ -357,7 +359,7 @@ When an outbound movement crosses below zero:
 
 Incoming quantity settles deficit before creating positive inventory. Differences between provisional and settling cost become explicit variance facts that do not change On Hand, do not create inventory asset value, do not rewrite earlier completed activity, and report in the settlement period.
 
-Deficit-allocation algorithm remains open under OD-014. Full provisional-deficit reconciliation is not required for Phase 3.
+Phase 5 settlement uses an aggregate Store-and-Variant deficit-cost pool (not origin-matched sales). A Receipt Line may post a `receipt_deficit_settlement` movement then a positive `receipt` movement. Full rules: [OD-014](../implementation/decisions/od-014-negative-inventory-settlement.md).
 
 ### Department estimate
 
@@ -518,7 +520,8 @@ Audit Receipt posting and corrections, accepted and rejected quantities, cost ap
 - What is the posted Receipt correction workflow?
 - Is Available stored or calculated?
 - Are unavailable quantities cached by status?
-- Negative-inventory deficit allocation and settlement representation — [OD-014](../implementation/open-decisions.md#od-014-negative-inventory-deficit-allocation).
+- Negative-inventory deficit allocation and settlement representation — accepted; [OD-014 decision](../implementation/decisions/od-014-negative-inventory-settlement.md).
+- Allocation-to-reservation conversion on receipt — accepted; [OD-007 decision](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md).
 - What is the Inventory Count model?
 - What Adjustment thresholds require Approval?
 - What is the inter-Store transfer lifecycle?

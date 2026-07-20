@@ -21,12 +21,12 @@
 1. Phase 3 includes first-class `product_requests`.
 2. Phase 3 includes first-class `purchase_order_allocations`.
 3. V1 Customer Requests use nullable opaque `customer_reference`; no `customers` table or `customer_id` foreign key is introduced.
-4. **Superseded for Phase 5:** every Product Request must reference an existing ShelfStack Product (`product_id` required). Free-text notes may preserve context but do not replace product identity. Earlier “unresolved product + `requested_description`” language is withdrawn for Phase 5 delivery — see [product-requests.md](../domains/product-requests.md) and [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
+4. **ADR-0015:** every Product Request must reference an existing ShelfStack Product (`product_id` required). Initial types include `customer_request`, `staff_suggestion`, `stock_replenishment`, and `frontlist_selection`. Earlier “unresolved product + `requested_description`” language is withdrawn.
 5. `special_order_quantity` and `tbo_required` are removed from Purchase-Order Lines.
-6. Buyer-review quantity is derived from Product Request coverage.
+6. Buyer-review quantity is derived from Product Request coverage / status.
 7. Inventory Reservations may use `source_type = product_request`.
-8. Purchase-Order Allocation statuses in Phase 3 are `active` and `cancelled`.
-9. `received` and `fulfilled` remain deferred until receiving and request-fulfilment posting rules are defined (OD-007).
+8. Purchase-Order Allocations commit expected supply **only to Customer Requests** (ADR-0015).
+9. Allocation `received` / `fulfilled` are not persisted statuses; conversion/release events and Product Request Fulfilment are accepted under [OD-007](decisions/od-007-allocation-receipt-and-fulfilment.md).
 
 ## Schema changes
 
@@ -78,6 +78,17 @@ updated_at
 ```
 
 `requested_description` as a substitute for unresolved `product_id` is not part of the Phase 5 model.
+
+Phase 5 scaffolding should also plan for:
+
+```text
+purchase_order_allocation_events   # converted_to_reservation | released (OD-007)
+product_request_fulfillments       # request + reservation + POS line + quantity
+purchase_order_lines.cost_entry_method
+purchase_order_lines cost provenance / list / discount / net fields
+```
+
+Update the Schema Dictionary exports before treating migrations as authoritative. Aggregate deficit settlement fields follow [OD-014](decisions/od-014-negative-inventory-settlement.md).
 
 Unfulfilled quantity is derived:
 

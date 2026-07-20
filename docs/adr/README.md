@@ -45,7 +45,7 @@ A conflict between implementation and an accepted ADR must be resolved explicitl
 | [ADR-0002](0002-canonical-identifiers-and-namespaces.md)         | Use Canonical Identifiers and Separate Restricted-Circulation Namespaces    | Accepted                   |
 | [ADR-0003](0003-merchandise-classes-and-departments.md)          | Use One Merchandise-Class Hierarchy with Department Defaults                | Accepted                   |
 | [ADR-0004](0004-store-level-inventory-boundary.md)               | Treat the Store as the Authoritative Inventory Boundary                     | Accepted                   |
-| [ADR-0005](0005-demand-allocations-and-reservations.md)          | Represent Demand, Supply Allocations, and Inventory Reservations Separately | Accepted                   |
+| [ADR-0005](0005-demand-allocations-and-reservations.md)          | Represent Demand, Supply Allocations, and Inventory Reservations Separately | Superseded by ADR-0015     |
 | [ADR-0006](0006-inventory-quantities-and-reservation-records.md) | Use Explicit Inventory Quantities and Reservation Records                   | Accepted                   |
 | [ADR-0007](0007-purchasing-receiving-and-inventory-events.md)    | Separate Purchasing, Receiving, and Inventory Events                        | Accepted with open details |
 | [ADR-0008](0008-immutable-pos-transactions.md)                   | Keep Completed POS Transactions Immutable and Use Explicit Corrections      | Accepted                   |
@@ -55,6 +55,7 @@ A conflict between implementation and an accepted ADR must be resolved explicitl
 | [ADR-0012](0012-stored-value-ledger.md)                          | Govern Stored Value Through Independent Accounts and an Append-Only Ledger  | Accepted                   |
 | [ADR-0013](0013-govern-quantity-tracked-inventory-cost.md)       | Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance | Accepted with open details |
 | [ADR-0014](0014-hybrid-transaction-component-tax-calculation.md) | Use Hybrid Transaction-Component Tax Calculation with Largest-Remainder Allocation | Accepted                   |
+| [ADR-0015](0015-product-backed-demand-and-customer-supply-commitments.md) | Require Product-Backed Demand and Reserve Supply Allocations for Customer Commitments | Accepted                   |
 
 ---
 

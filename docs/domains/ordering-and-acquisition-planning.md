@@ -2,6 +2,7 @@
 
 **Status:** Governing planning specification for Phase 5 supply and demand  
 **Scope:** Product-backed acquisition demand, buyer review, vendor sourcing, expected cost, and connection to receiving and fulfilment  
+**Governing ADR:** [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)  
 **Related phase plan:** [../implementation/phases/phase-05-supply-and-demand.md](../implementation/phases/phase-05-supply-and-demand.md)  
 **Lifecycle boundaries:** [../implementation/phase-05-ordering-scope-and-future-lifecycle-boundaries.md](../implementation/phase-05-ordering-scope-and-future-lifecycle-boundaries.md)
 
@@ -745,12 +746,11 @@ The workflow should:
 7. populate expected list price, discount, and net cost;  
 8. permit bulk discount and cost editing;  
 9. show vendor thresholds;  
-10. create allocations for customer-request quantities;  
-11. leave unplaced quantities in buyer review.
+10. create Purchase-Order Allocations only for Customer Request quantities (ADR-0015);  
+11. close non-customer requests with buyer resolution when ordering from them;  
+12. leave unplaced Customer Request quantity in buyer review.
 
-Several compatible demand records may contribute to one PO line.
-
-The contributing demand must remain traceable even when the interface displays one consolidated order line.
+Several compatible demand records may contribute quantity to one PO line for ordering convenience. Only Customer Requests retain persistent allocations. Non-customer requests close with resolution; a non-authoritative audit hint to the ordering session is optional and must not behave as an allocation.
 
 ---
 
@@ -827,7 +827,9 @@ The initial implementation must therefore preserve these rules:
 - [Catalog and Products](catalog-and-products.md)
 - [Phase 5 plan](../implementation/phases/phase-05-supply-and-demand.md)
 - [Phase 5 ordering scope and future-lifecycle boundaries](../implementation/phase-05-ordering-scope-and-future-lifecycle-boundaries.md)
-- [ADR-0005](../adr/0005-demand-allocations-and-reservations.md)
+- [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)
+- [OD-007](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md)
+- [OD-014](../implementation/decisions/od-014-negative-inventory-settlement.md)
 - [ADR-0007](../adr/0007-purchasing-receiving-and-inventory-events.md)
 - [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md)
 

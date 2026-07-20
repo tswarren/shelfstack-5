@@ -31,14 +31,14 @@ superseded
 | OD-004 | Tax residual-cent allocation, compounding, and rounding policy | accepted | Phase 4b | Classification / POS | [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md) |
 | OD-005 | Tax calculated per line vs transaction after discount allocation | accepted | Phase 4b | Classification / POS | [ADR-0014](../adr/0014-hybrid-transaction-component-tax-calculation.md) — hybrid line resolution + transaction-component rounding |
 | OD-006 | Customer identity for Phase 5 requests | accepted (v1) | Phase 5 | Product Requests / future Customer | Phase 5 uses nullable opaque `customer_reference` only; no `customers` table. Rich CRM remains deferred. See [product-requests.md](../domains/product-requests.md) |
-| OD-007 | PO allocation `received` / `fulfilled` — persist vs derive | open | Phase 5 | Purchasing / Inventory | Phase 3 schema persists only `active` / `cancelled` |
+| OD-007 | PO allocation receipt and fulfilment representation | accepted | Phase 5 | Purchasing / Inventory / Requests | [decisions/od-007-allocation-receipt-and-fulfilment.md](decisions/od-007-allocation-receipt-and-fulfilment.md); ADR-0015 |
 | OD-008 | Department GL account codes vs later mapping table | accepted | Phase 2 | Classification | GL account code columns remain on `departments` for Phase 2; no separate mapping table |
 | OD-009 | Store configuration home (columns vs `store_configurations` vs policy tables) | open | Phase 4a | Classification / Org | Thresholds and behavioral settings placement |
 | OD-010 | Unavailable quantity by status (aggregate only vs status balances) | open | Phase 3–5 | Inventory | `stock_balances.unavailable` total vs optional status buckets |
 | OD-011 | Identifier generation sequence ownership | accepted | Phase 2 | Catalog | Installation-singleton `identifier_sequences` (namespaces `21`/`27`/`28`/`29`); INV-ORG-001. Issue [#14](https://github.com/tswarren/shelfstack-5/issues/14) |
 | OD-012 | Parent/reporting-only departments (`postable = false`) in first release | accepted | Phase 2 | Classification | Hierarchical departments with `postable`; reporting-only parents in scope |
 | OD-013 | Storage and precedence of role and store authority defaults | deferred | Phase 4b | Organization / Authorization | See [OD-013 notes](#od-013-role-and-store-authority-defaults) |
-| OD-014 | Negative-inventory deficit allocation and settlement representation | accepted | Phase 4c / Phase 5 | Inventory / Reporting | [Phase 4c interim](#od-014-negative-inventory-deficit-allocation); settlement/variance tables remain Phase 5 open detail |
+| OD-014 | Negative-inventory deficit allocation and settlement representation | accepted | Phase 4c / Phase 5 | Inventory / Reporting | [Phase 4c interim](#od-014-negative-inventory-deficit-allocation); Phase 5 settlement accepted in [decisions/od-014-negative-inventory-settlement.md](decisions/od-014-negative-inventory-settlement.md) |
 
 ## OD-013 role and store authority defaults
 
@@ -72,14 +72,23 @@ Accepted behavior:
 
 Phase 3 deterministic transition rules live in the Inventory Domain (first positive from zero, cost-quality aggregation, zero-state quality, quantity-only crossing zero).
 
-Quantity may sell negative after warning ([architectural-locks](architectural-locks.md#negative-inventory)). Asset value remains zero when On Hand ≤ 0; deficit allocation and settlement representation remain open under OD-014.
+Quantity may sell negative after warning ([architectural-locks](architectural-locks.md#negative-inventory)). Asset value remains zero when On Hand ≤ 0. Phase 5 receipt settlement is accepted under OD-014.
+
+## OD-007 — allocation receipt and fulfilment
+
+**Status:** accepted  
+**Needed by:** Phase 5  
+**Governing area:** Product Requests / Purchasing / Receiving / POS  
+**Related:** [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md), [decisions/od-007-allocation-receipt-and-fulfilment.md](decisions/od-007-allocation-receipt-and-fulfilment.md)
+
+Purchase-Order Allocations commit expected supply only to Customer Requests. They do not persist `received` or `fulfilled` statuses. Remaining allocation quantity is derived from append-only conversion and release events. Receipt posting converts usable allocated quantity into an Inventory Reservation atomically. Final customer fulfilment is a separate Product Request Fulfilment fact linked to POS (or later delivery sources).
 
 ## OD-014 — negative-inventory deficit allocation
 
-**Status:** accepted (Phase 4c interim); settlement tables remain open for Phase 5  
+**Status:** accepted (Phase 4c interim + Phase 5 settlement)  
 **Needed by:** Phase 4c / Phase 5  
 **Governing area:** Inventory / Reporting  
-**Related:** [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md), [inventory cost schema design note](design-notes/inventory-costing/inventory_cost_schema_design_note.md)
+**Related:** [ADR-0013](../adr/0013-govern-quantity-tracked-inventory-cost.md), [decisions/od-014-negative-inventory-settlement.md](decisions/od-014-negative-inventory-settlement.md)
 
 ADR-0013 and the closed portion of OD-003 settle positive moving average, zero/negative **asset** treatment, opening inventory, quantity-only and cost-correction kinds, unknown versus zero, and immutable historical costs.
 
@@ -91,17 +100,11 @@ For quantity-tracked sales that create or increase negative On Hand:
 2. Outbound sale movements carry **provisional unit cost** from the best available rate (`moving_average` / `last_known` when positive history exists); otherwise cost quality is `unknown`. Confirmed zero remains distinct from unknown.
 3. When On Hand ≤ 0 after the sale, **positive inventory asset value remains zero** (ADR-0013). Provisional deficit cost may be recorded on the outbound ledger/sale snapshot for later settlement; it is not a negative inventory asset.
 4. Completed POS cost snapshots remain immutable when later supply arrives.
-5. Incoming Receipt settlement that allocates provisional deficit cost and records monetary variances is **Phase 5** work and must not rewrite completed sale snapshots.
+5. Incoming Receipt settlement is Phase 5 work and must not rewrite completed sale snapshots.
 
-### Still open for Phase 5 (settlement representation)
+### Phase 5 accepted settlement
 
-- aggregate proportional deficit pool versus origin-based settlement;
-- allocation order (if origin-based);
-- partial settlement and exact settlement to zero;
-- incoming stock crossing into positive after deficit settlement;
-- Department attribution for variances;
-- unknown provisional cost and/or unknown settling cost;
-- whether settlement allocations and monetary variances are separate record types.
+Aggregate Store-and-Variant deficit-cost pool (not origin-matched to individual sales). Accepted receipt quantity settles negative On Hand before creating positive inventory; a receipt line may post up to two ledger entries (`receipt_deficit_settlement` then `receipt`). Monetary variance / late cost recognition are separate non-quantity facts. Full rules: [decisions/od-014-negative-inventory-settlement.md](decisions/od-014-negative-inventory-settlement.md).
 
 ### Non-goals
 

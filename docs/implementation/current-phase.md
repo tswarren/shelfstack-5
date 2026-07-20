@@ -9,10 +9,10 @@
 
 ## Immediate next work
 
-1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns. Governing plan: [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md); planning detail: [../domains/ordering-and-acquisition-planning.md](../domains/ordering-and-acquisition-planning.md); lifecycle boundaries: [phase-05-ordering-scope-and-future-lifecycle-boundaries.md](phase-05-ordering-scope-and-future-lifecycle-boundaries.md).
-2. Continue residual 4g-5 backlog (exhaustive admin CRUD / remaining static models) in parallel as needed.
-3. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
-4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
+1. Begin Phase 5 scaffolding from the reconciled baseline: [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md). Governing decisions: [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md), [OD-007](decisions/od-007-allocation-receipt-and-fulfilment.md), [OD-014 settlement](decisions/od-014-negative-inventory-settlement.md).
+2. Update Schema Dictionary exports and permission catalog before substantive migrations.
+3. Continue residual 4g-5 backlog in parallel as needed.
+4. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md).
 
 ## Completed recently
 

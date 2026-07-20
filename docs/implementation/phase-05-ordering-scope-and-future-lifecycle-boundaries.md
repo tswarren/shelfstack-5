@@ -3,7 +3,10 @@
 **Status:** Governing Phase 5 implementation boundary  
 **Phase plan:** [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)  
 **Planning detail:** [../domains/ordering-and-acquisition-planning.md](../domains/ordering-and-acquisition-planning.md)  
+**Accepted decisions:** [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md); [OD-007](decisions/od-007-allocation-receipt-and-fulfilment.md); [OD-014](decisions/od-014-negative-inventory-settlement.md)  
 **Deferred catalog:** [deferred-capabilities.md](deferred-capabilities.md)
+
+Purchase-Order Allocations are reserved for Customer Requests. Non-customer demand closes with buyer resolution (ADR-0015). Allocation `received`/`fulfilled` statuses are not used; see OD-007.
 
 ## 1. Purpose
 

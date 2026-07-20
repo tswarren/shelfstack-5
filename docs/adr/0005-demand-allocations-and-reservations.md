@@ -1,6 +1,8 @@
 # ADR-0005: Represent Demand, Supply Allocations, and Inventory Reservations Separately
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0015: Require Product-Backed Demand and Reserve Supply Allocations for Customer Commitments](0015-product-backed-demand-and-customer-supply-commitments.md)
+
+This ADR remains historical. The separation of demand, purchase-order allocations, inventory reservations, purchase orders, and receipts remains foundational. ADR-0015 revises product identity requirements, the initial request-type set, and the scope of purchase-order allocations (customer commitments only).
 
 ## Context
 
