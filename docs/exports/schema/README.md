@@ -28,6 +28,16 @@ For demand and supply commitments, [ADR-0015](../../adr/0015-product-backed-dema
 
 The reconciled dictionary and table summary should reflect ADR-0015 / OD-007 even when older workbook rows still say ADR-0005.
 
+### Workbooks in this folder
+
+| File | Role |
+| --- | --- |
+| `ShelfStack Proforma Schema 260717.1402 reconciled.xlsx` | Earlier reconciled proforma workbook (companion CSVs share this stem). |
+| `ShelfStack Proforma Schema 260717.1402 reconciled - *.csv` | Dictionary, table summary, open decisions, and revision notes used for planning diffs. |
+| `ShelfStack_Schema_Reconciliation_2026-07-20.xlsx` | Current Phase 5 schema reconciliation workbook; prefer this for scaffolding review. |
+
+CSV companions remain the text-diffable planning source. When the workbook and CSVs disagree, reconcile deliberately and update both.
+
 The actual implemented database structure is defined by Rails migrations and `db/schema.rb`. An implementation conflict with a governing ADR or Domain Specification must be resolved explicitly rather than silently treating the current database as the intended architecture.
 
 ### Implementation additions beyond the 260717.1402 reconciled proforma

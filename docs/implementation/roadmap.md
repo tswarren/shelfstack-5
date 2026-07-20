@@ -106,8 +106,8 @@ Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged t
 | Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Unlocked |
 | Return/refund-oriented fulfilment paths | **4e** recommended + same | Unlocked |
 
-1. Scaffold Phase 5 from the reconciled baseline ([phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)): vendors → POs → receipts + OD-014 settlement → product-backed demand → customer allocations (OD-007) → fulfilment. Authority: [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md).
-2. Update Schema Dictionary exports and permission catalog before treating migrations as authoritative.
+1. Scaffold Phase 5 from the reconciled baseline ([phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)): vendors → POs → receipts + OD-014 settlement → product-backed demand → customer allocations (OD-007) → fulfilment. Authority: [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md). Planning defaults in that phase plan are binding for scaffolding.
+2. Schema exports and Phase 5 permission catalog are reconciled; treat migrations as authoritative only when they match ADRs/domains.
 3. Residual 4g-5 broader coverage may continue alongside Phase 5.
 4. Phases 6–7 as separate epics.
 
@@ -115,7 +115,8 @@ Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged t
 
 ## Schema and seed inputs
 
-- Reconciled proforma: [../exports/schema/](../exports/schema/)
+- Reconciled proforma CSVs and workbook: [../exports/schema/](../exports/schema/)
+- Current reconciliation workbook: [../exports/schema/ShelfStack_Schema_Reconciliation_2026-07-20.xlsx](../exports/schema/ShelfStack_Schema_Reconciliation_2026-07-20.xlsx)
 - Classification seed CSVs: [../exports/departments.csv](../exports/departments.csv), [../exports/tax_categories.csv](../exports/tax_categories.csv), [../exports/merchandise_classes.csv](../exports/merchandise_classes.csv)
 - Pre-scaffolding reconciliation note: [schema-reconciliation-display-categories-and-demand-allocation.md](schema-reconciliation-display-categories-and-demand-allocation.md)
 

@@ -74,11 +74,29 @@ Detail: [ordering-and-acquisition-planning.md](../../domains/ordering-and-acquis
 
 - `product_requests` (four initial types; required `product_id`)
 - `purchase_order_allocations` (Customer Requests only)
-- allocation conversion/release events (OD-007)
-- `product_request_fulfillments` (or equivalent)
+- `purchase_order_allocation_events` (OD-007 conversion/release)
+- `product_request_fulfillments`
 - existing inventory reservations for present supply
 
 No `customers` table. Buyer-review is a projection, not a table or PO-line flag.
+
+## Phase 5 planning defaults
+
+These close ADR-0015 open details for scaffolding. Do not reopen unless implementation proves a default wrong.
+
+| Topic | Phase 5 default |
+| --- | --- |
+| Non-customer resolution storage | Columns on `product_requests` (`resolution`, `resolved_quantity`, `resolved_at`, `resolved_by_user_id`, `resolution_note`). No separate resolution-event table. |
+| Partial non-customer order | Close the original with the ordered quantity; create a follow-up request only when residual demand should re-enter buyer review. |
+| Request supersession | Optional nullable `supersedes_product_request_id` (or equivalent) when a follow-up replaces another; not required for every close. |
+| Non-customer ↔ PO correlation | Optional non-authoritative audit/navigation hint only; must not behave as an allocation or coverage fact. |
+| Allocation events | Append-only `purchase_order_allocation_events` with `converted_to_reservation` and `released`; remaining quantity derived. Exact columns at migration time per OD-007 / schema dictionary. |
+| Fulfilment | Persist `product_request_fulfillments`; Phase 5 baseline links to POS line (+ reservation when applicable). |
+| Product from demand | Thin search → import-or-create → return-to-request path. No full external-catalog / ONIX platform. |
+| Unclaimed customer reservations | Release via existing `inventory.reservation.release` with reason; no separate expiration engine. |
+| Substitutions | Out of Phase 5; do not invent substitution authorization. |
+
+Permissions: [authorization-permissions.md](../../domains/authorization-permissions.md).
 
 ## Purchasing and receiving rules (summary)
 
@@ -108,9 +126,19 @@ No `customers` table. Buyer-review is a projection, not a table or PO-line flag.
 - [ ] POS completion can create Product Request Fulfilment and close a fulfilled request
 - [ ] Existing Phase 4 POS sale paths work with received general stock
 
-## Out of scope
+## Out of scope / explicitly deferred
 
-Customer master/CRM/notifications/deposits; automated replenishment/forecasting; full ONIX/frontlist campaigns; vendor EDI/acknowledgements/cascading; automatic tier discounts; hard minimum enforcement; freight/landed cost/AP; advanced PO approvals; full RTV/transfers; cross-store consolidation.
+Do not design or seed these in Phase 5 scaffolding:
+
+- Customer master / CRM / notifications / deposits (OD-006 v1 stands)
+- Posted receipt correction workflow (`inventory.receipt.correct` reserved, not seeded)
+- OD-009 store-configuration home; OD-010 unavailable status buckets; OD-013 role/store authority defaults
+- Product substitutions and substitution authorization
+- Automated replenishment / forecasting; full ONIX / frontlist campaigns
+- Vendor EDI / acknowledgements / cascading; automatic tier discounts; hard minimum enforcement
+- Freight / landed cost / AP; advanced PO approval routing
+- Full RTV / transfers / cross-store consolidation
+- Workflow stubs under `docs/workflows/` for purchasing/requests (add as slices land)
 
 ## Related
 

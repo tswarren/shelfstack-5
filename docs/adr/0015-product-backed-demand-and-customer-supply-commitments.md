@@ -493,14 +493,14 @@ Settled elsewhere (do not reopen):
 * Allocation conversion and release use append-only quantity events; `received` / `fulfilled` are not allocation statuses — [OD-007](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md).
 * Final Customer Request fulfilment is a separate Product Request Fulfilment fact, typically linked to a POS line — OD-007.
 
-The following remain for Domain Specifications or implementation decisions:
+Phase 5 planning defaults (locked for scaffolding in [phase-05-supply-and-demand.md](../implementation/phases/phase-05-supply-and-demand.md)):
 
-* whether non-customer resolution fields are stored directly on `product_requests` or through a request-resolution event (Phase 5 planning default: columns on `product_requests`);
-* whether a lightweight non-authoritative audit/navigation correlation between a resolved non-customer request and a PO line is useful;
-* whether partially ordered non-customer requests always create a follow-up request or may be split in place (ADR preference: close original + follow-up request);
-* how request supersession relationships are represented;
-* how substitutions are authorized;
-* how unclaimed customer reservations are released.
+* non-customer resolution fields live as columns on `product_requests`;
+* partial non-customer order closes the original and creates a follow-up request only when residual demand should re-enter buyer review;
+* optional supersession link when a follow-up replaces another request;
+* optional non-authoritative non-customer ↔ PO navigation hint only (not allocation);
+* unclaimed customer reservations release through `inventory.reservation.release`;
+* substitutions remain out of Phase 5.
 
 These details must not change the governing distinction between Customer Request supply commitments and non-customer buyer decisions.
 
