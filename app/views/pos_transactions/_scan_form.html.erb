@@ -31,7 +31,9 @@
       <%= hidden_field_tag :kind, "open_ring" %>
       <div class="field">
         <%= form.label :department_id, "Department", class: "field-label" %>
-        <%= form.collection_select :department_id, @departments, :id, :name, {}, class: "input" %>
+        <%= form.select :department_id,
+              @departments.map { |d| [ hierarchy_path_label(d), d.id ] },
+              {}, class: "input" %>
       </div>
       <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "open_ring_unit_price_cents" %>
       <div class="field">
@@ -77,7 +79,14 @@
               <% returned = line.quantity - remaining %>
               <li>
                 <p>
-                  <strong><%= line.effective_description %></strong>
+                  <% if line.product_variant.present? %>
+                    <strong><%= variant_option_label(line.product_variant) %></strong>
+                    <% if line.inventory_unit.present? %>
+                      <span class="muted">· Unit <%= line.inventory_unit.unit_identifier %></span>
+                    <% end %>
+                  <% else %>
+                    <strong><%= line.effective_description %></strong>
+                  <% end %>
                   <span class="muted">
                     · sold <%= line.quantity %>
                     · returned <%= returned %>

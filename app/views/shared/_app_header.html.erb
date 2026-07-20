@@ -29,7 +29,7 @@
           <%= link_to "Main workspace", root_path, class: "button button-small button-outline" %>
           <% active_txn = local_assigns[:active_transaction] %>
           <% if active_txn %>
-            <span class="status-badge status-badge-warning" title="Open transaction">Open transaction</span>
+            <%= status_badge "Open transaction", variant: :warning %>
           <% end %>
           <% if show_switch && !active_txn %>
             <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-outline" %>

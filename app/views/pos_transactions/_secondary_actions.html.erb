@@ -1,6 +1,26 @@
 <% if @pos_transaction.editable? %>
-  <details class="pos-panel">
+  <details class="pos-panel" <%= "open" if @transaction_discounts.present? %>>
     <summary>Transaction-wide discount</summary>
+    <% if @transaction_discounts.present? %>
+      <ul class="pos-resolution-list">
+        <% @transaction_discounts.each do |discount| %>
+          <li>
+            <p>
+              <strong>Transaction discount</strong>
+              <span class="muted">· <%= pos_discount_summary(discount) %></span>
+            </p>
+            <% if Current.user.can?("pos.discount.apply", store: Current.store) %>
+              <%= button_to "Remove discount",
+                    pos_transaction_pos_discount_path(@pos_transaction, discount),
+                    method: :delete,
+                    class: "button button-small button-danger",
+                    form: { data: { turbo_confirm: "Remove this transaction discount?" } } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
     <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "form" do |form| %>
       <%= hidden_field_tag :scope, "transaction" %>
       <div class="field">

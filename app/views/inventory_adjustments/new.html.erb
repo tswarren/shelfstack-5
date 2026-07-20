@@ -3,4 +3,5 @@
 <%= render "shared/page_header", title: "New inventory adjustment",
       breadcrumbs: [ { label: "Inventory adjustments", path: inventory_adjustments_path }, { label: "New" } ] %>
 
-<%= render "form", inventory_adjustment: @inventory_adjustment, reasons: @reasons, variants: @variants %>
+<%= render "form", inventory_adjustment: @inventory_adjustment, reasons: @reasons, variants: @variants,
+      submitted_lines: @submitted_adjustment_lines %>

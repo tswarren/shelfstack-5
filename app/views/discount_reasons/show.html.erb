@@ -15,7 +15,7 @@
     [ "Name", @discount_reason.name ],
     [ "Calculation method", @discount_reason.default_calculation_method.titleize ],
     [ "Default rate", @discount_reason.default_rate_bps ? format_bps_as_percent(@discount_reason.default_rate_bps) : "—" ],
-    [ "Default amount", @discount_reason.default_amount_cents ? number_to_currency(@discount_reason.default_amount_cents / 100.0) : "—" ],
+    [ "Default amount", @discount_reason.default_amount_cents ? format_money(@discount_reason.default_amount_cents) : "—" ],
     [ "Maximum rate", @discount_reason.maximum_rate_bps ? format_bps_as_percent(@discount_reason.maximum_rate_bps) : "—" ],
     [ "Requires approval", @discount_reason.requires_approval? ? "Yes" : "No" ],
     [ "Resulting return policy", @discount_reason.resulting_return_policy&.code || "—" ],

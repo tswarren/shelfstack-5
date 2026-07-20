@@ -47,18 +47,37 @@
       <p><%= user.pin_configured? ? status_badge("PIN set", variant: :success) : status_badge("No PIN", variant: :inactive) %></p>
     <% end %>
     <div class="form-grid">
+      <%
+        pin_hint_id = "user_pin_hint"
+        pin_error = user.errors[:pin].presence&.to_sentence
+        pin_describedby = [ pin_hint_id, (pin_error ? "user_pin_error" : nil) ].compact.join(" ")
+      %>
       <div class="field">
         <%= form.label :pin, "PIN", class: "field-label" %>
         <%= form.password_field :pin, class: "input input-code", autocomplete: "new-password",
-              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH %>
+              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH,
+              aria: { invalid: pin_error.present? || nil, describedby: pin_describedby } %>
         <% if user.persisted? %>
-          <p class="field-hint">Leave blank to keep the current PIN.</p>
+          <p class="field-hint" id="<%= pin_hint_id %>">Leave blank to keep the current PIN.</p>
+        <% else %>
+          <p class="field-hint" id="<%= pin_hint_id %>">Digits only.</p>
+        <% end %>
+        <% if pin_error %>
+          <p class="field-error" id="user_pin_error"><%= pin_error %></p>
         <% end %>
       </div>
+      <%
+        pin_conf_error = user.errors[:pin_confirmation].presence&.to_sentence
+        pin_conf_describedby = pin_conf_error ? "user_pin_confirmation_error" : nil
+      %>
       <div class="field">
         <%= form.label :pin_confirmation, "PIN confirmation", class: "field-label" %>
         <%= form.password_field :pin_confirmation, class: "input input-code", autocomplete: "new-password",
-              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH %>
+              inputmode: "numeric", maxlength: User::PIN_MAX_LENGTH,
+              aria: { invalid: pin_conf_error.present? || nil, describedby: pin_conf_describedby } %>
+        <% if pin_conf_error %>
+          <p class="field-error" id="user_pin_confirmation_error"><%= pin_conf_error %></p>
+        <% end %>
       </div>
     </div>
   </section>

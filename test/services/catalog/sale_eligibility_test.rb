@@ -103,4 +103,20 @@ class CatalogSaleEligibilityTest < ActiveSupport::TestCase
 
     assert_includes result.blockers, "unsupported_variant_structure"
   end
+
+  test "availability windows use store-local date not Date.current" do
+    store = stores(:main_street)
+    store.update!(timezone: "America/New_York")
+    # Becomes available on the 15th. Near midnight UTC that calendar date has already
+    # flipped while the store is still on the 14th.
+    @variant.product.update!(available_from: Date.new(2026, 3, 15), available_until: nil)
+
+    travel_to Time.utc(2026, 3, 15, 2, 30, 0) do
+      without_store = Catalog::SaleEligibility.call(variant: @variant)
+      assert_not_includes without_store.blockers, "product_outside_availability_window"
+
+      with_store = Catalog::SaleEligibility.call(variant: @variant, store: store)
+      assert_includes with_store.blockers, "product_outside_availability_window"
+    end
+  end
 end

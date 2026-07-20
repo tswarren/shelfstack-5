@@ -39,6 +39,7 @@ class DepartmentsController < ApplicationController
   def update
     attrs = department_params.to_h
     if human_readable_params_invalid?
+      @department.assign_attributes(attrs)
       copy_human_readable_param_errors!(@department)
       render :edit, status: :unprocessable_entity
       return
@@ -63,9 +64,11 @@ class DepartmentsController < ApplicationController
   end
 
   def load_form_collections
-    @parent_departments = Current.organization.departments.order(:department_number)
-    @tax_categories = Current.organization.tax_categories.order(:code)
-    @return_policies = Current.organization.return_policies.order(:code)
+    @parent_departments = Department.sorted_hierarchically(
+      Current.organization.departments.includes(:parent_department)
+    )
+    @tax_categories = Current.organization.tax_categories.order(:name)
+    @return_policies = Current.organization.return_policies.order(:name)
   end
 
   def department_params

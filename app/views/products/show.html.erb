@@ -74,7 +74,7 @@
 <section class="record-section">
   <h2>Pricing &amp; availability</h2>
   <%= render "shared/record_summary", rows: [
-    [ "List price", @product.list_price_cents ? number_to_currency(@product.list_price_cents / 100.0) : "—" ],
+    [ "List price", @product.list_price_cents ? format_money(@product.list_price_cents) : "—" ],
     [ "Available from", @product.available_from&.to_fs(:long) || "—" ],
     [ "Available until", @product.available_until&.to_fs(:long) || "—" ]
   ] %>
@@ -113,7 +113,7 @@
             <td><%= variant.inventory_tracking_mode.titleize %></td>
             <td><%= status_badge variant.status.titleize, variant: product_status_variant(variant.status) %></td>
             <td><%= boolean_status variant.sellable?, true_label: "Sellable", false_label: "Not sellable" %></td>
-            <td class="num"><%= variant.regular_price_cents ? number_to_currency(variant.regular_price_cents / 100.0) : "—" %></td>
+            <td class="num"><%= variant.regular_price_cents ? format_money(variant.regular_price_cents) : "—" %></td>
             <td class="num"><%= balance ? balance.on_hand : "—" %></td>
             <td class="num"><%= balance ? balance.available : "—" %></td>
           </tr>

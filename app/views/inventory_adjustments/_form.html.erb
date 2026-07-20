@@ -1,4 +1,4 @@
-<% lines = inventory_adjustment.inventory_adjustment_lines.to_a
+<% lines = local_assigns[:submitted_lines].presence || inventory_adjustment.inventory_adjustment_lines.to_a
    lines = [ inventory_adjustment.inventory_adjustment_lines.build(quantity_delta: 1, position: 0) ] if lines.empty? %>
 
 <%= form_with model: inventory_adjustment, class: "form",

@@ -63,4 +63,16 @@ class ApplicationHelperTest < ActionView::TestCase
     assert_equal "Zero-rated", tax_treatment_label("zero_rated")
     assert_equal "Not applicable", tax_treatment_label("not_applicable")
   end
+
+  test "format_money uses the store currency unit" do
+    store = stores(:main_street)
+    store.update!(currency_code: "CAD")
+    Current.store = store
+
+    assert_includes format_money(1250), "CA$"
+    assert_includes format_money(1250), "12.50"
+  ensure
+    Current.reset if Current.respond_to?(:reset)
+    Current.store = nil
+  end
 end

@@ -12,13 +12,20 @@ module Hierarchical
       @hierarchy_parent_association || :parent
     end
 
-    # Depth-first order: each parent, then its children (siblings by position, name).
+    # Depth-first order: each parent, then its children.
+    # Sibling order: position, then department_number (when present), then name.
     def sorted_hierarchically(scope = all)
       records = scope.respond_to?(:to_a) ? scope.to_a : Array(scope)
       parent_fk = :"#{hierarchy_parent_association}_id"
       by_parent = records.group_by { |record| record.public_send(parent_fk) }
       sort_key = ->(record) {
-        [ record.try(:position) || Float::INFINITY, record.name.to_s.downcase, record.id ]
+        number = record.try(:department_number)
+        [
+          record.try(:position) || Float::INFINITY,
+          number.present? ? number.to_s : "",
+          record.name.to_s.downcase,
+          record.id
+        ]
       }
 
       ordered = []

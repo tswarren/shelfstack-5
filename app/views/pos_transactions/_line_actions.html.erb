@@ -40,6 +40,27 @@
 
   <div class="pos-panel">
     <h3>Line discount</h3>
+    <% line_discounts = Array(@line_discounts_by_line_id&.[](line.id)) %>
+    <% if line_discounts.any? %>
+      <ul class="pos-resolution-list">
+        <% line_discounts.each do |discount| %>
+          <li>
+            <p>
+              <strong>Line discount</strong>
+              <span class="muted">· <%= pos_discount_summary(discount) %></span>
+            </p>
+            <% if Current.user.can?("pos.discount.apply", store: Current.store) %>
+              <%= button_to "Remove discount",
+                    pos_transaction_pos_discount_path(@pos_transaction, discount),
+                    method: :delete,
+                    class: "button button-small button-danger",
+                    form: { data: { turbo_confirm: "Remove this line discount?" } } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+
     <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "form" do |form| %>
       <%= hidden_field_tag :scope, "line" %>
       <%= hidden_field_tag :pos_line_item_id, line.id %>

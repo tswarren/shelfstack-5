@@ -84,7 +84,9 @@
         <div class="field">
           <%= product_form.label :default_department_id, "Default department", class: "field-label" %>
           <%= product_form.select :default_department_id,
-                Current.organization.departments.order(:name).map { |d| [ hierarchy_path_label(d), d.id ] },
+                Department.sorted_hierarchically(
+                  Current.organization.departments.includes(:parent_department)
+                ).map { |d| [ hierarchy_path_label(d), d.id ] },
                 { include_blank: true }, class: "input" %>
           <p class="field-hint">Leave blank to inherit from the merchandise class when present.</p>
         </div>

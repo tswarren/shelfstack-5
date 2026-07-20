@@ -163,6 +163,25 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert qty_at < desc_at
   end
 
+  test "open-ring department options keep hierarchy order after filtering postable" do
+    get pos_transaction_path(@transaction)
+    assert_response :success
+
+    start = response.body.index("Open-ring line")
+    segment = response.body[start..]
+    books_new = departments(:books_new)
+    unconfigured = departments(:unconfigured_tax_department)
+    books_label = ApplicationController.helpers.hierarchy_path_label(books_new)
+    unconfigured_label = ApplicationController.helpers.hierarchy_path_label(unconfigured)
+    books_at = segment.index(books_label)
+    unconfigured_at = segment.index(unconfigured_label)
+
+    assert books_at, "expected #{books_label.inspect} in open-ring select"
+    assert unconfigured_at, "expected #{unconfigured_label.inspect} in open-ring select"
+    assert_operator books_at, :<, unconfigured_at,
+                    "postable children should follow full-tree order (Books child before dept 800)"
+  end
+
   test "completed transaction shows change due and back to register without print" do
     Pos::AddOpenRingLine.call(
       pos_transaction: @transaction, department: @department, unit_price_cents: 1000, actor: @admin

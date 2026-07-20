@@ -2,7 +2,9 @@
 
 class PosDiscountsController < ApplicationController
   before_action -> { require_permission!("pos.access") }
+  before_action -> { require_permission!("pos.discount.apply") }, only: %i[destroy]
   before_action :set_transaction
+  before_action :set_discount, only: %i[destroy]
 
   def create
     rate_bps = discount_rate_bps_from_params
@@ -34,10 +36,24 @@ class PosDiscountsController < ApplicationController
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
+  def destroy
+    result = Pos::RemoveDiscount.call(pos_discount: @pos_discount, actor: Current.user)
+    if result.success?
+      notice = result.warnings.present? ? result.warnings.join("; ") : "Discount removed."
+      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
   private
 
   def set_transaction
     @pos_transaction = Current.store.pos_transactions.find(params[:pos_transaction_id])
+  end
+
+  def set_discount
+    @pos_discount = @pos_transaction.pos_discounts.find(params[:id])
   end
 
   def line_item

@@ -54,10 +54,14 @@
       <%= render "shared/percent_field", name: "department[maximum_merchandise_discount_percent]",
             label: "Maximum merchandise discount", id: "department_maximum_merchandise_discount",
             value_percent: format_rate_as_percent(department.maximum_merchandise_discount),
+            value: params.dig(:department, :maximum_merchandise_discount_percent),
+            object: department, error_attr: :maximum_merchandise_discount,
             hint: "Largest discount allowed on items in this department, e.g. 20 for 20%." %>
       <%= render "shared/percent_field", name: "department[default_cost_estimation_margin_percent]",
             label: "Default cost estimation margin", id: "department_default_cost_estimation_margin",
             value_percent: format_bps_as_percent(department.default_cost_estimation_margin_bps),
+            value: params.dig(:department, :default_cost_estimation_margin_percent),
+            object: department, error_attr: :default_cost_estimation_margin_bps,
             hint: "Assumed gross margin used to estimate cost, e.g. 40 for 40%." %>
     </div>
   </section>

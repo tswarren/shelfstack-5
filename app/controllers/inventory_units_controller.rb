@@ -23,8 +23,9 @@ class InventoryUnitsController < ApplicationController
       .find_by(id: attrs[:product_variant_id])
 
     if variant.blank?
+      @inventory_unit = Current.store.inventory_units.new(attrs)
+      @inventory_unit.errors.add(:product_variant, "must be an individually tracked variant")
       load_form_collections
-      flash.now[:alert] = "Select an individually tracked variant."
       render :new, status: :unprocessable_entity
       return
     end

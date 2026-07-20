@@ -112,6 +112,32 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     assert @transaction.reload.completed?
   end
 
+  test "Enter on the completed summary returns to the register" do
+    open_register_with_transaction!
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
+    )
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: tender_types(:cash),
+      amount_tendered_cents: net, actor: @admin
+    )
+    Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "system-complete-enter"
+    )
+
+    visit pos_transaction_path(@transaction)
+    assert_text "Transaction complete"
+    assert_text "Back to register"
+
+    # Focus is on the workspace (not the link); document-level Enter should navigate.
+    page.execute_script("document.activeElement && document.activeElement.blur()")
+    find(".pos-completed-workspace").send_keys(:return)
+
+    assert_current_path register_path
+  end
+
   test "keyboard path opens a secondary POS disclosure" do
     open_register_with_transaction!
 

@@ -68,7 +68,7 @@
             <td><%= product.merchandise_class&.name || "—" %></td>
             <td><%= status_badge product.status.titleize, variant: product_status_variant(product.status) %></td>
             <td><%= boolean_status product.sellable?, true_label: "Sellable", false_label: "Not sellable" %></td>
-            <td class="num"><%= variant&.regular_price_cents ? number_to_currency(variant.regular_price_cents / 100.0) : "—" %></td>
+            <td class="num"><%= variant&.regular_price_cents ? format_money(variant.regular_price_cents) : "—" %></td>
           </tr>
         <% end %>
       </tbody>

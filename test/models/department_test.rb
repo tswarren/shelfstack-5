@@ -24,6 +24,15 @@ class DepartmentTest < ActiveSupport::TestCase
     assert_raises(ActiveRecord::ReadonlyAttributeError) { department.department_number = 999 }
   end
 
+  test "sorted_hierarchically keeps children under non-postable parents when filtering" do
+    ordered = Department.sorted_hierarchically(@organization.departments).select(&:postable?)
+
+    assert_equal(
+      [ departments(:books_new), departments(:unconfigured_tax_department) ].map(&:id),
+      ordered.map(&:id)
+    )
+  end
+
   test "default tax category must belong to same organization" do
     foreign_tax = TaxCategory.new(
       organization_id: @organization.id + 99_999,

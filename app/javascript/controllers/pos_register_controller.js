@@ -12,7 +12,16 @@ export default class extends Controller {
     this.onSubmitEnd = this.handleSubmitEnd.bind(this)
     this.onKeydown = this.handleKeydown.bind(this)
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
-    this.element.addEventListener("keydown", this.onKeydown)
+
+    // Completed summary: listen on document so Enter works when focus is on
+    // body / outside the workspace after Turbo replaces the page.
+    if (this.completedValue) {
+      document.addEventListener("keydown", this.onKeydown)
+      this.element.setAttribute("tabindex", "-1")
+      this.element.focus({ preventScroll: true })
+    } else {
+      this.element.addEventListener("keydown", this.onKeydown)
+    }
 
     this.announceStatus()
     this.applyScanOutcome()
@@ -22,6 +31,7 @@ export default class extends Controller {
   disconnect() {
     this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd)
     this.element.removeEventListener("keydown", this.onKeydown)
+    document.removeEventListener("keydown", this.onKeydown)
   }
 
   handleSubmitEnd(event) {

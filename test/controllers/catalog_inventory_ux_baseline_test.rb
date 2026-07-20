@@ -60,7 +60,7 @@ class CatalogInventoryUxBaselineTest < ActionDispatch::IntegrationTest
 
     patch product_path(product), params: {
       product: {
-        name: product.name, product_type: product.product_type,
+        name: "Renamed While Invalid", product_type: product.product_type,
         product_format_id: product.product_format_id,
         status: product.status, sellable: product.sellable,
         list_price: "abc"
@@ -75,7 +75,9 @@ class CatalogInventoryUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_select "#form-errors-product"
     assert_select "input#product_list_price[value='abc'][aria-invalid='true']"
+    assert_select "input[name='product[name]'][value='Renamed While Invalid']"
     assert_equal original_cents, variant.reload.regular_price_cents
+    assert_equal "The Illustrated Man", product.reload.name
   end
 
   test "product form re-renders with shared errors when validation fails" do
@@ -187,6 +189,32 @@ class CatalogInventoryUxBaselineTest < ActionDispatch::IntegrationTest
 
     line = InventoryAdjustmentLine.order(:id).last
     assert_equal 350, line.input_unit_cost_cents
+  end
+
+  test "invalid adjustment cost preserves submitted lines and raw value" do
+    reason = inventory_adjustment_reasons(:opening_other)
+
+    assert_no_difference "InventoryAdjustment.count" do
+      post inventory_adjustments_path, params: {
+        inventory_adjustment: {
+          kind: "opening_inventory",
+          inventory_adjustment_reason_id: reason.id,
+          note: "Keep this note",
+          inventory_adjustment_lines_attributes: {
+            "0" => {
+              product_variant_id: @variant.id, quantity_delta: 3,
+              input_unit_cost: "not-a-price", input_cost_method: "explicit",
+              input_cost_quality: "actual", position: 0
+            }
+          }
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_select "textarea[name='inventory_adjustment[note]']", text: "Keep this note"
+    assert_select "input[name*='[input_unit_cost]'][value='not-a-price'][aria-invalid='true']"
+    assert_select "select[name*='[product_variant_id]'] option[selected][value=?]", @variant.id.to_s
   end
 
   # --- Reservations: filters + release with reason -------------------------

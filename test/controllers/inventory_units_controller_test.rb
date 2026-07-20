@@ -48,4 +48,25 @@ class InventoryUnitsControllerTest < ActionDispatch::IntegrationTest
     get new_inventory_unit_path
     assert_redirected_to root_path
   end
+
+  test "blank variant selection rerenders new with a form object and field error" do
+    post inventory_units_path, params: {
+      inventory_unit: { product_variant_id: "", description: "No variant" }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "form"
+    assert_match(/individually tracked variant/i, response.body)
+    assert_select "#form-errors-inventory_unit, .form-errors, .field-error", minimum: 1
+  end
+
+  test "foreign organization variant id is rejected with a form object" do
+    post inventory_units_path, params: {
+      inventory_unit: { product_variant_id: 0, description: "Missing" }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "form"
+    assert_match(/individually tracked variant/i, response.body)
+  end
 end

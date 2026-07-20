@@ -79,7 +79,7 @@ Rails.application.routes.draw do
         post :lookup
       end
     end
-    resources :pos_discounts, only: %i[create]
+    resources :pos_discounts, only: %i[create destroy]
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
     resources :pos_tenders, only: %i[create destroy]
   end

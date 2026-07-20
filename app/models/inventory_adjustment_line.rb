@@ -8,6 +8,9 @@ class InventoryAdjustmentLine < ApplicationRecord
   CORRECTION_METHODS = %w[explicit].freeze
   CORRECTION_QUALITIES = %w[actual estimated mixed].freeze
 
+  # Presentation-only values for invalid money redisplay (not persisted).
+  attr_accessor :input_unit_cost_input, :corrected_inventory_value_input
+
   belongs_to :inventory_adjustment
   belongs_to :product_variant
   belongs_to :estimate_department, class_name: "Department", optional: true

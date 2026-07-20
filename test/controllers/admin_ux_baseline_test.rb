@@ -56,6 +56,24 @@ class AdminUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select "section.form-section"
   end
 
+  test "invalid store tax rate percent preserves submitted percent and other fields" do
+    rate = store_tax_rates(:gst_13)
+
+    patch store_tax_rate_path(rate), params: {
+      store_tax_rate: {
+        name: "Renamed GST",
+        rate_percent: "twelve",
+        receipt_code: rate.receipt_code,
+        active: true
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_select "input[name='store_tax_rate[name]'][value='Renamed GST']"
+    assert_select "input#store_tax_rate_rate[value='twelve'][aria-invalid='true']"
+    assert_equal "GST 13%", rate.reload.name
+  end
+
   # --- Human-readable department margin / discount entry -------------------
 
   test "creating a department parses percent margin and maximum discount inputs" do

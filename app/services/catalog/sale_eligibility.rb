@@ -26,11 +26,11 @@ module Catalog
       unsupported_variant_structure
     ].freeze
 
-    def initialize(variant:, store: nil, as_of: Date.current)
+    def initialize(variant:, store: nil, as_of: nil)
       @variant = variant
       @product = variant.product
       @store = store
-      @as_of = as_of
+      @as_of = as_of || (store ? StoreTime.today(store) : Date.current)
     end
 
     def call
@@ -72,9 +72,6 @@ module Catalog
       elsif !tax_category.active?
         blockers << "tax_category_inactive"
       end
-
-      # Store context is reserved for later POS/store-policy checks.
-      _ = @store
 
       SaleEligibilityResult.new(blockers: blockers.uniq, warnings: warnings.uniq)
     end

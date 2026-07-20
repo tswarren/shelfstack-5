@@ -90,6 +90,8 @@ class ProductsController < ApplicationController
     variant_attrs = variant_params
 
     if human_readable_params_invalid?
+      @product.assign_attributes(product_attrs)
+      @variant.assign_attributes(variant_attrs) if @variant
       copy_human_readable_param_errors_for_product!
       render :edit, status: :unprocessable_entity
       return

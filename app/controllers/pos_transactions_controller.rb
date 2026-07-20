@@ -32,7 +32,16 @@ class PosTransactionsController < ApplicationController
     # Load lines after recalculation so provisional tax associations are fresh.
     @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position)
     @removed_line_items = @pos_transaction.pos_line_items.where(status: "removed").order(:position)
-    @departments = Current.organization.departments.where(active: true, postable: true).order(:name)
+    @pos_discounts = @pos_transaction.pos_discounts
+      .includes(:discount_reason, :target_pos_line_item, :pos_discount_allocations)
+      .order(:position, :id)
+    @line_discounts_by_line_id = @pos_discounts.select { |d| d.scope == "line" }.group_by(&:target_pos_line_item_id)
+    @transaction_discounts = @pos_discounts.select { |d| d.scope == "transaction" }
+    # Sort the full hierarchy (including non-postable parents), then offer only
+    # active postable departments so open-ring children keep parent-relative order.
+    @departments = Department.sorted_hierarchically(
+      Current.organization.departments.includes(:parent_department)
+    ).select { |d| d.active? && d.postable? }
     @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
     @discount_reasons = Current.organization.discount_reasons.where(active: true).order(:name)
     @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
@@ -173,7 +182,7 @@ class PosTransactionsController < ApplicationController
     @return_lookup_transaction = original_txn
     @return_lookup_lines = original_txn.pos_line_items
       .where(status: "completed", direction: "sale")
-      .includes(:product_variant, product_variant: :product)
+      .includes(:inventory_unit, product_variant: :product)
       .order(:position)
       .select { |line| line.remaining_returnable_quantity.positive? }
   end

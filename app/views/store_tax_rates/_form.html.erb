@@ -18,7 +18,9 @@
       </div>
       <%= render "shared/percent_field", name: "store_tax_rate[rate_percent]",
             label: "Rate", id: "store_tax_rate_rate",
-            value_percent: format_rate_as_percent(store_tax_rate.rate), required: true,
+            value_percent: format_rate_as_percent(store_tax_rate.rate),
+            value: params.dig(:store_tax_rate, :rate_percent),
+            object: store_tax_rate, error_attr: :rate, required: true,
             hint: "Tax rate as a percentage, e.g. 13 for 13%." %>
       <div class="field">
         <%= form.label :receipt_code, class: "field-label" %>
