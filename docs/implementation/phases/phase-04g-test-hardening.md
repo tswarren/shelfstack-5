@@ -1,7 +1,7 @@
 # Phase 4g — Test Hardening
 
-**Status:** Ready to start after PR #30 merges  
-**Depends on:** Phase 4f UX Baseline Gate accepted and merged to `main`  
+**Status:** In progress on `phase/4g-test-hardening`  
+**Depends on:** Phase 4f UX Baseline Gate merged to `main` at `34f371f5590c6942f5291c5bd750a1d98756d13f`  
 **Governing docs:** [../testing/test-review-2026-07-19.md](../testing/test-review-2026-07-19.md), [../testing.md](../testing.md), [AGENTS.md](../../../AGENTS.md) §9
 
 ## Characterization
