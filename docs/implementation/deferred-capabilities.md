@@ -13,8 +13,11 @@ Do not scaffold speculative tables, statuses, or services for these areas. When 
 | Inventory counts | Dedicated count documents and posting |
 | Inter-store transfers | Changes authoritative store ownership |
 | Complete return-to-vendor (RTV) | Beyond disposition flags / deferred unit statuses |
-| Full customer CRM | Beyond Phase 5 minimal customer/contact shell |
+| Full customer CRM | Beyond Phase 5 opaque `customer_reference`; no Customer master in Phase 5 |
 | Customer notifications platform | After customer domain design |
+| Automated replenishment / forecasting | Manual replenishment review and stock_replenishment demand in Phase 5 |
+| Full frontlist / ONIX campaign management | Product-backed frontlist_selection in Phase 5; full campaign tooling deferred |
+| Vendor EDI / acknowledgements / cascading | Phase 5 preserves structural hooks; full lifecycle deferred — see [phase-05-ordering-scope-and-future-lifecycle-boundaries.md](phase-05-ordering-scope-and-future-lifecycle-boundaries.md) |
 | Customer holds / special-order product beyond requests | Extend Product Requests carefully |
 | Reusable tax exemptions | Transaction-specific exemptions may exist earlier |
 | Selected-line / selected-component tax exemptions | Phase 4b is `whole_transaction` coverage only; later `pos_tax_exemption_applications` |

@@ -105,11 +105,11 @@ Receipt numbers are assigned only during successful completion (ADR-0009).
 
 ## Customer identity before customer requests
 
-Phase 5 introduces a **minimal customer/contact shell** (identity and contact fields) before `customer_request` workflows.
+Phase 5 Customer Requests use a nullable opaque `customer_reference` on the Product Request. Phase 5 does **not** introduce a `customers` table or Customer master shell.
 
-Deferred until a later customer domain: loyalty, householding, full purchase history, CRM, notifications platform.
+Deferred until a later Customer domain: stable Customer identity, loyalty, householding, full purchase history, CRM, notifications platform, and migration of `customer_reference` values.
 
-Opaque `customer_reference` strings alone are not sufficient once customer requests and fulfilment are implemented.
+See [product-requests.md](../domains/product-requests.md) and [ordering-and-acquisition-planning.md](../domains/ordering-and-acquisition-planning.md).
 
 ## Purchase-order and receipt linkage
 

@@ -1294,7 +1294,7 @@ A future Customer domain may own:
 * purchase history access;
 * pickup communication.
 
-Product Requests may reference customers before a full Customer domain is implemented.
+Product Requests use opaque `customer_reference` values in Phase 5 before a full Customer domain is implemented.
 
 ## 9.2 Buyback
 

@@ -21,12 +21,12 @@
 1. Phase 3 includes first-class `product_requests`.
 2. Phase 3 includes first-class `purchase_order_allocations`.
 3. V1 Customer Requests use nullable opaque `customer_reference`; no `customers` table or `customer_id` foreign key is introduced.
-4. A Request may retain `requested_description` while Product identity remains unresolved.
+4. **Superseded for Phase 5:** every Product Request must reference an existing ShelfStack Product (`product_id` required). Free-text notes may preserve context but do not replace product identity. Earlier “unresolved product + `requested_description`” language is withdrawn for Phase 5 delivery — see [product-requests.md](../domains/product-requests.md) and [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
 5. `special_order_quantity` and `tbo_required` are removed from Purchase-Order Lines.
 6. Buyer-review quantity is derived from Product Request coverage.
 7. Inventory Reservations may use `source_type = product_request`.
 8. Purchase-Order Allocation statuses in Phase 3 are `active` and `cancelled`.
-9. `received` and `fulfilled` remain deferred until Phase 4 posting rules are defined.
+9. `received` and `fulfilled` remain deferred until receiving and request-fulfilment posting rules are defined (OD-007).
 
 ## Schema changes
 
@@ -64,9 +64,8 @@ id
 store_id
 request_type
 status
-product_id
-product_variant_id
-requested_description
+product_id                  # required for Phase 5
+product_variant_id          # nullable until exact configuration known
 requested_quantity
 priority
 needed_by_on
@@ -77,6 +76,8 @@ notes
 created_at
 updated_at
 ```
+
+`requested_description` as a substitute for unresolved `product_id` is not part of the Phase 5 model.
 
 Unfulfilled quantity is derived:
 

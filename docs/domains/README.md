@@ -38,7 +38,8 @@ Database migrations describe the schema currently implemented. They do not silen
 | Authorization permissions (catalog) | [authorization-permissions.md](authorization-permissions.md) | Canonical permission keys, scope, phase, authority, and approval behavior |
 | Classification and Configuration | [classification-and-configuration.md](classification-and-configuration.md) | Merchandise Classes, Departments, tax configuration, reasons, Tender Types, and Store policies |
 | Catalog and Products | [catalog-and-products.md](catalog-and-products.md) | Products, Product Variants, identifiers, Formats, Conditions, options, pricing inputs, and eligibility |
-| Product Requests | [product-requests.md](product-requests.md) | Customer demand, staff suggestions, buyer-review demand, and fulfilment state |
+| Product Requests | [product-requests.md](product-requests.md) | Customer demand, staff suggestions, replenishment/frontlist demand, buyer-review state, and fulfilment state |
+| Ordering and Acquisition Planning | [ordering-and-acquisition-planning.md](ordering-and-acquisition-planning.md) | Product-backed demand, buyer review, sourcing, expected cost, and supply-to-fulfilment planning |
 | Vendors and Purchasing | [vendors-and-purchasing.md](vendors-and-purchasing.md) | Vendors, Vendor Sources, Purchase Orders, expected supply, and allocations |
 | Receiving and Inventory | [receiving-and-inventory.md](receiving-and-inventory.md) | Receipts, physical inventory, Stock Balances, Inventory Units, Reservations, movements, and cost |
 | Point of Sale | [point-of-sale.md](point-of-sale.md) | Business Days, Sessions, Transactions, lines, tax, Tenders, cash, receipts, returns, and corrections |

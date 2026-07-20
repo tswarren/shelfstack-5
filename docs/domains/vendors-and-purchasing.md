@@ -274,7 +274,7 @@ Audit Vendor and Vendor-Source changes, Purchase-Order creation, line additions 
 - Which Phase 4 events transition an active Allocation to received or fulfilled, and should those states be persisted or derived?
 - Is internal submission or approval distinct from Vendor placement?
 - Are order numbers Store-specific or Organization-wide?
-- Are costs captured as net cost, list and discount, or both?
+- Are costs captured as net cost, list and discount, or both? → Phase 5 accepts both `discount_from_list` and `direct_net_cost` (see [ordering-and-acquisition-planning.md](ordering-and-acquisition-planning.md)); automatic tier qualification remains deferred.
 - How are Vendor-confirmed backorders represented?
 - Are Vendor terms Organization-wide, Store-specific, or both?
 - Which purchasing amounts require Approval?

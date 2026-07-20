@@ -12,9 +12,11 @@
 
 This domain records demand that the Store may attempt to fulfil.
 
-It unifies Customer Requests, staff purchasing suggestions, future automated replenishment suggestions, and buyer-review demand.
+It unifies Customer Requests, staff purchasing suggestions, stock replenishment, frontlist selections, future automated replenishment suggestions, and buyer-review demand.
 
 It does not merge demand with supply. Product Requests, Purchase-Order Allocations, Inventory Reservations, Purchase Orders, and Receipts remain separate facts.
+
+Every acquisition-demand record references an existing ShelfStack Product. Free-text notes may preserve context but do not substitute for product identity. When the Product does not exist, staff search, import, or create it before recording demand. See [ordering-and-acquisition-planning.md](ordering-and-acquisition-planning.md).
 
 ## Ownership boundary
 
@@ -47,6 +49,8 @@ Initial types:
 ```text
 customer_request
 staff_suggestion
+stock_replenishment
+frontlist_selection
 ```
 
 Potential future type:
@@ -63,6 +67,14 @@ Represents customer demand and an intended fulfilment obligation.
 
 Represents a recommendation for buyer consideration. It does not ordinarily reserve present inventory or commit future supply to a customer.
 
+### Stock Replenishment
+
+Represents a buyer or authorized user’s decision that additional stock should be considered for ordering. It may originate from a replenishment-review screen. It does not create a customer obligation.
+
+### Frontlist Selection
+
+Represents buyer interest in a forthcoming or newly released Product. The Product must be imported or created before the selection is recorded. Full publisher-catalog or ONIX campaign management is deferred.
+
 ## Product Request
 
 Suggested attributes:
@@ -70,9 +82,8 @@ Suggested attributes:
 - Store;
 - request type;
 - nullable `customer_reference` string for v1 Customer Requests;
-- Product when resolved;
-- Product Variant when known;
-- requested description when Product is unresolved;
+- required Product;
+- optional Product Variant when known;
 - requested quantity;
 - priority;
 - needed-by date;
@@ -81,6 +92,20 @@ Suggested attributes:
 - assigned buyer;
 - notes;
 - timestamps.
+
+Required relationship:
+
+```text
+product_requests.product_id → required
+```
+
+Optional relationship:
+
+```text
+product_requests.product_variant_id → nullable until an exact configuration is known or selected
+```
+
+Before merchandise is added to a Purchase Order, the exact Product Variant must be resolved.
 
 Suggested high-level statuses:
 
@@ -107,8 +132,7 @@ Customer Requests may store a nullable opaque `customer_reference` string. This 
 - may be replaced or migrated when the Customer domain is designed;
 - does not provide notifications, reusable tax exemptions, deposits, or Customer history.
 
-A Request may begin before its Product is resolved. When `product_id` is null, the Request should retain a `requested_description` sufficient for buyer review. `product_variant_id` remains nullable until an exact Variant is required or selected.
-
+Phase 5 does not require a Customer master shell. Rich CRM remains deferred.
 
 ## Supply coverage
 
@@ -144,24 +168,30 @@ An authorized User may create a Purchase-Order Allocation.
 
 Remaining quantity enters buyer review.
 
-A buyer may select or create a Vendor Source, add quantity to a Purchase Order, defer, decline, request more information, or contact the Customer.
+A buyer may select or create a Vendor Source, add quantity to a Purchase Order, defer, decline, or return unresolved quantity for later sourcing.
 
 ### Receipt and fulfilment
 
 When allocated merchandise is accepted:
 
-- Phase 4 posting rules determine whether the Allocation becomes `received`/`fulfilled`, a derived state, or a separate fulfilment event (Phase 3 persists only `active` and `cancelled`);
+- Phase 5 posting rules determine whether the Allocation becomes `received`/`fulfilled`, a derived state, or a separate fulfilment event (schema persists only `active` and `cancelled` until OD-007 is closed);
 - merchandise may become Reserved for the Customer;
 - notification or pickup may occur when Customer capability exists;
 - final sale or delivery fulfils the Request.
 
+Compatible Customer Requests should ordinarily be ranked by explicitly authorized priority, needed-by date, then request creation time. Earlier compatible supply may fulfil a request previously allocated to later supply; redundant future Allocations are then reduced or cancelled.
+
 ## Staff Suggestion workflow
 
-1. Create suggestion.
-2. Resolve Product or provide enough information for buyer review.
+1. Resolve or create the Product (and optional Variant).
+2. Create suggestion.
 3. Add to buyer queue.
 4. Buyer orders, defers, declines, or closes.
 5. Received merchandise remains generally available unless separately Reserved.
+
+## Stock replenishment and frontlist
+
+Replenishment and frontlist selections enter the same buyer-review projection as other demand. They do not create customer obligations or reserve received merchandise by default. See [ordering-and-acquisition-planning.md](ordering-and-acquisition-planning.md).
 
 ## Derived request states
 
@@ -177,12 +207,16 @@ The interface may present:
 
 These may be projections rather than persisted statuses.
 
+The buyer-review (“To Be Ordered”) queue is a projection over Product Requests and coverage. It is not a boolean on a Purchase-Order Line, a permanent Product status, or an inventory quantity.
+
 ## Permissions
 
 ```text
 requests.view
 requests.create_customer_request
 requests.create_staff_suggestion
+requests.create_stock_replenishment
+requests.create_frontlist_selection
 requests.edit_open_request
 requests.assign_buyer
 requests.reserve_in_house_inventory
@@ -196,16 +230,17 @@ requests.close
 
 ## Audit requirements
 
-Audit Request creation, quantity and Product changes, priority and needed-by changes, buyer assignment, referenced Reservation and Allocation changes, decline, Cancellation, fulfilment, close, User, and reason.
+Audit Request creation, quantity and Product changes, priority and needed-by changes, buyer assignment, referenced Reservation and Allocation changes, decline, Cancellation, fulfilment, close, User, and reason. Product creation initiated from demand entry is audited in Catalog.
 
 ## Invariants
 
 - A Request represents demand, not supply.
 - Creating a Request does not change On Hand or On Order.
+- Every Request references an existing ShelfStack Product.
 - A Request is not an Inventory Reservation.
 - Future committed supply uses Purchase-Order Allocation.
 - In-house Reservation requires physical confirmation.
-- Staff Suggestions do not ordinarily create customer obligations.
+- Staff Suggestions, stock replenishment, and frontlist selections do not ordinarily create customer obligations.
 - Active coverage must not exceed requested quantity without an explicit change.
 - Supply cannot be allocated or reserved beyond available quantity.
 - V1 Customer Requests use `customer_reference`; they do not require or imply a Customer master record.

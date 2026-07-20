@@ -106,7 +106,7 @@ Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged t
 | Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Unlocked |
 | Return/refund-oriented fulfilment paths | **4e** recommended + same | Unlocked |
 
-1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`)
+1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns (`P4c → P5f`; `P4d → P5u`). Governing docs: [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md), [../domains/ordering-and-acquisition-planning.md](../domains/ordering-and-acquisition-planning.md), [phase-05-ordering-scope-and-future-lifecycle-boundaries.md](phase-05-ordering-scope-and-future-lifecycle-boundaries.md).
 2. Residual 4g-5 broader coverage may continue alongside Phase 5
 3. Phases 6–7 as separate epics
 

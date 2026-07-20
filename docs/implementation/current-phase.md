@@ -9,7 +9,7 @@
 
 ## Immediate next work
 
-1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns.
+1. Begin Phase 5 foundational purchasing / receiving / requests using Baseline page patterns. Governing plan: [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md); planning detail: [../domains/ordering-and-acquisition-planning.md](../domains/ordering-and-acquisition-planning.md); lifecycle boundaries: [phase-05-ordering-scope-and-future-lifecycle-boundaries.md](phase-05-ordering-scope-and-future-lifecycle-boundaries.md).
 2. Continue residual 4g-5 backlog (exhaustive admin CRUD / remaining static models) in parallel as needed.
 3. Keep [OD-014](open-decisions.md) full settlement/variance representation open for Phase 5; the Phase 4c interim remains accepted.
 4. Keep [architectural-locks.md](architectural-locks.md) binding; track unresolved items in [open-decisions.md](open-decisions.md).
