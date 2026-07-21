@@ -26,6 +26,8 @@ class ProductVariantTest < ActiveSupport::TestCase
   test "rejects SKU that is not a valid generated 28 identifier" do
     product = products(:sample_book)
     product.update!(sellable: false)
+    PurchaseOrderLine.where(product_variant: product.product_variants).delete_all
+    ProductVariantVendor.where(product_variant: product.product_variants).delete_all
     product.product_variants.destroy_all
 
     variant = product.product_variants.build(

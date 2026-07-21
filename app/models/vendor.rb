@@ -4,6 +4,7 @@ class Vendor < ApplicationRecord
   belongs_to :organization
   has_many :product_variant_vendors, dependent: :restrict_with_exception
   has_many :product_variants, through: :product_variant_vendors
+  has_many :purchase_orders, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true

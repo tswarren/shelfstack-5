@@ -192,11 +192,39 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Remaining returnable quantity is `original.quantity − sum(pending/completed linked returns)`.
 - Free-text cancellation/removal/override reasons remain free text; Return Reasons are organization master data (`docs/exports/return_reasons.csv`).
 
+## Phase 5a — Vendors
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Purchasing::CreateVendor` / `UpdateVendor` | Vendors and Purchasing | 5a | Yes | No | Vendor | Organization, actor, vendor attrs | Persisted `Vendor` + audit; code unique within organization |
+| `Purchasing::CreateProductVariantVendor` / `UpdateProductVariantVendor` | Vendors and Purchasing | 5a | Yes | No | Product Variant Vendor | Variant, vendor, source attrs (vendor item code, cost, MOQ, order multiple, returnable) | Persisted vendor-source link + audit; unique per (variant, vendor) |
+
+## Phase 5b — Purchase orders
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Purchasing::CreatePurchaseOrder` | Vendors and Purchasing | 5b | Yes | No | Store (`lock`, number sequence) | Store, vendor, actor, header + lines attrs | Draft `PurchaseOrder` with store-scoped never-reused number and store currency; snapshots description/SKU/identifier/vendor-item/returnable via `LineSnapshot`; audit |
+| `Purchasing::UpdateDraftPurchaseOrder` | Vendors and Purchasing | 5b | Yes | No | Purchase Order (`reload.lock!`) | Draft Purchase Order, header attrs, replacement lines | Updated header + fully replaced line set; rejected once no longer draft; audit |
+| `Purchasing::PlacePurchaseOrder` | Vendors and Purchasing | 5b | Yes | Yes (replaying an ordered PO is a no-op) | Purchase Order (`reload.lock!`) | Draft Purchase Order, actor, store | `ordered` status; `ordered_at`/`ordered_by_user`/`ordered_on`; soft MOQ/multiple warnings via `ThresholdWarnings`; audit |
+| `Purchasing::AmendPurchaseOrder` | Vendors and Purchasing | 5b | Yes | No | Purchase Order (`reload.lock!`), then affected Lines (`lock`) | Ordered Purchase Order, actor, cancel-quantity attrs (+ reason), and/or new-line attrs | Increases supply via new lines and/or reduces expected quantity via `cancelled_quantity` (never decreases, never edits identity fields in place); audit |
+| `Purchasing::CancelPurchaseOrder` | Vendors and Purchasing | 5b | Yes | Yes (replaying a cancelled PO is a no-op) | Purchase Order (`reload.lock!`) | Draft or ordered Purchase Order with no received quantity, actor, optional reason | `cancelled` status + `cancelled_at`/`cancelled_by_user`; rejects if any line has received quantity or PO is closed; audit |
+| `Purchasing::ClosePurchaseOrder` | Vendors and Purchasing | 5b | Yes | Yes (replaying a closed PO is a no-op) | Purchase Order (`reload.lock!`) | Ordered Purchase Order where every line's `open_quantity` is zero, actor | `closed` status + `closed_at`/`closed_by_user`; no reopen workflow; audit |
+| `Purchasing::ApplyBulkDiscountToDraftLines` | Vendors and Purchasing | 5b | Yes | No | Purchase Order (`reload.lock!`) | Draft Purchase Order, selected `discount_from_list` line IDs, discount bps, actor | Updated `discount_bps`/`cost_provenance` on selected lines; expected unit/extended cost recompute deterministically; audit |
+| `Purchasing::OnOrder` | Vendors and Purchasing | 5b | No | Yes | None | Store, product variant | Derived on-order quantity: `max(ordered − received − cancelled, 0)` summed across `ordered` Purchase Order Lines only; never cached or posted through the inventory ledger |
+| `Purchasing::ThresholdWarnings` | Vendors and Purchasing | 5b | No | Yes | None | Purchase-order lines (with optional vendor source) | Soft warning strings for vendor minimum-order-quantity and order-multiple mismatches; never blocks placement |
+
+### Phase 5b notes
+
+- Purchase-order commercial lifecycle is `draft → ordered → (closed | cancelled)`; receiving progress (`receiving_state`: `not_received`/`partially_received`/`fully_received`) is derived from line quantity and is never a commercial status.
+- Line identity (variant, vendor source, quantity, cost fields, snapshots) is immutable once the parent Purchase Order is placed; only `cancelled_quantity` may change afterward, and only via `AmendPurchaseOrder`.
+- `expected_unit_cost_cents` is deterministic for `discount_from_list` lines (`list_cost_cents` × (1 − discount_bps)) via `Inventory::Rounding`, and manual for `direct_net_cost` lines; `expected_extended_cost_cents` is always a derived rollup.
+- Receipt posting and PO-line receiving allocation remain Phase 5c work (not yet implemented).
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 5: receipt posting, PO placement, allocation services
+- Phase 5c: receipt posting, PO-line receiving allocation
 - Phase 6: stored-value posting, post-void
 
 ## Related

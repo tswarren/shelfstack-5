@@ -6,6 +6,7 @@ main_street:
   timezone: America/New_York
   currency_code: USD
   active: true
+  next_purchase_order_number: 3
 
 warehouse:
   organization: acme

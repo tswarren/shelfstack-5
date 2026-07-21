@@ -1,0 +1,43 @@
+draft_po_line1:
+  purchase_order: draft_po
+  position: 0
+  product_variant: sample_book_standard
+  product_variant_vendor: sample_book_ingram
+  description_snapshot: Standard
+  identifier_snapshot: "9780306406157"
+  sku_snapshot: "2800000000011"
+  vendor_item_code_snapshot: "9780000000001"
+  ordered_quantity: 10
+  cancelled_quantity: 0
+  received_quantity: 0
+  cost_entry_method: discount_from_list
+  list_cost_cents: 1200
+  discount_bps: 4000
+  expected_unit_cost_cents: 720
+  expected_extended_cost_cents: 7200
+  cost_provenance: vendor_source
+  returnable_snapshot: true
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+ordered_po_line1:
+  purchase_order: ordered_po
+  position: 0
+  product_variant: sample_book_standard
+  product_variant_vendor: sample_book_ingram
+  description_snapshot: Standard
+  identifier_snapshot: "9780306406157"
+  sku_snapshot: "2800000000011"
+  vendor_item_code_snapshot: "9780000000001"
+  ordered_quantity: 5
+  cancelled_quantity: 0
+  received_quantity: 0
+  cost_entry_method: discount_from_list
+  list_cost_cents: 1200
+  discount_bps: 4000
+  expected_unit_cost_cents: 720
+  expected_extended_cost_cents: 3600
+  cost_provenance: vendor_source
+  returnable_snapshot: true
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>

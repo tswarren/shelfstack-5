@@ -1,0 +1,56 @@
+<%# locals: f:, variants:, product_variant_vendors: %>
+<fieldset class="adjustment-line" data-purchase-order-form-target="line">
+  <div class="adjustment-line-header">
+    <span class="adjustment-line-title">Line</span>
+    <button type="button" class="button button-small button-danger"
+            data-purchase-order-form-target="removeButton"
+            data-action="purchase-order-form#removeLine">Remove</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= f.label :product_variant_id, "Variant", class: "field-label" %>
+      <%= f.select :product_variant_id,
+            variants.map { |v| [ variant_option_label(v), v.id ] },
+            { include_blank: true },
+            class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :product_variant_vendor_id, "Vendor source", class: "field-label" %>
+      <%= f.select :product_variant_vendor_id,
+            product_variant_vendors.map { |s| [ "#{s.product_variant.name} — #{s.vendor.code} (#{s.vendor_item_code})", s.id ] },
+            { include_blank: true },
+            class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :ordered_quantity, "Ordered quantity", class: "field-label" %>
+      <%= f.number_field :ordered_quantity, min: 1, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :cost_entry_method, "Cost entry method", class: "field-label" %>
+      <%= f.select :cost_entry_method, PurchaseOrderLine::COST_ENTRY_METHODS.map { |m| [ m.titleize, m ] }, {}, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :list_cost_cents, "List cost (cents)", class: "field-label" %>
+      <%= f.number_field :list_cost_cents, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :discount_bps, "Discount (bps)", class: "field-label" %>
+      <%= f.number_field :discount_bps, min: 0, max: 10_000, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :expected_unit_cost_cents, "Expected unit cost (cents)", class: "field-label" %>
+      <%= f.number_field :expected_unit_cost_cents, min: 0, class: "input" %>
+      <p class="field-hint">Used directly for direct-net cost; derived automatically for discount-from-list.</p>
+    </div>
+  </div>
+
+  <%= f.hidden_field :id if f.object.id.present? %>
+  <%= f.hidden_field :position, data: { purchase_order_form_target: "position" } %>
+</fieldset>

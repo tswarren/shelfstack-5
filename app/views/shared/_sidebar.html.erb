@@ -12,6 +12,7 @@
     <%= nav_section "Purchasing" do %>
       <%= nav_item "Vendors", vendors_path, permission_key: "purchasing.vendor.view" %>
       <%= nav_item "Vendor sources", product_variant_vendors_path, permission_key: "purchasing.vendor_source.view" %>
+      <%= nav_item "Purchase orders", purchase_orders_path, permission_key: "purchasing.purchase_order.view" %>
     <% end %>
 
     <%= nav_section "Inventory" do %>

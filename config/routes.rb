@@ -34,6 +34,15 @@ Rails.application.routes.draw do
   resources :products, except: %i[destroy]
   resources :vendors, except: %i[destroy]
   resources :product_variant_vendors, except: %i[destroy], path: "vendor_sources"
+  resources :purchase_orders, except: %i[destroy] do
+    member do
+      post :place
+      post :amend
+      post :cancel
+      post :close
+      post :bulk_discount
+    end
+  end
   resources :inventory_adjustment_reasons, except: %i[destroy]
   resources :stock_balances, only: %i[index show]
   resources :inventory_adjustments, except: %i[destroy] do

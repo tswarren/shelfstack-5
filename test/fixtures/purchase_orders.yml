@@ -1,0 +1,20 @@
+draft_po:
+  store: main_street
+  vendor: acme_distributor
+  purchase_order_number: "001-PO-00001"
+  status: draft
+  currency_code: USD
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+ordered_po:
+  store: main_street
+  vendor: acme_distributor
+  purchase_order_number: "001-PO-00002"
+  status: ordered
+  currency_code: USD
+  ordered_on: <%= Date.current %>
+  ordered_at: <%= Time.current %>
+  ordered_by_user: admin
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
