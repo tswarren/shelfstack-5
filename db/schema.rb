@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_032000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -219,6 +219,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.bigint "posted_by_user_id", null: false
     t.string "posting_key", null: false
     t.bigint "product_variant_id", null: false
+    t.bigint "provisional_cost_released_cents"
+    t.string "provisional_deficit_cost_quality_snapshot"
     t.integer "quantity_delta", null: false
     t.string "reason_code"
     t.text "reason_note"
@@ -227,6 +229,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.integer "resulting_moving_average_cost_cents"
     t.integer "resulting_on_hand", null: false
     t.bigint "reversal_of_entry_id"
+    t.bigint "settlement_variance_cents"
+    t.string "settlement_variance_kind"
     t.bigint "source_id", null: false
     t.string "source_type", null: false
     t.bigint "store_id", null: false
@@ -243,8 +247,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.check_constraint "cost_method::text = ANY (ARRAY['explicit'::character varying::text, 'configured_estimate'::character varying::text, 'moving_average'::character varying::text, 'last_known'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_cost_method"
     t.check_constraint "cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_cost_quality"
     t.check_constraint "movement_cost_cents IS NULL OR movement_cost_cents >= 0", name: "inv_ledger_movement_cost_nonneg"
-    t.check_constraint "movement_type::text = ANY (ARRAY['opening_inventory'::character varying::text, 'quantity_adjustment'::character varying::text, 'cost_correction'::character varying::text, 'sale'::character varying::text, 'customer_return'::character varying::text])", name: "inv_ledger_movement_type"
+    t.check_constraint "movement_type::text = ANY (ARRAY['opening_inventory'::text, 'quantity_adjustment'::text, 'cost_correction'::text, 'sale'::text, 'customer_return'::text, 'receipt'::text, 'receipt_deficit_settlement'::text])", name: "inv_ledger_movement_type"
+    t.check_constraint "provisional_deficit_cost_quality_snapshot IS NULL OR (provisional_deficit_cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[]))", name: "inv_ledger_deficit_quality_snapshot_check"
     t.check_constraint "resulting_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_resulting_cost_quality"
+    t.check_constraint "settlement_variance_kind IS NULL OR (settlement_variance_kind::text = ANY (ARRAY['ordinary'::character varying, 'late_cost_recognition'::character varying]::text[]))", name: "inv_ledger_variance_kind_check"
     t.check_constraint "unit_cost_cents IS NULL OR unit_cost_cents >= 0", name: "inv_ledger_unit_cost_nonneg"
   end
 
@@ -874,6 +880,62 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'ordered'::character varying, 'closed'::character varying, 'cancelled'::character varying]::text[])", name: "purchase_orders_status_check"
   end
 
+  create_table "receipt_lines", force: :cascade do |t|
+    t.integer "accepted_quantity", default: 0, null: false
+    t.integer "accepted_unavailable_quantity", default: 0, null: false
+    t.integer "actual_unit_cost_cents"
+    t.string "cost_provenance"
+    t.string "cost_quality"
+    t.datetime "created_at", null: false
+    t.integer "delivered_quantity", null: false
+    t.string "discrepancy_reason"
+    t.text "notes"
+    t.integer "position", default: 0, null: false
+    t.bigint "product_variant_id", null: false
+    t.bigint "purchase_order_line_id"
+    t.bigint "receipt_id", null: false
+    t.integer "rejected_quantity", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.index ["product_variant_id"], name: "index_receipt_lines_on_product_variant_id"
+    t.index ["purchase_order_line_id"], name: "index_receipt_lines_on_purchase_order_line_id"
+    t.index ["receipt_id", "position"], name: "index_receipt_lines_on_receipt_and_position"
+    t.index ["receipt_id"], name: "index_receipt_lines_on_receipt_id"
+    t.check_constraint "(accepted_quantity + rejected_quantity) <= delivered_quantity", name: "receipt_lines_accepted_rejected_within_delivered"
+    t.check_constraint "accepted_quantity >= 0", name: "receipt_lines_accepted_nonneg"
+    t.check_constraint "accepted_unavailable_quantity <= accepted_quantity", name: "receipt_lines_accepted_unavailable_within_accepted"
+    t.check_constraint "accepted_unavailable_quantity >= 0", name: "receipt_lines_accepted_unavailable_nonneg"
+    t.check_constraint "actual_unit_cost_cents IS NULL OR actual_unit_cost_cents >= 0", name: "receipt_lines_unit_cost_nonneg"
+    t.check_constraint "cost_quality IS NULL OR (cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'unknown'::character varying, 'confirmed_zero'::character varying]::text[]))", name: "receipt_lines_cost_quality_check"
+    t.check_constraint "delivered_quantity >= 0", name: "receipt_lines_delivered_nonneg"
+    t.check_constraint "rejected_quantity >= 0", name: "receipt_lines_rejected_nonneg"
+  end
+
+  create_table "receipts", force: :cascade do |t|
+    t.text "cancellation_reason"
+    t.datetime "cancelled_at"
+    t.bigint "cancelled_by_user_id"
+    t.datetime "created_at", null: false
+    t.text "notes"
+    t.datetime "posted_at"
+    t.bigint "posted_by_user_id"
+    t.string "posting_key"
+    t.string "receipt_number", null: false
+    t.datetime "received_at"
+    t.bigint "received_by_user_id"
+    t.string "status", default: "draft", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "vendor_id", null: false
+    t.index ["cancelled_by_user_id"], name: "index_receipts_on_cancelled_by_user_id"
+    t.index ["posted_by_user_id"], name: "index_receipts_on_posted_by_user_id"
+    t.index ["posting_key"], name: "index_receipts_on_posting_key", unique: true, where: "(posting_key IS NOT NULL)"
+    t.index ["received_by_user_id"], name: "index_receipts_on_received_by_user_id"
+    t.index ["store_id", "receipt_number"], name: "index_receipts_on_store_and_number", unique: true
+    t.index ["store_id"], name: "index_receipts_on_store_id"
+    t.index ["vendor_id"], name: "index_receipts_on_vendor_id"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'posted'::character varying, 'cancelled'::character varying]::text[])", name: "receipts_status_check"
+  end
+
   create_table "return_policies", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
@@ -927,12 +989,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
   create_table "stock_balances", force: :cascade do |t|
     t.string "cost_quality", default: "unknown", null: false
     t.datetime "created_at", null: false
+    t.string "deficit_cost_quality", default: "unknown", null: false
     t.bigint "inventory_value_cents", default: 0
     t.string "last_known_cost_quality"
     t.integer "last_known_unit_cost_cents"
     t.integer "lock_version", default: 0, null: false
     t.integer "moving_average_cost_cents"
     t.integer "on_hand", default: 0, null: false
+    t.bigint "open_provisional_deficit_cost_cents", default: 0
     t.bigint "product_variant_id", null: false
     t.integer "reserved", default: 0, null: false
     t.bigint "store_id", null: false
@@ -942,10 +1006,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.index ["store_id", "product_variant_id"], name: "index_stock_balances_on_store_id_and_product_variant_id", unique: true
     t.index ["store_id"], name: "index_stock_balances_on_store_id"
     t.check_constraint "cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "stock_balances_cost_quality"
+    t.check_constraint "deficit_cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[])", name: "stock_balances_deficit_cost_quality_check"
     t.check_constraint "last_known_cost_quality IS NULL OR (last_known_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "stock_balances_last_known_cost_quality"
+    t.check_constraint "on_hand < 0 OR open_provisional_deficit_cost_cents = 0 AND deficit_cost_quality::text = 'unknown'::text", name: "stock_balances_deficit_zero_state"
     t.check_constraint "on_hand <= 0 OR cost_quality::text = 'unknown'::text AND inventory_value_cents IS NULL OR cost_quality::text <> 'unknown'::text AND inventory_value_cents IS NOT NULL", name: "stock_balances_positive_value_state"
     t.check_constraint "on_hand <> 0 OR cost_quality::text = 'unknown'::text", name: "stock_balances_zero_quality_unknown"
     t.check_constraint "on_hand > 0 OR inventory_value_cents = 0 AND moving_average_cost_cents IS NULL", name: "stock_balances_nonpositive_value_state"
+    t.check_constraint "open_provisional_deficit_cost_cents IS NULL OR open_provisional_deficit_cost_cents >= 0", name: "stock_balances_deficit_cost_nonneg"
     t.check_constraint "reserved >= 0", name: "stock_balances_reserved_nonneg"
     t.check_constraint "unavailable >= 0", name: "stock_balances_unavailable_nonneg"
   end
@@ -1038,6 +1105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.string "legal_name"
     t.string "name", null: false
     t.bigint "next_purchase_order_number", default: 1, null: false
+    t.bigint "next_receipt_number", default: 1, null: false
     t.bigint "next_receipt_sequence", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone", limit: 30
@@ -1053,6 +1121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
     t.index ["organization_id", "store_number"], name: "index_stores_on_organization_id_and_store_number", unique: true, where: "(store_number IS NOT NULL)"
     t.index ["organization_id"], name: "index_stores_on_organization_id"
     t.check_constraint "next_purchase_order_number >= 1", name: "stores_next_purchase_order_number_positive"
+    t.check_constraint "next_receipt_number >= 1", name: "stores_next_receipt_number_positive"
     t.check_constraint "next_receipt_sequence >= 1", name: "stores_next_receipt_sequence_positive"
   end
 
@@ -1258,6 +1327,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
   add_foreign_key "purchase_orders", "users", column: "closed_by_user_id", on_delete: :restrict
   add_foreign_key "purchase_orders", "users", column: "ordered_by_user_id", on_delete: :restrict
   add_foreign_key "purchase_orders", "vendors", on_delete: :restrict
+  add_foreign_key "receipt_lines", "product_variants", on_delete: :restrict
+  add_foreign_key "receipt_lines", "purchase_order_lines", on_delete: :restrict
+  add_foreign_key "receipt_lines", "receipts", on_delete: :restrict
+  add_foreign_key "receipts", "stores", on_delete: :restrict
+  add_foreign_key "receipts", "users", column: "cancelled_by_user_id", on_delete: :restrict
+  add_foreign_key "receipts", "users", column: "posted_by_user_id", on_delete: :restrict
+  add_foreign_key "receipts", "users", column: "received_by_user_id", on_delete: :restrict
+  add_foreign_key "receipts", "vendors", on_delete: :restrict
   add_foreign_key "return_policies", "organizations", on_delete: :restrict
   add_foreign_key "return_reasons", "organizations", on_delete: :restrict
   add_foreign_key "role_permissions", "permissions", on_delete: :restrict

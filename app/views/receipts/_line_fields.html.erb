@@ -1,0 +1,71 @@
+<%# locals: f:, variants:, purchase_order_lines: %>
+<fieldset class="adjustment-line" data-receipt-form-target="line">
+  <div class="adjustment-line-header">
+    <span class="adjustment-line-title">Line</span>
+    <button type="button" class="button button-small button-danger"
+            data-receipt-form-target="removeButton"
+            data-action="receipt-form#removeLine">Remove</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= f.label :product_variant_id, "Variant", class: "field-label" %>
+      <%= f.select :product_variant_id,
+            variants.map { |v| [ variant_option_label(v, include_tracking: true), v.id ] },
+            { include_blank: true },
+            class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :purchase_order_line_id, "Purchase order line", class: "field-label" %>
+      <%= f.select :purchase_order_line_id,
+            purchase_order_lines.map { |l| [ "#{l.purchase_order.purchase_order_number} — #{l.description_snapshot.presence || l.product_variant.name} (open #{l.open_quantity})", l.id ] },
+            { include_blank: "None (unlinked)" },
+            class: "input" %>
+      <p class="field-hint">Leave blank for an unlinked receipt line. Posting an unlinked line requires the receive-unlinked permission.</p>
+    </div>
+
+    <div class="field">
+      <%= f.label :delivered_quantity, "Delivered quantity", class: "field-label" %>
+      <%= f.number_field :delivered_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :accepted_quantity, "Accepted quantity", class: "field-label" %>
+      <%= f.number_field :accepted_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :rejected_quantity, "Rejected quantity", class: "field-label" %>
+      <%= f.number_field :rejected_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :accepted_unavailable_quantity, "Accepted but unavailable", class: "field-label" %>
+      <%= f.number_field :accepted_unavailable_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :actual_unit_cost_cents, "Actual unit cost (cents)", class: "field-label" %>
+      <%= f.number_field :actual_unit_cost_cents, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :cost_quality, "Cost quality", class: "field-label" %>
+      <%= f.select :cost_quality, ReceiptLine::COST_QUALITIES.map { |q| [ q.titleize, q ] }, { include_blank: true }, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :cost_provenance, "Cost provenance", class: "field-label" %>
+      <%= f.text_field :cost_provenance, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :discrepancy_reason, "Discrepancy reason", class: "field-label" %>
+      <%= f.text_field :discrepancy_reason, class: "input" %>
+    </div>
+  </div>
+
+  <%= f.hidden_field :id if f.object.id.present? %>
+  <%= f.hidden_field :position, data: { receipt_form_target: "position" } %>
+</fieldset>

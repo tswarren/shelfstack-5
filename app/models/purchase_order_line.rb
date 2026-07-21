@@ -38,7 +38,11 @@ class PurchaseOrderLine < ApplicationRecord
   before_validation :apply_deterministic_cost_calculations
   before_create :require_addable_parent_status
   before_update :require_permitted_change_for_parent_status
+  # Registered after require_draft_parent so the friendlier "draft only"
+  # message always wins over a raised DeleteRestrictionError when both
+  # conditions hold (mirrors ProductVariant's destroy-callback ordering).
   before_destroy :require_draft_parent
+  has_many :receipt_lines, dependent: :restrict_with_exception
 
   # max(ordered − received − cancelled, 0) (vendors-and-purchasing.md#purchase-order-line).
   def open_quantity

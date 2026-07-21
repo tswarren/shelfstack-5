@@ -22,6 +22,7 @@ class Store < ApplicationRecord
   has_many :store_tax_rates, dependent: :restrict_with_exception
   has_many :store_tax_rules, dependent: :restrict_with_exception
   has_many :purchase_orders, dependent: :restrict_with_exception
+  has_many :receipts, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true
@@ -37,4 +38,5 @@ class Store < ApplicationRecord
   validates :next_receipt_sequence, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :next_purchase_order_number, presence: true,
             numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validates :next_receipt_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
 end

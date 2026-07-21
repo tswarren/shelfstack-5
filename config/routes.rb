@@ -43,6 +43,12 @@ Rails.application.routes.draw do
       post :bulk_discount
     end
   end
+  resources :receipts, except: %i[destroy] do
+    member do
+      post :post
+      post :cancel
+    end
+  end
   resources :inventory_adjustment_reasons, except: %i[destroy]
   resources :stock_balances, only: %i[index show]
   resources :inventory_adjustments, except: %i[destroy] do

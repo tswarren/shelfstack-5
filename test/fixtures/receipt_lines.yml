@@ -1,0 +1,14 @@
+draft_receipt_line1:
+  receipt: draft_receipt
+  position: 0
+  product_variant: sample_book_standard
+  purchase_order_line: ordered_po_line1
+  delivered_quantity: 3
+  accepted_quantity: 3
+  rejected_quantity: 0
+  accepted_unavailable_quantity: 0
+  actual_unit_cost_cents: 700
+  cost_quality: actual
+  cost_provenance: vendor_source
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>

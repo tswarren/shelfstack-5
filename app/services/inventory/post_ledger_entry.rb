@@ -75,6 +75,8 @@ module Inventory
           prior_last_known_cost_quality: balance.last_known_cost_quality
         )
 
+        deficit = compute_deficit_effect(balance, calc)
+
         entry = InventoryLedgerEntry.create!(
           store: @store,
           product_variant: @product_variant,
@@ -96,12 +98,16 @@ module Inventory
           estimate_regular_price_cents: @estimate_regular_price_cents,
           estimate_margin_bps: @estimate_margin_bps,
           estimate_unit_cost_cents: @estimate_unit_cost_cents,
+          provisional_cost_released_cents: deficit.provisional_cost_released_cents,
+          provisional_deficit_cost_quality_snapshot: deficit.provisional_deficit_cost_quality_snapshot,
+          settlement_variance_cents: deficit.settlement_variance_cents,
+          settlement_variance_kind: deficit.settlement_variance_kind,
           posting_key: @posting_key,
           posted_by_user: @posted_by_user,
           posted_at: @posted_at
         )
 
-        apply_balance!(balance, calc)
+        apply_balance!(balance, calc, deficit)
         Result.new(ledger_entry: entry, stock_balance: balance, replayed: false)
       end
     rescue ArgumentError => e
@@ -132,12 +138,14 @@ module Inventory
       when "cost_correction" then :cost_correction
       when "sale" then :sale
       when "customer_return" then :customer_return
+      when "receipt" then :receipt
+      when "receipt_deficit_settlement" then :receipt_deficit_settlement
       else
         raise Error, "unsupported movement_type: #{@movement_type}"
       end
     end
 
-    def apply_balance!(balance, calc)
+    def apply_balance!(balance, calc, deficit)
       attrs = {
         on_hand: calc.resulting_on_hand,
         inventory_value_cents: calc.resulting_inventory_value_cents || (calc.resulting_on_hand.positive? ? nil : 0),
@@ -154,7 +162,137 @@ module Inventory
         attrs[:last_known_cost_quality] = calc.resulting_cost_quality
       end
 
+      if deficit.changed
+        attrs[:open_provisional_deficit_cost_cents] = deficit.resulting_open_provisional_deficit_cost_cents
+        attrs[:deficit_cost_quality] = deficit.resulting_deficit_cost_quality
+      end
+
       balance.update!(attrs)
+    end
+
+    DeficitEffect = Data.define(
+      :changed,
+      :resulting_open_provisional_deficit_cost_cents,
+      :resulting_deficit_cost_quality,
+      :provisional_cost_released_cents,
+      :provisional_deficit_cost_quality_snapshot,
+      :settlement_variance_cents,
+      :settlement_variance_kind
+    )
+    private_constant :DeficitEffect
+
+    NO_DEFICIT_EFFECT = DeficitEffect.new(
+      changed: false,
+      resulting_open_provisional_deficit_cost_cents: nil,
+      resulting_deficit_cost_quality: nil,
+      provisional_cost_released_cents: nil,
+      provisional_deficit_cost_quality_snapshot: nil,
+      settlement_variance_cents: nil,
+      settlement_variance_kind: nil
+    )
+    private_constant :NO_DEFICIT_EFFECT
+
+    # OD-014: negative On Hand is an aggregate Store-and-Variant deficit-cost
+    # pool, never matched to individual outbound movements. Any movement that
+    # changes the open deficit quantity (max(-on_hand, 0)) either adds
+    # provisional cost to the pool (outbound, deficit grows) or releases cost
+    # from it proportionally (inbound, deficit shrinks). Movements that do not
+    # cross the deficit boundary leave the pool untouched.
+    def compute_deficit_effect(balance, calc)
+      prior_deficit_quantity = [ -balance.on_hand, 0 ].max
+      resulting_deficit_quantity = [ -calc.resulting_on_hand, 0 ].max
+
+      if resulting_deficit_quantity > prior_deficit_quantity
+        deficit_created_effect(balance, calc, resulting_deficit_quantity - prior_deficit_quantity)
+      elsif resulting_deficit_quantity < prior_deficit_quantity
+        deficit_released_effect(
+          balance, prior_deficit_quantity, resulting_deficit_quantity,
+          prior_deficit_quantity - resulting_deficit_quantity
+        )
+      else
+        NO_DEFICIT_EFFECT
+      end
+    end
+
+    def deficit_created_effect(balance, calc, created_quantity)
+      known = calc.unit_cost_cents.present? && CalculateQuantityCost::KNOWN_QUALITIES.include?(calc.cost_quality.to_s)
+      prior_deficit_quantity = [ -balance.on_hand, 0 ].max
+      prior_pool = balance.open_provisional_deficit_cost_cents
+      prior_quality = balance.deficit_cost_quality
+
+      if prior_deficit_quantity.zero?
+        resulting_pool = known ? Rounding.multiply_round_half_up(calc.unit_cost_cents, created_quantity) : nil
+        resulting_quality = known ? calc.cost_quality.to_s : "unknown"
+      elsif known && prior_pool.present? && prior_quality != "unknown"
+        resulting_pool = prior_pool + Rounding.multiply_round_half_up(calc.unit_cost_cents, created_quantity)
+        resulting_quality = merge_deficit_quality(prior_quality, calc.cost_quality.to_s)
+      else
+        resulting_pool = nil
+        resulting_quality = "unknown"
+      end
+
+      DeficitEffect.new(
+        changed: true,
+        resulting_open_provisional_deficit_cost_cents: resulting_pool,
+        resulting_deficit_cost_quality: resulting_quality,
+        provisional_cost_released_cents: nil,
+        provisional_deficit_cost_quality_snapshot: nil,
+        settlement_variance_cents: nil,
+        settlement_variance_kind: nil
+      )
+    end
+
+    def deficit_released_effect(balance, prior_deficit_quantity, resulting_deficit_quantity, settled_quantity)
+      prior_pool = balance.open_provisional_deficit_cost_cents
+      prior_quality = balance.deficit_cost_quality
+
+      if resulting_deficit_quantity.zero?
+        released = prior_pool
+        resulting_pool = 0
+        resulting_quality = "unknown"
+      else
+        released = prior_pool.nil? ? nil : Rounding.round_half_up(prior_pool * settled_quantity, prior_deficit_quantity)
+        resulting_pool = prior_pool.nil? ? nil : prior_pool - released
+        resulting_quality = prior_quality
+      end
+
+      variance, variance_kind = settlement_variance(released, settled_quantity)
+
+      DeficitEffect.new(
+        changed: true,
+        resulting_open_provisional_deficit_cost_cents: resulting_pool,
+        resulting_deficit_cost_quality: resulting_quality,
+        provisional_cost_released_cents: released,
+        provisional_deficit_cost_quality_snapshot: prior_quality,
+        settlement_variance_cents: variance,
+        settlement_variance_kind: variance_kind
+      )
+    end
+
+    # Only an actual receipt settlement carries a distinct "actual settlement
+    # cost" to compare against the released provisional cost (OD-014
+    # "Known costs" / "Unknown provisional cost"). Linked returns/post-voids
+    # and quantity-only corrections release the pool using its own recorded
+    # cost and never create ordinary receipt cost variance.
+    def settlement_variance(released, settled_quantity)
+      return [ nil, nil ] unless @movement_type == "receipt_deficit_settlement"
+
+      actual_settlement_cost = if @incoming_unit_cost_cents.present?
+        Rounding.multiply_round_half_up(@incoming_unit_cost_cents, settled_quantity)
+      end
+
+      return [ nil, nil ] if actual_settlement_cost.nil?
+      return [ nil, "late_cost_recognition" ] if released.nil?
+
+      [ actual_settlement_cost - released, "ordinary" ]
+    end
+
+    def merge_deficit_quality(existing, incoming)
+      return "unknown" if existing == "unknown" || incoming == "unknown"
+      return "mixed" if existing == "mixed" || incoming == "mixed"
+      return existing if existing == incoming
+
+      "mixed"
     end
 
 
@@ -189,7 +327,7 @@ module Inventory
         existing.resulting_inventory_value_cents == @corrected_inventory_value_cents.to_i &&
           existing.cost_method == (@incoming_cost_method.presence || "explicit").to_s &&
           existing.cost_quality == (@incoming_cost_quality.presence || "actual").to_s
-      when :opening_inventory, :customer_return, :customer_return_discard
+      when :opening_inventory, :customer_return, :customer_return_discard, :receipt, :receipt_deficit_settlement
         opening_inputs_match?(existing)
       when :quantity_only, :sale
         true

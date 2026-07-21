@@ -427,8 +427,8 @@ cost_correction
 `quantity_only` must not impose an arbitrary replacement rate.
 
 * From a positive valued balance: added quantity uses current moving-average rate; removed quantity receives an allocated share of aggregate value.
-* When an adjustment crosses from positive into deficit: the positive portion consumes remaining aggregate value; excess creates a deficit with no positive asset value; full provisional deficit-cost reconciliation is deferred (OD-014).
-* Quantity added from negative toward zero does not create inventory asset value and is not an acquisition-cost variance.
+* When an adjustment crosses from positive into deficit: the positive portion consumes remaining aggregate value; excess creates a deficit with no positive asset value and adds provisional cost to the aggregate deficit-cost pool at that movement's own resolved rate (OD-014, Phase 5c).
+* Quantity added from negative toward zero does not create inventory asset value and is not an acquisition-cost variance; it releases provisional deficit-cost proportionally without recording ordinary receipt cost variance (OD-014, Phase 5c).
 * If quantity crosses from negative/zero into positive surplus: Phase 3 treats the positive surplus as unknown-cost inventory unless an implemented retained-cost policy supplies a rate. Do not invent a Department estimate automatically.
 
 ### Cost corrections (Phase 3)
@@ -485,7 +485,7 @@ Transfer, RTV, count, and `inventory.receipt.correct` remain deferred until thos
 
 ## Audit requirements
 
-Audit Receipt posting and corrections, accepted and rejected quantities, cost approach and quality, estimate inputs, missing versus confirmed-zero cost, aggregate inventory-value changes, Inventory Movements, Reservation lifecycle, Unit creation and status changes, manual Adjustments, cost corrections, provisional deficit creation/settlement and variances when implemented, inspection and damage resolution, transfer, RTV, discard, and retained negative-inventory warnings.
+Audit Receipt posting and corrections, accepted and rejected quantities, cost approach and quality, estimate inputs, missing versus confirmed-zero cost, aggregate inventory-value changes, Inventory Movements, Reservation lifecycle, Unit creation and status changes, manual Adjustments, cost corrections, provisional deficit creation/settlement and variances (Phase 5c: recorded on the settlement Ledger Entry — `provisional_cost_released_cents`, `provisional_deficit_cost_quality_snapshot`, `settlement_variance_cents`, `settlement_variance_kind`), inspection and damage resolution, transfer, RTV, discard, and retained negative-inventory warnings.
 
 ## Invariants
 

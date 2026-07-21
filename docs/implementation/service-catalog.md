@@ -218,13 +218,31 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Purchase-order commercial lifecycle is `draft → ordered → (closed | cancelled)`; receiving progress (`receiving_state`: `not_received`/`partially_received`/`fully_received`) is derived from line quantity and is never a commercial status.
 - Line identity (variant, vendor source, quantity, cost fields, snapshots) is immutable once the parent Purchase Order is placed; only `cancelled_quantity` may change afterward, and only via `AmendPurchaseOrder`.
 - `expected_unit_cost_cents` is deterministic for `discount_from_list` lines (`list_cost_cents` × (1 − discount_bps)) via `Inventory::Rounding`, and manual for `direct_net_cost` lines; `expected_extended_cost_cents` is always a derived rollup.
-- Receipt posting and PO-line receiving allocation remain Phase 5c work (not yet implemented).
+- Receipt posting and PO-line receiving allocation are implemented in Phase 5c below; PO-line **allocation** (converting on-order supply to Customer Request commitments) remains Phase 5f.
+
+## Phase 5c — Receipts and OD-014 negative-inventory settlement
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Inventory::CreateReceipt` | Receiving and Inventory | 5c | Yes | No | Store (`lock`, number sequence) | Store, vendor, actor, header + lines attrs | Draft `Receipt` with a store-scoped never-reused number; audit |
+| `Inventory::UpdateDraftReceipt` | Receiving and Inventory | 5c | Yes | No | Receipt (`reload.lock!`) | Draft Receipt, header attrs, replacement lines | Updated header + fully replaced line set; rejected once no longer draft; audit |
+| `Inventory::CancelReceipt` | Receiving and Inventory | 5c | Yes | Yes (replaying a cancelled Receipt is a no-op) | Receipt (`reload.lock!`) | Draft Receipt, actor, optional reason | `cancelled` status + `cancelled_at`/`cancelled_by_user`; draft only — a posted Receipt has no correction workflow yet; audit |
+| `Inventory::PostReceipt` | Receiving and Inventory | 5c | Yes | Yes (replaying a posted Receipt is a no-op; the whole posting is one transaction) | Receipt (`reload.lock!`), then per line: Stock Balance (via `FindOrCreateStockBalance`) or Purchase Order Line (`lock`) | Draft Receipt, actor, store | Only accepted quantity enters inventory (never rejected); quantity-tracked lines call `PostLedgerEntry` and split into a `receipt_deficit_settlement` entry then a `receipt` entry when prior On Hand is negative (OD-014); individual lines call `CreateInventoryUnit` per accepted unit (`require_unit_manage_permission: false`); linked lines advance `PurchaseOrderLine#received_quantity`; permission checks: `inventory.receipt.post` always, `inventory.receipt.receive_unlinked` when a line has no PO Line, `inventory.receipt.over_receive` when accepted quantity exceeds the PO Line's open quantity; audit |
+
+### Phase 5c notes
+
+- `Inventory::PostLedgerEntry` and `Inventory::CalculateQuantityCost` gained `receipt` and `receipt_deficit_settlement` movement kinds. `receipt` reuses the existing opening/customer-return inbound cost path (valid because it only ever runs from a zero-or-positive prior On Hand); `receipt_deficit_settlement` never creates inventory value (`inventory_value_delta_cents` is always zero) and never crosses above zero On Hand.
+- OD-014 deficit-pool bookkeeping (`stock_balances.open_provisional_deficit_cost_cents`/`deficit_cost_quality`) is maintained generically inside `PostLedgerEntry#apply_balance!` for **any** quantity-tracked movement whose resulting On Hand crosses the deficit boundary (not only receipts): an outbound movement that drives On Hand further negative adds provisional cost to the pool using that movement's own resolved unit cost/quality (whatever `CalculateQuantityCost` already resolved for the sale/adjustment); any movement that reduces the deficit (settlement, linked return, quantity-only correction) releases pool cost proportionally, in full when the deficit reaches zero. Settlement variance (`provisional_cost_released_cents`/`settlement_variance_cents`/`settlement_variance_kind`) is only ever recorded on `receipt_deficit_settlement` entries, per OD-014's "linked returns and quantity-only corrections do not create ordinary receipt cost variance."
+- `Inventory::CreateInventoryUnit` gained `require_unit_manage_permission:` (default `true`) so `PostReceipt` can create receipt-sourced units under the receiver's own `inventory.receipt.post` authorization instead of requiring `inventory.unit.manage`.
+- Receipt Line `cost_quality` accepts `confirmed_zero` (a known actual cost of zero) in addition to the ledger's `actual`/`estimated`/`unknown`; `PostReceipt` maps `confirmed_zero` to ledger `cost_quality: "actual"` with a zero unit cost, and any other missing/unknown line cost to ledger `cost_quality: "unknown"` with a null unit cost (never zero).
+- An individually tracked line's `accepted_unavailable_quantity` creates units with status `inspection` rather than `available`; there is no dedicated "receiving unavailable" Unit status.
+- PO-line **allocation** conversion (committing on-order supply to Customer Request allocations) is explicitly deferred to Phase 5f and is not performed by `PostReceipt`.
 
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 5c: receipt posting, PO-line receiving allocation
+- Phase 5f: PO-line allocation conversion
 - Phase 6: stored-value posting, post-void
 
 ## Related

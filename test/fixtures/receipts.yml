@@ -1,0 +1,7 @@
+draft_receipt:
+  store: main_street
+  vendor: acme_distributor
+  receipt_number: "001-RCPT-000001"
+  status: draft
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
