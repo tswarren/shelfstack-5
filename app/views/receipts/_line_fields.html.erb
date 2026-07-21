@@ -24,22 +24,23 @@
       <%= f.label :purchase_order_line_id, "Purchase order line", class: "field-label" %>
       <%= f.select :purchase_order_line_id,
             purchase_order_lines.map { |l|
+              suggestion = Inventory::SuggestReceiptLineCost.call(purchase_order_line: l)
               label = [
                 l.purchase_order.purchase_order_number,
                 l.product_variant.product.name,
                 (l.description_snapshot.presence || l.product_variant.name),
                 "open #{l.open_quantity}"
               ].join(" — ")
-              [
-                label,
-                l.id,
-                {
-                  data: {
-                    vendor_id: l.purchase_order.vendor_id,
-                    product_variant_id: l.product_variant_id
-                  }
-                }
-              ]
+              option_data = {
+                vendor_id: l.purchase_order.vendor_id,
+                product_variant_id: l.product_variant_id
+              }
+              if suggestion
+                option_data[:suggested_unit_cost_cents] = suggestion.unit_cost_cents
+                option_data[:suggested_cost_quality] = suggestion.cost_quality
+                option_data[:suggested_cost_provenance] = suggestion.cost_provenance
+              end
+              [ label, l.id, { data: option_data } ]
             },
             { include_blank: "None (unlinked)" },
             class: "input",
@@ -73,7 +74,8 @@
     <% if local_assigns.fetch(:can_edit_cost, true) %>
       <div class="field">
         <%= f.label :actual_unit_cost_cents, "Actual unit cost (cents)", class: "field-label" %>
-        <%= f.number_field :actual_unit_cost_cents, min: 0, class: "input" %>
+        <%= f.number_field :actual_unit_cost_cents, min: 0, class: "input",
+              data: { receipt_form_target: "unitCost" } %>
       </div>
 
       <div class="field">
@@ -81,13 +83,15 @@
         <%= f.select :cost_quality,
               ReceiptLine::COST_QUALITIES.map { |q| [ q.titleize, q ] },
               { include_blank: "Unknown (default)" },
-              class: "input" %>
-        <p class="field-hint">Leave blank when cost is not yet known. Posting falls back to vendor source, then PO expected cost, then unknown.</p>
+              class: "input",
+              data: { receipt_form_target: "costQuality" } %>
+        <p class="field-hint">Defaults to vendor expected cost, or list price minus vendor discount, or the linked PO expected cost. Override when the invoice differs.</p>
       </div>
 
       <div class="field">
         <%= f.label :cost_provenance, "Cost provenance", class: "field-label" %>
-        <%= f.text_field :cost_provenance, class: "input" %>
+        <%= f.text_field :cost_provenance, class: "input",
+              data: { receipt_form_target: "costProvenance" } %>
       </div>
     <% end %>
 

@@ -108,9 +108,31 @@ class ReceiptsController < ApplicationController
       .order("products.name", :name)
     @purchase_order_lines = PurchaseOrderLine.joins(:purchase_order)
       .where(purchase_orders: { store_id: Current.store.id, status: "ordered" })
-      .includes(:purchase_order, product_variant: :product)
+      .includes(:purchase_order, :product_variant_vendor, product_variant: :product)
       .order("purchase_orders.purchase_order_number", :position)
     @can_edit_cost = can_view_receipt_cost?
+    @vendor_cost_suggestions = vendor_cost_suggestions_payload if @can_edit_cost
+  end
+
+  def vendor_cost_suggestions_payload
+    ProductVariantVendor.joins(:vendor)
+      .where(vendors: { organization_id: Current.organization.id }, active: true)
+      .pluck(:product_variant_id, :vendor_id, :expected_unit_cost_cents, :list_cost_cents, :discount_bps)
+      .each_with_object({}) do |(variant_id, vendor_id, expected, list, discount), memo|
+        key = "#{variant_id}:#{vendor_id}"
+        unit_cost = if expected.present?
+          expected
+        elsif list.present?
+          Inventory::Rounding.round_half_up(list.to_i * (10_000 - discount.to_i), 10_000)
+        end
+        next if unit_cost.nil?
+
+        memo[key] = {
+          unit_cost_cents: unit_cost,
+          cost_quality: expected.present? ? "actual" : "estimated",
+          cost_provenance: expected.present? ? "vendor_source" : "vendor_list_discount"
+        }
+      end
   end
 
   def header_params

@@ -10,6 +10,10 @@ module Requests
   # marking the request cancelled, so cancelled demand cannot continue to
   # reduce available or consume expected supply (OD-007).
   #
+  # Cancellation is rejected while pending POS lines still reference the
+  # request — those lines own transferred Reservations and must be removed or
+  # completed first.
+  #
   # Idempotent — replaying an already-cancelled request is a no-op success.
   class CancelProductRequest < ApplicationService
     Error = Class.new(StandardError)
@@ -34,6 +38,11 @@ module Requests
         end
 
         return failure("only open requests can be cancelled") unless @product_request.open?
+
+        pending_pos = PosLineItem.pending.where(product_request_id: @product_request.id).exists?
+        if pending_pos || @product_request.pos_held_reserved_quantity.positive?
+          return failure("cannot cancel while pending POS lines are linked to this request")
+        end
 
         release_reservations!
         release_allocations!
@@ -69,6 +78,7 @@ module Requests
     end
 
     def release_reservations!
+      # Do not pre-lock — ReleaseReservation locks Stock Balance/Unit then Reservation.
       InventoryReservation.active.where(source_type: "product_request", source_id: @product_request.id).find_each do |reservation|
         result = Inventory::ReleaseReservation.call(
           reservation: reservation,

@@ -232,6 +232,10 @@ module Inventory
     # OD-014 "Unknown receipt cost": actual receipt cost → confirmed vendor
     # source cost → linked PO expected cost as an estimate → unknown.
     # `confirmed_zero` is a known actual cost of zero, distinct from unknown.
+    #
+    # Ledger `cost_method` must be one of InventoryLedgerEntry::COST_METHODS.
+    # Vendor/PO provenance is recorded on the receipt line; the ledger method is
+    # the valuation technique (`explicit` / `configured_estimate` / `unknown`).
     def receipt_cost_inputs(line)
       case line.cost_quality
       when "confirmed_zero"
@@ -249,17 +253,17 @@ module Inventory
 
       source = line.purchase_order_line&.product_variant_vendor
       if source&.expected_unit_cost_cents.present?
-        return [ source.expected_unit_cost_cents, "vendor_source", "actual" ]
+        return [ source.expected_unit_cost_cents, "explicit", "actual" ]
       end
       if source&.list_cost_cents.present?
         discount = source.discount_bps.to_i
         estimated = Inventory::Rounding.round_half_up(source.list_cost_cents.to_i * (10_000 - discount), 10_000)
-        return [ estimated, "vendor_source", "estimated" ]
+        return [ estimated, "configured_estimate", "estimated" ]
       end
 
       po_line = line.purchase_order_line
       if po_line&.expected_unit_cost_cents.present?
-        return [ po_line.expected_unit_cost_cents, "purchase_order_expected", "estimated" ]
+        return [ po_line.expected_unit_cost_cents, "configured_estimate", "estimated" ]
       end
 
       [ nil, "unknown", "unknown" ]
@@ -419,11 +423,11 @@ module Inventory
 
     # Adds `additional_quantity` on top of any existing active Inventory
     # Reservation for this Customer Request/variant (`Inventory::Reserve`
-    # sets an absolute quantity, so the current locked quantity is read
-    # first; the Product Request lock taken by the caller serializes this
-    # read-then-set against concurrent writers of the same reservation).
+    # sets an absolute quantity). The Product Request lock taken by the caller
+    # serializes concurrent writers; do not pre-lock the Reservation before
+    # Reserve (Stock Balance → Reservation order).
     def reserve_for_request!(variant:, product_request:, additional_quantity:)
-      existing = InventoryReservation.active.lock.find_by(
+      existing = InventoryReservation.active.find_by(
         store_id: @store.id, product_variant_id: variant.id,
         source_type: "product_request", source_id: product_request.id
       )

@@ -71,18 +71,29 @@ module Pos
 
         now = Time.current
         warnings = recalculation.warnings.dup
+
+        # Lock linked Product Requests before inventory conversion so completion
+        # and POS edits share: Transaction → Lines → Product Request → Balance → Reservation.
+        linked_request_ids = lines.filter_map { |line|
+          line.product_request_id if line.sale? && line.line_kind == "product" && line.product_request_id.present?
+        }.uniq.sort
+        linked_request_ids.each { |id| ProductRequest.lock.find(id) }
+
         lines.each do |line|
           if line.direction == "return" && line.line_kind == "product"
             posted = Inventory::PostCustomerReturn.call(pos_line_item: line, posted_by_user: @actor)
             raise Error, posted.error unless posted.success?
             warnings.concat(posted.warnings)
             reverse_fulfilment_for_return!(line, posted_at: now)
-          elsif inventory_tracked_product_line?(line)
-            conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
-            raise Error, conversion.error unless conversion.success?
-            warnings.concat(conversion.warnings)
+          elsif line.sale? && line.line_kind == "product"
+            conversion = nil
+            if inventory_tracked_product_line?(line)
+              conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
+              raise Error, conversion.error unless conversion.success?
+              warnings.concat(conversion.warnings)
+            end
             record_fulfilment_for_sale!(
-              line, posted_at: now, converted_reservation: conversion.reservation
+              line, posted_at: now, converted_reservation: conversion&.reservation
             )
           end
         end

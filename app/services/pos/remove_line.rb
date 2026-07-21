@@ -19,6 +19,8 @@ module Pos
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
 
       ActiveRecord::Base.transaction do
+        # Lock order: POS Transaction → POS Line → Product Request →
+        # Stock Balance/Unit → Reservation.
         transaction = PosTransaction.lock.find(@pos_line_item.pos_transaction_id)
         raise Error, "transaction is not open for editing" unless transaction.editable?
 
@@ -26,12 +28,17 @@ module Pos
         raise Error, "line is not pending" unless line.pending?
         raise Error, "line does not belong to the locked transaction" unless line.pos_transaction_id == transaction.id
 
-        reservation = InventoryReservation.active.lock.find_by(
+        product_request = nil
+        if line.product_request_id.present?
+          product_request = ProductRequest.lock.find(line.product_request_id)
+        end
+
+        reservation = InventoryReservation.active.find_by(
           source_type: "pos_line_item",
           source_id: line.id
         )
         if reservation
-          returned = return_reservation_to_product_request!(line, reservation)
+          returned = return_reservation_to_product_request!(line, reservation, product_request)
           unless returned
             released = Inventory::ReleaseReservation.call(
               reservation: reservation, actor: @actor, release_reason: @reason || "line removed"
@@ -58,40 +65,45 @@ module Pos
 
     private
 
-    def return_reservation_to_product_request!(line, reservation)
-      product_request = line.product_request
+    def return_reservation_to_product_request!(line, reservation, product_request)
       return false if product_request.blank?
       return false unless product_request.open?
       return false unless product_request.compatible_with_variant?(line.product_variant)
 
       if reservation.inventory_unit_id.present?
-        reservation.update!(source_type: "product_request", source_id: product_request.id)
+        InventoryUnit.lock.find(reservation.inventory_unit_id)
+        locked = InventoryReservation.lock.find(reservation.id)
+        return false unless locked.status == "active"
+
+        locked.update!(source_type: "product_request", source_id: product_request.id)
         return true
       end
 
+      # Quantity-tracked: lock balance before reservations; merge coverage in place
+      # so we never call Reserve/ReleaseReservation while holding a reservation.
+      Inventory::FindOrCreateStockBalance.call(
+        store: reservation.store, product_variant: reservation.product_variant
+      )
+      locked = InventoryReservation.lock.find(reservation.id)
+      return false unless locked.status == "active"
+
       existing = InventoryReservation.active.lock.find_by(
-        store_id: reservation.store_id,
-        product_variant_id: reservation.product_variant_id,
+        store_id: locked.store_id,
+        product_variant_id: locked.product_variant_id,
         source_type: "product_request",
         source_id: product_request.id
       )
       if existing
-        released = Inventory::ReleaseReservation.call(
-          reservation: reservation, actor: @actor, release_reason: "returned_to_product_request"
+        existing.update!(quantity: existing.quantity + locked.quantity)
+        locked.update!(
+          status: "released",
+          released_at: Time.current,
+          released_by_user: @actor,
+          release_reason: "returned_to_product_request"
         )
-        raise Error, released.error unless released.success?
-
-        result = Inventory::Reserve.call(
-          store: reservation.store,
-          product_variant: reservation.product_variant,
-          quantity: existing.quantity + reservation.quantity,
-          source_type: "product_request",
-          source_id: product_request.id,
-          actor: @actor
-        )
-        raise Error, result.error unless result.success?
+        # StockBalance.reserved unchanged — coverage moved between sources.
       else
-        reservation.update!(source_type: "product_request", source_id: product_request.id)
+        locked.update!(source_type: "product_request", source_id: product_request.id)
       end
 
       true

@@ -17,7 +17,6 @@ module Pos
     def call
       raise Error, "transaction is not open for editing" unless @pos_transaction.editable?
       raise Error, "quantity must be positive" unless @quantity.positive?
-      validate_product_request!
 
       eligibility = Catalog::SaleEligibility.call(variant: @product_variant, store: @pos_transaction.store)
       raise Error, "not eligible for sale: #{eligibility.blockers.join(', ')}" if eligibility.blockers.any?
@@ -36,8 +35,11 @@ module Pos
       warnings = eligibility.warnings.dup
 
       ActiveRecord::Base.transaction do
+        # Lock order: POS Transaction → Product Request → Stock Balance/Unit → Reservation.
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open for editing" unless transaction.editable?
+
+        product_request = lock_and_validate_product_request!(transaction)
 
         line = PosLineItem.create!(
           pos_transaction: transaction,
@@ -51,13 +53,13 @@ module Pos
           unit_price_cents: resolved_unit_price_cents(individual),
           position: next_position,
           created_by_user: @actor,
-          product_request: @product_request
+          product_request: product_request
         )
 
         if @product_variant.inventory_tracking_mode == "quantity"
-          warnings.concat(reserve_quantity_for_line!(line))
+          warnings.concat(reserve_quantity_for_line!(line, product_request))
         elsif individual
-          warnings.concat(reserve_individual_for_line!(line))
+          warnings.concat(reserve_individual_for_line!(line, product_request))
         end
 
         recalculation = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
@@ -71,45 +73,48 @@ module Pos
 
     private
 
-    def validate_product_request!
-      return if @product_request.blank?
+    def lock_and_validate_product_request!(transaction)
+      return nil if @product_request.blank?
 
-      raise Error, "fulfilment linkage applies only to customer requests" unless @product_request.customer_request?
-      raise Error, "product request is not open" unless @product_request.open?
-      raise Error, "product request store mismatch" unless @product_request.store_id == @pos_transaction.store_id
-      unless @product_request.compatible_with_variant?(@product_variant)
-        raise Error, @product_request.compatibility_error_for(@product_variant)
+      product_request = ProductRequest.lock.find(@product_request.id)
+      raise Error, "fulfilment linkage applies only to customer requests" unless product_request.customer_request?
+      raise Error, "product request is not open" unless product_request.open?
+      raise Error, "product request store mismatch" unless product_request.store_id == transaction.store_id
+      unless product_request.compatible_with_variant?(@product_variant)
+        raise Error, product_request.compatibility_error_for(@product_variant)
       end
 
-      outstanding = @product_request.outstanding_quantity
+      outstanding = product_request.outstanding_quantity
       if @quantity > outstanding
         raise Error, "quantity exceeds the product request's outstanding quantity (#{outstanding} outstanding)"
       end
 
       transferable = InventoryReservation.active.where(
-        store_id: @pos_transaction.store_id,
+        store_id: transaction.store_id,
         product_variant_id: @product_variant.id,
         source_type: "product_request",
-        source_id: @product_request.id
+        source_id: product_request.id
       ).sum(:quantity)
       additional = [ @quantity - transferable, 0 ].max
-      uncovered = @product_request.uncovered_quantity
+      uncovered = product_request.uncovered_quantity
       if additional > uncovered
         raise Error, "quantity exceeds the product request's uncovered quantity (#{uncovered} uncovered)"
       end
+
+      product_request
     end
 
     # Prefer transferring an existing Product Request reservation to the POS
     # line so the same physical stock is not double-reserved.
     # Lock order: stock balance → reservations (matches Reserve / ReleaseReservation).
-    def reserve_quantity_for_line!(line)
+    def reserve_quantity_for_line!(line, product_request)
       store = @pos_transaction.store
       balance = Inventory::FindOrCreateStockBalance.call(store: store, product_variant: @product_variant)
 
-      request_reservation = if @product_request.present?
+      request_reservation = if product_request
         InventoryReservation.active.lock.find_by(
           store_id: store.id, product_variant_id: @product_variant.id,
-          source_type: "product_request", source_id: @product_request.id
+          source_type: "product_request", source_id: product_request.id
         )
       end
 
@@ -161,16 +166,16 @@ module Pos
     end
 
     # Lock order: inventory unit → reservation.
-    def reserve_individual_for_line!(line)
+    def reserve_individual_for_line!(line, product_request)
       store = @pos_transaction.store
       unit = InventoryUnit.lock.find(@inventory_unit.id)
       raise Error, "unit belongs to a different store" unless unit.store_id == store.id
       raise Error, "unit belongs to a different variant" unless unit.product_variant_id == @product_variant.id
 
-      request_reservation = if @product_request.present?
+      request_reservation = if product_request
         InventoryReservation.active.lock.find_by(
           store_id: store.id, product_variant_id: @product_variant.id,
-          source_type: "product_request", source_id: @product_request.id,
+          source_type: "product_request", source_id: product_request.id,
           inventory_unit_id: unit.id
         )
       end
@@ -180,6 +185,7 @@ module Pos
         return []
       end
 
+      # Do not pre-lock a reservation before Reserve — Reserve locks unit then reservation.
       reservation = Inventory::Reserve.call(
         store: store, product_variant: @product_variant, quantity: 1,
         source_type: "pos_line_item", source_id: line.id,

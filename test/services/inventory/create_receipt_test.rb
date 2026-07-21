@@ -64,9 +64,10 @@ module Inventory
       assert_match(/not permitted/i, result.error)
     end
 
-    test "accepts a blank cost_quality string from the form as nil (unknown on post)" do
+    test "accepts a blank cost_quality string from the form as nil when no suggestion applies" do
+      other_vendor = vendors(:small_press_direct)
       result = CreateReceipt.call(
-        receipt: Receipt.new(vendor: @vendor),
+        receipt: Receipt.new(vendor: other_vendor),
         lines_attributes: [ {
           product_variant_id: @variant.id,
           delivered_quantity: 1,
@@ -78,7 +79,54 @@ module Inventory
       )
 
       assert result.success?, result.error
-      assert_nil result.receipt.receipt_lines.first.cost_quality
+      line = result.receipt.receipt_lines.first
+      assert_nil line.cost_quality
+      assert_nil line.actual_unit_cost_cents
+    end
+
+    test "defaults unit cost from vendor list minus discount when cost is blank" do
+      result = CreateReceipt.call(
+        receipt: Receipt.new(vendor: @vendor),
+        lines_attributes: [ {
+          product_variant_id: @variant.id,
+          delivered_quantity: 1,
+          accepted_quantity: 1
+        } ],
+        actor: @user,
+        store: @store
+      )
+
+      assert result.success?, result.error
+      line = result.receipt.receipt_lines.first
+      assert_equal 720, line.actual_unit_cost_cents
+      assert_equal "actual", line.cost_quality
+      assert_equal "vendor_source", line.cost_provenance
+    end
+
+    test "defaults unit cost from linked purchase-order expected cost" do
+      po_line = purchase_order_lines(:ordered_po_line1)
+      product_variant_vendors(:sample_book_ingram).update_columns(
+        expected_unit_cost_cents: nil, list_cost_cents: nil, discount_bps: nil
+      )
+      po_line.update_columns(product_variant_vendor_id: nil, expected_unit_cost_cents: 640)
+
+      result = CreateReceipt.call(
+        receipt: Receipt.new(vendor: @vendor),
+        lines_attributes: [ {
+          product_variant_id: @variant.id,
+          purchase_order_line_id: po_line.id,
+          delivered_quantity: 1,
+          accepted_quantity: 1
+        } ],
+        actor: @user,
+        store: @store
+      )
+
+      assert result.success?, result.error
+      line = result.receipt.receipt_lines.first
+      assert_equal 640, line.actual_unit_cost_cents
+      assert_equal "estimated", line.cost_quality
+      assert_equal "purchase_order_expected", line.cost_provenance
     end
   end
 end

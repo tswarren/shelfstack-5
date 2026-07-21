@@ -85,6 +85,7 @@ module Inventory
           COST_ATTRIBUTES.each { |key| updates.delete(key) } unless @can_edit_cost
           line.assign_attributes(updates)
           line.position = attrs[:position].presence || index
+          apply_suggested_cost!(line) if @can_edit_cost
           line.save!
           keep_ids << line.id
         else
@@ -101,8 +102,25 @@ module Inventory
       COST_ATTRIBUTES.each { |key| attrs.delete(key) } unless @can_edit_cost
       line = @receipt.receipt_lines.build(attrs)
       line.position = attrs[:position].presence || index
+      apply_suggested_cost!(line) if @can_edit_cost
       line.save!
       line
+    end
+
+    def apply_suggested_cost!(line)
+      return if line.actual_unit_cost_cents.present?
+      return if line.cost_quality == "confirmed_zero"
+
+      suggestion = SuggestReceiptLineCost.call(
+        purchase_order_line: line.purchase_order_line,
+        product_variant: line.product_variant,
+        vendor: @receipt.vendor
+      )
+      return if suggestion.blank?
+
+      line.actual_unit_cost_cents = suggestion.unit_cost_cents
+      line.cost_quality = line.cost_quality.presence || suggestion.cost_quality
+      line.cost_provenance = line.cost_provenance.presence || suggestion.cost_provenance
     end
 
     def failure(message)

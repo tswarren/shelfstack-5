@@ -138,5 +138,42 @@ module Requests
       assert_match(/fulfilments are not compatible/i, result.error)
       assert_nil request.reload.product_variant_id
     end
+
+    test "rejects reducing requested quantity below pending POS-held coverage" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 5)
+
+      StockBalance.create!(
+        store: @store, product_variant: variant,
+        on_hand: 5, reserved: 0, unavailable: 0,
+        inventory_value_cents: 5000, moving_average_cost_cents: 1000, cost_quality: "actual"
+      )
+      assert Inventory::Reserve.call(
+        store: @store, product_variant: variant, quantity: 5,
+        source_type: "product_request", source_id: request.id, actor: @admin
+      ).success?
+
+      day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = Pos::OpenSession.call(
+        business_day: day, store: @store, pos_device: pos_devices(:register_1),
+        cash_drawer: cash_drawers(:drawer_1), opening_cash_cents: 0, cashier: @admin, actor: @admin
+      ).pos_session
+      txn = Pos::OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
+      line = Pos::AddLine.call(
+        pos_transaction: txn, product_variant: variant, quantity: 5, actor: @admin, product_request: request
+      ).pos_line_item
+      assert line.present?
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { requested_quantity: 3 }
+      )
+
+      assert_not result.success?
+      assert_match(/pending POS-held/i, result.error)
+      assert_equal 5, request.reload.requested_quantity
+      assert_equal 5, request.pos_held_reserved_quantity
+    end
   end
 end

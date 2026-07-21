@@ -78,6 +78,16 @@ module Requests
       if @product_request.requested_quantity < fulfilled
         raise Error, "requested quantity cannot be less than already fulfilled quantity (#{fulfilled})"
       end
+
+      # Pending POS-held coverage belongs to open transactions and must not be
+      # silently truncated by a request edit (OD-007 coverage ceiling).
+      pos_held = @product_request.pos_held_reserved_quantity
+      floor = fulfilled + pos_held
+      if @product_request.requested_quantity < floor
+        raise Error,
+              "requested quantity cannot be less than fulfilled quantity plus pending POS-held " \
+              "quantity (#{floor})"
+      end
     end
 
     # nil → Variant is allowed only when every existing commitment is compatible
@@ -161,26 +171,26 @@ module Requests
     end
 
     def release_reservations!(excess)
+      # Do not pre-lock reservations — Reserve / ReleaseReservation own the
+      # Stock Balance → Reservation (or Unit → Reservation) lock order.
       InventoryReservation.active.where(source_type: "product_request", source_id: @product_request.id)
-        .order(:id).reverse_each do |reservation|
+        .order(id: :desc).to_a.each do |reservation|
           break unless excess.positive?
+          next unless reservation.status == "active"
 
-          locked = InventoryReservation.lock.find(reservation.id)
-          next unless locked.status == "active"
-
-          if locked.quantity <= excess
+          if reservation.quantity <= excess
             result = Inventory::ReleaseReservation.call(
-              reservation: locked, actor: @actor, release_reason: "request_quantity_reduced"
+              reservation: reservation, actor: @actor, release_reason: "request_quantity_reduced"
             )
             raise Error, result.error unless result.success?
 
-            excess -= locked.quantity
+            excess -= reservation.quantity
           else
-            variant = locked.product_variant
             result = Inventory::Reserve.call(
-              store: @store, product_variant: variant, quantity: locked.quantity - excess,
+              store: @store, product_variant: reservation.product_variant,
+              quantity: reservation.quantity - excess,
               source_type: "product_request", source_id: @product_request.id, actor: @actor,
-              inventory_unit: locked.inventory_unit
+              inventory_unit: reservation.inventory_unit
             )
             raise Error, result.error unless result.success?
 

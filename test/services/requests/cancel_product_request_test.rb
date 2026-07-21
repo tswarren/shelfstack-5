@@ -89,5 +89,35 @@ module Requests
       assert_equal 0, allocation.reload.remaining_quantity
       assert_equal "request_cancelled", allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
     end
+
+    test "rejects cancellation while a pending POS line is linked to the request" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 2)
+
+      StockBalance.create!(
+        store: @store, product_variant: variant,
+        on_hand: 5, reserved: 0, unavailable: 0,
+        inventory_value_cents: 5000, moving_average_cost_cents: 1000, cost_quality: "actual"
+      )
+      day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = Pos::OpenSession.call(
+        business_day: day, store: @store, pos_device: pos_devices(:register_1),
+        cash_drawer: cash_drawers(:drawer_1), opening_cash_cents: 0, cashier: @admin, actor: @admin
+      ).pos_session
+      txn = Pos::OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
+      assert Pos::AddLine.call(
+        pos_transaction: txn, product_variant: variant, quantity: 1, actor: @admin, product_request: request
+      ).success?
+
+      result = CancelProductRequest.call(
+        product_request: request, actor: @admin, store: @store, cancellation_reason: "Customer withdrew"
+      )
+
+      assert_not result.success?
+      assert_match(/pending POS lines/i, result.error)
+      assert_equal "open", request.reload.status
+      assert InventoryReservation.active.exists?(source_type: "pos_line_item")
+    end
   end
 end

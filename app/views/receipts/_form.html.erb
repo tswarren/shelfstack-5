@@ -1,7 +1,11 @@
 <% lines = receipt.receipt_lines.to_a
    lines = [ receipt.receipt_lines.build(delivered_quantity: 1, accepted_quantity: 1, position: 0) ] if lines.empty? %>
 
-<%= form_with model: receipt, class: "form", data: { controller: "receipt-form" } do |form| %>
+<%= form_with model: receipt, class: "form",
+      data: {
+        controller: "receipt-form",
+        receipt_form_vendor_cost_suggestions_value: (@vendor_cost_suggestions || {}).to_json
+      } do |form| %>
   <%= render "shared/form_errors", object: receipt %>
 
   <section class="form-section">

@@ -215,5 +215,25 @@ module Pos
       )
       assert @request.reload.fulfilled?
     end
+
+    test "non-inventory product sales still record product request fulfilment" do
+      none_variant = product_variants(:gift_wrap_service_standard)
+      request = ProductRequest.create!(
+        store: @store, request_type: "customer_request", product: none_variant.product,
+        product_variant: none_variant, requested_quantity: 1, requested_by_user: @admin
+      )
+
+      txn, line, = pos_complete_cash_sale(
+        session: @session, variant: none_variant, quantity: 1, actor: @admin, cash: @cash,
+        key: "fulfil-none-tracking", product_request: request
+      )
+
+      fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: line.id, kind: "fulfill")
+      assert fulfillment
+      assert_nil fulfillment.inventory_reservation_id
+      assert_equal 1, fulfillment.quantity
+      assert request.reload.fulfilled?
+      assert txn.completed?
+    end
   end
 end

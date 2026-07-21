@@ -238,6 +238,50 @@ module Inventory
       assert_equal 700, sale.ledger_entry.unit_cost_cents
     end
 
+    test "blank receipt cost falls back to PO expected cost with a valid ledger method" do
+      po_line = build_ordered_po_line(variant: @quantity_variant, ordered_quantity: 5, expected_unit_cost_cents: 850)
+      po_line.update_columns(product_variant_vendor_id: nil)
+
+      receipt = build_receipt(lines_attributes: [
+        { product_variant_id: @quantity_variant.id, purchase_order_line_id: po_line.id,
+          delivered_quantity: 2, accepted_quantity: 2 }
+      ])
+
+      result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
+
+      assert result.success?, result.error
+      entry = InventoryLedgerEntry.find_by!(movement_type: "receipt", source: receipt.receipt_lines.first)
+      assert_equal 850, entry.unit_cost_cents
+      assert_equal 1700, entry.inventory_value_delta_cents
+      assert_equal "configured_estimate", entry.cost_method
+      assert_equal "estimated", entry.cost_quality
+
+      balance = StockBalance.find_by!(store: @store, product_variant: @quantity_variant)
+      assert_equal 1700, balance.inventory_value_cents
+      assert_equal 850, balance.moving_average_cost_cents
+      assert_equal "estimated", balance.cost_quality
+    end
+
+    test "blank receipt cost falls back to vendor-source list discount as configured_estimate" do
+      source = product_variant_vendors(:sample_book_ingram)
+      source.update!(list_cost_cents: 1000, discount_bps: 2000, expected_unit_cost_cents: nil)
+      po_line = build_ordered_po_line(variant: @quantity_variant, ordered_quantity: 3, expected_unit_cost_cents: 999)
+      po_line.update_columns(product_variant_vendor_id: source.id)
+
+      receipt = build_receipt(lines_attributes: [
+        { product_variant_id: @quantity_variant.id, purchase_order_line_id: po_line.id,
+          delivered_quantity: 1, accepted_quantity: 1 }
+      ])
+
+      result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
+
+      assert result.success?, result.error
+      entry = InventoryLedgerEntry.find_by!(movement_type: "receipt", source: receipt.receipt_lines.first)
+      assert_equal 800, entry.unit_cost_cents # 1000 * (1 - 0.20)
+      assert_equal "configured_estimate", entry.cost_method
+      assert_equal "estimated", entry.cost_quality
+    end
+
     private
 
     def build_ordered_po_line(variant:, ordered_quantity:, expected_unit_cost_cents:)
@@ -271,5 +315,6 @@ module Inventory
       membership = StoreMembership.find_by!(user: user, store: @store)
       RolePermission.find_or_create_by!(role: membership.role, permission: Permission.find_by!(code: permission_code))
     end
+
   end
 end
