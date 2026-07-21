@@ -56,5 +56,44 @@ module Purchasing
       assert result.success?
       assert result.replayed
     end
+
+    test "cancelling an ordered purchase order atomically releases remaining allocated quantity" do
+      po = purchase_orders(:ordered_po)
+      line = purchase_order_lines(:ordered_po_line1)
+      allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: line, product_request: product_requests(:open_customer_request),
+        quantity: 2, actor: @user, store: @store
+      ).purchase_order_allocation
+
+      result = CancelPurchaseOrder.call(purchase_order: po, actor: @user, store: @store, cancel_reason: "vendor unavailable")
+
+      assert result.success?, result.error
+      assert po.reload.cancelled?
+      assert_equal 0, allocation.reload.remaining_quantity
+      event = allocation.purchase_order_allocation_events.last
+      assert_equal "released", event.event_type
+      assert_equal "purchase_order_cancelled", event.reason
+
+      audit = AdministrativeAuditEvent.where(action: "purchasing.purchase_order.cancelled", subject_id: po.id).last
+      assert_equal [ { "allocation_id" => allocation.id, "quantity" => 2 } ], audit.metadata["released_allocations"]
+    end
+
+    test "cancelling a purchase order with no remaining allocated quantity leaves resolved allocations untouched" do
+      po = purchase_orders(:ordered_po)
+      line = purchase_order_lines(:ordered_po_line1)
+      allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: line, product_request: product_requests(:open_customer_request),
+        quantity: 2, actor: @user, store: @store
+      ).purchase_order_allocation
+      Purchasing::ReleaseAllocation.call(
+        purchase_order_allocation: allocation, quantity: 2, reason: "manual_release", actor: @user, store: @store
+      )
+
+      result = CancelPurchaseOrder.call(purchase_order: po, actor: @user, store: @store)
+
+      assert result.success?, result.error
+      assert_equal 1, allocation.purchase_order_allocation_events.count
+      assert_equal "manual_release", allocation.purchase_order_allocation_events.last.reason
+    end
   end
 end

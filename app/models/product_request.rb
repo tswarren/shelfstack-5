@@ -23,6 +23,7 @@ class ProductRequest < ApplicationRecord
   has_many :superseding_product_requests, class_name: "ProductRequest",
            foreign_key: :supersedes_product_request_id, inverse_of: :supersedes_product_request,
            dependent: :restrict_with_exception
+  has_many :purchase_order_allocations, dependent: :restrict_with_exception
 
   validates :request_type, presence: true, inclusion: { in: REQUEST_TYPES }
   validates :status, presence: true, inclusion: { in: STATUSES }

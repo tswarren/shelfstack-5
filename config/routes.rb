@@ -43,6 +43,11 @@ Rails.application.routes.draw do
       post :bulk_discount
     end
   end
+  resources :purchase_order_allocations, only: %i[create] do
+    member do
+      post :release
+    end
+  end
   resources :receipts, except: %i[destroy] do
     member do
       post :post

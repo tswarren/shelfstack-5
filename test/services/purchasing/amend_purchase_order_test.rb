@@ -80,5 +80,64 @@ module Purchasing
       assert_not result.success?
       assert_match(/cancel quantity or add/i, result.error)
     end
+
+    test "rejects cancelling quantity below remaining allocated quantity without releasing allocations" do
+      allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: @line, product_request: product_requests(:open_customer_request),
+        quantity: 2, actor: @user, store: @store
+      ).purchase_order_allocation
+      assert_equal 2, allocation.remaining_quantity
+
+      # open_quantity is 5; cancelling 4 leaves open_quantity 1, below the 2 remaining allocated.
+      result = AmendPurchaseOrder.call(
+        purchase_order: @po, actor: @user, store: @store,
+        cancel_lines_attributes: [ { id: @line.id, cancelled_quantity: 4 } ],
+        reason: "vendor short-shipped"
+      )
+
+      assert_not result.success?
+      assert_match(/remains allocated/i, result.error)
+      assert_equal 0, @line.reload.cancelled_quantity
+      assert_equal 2, allocation.reload.remaining_quantity
+    end
+
+    test "atomically releases allocations to permit a cancellation that would otherwise breach remaining allocated quantity" do
+      allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: @line, product_request: product_requests(:open_customer_request),
+        quantity: 2, actor: @user, store: @store
+      ).purchase_order_allocation
+
+      result = AmendPurchaseOrder.call(
+        purchase_order: @po, actor: @user, store: @store,
+        cancel_lines_attributes: [ { id: @line.id, cancelled_quantity: 4 } ],
+        release_allocations_attributes: [ { allocation_id: allocation.id, quantity: 1, reason: "line_quantity_cancelled" } ],
+        reason: "vendor short-shipped"
+      )
+
+      assert result.success?, result.error
+      assert_equal 4, @line.reload.cancelled_quantity
+      assert_equal 1, allocation.reload.remaining_quantity
+      event = allocation.purchase_order_allocation_events.last
+      assert_equal "released", event.event_type
+      assert_equal "line_quantity_cancelled", event.reason
+    end
+
+    test "rejects releasing an allocation that does not belong to the purchase order being amended" do
+      other_po = purchase_orders(:draft_po)
+      other_po.update!(status: "ordered", ordered_at: Time.current, ordered_by_user: @user, ordered_on: Date.current)
+      other_line = purchase_order_lines(:draft_po_line1)
+      other_allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: other_line, product_request: product_requests(:open_customer_request),
+        quantity: 1, actor: @user, store: @store
+      ).purchase_order_allocation
+
+      result = AmendPurchaseOrder.call(
+        purchase_order: @po, actor: @user, store: @store,
+        release_allocations_attributes: [ { allocation_id: other_allocation.id, quantity: 1, reason: "manual_release" } ]
+      )
+
+      assert_not result.success?
+      assert_match(/does not belong to this purchase order/i, result.error)
+    end
   end
 end

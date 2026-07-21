@@ -20,6 +20,25 @@ class ProductRequestsController < ApplicationController
     @buyers = User.joins(:store_memberships)
       .where(store_memberships: { store_id: Current.store.id })
       .distinct.order(:username)
+
+    return unless @product_request.customer_request?
+
+    @can_create_allocation = @product_request.open? && Current.user.can?("purchasing.allocation.create", store: Current.store)
+    @can_release_allocation = Current.user.can?("purchasing.allocation.release", store: Current.store)
+    @allocations = @product_request.purchase_order_allocations
+      .includes(purchase_order_line: :purchase_order, purchase_order_allocation_events: [])
+      .order(:created_at)
+
+    if @can_create_allocation
+      variant_ids = [ @product_request.product_variant_id ].compact
+      variant_scope = variant_ids.any? ? { product_variant_id: variant_ids } : { product_variant_id: @product_request.product.product_variant_ids }
+      @open_purchase_order_lines = PurchaseOrderLine.joins(:purchase_order)
+        .where(purchase_orders: { store_id: Current.store.id, status: "ordered" })
+        .where(variant_scope)
+        .includes(:product_variant, :purchase_order)
+        .order("purchase_orders.purchase_order_number", :position)
+        .select { |line| line.open_quantity.positive? }
+    end
   end
 
   def new

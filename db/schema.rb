@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_040000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -856,6 +856,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_040000) do
     t.check_constraint "variant_structure::text = 'single'::text", name: "products_variant_structure_single"
   end
 
+  create_table "purchase_order_allocation_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "event_type", null: false
+    t.bigint "inventory_reservation_id"
+    t.text "note"
+    t.datetime "occurred_at", null: false
+    t.string "posting_key"
+    t.bigint "purchase_order_allocation_id", null: false
+    t.integer "quantity", null: false
+    t.string "reason"
+    t.bigint "receipt_line_id"
+    t.bigint "user_id", null: false
+    t.index ["inventory_reservation_id"], name: "idx_on_inventory_reservation_id_b6d5c66ee6"
+    t.index ["posting_key"], name: "index_po_allocation_events_on_posting_key", unique: true
+    t.index ["purchase_order_allocation_id"], name: "idx_on_purchase_order_allocation_id_bd612eb847"
+    t.index ["receipt_line_id"], name: "index_purchase_order_allocation_events_on_receipt_line_id"
+    t.index ["user_id"], name: "index_purchase_order_allocation_events_on_user_id"
+    t.check_constraint "event_type::text <> 'released'::text OR reason IS NOT NULL", name: "po_allocation_events_released_requires_reason"
+    t.check_constraint "event_type::text = ANY (ARRAY['converted_to_reservation'::character varying, 'released'::character varying]::text[])", name: "po_allocation_events_event_type_check"
+    t.check_constraint "quantity > 0", name: "po_allocation_events_quantity_positive"
+    t.check_constraint "reason IS NULL OR (reason::text = ANY (ARRAY['purchase_order_cancelled'::character varying, 'line_quantity_cancelled'::character varying, 'vendor_unavailable'::character varying, 'received_unavailable'::character varying, 'request_cancelled'::character varying, 'request_quantity_reduced'::character varying, 'fulfilled_from_earlier_supply'::character varying, 'reallocated_to_other_supply'::character varying, 'manual_release'::character varying]::text[]))", name: "po_allocation_events_reason_check"
+  end
+
+  create_table "purchase_order_allocations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.bigint "product_request_id", null: false
+    t.bigint "purchase_order_line_id", null: false
+    t.integer "quantity", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_user_id"], name: "index_purchase_order_allocations_on_created_by_user_id"
+    t.index ["product_request_id"], name: "index_purchase_order_allocations_on_product_request_id"
+    t.index ["purchase_order_line_id", "product_request_id"], name: "index_po_allocations_on_line_and_request", unique: true
+    t.index ["purchase_order_line_id"], name: "index_purchase_order_allocations_on_purchase_order_line_id"
+    t.check_constraint "quantity > 0", name: "po_allocations_quantity_positive"
+  end
+
   create_table "purchase_order_lines", force: :cascade do |t|
     t.integer "cancelled_quantity", default: 0, null: false
     t.string "cost_entry_method", null: false
@@ -1366,6 +1403,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_040000) do
   add_foreign_key "products", "organizations"
   add_foreign_key "products", "product_formats"
   add_foreign_key "products", "tax_categories", column: "default_tax_category_id"
+  add_foreign_key "purchase_order_allocation_events", "inventory_reservations", on_delete: :restrict
+  add_foreign_key "purchase_order_allocation_events", "purchase_order_allocations", on_delete: :restrict
+  add_foreign_key "purchase_order_allocation_events", "receipt_lines", on_delete: :restrict
+  add_foreign_key "purchase_order_allocation_events", "users", on_delete: :restrict
+  add_foreign_key "purchase_order_allocations", "product_requests", on_delete: :restrict
+  add_foreign_key "purchase_order_allocations", "purchase_order_lines", on_delete: :restrict
+  add_foreign_key "purchase_order_allocations", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "purchase_order_lines", "product_variant_vendors", on_delete: :restrict
   add_foreign_key "purchase_order_lines", "product_variants", on_delete: :restrict
   add_foreign_key "purchase_order_lines", "purchase_orders", on_delete: :restrict

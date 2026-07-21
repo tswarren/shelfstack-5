@@ -218,7 +218,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Purchase-order commercial lifecycle is `draft → ordered → (closed | cancelled)`; receiving progress (`receiving_state`: `not_received`/`partially_received`/`fully_received`) is derived from line quantity and is never a commercial status.
 - Line identity (variant, vendor source, quantity, cost fields, snapshots) is immutable once the parent Purchase Order is placed; only `cancelled_quantity` may change afterward, and only via `AmendPurchaseOrder`.
 - `expected_unit_cost_cents` is deterministic for `discount_from_list` lines (`list_cost_cents` × (1 − discount_bps)) via `Inventory::Rounding`, and manual for `direct_net_cost` lines; `expected_extended_cost_cents` is always a derived rollup.
-- Receipt posting and PO-line receiving allocation are implemented in Phase 5c below; PO-line **allocation** (converting on-order supply to Customer Request commitments) remains Phase 5f.
+- Receipt posting and PO-line receiving allocation are implemented in Phase 5c below; PO-line **allocation** to Customer Requests lands in Phase 5e (`Purchasing::CreateAllocation`/`ReleaseAllocation`), with conversion to Inventory Reservation deferred to Phase 5f.
 
 ## Phase 5c — Receipts and OD-014 negative-inventory settlement
 
@@ -236,7 +236,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - `Inventory::CreateInventoryUnit` gained `require_unit_manage_permission:` (default `true`) so `PostReceipt` can create receipt-sourced units under the receiver's own `inventory.receipt.post` authorization instead of requiring `inventory.unit.manage`.
 - Receipt Line `cost_quality` accepts `confirmed_zero` (a known actual cost of zero) in addition to the ledger's `actual`/`estimated`/`unknown`; `PostReceipt` maps `confirmed_zero` to ledger `cost_quality: "actual"` with a zero unit cost, and any other missing/unknown line cost to ledger `cost_quality: "unknown"` with a null unit cost (never zero).
 - An individually tracked line's `accepted_unavailable_quantity` creates units with status `inspection` rather than `available`; there is no dedicated "receiving unavailable" Unit status.
-- PO-line **allocation** conversion (committing on-order supply to Customer Request allocations) is explicitly deferred to Phase 5f and is not performed by `PostReceipt`.
+- PO-line **allocation** (committing on-order supply to Customer Request allocations) is implemented in Phase 5e below (not by `PostReceipt`); converting an allocation to an Inventory Reservation at receipt time remains Phase 5f.
 
 ## Phase 5d — Product Requests, buyer review, and the PO seam
 
@@ -257,13 +257,30 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Non-customer resolution fields (`resolution`, `resolved_quantity`, `resolved_at`, `resolved_by_user_id`, `resolution_note`) live directly on `product_requests` (no separate resolution-event table), per the Phase 5 planning defaults.
 - The Buyer-review queue (`BuyerReviewController`) is a read-only projection over open `ProductRequest` rows plus `Purchasing::ReplenishmentSnapshot` — never a table, PO-line flag, or inventory quantity.
 - `Purchasing::AddDemandToDraftPurchaseOrder` reuses an existing draft Purchase Order for the same Store × Vendor when one exists and none is explicitly specified, otherwise creates one (mirroring `Purchasing::CreatePurchaseOrder`'s numbering); it never targets an already-`ordered` Purchase Order.
-- Purchase-Order Allocation (committing expected supply to a Customer Request) remains Phase 5e/5f and is not performed by any Phase 5d service.
+- Purchase-Order Allocation (committing expected supply to a Customer Request) lands in Phase 5e below and is not performed by any Phase 5d service.
+
+## Phase 5e — Purchase-order allocations to Customer Requests
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Purchasing::CreateAllocation` | Vendors and Purchasing | 5e | Yes | No | Purchase Order Line (`lock!`), then Product Request (`lock!`) | Purchase Order Line, Customer-Request `ProductRequest`, quantity, actor, store | Persisted `PurchaseOrderAllocation` committing expected (not physical) supply; capped by both the line's open-minus-already-allocated quantity and the request's uncovered quantity (`requested − reserved − remaining_allocated`, fulfilled is always 0 until Phase 5f); refuses non-Customer-Request types; audit |
+| `Purchasing::ReleaseAllocation` | Vendors and Purchasing | 5e | Yes | Yes (`posting_key`) | `PurchaseOrderAllocation` (`lock!`) | Allocation, quantity, structured reason code, actor, optional note/`posting_key`/`occurred_at` | Appends a `released` `PurchaseOrderAllocationEvent`; capped at `remaining_quantity`; replaying the same `posting_key` returns the original event without double-releasing; audit |
+
+### Phase 5e notes
+
+- `purchase_order_allocations` (immutable `purchase_order_line_id`/`product_request_id`/`quantity`/`created_by_user_id`, unique per line+request pair) records only the *original* committed quantity; it carries no `status`/`received`/`fulfilled` column. `remaining_quantity` (`quantity − sum(events.quantity)`) and lifecycle `state` (`open`/`partially_released`/`released`; `converted`/`partially_converted` reserved for Phase 5f) are always derived from the append-only `purchase_order_allocation_events` ledger, never stored.
+- `purchase_order_allocation_events` supports `event_type: released` today; `converted_to_reservation` (requiring both `receipt_line_id` and `inventory_reservation_id`) is modeled and validated now but is not yet written by any service — that lands with Phase 5f fulfilment. Events are append-only (`readonly?` after creation) and a nullable-but-unique `posting_key` gives `ReleaseAllocation` replay idempotency.
+- `released` events require one structured `reason` code: `purchase_order_cancelled`, `line_quantity_cancelled`, `vendor_unavailable`, `received_unavailable`, `request_cancelled`, `request_quantity_reduced`, `fulfilled_from_earlier_supply`, `reallocated_to_other_supply`, `manual_release`. Free-text detail is optional (`note`), never a substitute for the code.
+- Allocating never changes `on_hand`, `on_order`, or creates an `InventoryReservation` — it only commits a share of a Purchase Order Line's still-open expected quantity to a specific Customer Request, per ADR-0015.
+- `Purchasing::AmendPurchaseOrder` now accepts `release_allocations_attributes` and releases those allocations (inside the same transaction, before applying cancellations) so a caller can atomically shrink `cancelled_quantity` and free the allocated quantity it depends on; without a matching release, reducing a line's open quantity below its `remaining_allocated` is rejected.
+- `Purchasing::CancelPurchaseOrder` automatically releases every remaining allocated quantity on the Purchase Order's lines (reason `purchase_order_cancelled`) inside its own transaction before cancelling — cancellation is never blocked by outstanding allocations, and the release is always auditable.
+- Minimal UI: allocate/release forms and a status table on both the Purchase Order show page (per-line, listing allocations to Customer Requests) and the Product Request show page (per-request, listing allocations from Purchase Order Lines), gated by `purchasing.allocation.create`/`purchasing.allocation.release`.
 
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 5e/5f: PO-line allocation conversion, Inventory Reservation, and Product Request Fulfilment for Customer Requests
+- Phase 5f: PO-line allocation conversion to Inventory Reservation, and Product Request Fulfilment for Customer Requests
 - Phase 6: stored-value posting, post-void
 
 ## Related

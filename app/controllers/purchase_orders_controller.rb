@@ -24,12 +24,23 @@ class PurchaseOrdersController < ApplicationController
     @can_cancel = %w[draft ordered].include?(@purchase_order.status) &&
       Current.user.can?("purchasing.purchase_order.cancel", store: Current.store)
     @can_close = @purchase_order.ordered? && Current.user.can?("purchasing.purchase_order.close", store: Current.store)
+    @can_create_allocation = @purchase_order.ordered? && Current.user.can?("purchasing.allocation.create", store: Current.store)
+    @can_release_allocation = Current.user.can?("purchasing.allocation.release", store: Current.store)
 
     if @can_amend
       @vendor_variant_options = ProductVariant.joins(:product)
         .where(products: { organization_id: Current.organization.id })
         .order("products.name", :name)
         .map { |v| [ "#{v.product.name} — #{v.name} (#{v.sku})", v.id ] }
+    end
+
+    @allocations = PurchaseOrderAllocation.where(purchase_order_line_id: @purchase_order.purchase_order_lines.select(:id))
+      .includes(:purchase_order_line, :product_request, :purchase_order_allocation_events)
+      .order(:created_at)
+
+    if @can_create_allocation
+      @open_customer_requests = Current.store.product_requests.open_requests.where(request_type: "customer_request")
+        .includes(:product, :product_variant).order(created_at: :asc)
     end
   end
 
