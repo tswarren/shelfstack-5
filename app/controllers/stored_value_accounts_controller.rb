@@ -41,7 +41,11 @@ class StoredValueAccountsController < ApplicationController
 
   def adjust
     reason = Current.organization.stored_value_adjustment_reasons.find(params[:adjustment_reason_id])
-    approver = User.find_by(username: params[:approver_username].to_s.strip.downcase)
+    approver = if params[:approver_username].present?
+      User.find_by(username: params[:approver_username].to_s.strip.downcase)
+    else
+      Current.user
+    end
     result = StoredValue::AdjustBalance.call(
       account: @account,
       store: Current.store,

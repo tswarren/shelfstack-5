@@ -46,6 +46,7 @@ module StoredValue
         approver: @approver,
         approver_pin: @approver_pin,
         approver_permission_key: "stored_value.adjustment.approve",
+        self_approver_permission_key: "stored_value.adjustment.approve_self",
         requested_value: @amount_cents
       )
       raise Error, auth.error || "adjustment approval required" unless auth.allowed? && auth.pos_approval

@@ -436,6 +436,12 @@ stored_value_adjustment_approve:
   permission_group: stored_value
   active: true
 
+stored_value_adjustment_approve_self:
+  code: stored_value.adjustment.approve_self
+  name: Self-approve stored-value adjustments
+  permission_group: stored_value
+  active: true
+
 
 # Phase 5
 

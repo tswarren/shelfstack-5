@@ -30,7 +30,9 @@ unless defined?(PHASE6_PERMISSIONS)
     { code: "stored_value.adjustment.create", name: "Create stored-value adjustments", permission_group: "stored_value",
       description: "Create manual balance adjustments" },
     { code: "stored_value.adjustment.approve", name: "Approve stored-value adjustments", permission_group: "stored_value",
-      description: "Independently approve manual adjustments" }
+      description: "Independently approve manual adjustments" },
+    { code: "stored_value.adjustment.approve_self", name: "Self-approve stored-value adjustments", permission_group: "stored_value",
+      description: "Authorize one's own manual adjustment with recorded self-approval" }
   ].freeze
 end
 

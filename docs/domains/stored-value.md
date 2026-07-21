@@ -148,7 +148,7 @@ A Ledger Entry must not post without its completed originating POS activity, exc
 
 Manual adjustment requires Permission, reason, performing User, and Approval.
 
-Phase 6 requires independent approval for every manual adjustment (no monetary threshold).
+Phase 6 requires a recorded approval for every manual adjustment (no monetary threshold): another user with `stored_value.adjustment.approve`, or the same user with `stored_value.adjustment.approve_self`.
 
 It creates a new Entry and never overwrites history.
 
@@ -175,6 +175,7 @@ stored_value.tender.redeem
 stored_value.tender.refund
 stored_value.adjustment.create
 stored_value.adjustment.approve
+stored_value.adjustment.approve_self
 ```
 
 Replacement and transfer permissions remain deferred.

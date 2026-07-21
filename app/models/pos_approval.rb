@@ -9,7 +9,7 @@ class PosApproval < ApplicationRecord
     price_override discount_apply tax_exemption tax_category_override cash_movement
     post_void stored_value_adjustment
   ].freeze
-  SELF_APPROVAL_ACTION_TYPES = %w[post_void].freeze
+  SELF_APPROVAL_ACTION_TYPES = %w[post_void stored_value_adjustment].freeze
 
   belongs_to :store
   belongs_to :pos_session, optional: true

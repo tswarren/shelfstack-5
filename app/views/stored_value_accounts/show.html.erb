@@ -20,6 +20,7 @@
       <div class="field">
         <%= form.label :approver_username, "Approver username", class: "field-label" %>
         <%= form.text_field :approver_username, class: "input", autocomplete: "off" %>
+        <p class="field-hint">Leave blank to self-approve (requires stored_value.adjustment.approve_self).</p>
       </div>
       <div class="field">
         <%= form.label :approver_pin, "Approver PIN", class: "field-label" %>

@@ -81,7 +81,7 @@ module Pos
 
       if self_approval?
         if @self_approver_permission_key.blank?
-          return denied("approver must differ from requester")
+          return denied("self-approval is not permitted for this action")
         end
         return denied("missing permission #{@self_approver_permission_key}") unless self_approver_permitted?
       else

@@ -435,3 +435,7 @@ admin_stored_value_adjustment_create:
 admin_stored_value_adjustment_approve:
   role: administrator
   permission: stored_value_adjustment_approve
+
+admin_stored_value_adjustment_approve_self:
+  role: administrator
+  permission: stored_value_adjustment_approve_self

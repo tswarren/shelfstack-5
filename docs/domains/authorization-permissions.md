@@ -239,11 +239,12 @@ Canonical keys for Stored Value. Domain lists must match this catalog. Policy: [
 | `stored_value.tender.refund` | Refund to stored value | store | 6 | — | no | yes |
 | `stored_value.adjustment.create` | Create manual balance adjustments | store | 6 | — | yes | yes |
 | `stored_value.adjustment.approve` | Independently approve manual adjustments | store | 6 | — | — | yes |
+| `stored_value.adjustment.approve_self` | Authorize one’s own manual adjustment (still requires PIN re-auth and a recorded approval) | store | 6 | — | — | yes |
 
 ### Stored-value evaluation
 
 - Replacement and transfer keys remain deferred.
-- Every manual adjustment requires independent `stored_value.adjustment.approve` in Phase 6 (no monetary threshold).
+- Every manual adjustment requires `stored_value.adjustment.create` plus a recorded approval: another user with `stored_value.adjustment.approve`, or the same user with `stored_value.adjustment.approve_self` (PIN re-auth still required). Holding only `stored_value.adjustment.approve` does not imply self-approval.
 - Post-void always requires `pos.post_void.create` plus a recorded approval: another user with `pos.post_void.approve`, or the same user with `pos.post_void.approve_self` (PIN re-auth still required). Holding only `pos.post_void.approve` does not imply self-approval.
 
 ## Reporting

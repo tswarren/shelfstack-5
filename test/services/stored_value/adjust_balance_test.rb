@@ -10,7 +10,7 @@ module StoredValue
       @org = @store.organization
       IdentifierSequence.ensure_defaults!
       @account = CreateAccount.call(
-        organization: @org, account_type: "gift_card", actor: @admin
+        organization: @org, account_type: "gift_card", actor: @admin, store: @store
       ).account
       @reason = StoredValueAdjustmentReason.create!(
         organization: @org, code: "manual_fix", name: "Manual correction",
@@ -18,7 +18,11 @@ module StoredValue
       )
 
       admin_role = roles(:administrator)
-      %w[stored_value.adjustment.create stored_value.adjustment.approve].each do |code|
+      %w[
+        stored_value.adjustment.create
+        stored_value.adjustment.approve
+        stored_value.adjustment.approve_self
+      ].each do |code|
         perm = Permission.find_or_create_by!(code: code) do |p|
           p.name = code
           p.permission_group = "stored_value"
@@ -55,15 +59,32 @@ module StoredValue
       assert_equal "stored_value_adjustment", result.pos_approval.action_type
     end
 
-    test "self-approval is denied for adjustments" do
+    test "self-approval with approve_self posts adjustment" do
       result = AdjustBalance.call(
         account: @account, store: @store, amount_cents: 100, adjustment_reason: @reason,
         actor: @admin, description: "note",
         approver: @admin, approver_pin: "1234",
         posting_key: "sv-adj-self"
       )
+      assert result.success?, result.error
+      assert_equal @admin.id, result.pos_approval.requested_by_user_id
+      assert_equal @admin.id, result.pos_approval.approved_by_user_id
+    end
+
+    test "self-approval without approve_self is denied" do
+      RolePermission.joins(:permission).where(
+        role: roles(:administrator),
+        permissions: { code: "stored_value.adjustment.approve_self" }
+      ).delete_all
+
+      result = AdjustBalance.call(
+        account: @account, store: @store, amount_cents: 100, adjustment_reason: @reason,
+        actor: @admin, description: "note",
+        approver: @admin, approver_pin: "1234",
+        posting_key: "sv-adj-self-denied"
+      )
       refute result.success?
-      assert_match(/differ from requester|approval/i, result.error)
+      assert_match(/approve_self/, result.error)
     end
 
     test "missing note is rejected when reason requires it" do

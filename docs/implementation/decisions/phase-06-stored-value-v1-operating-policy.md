@@ -100,7 +100,7 @@ Every manual adjustment requires:
 - `stored_value.adjustment.create`;
 - an active adjustment reason;
 - explanatory text when the reason requires a note;
-- independent `stored_value.adjustment.approve`;
+- a recorded approval: another user with `stored_value.adjustment.approve`, or the same user with `stored_value.adjustment.approve_self` (PIN re-auth still required; `approve` alone does not imply self-approval);
 - an immutable `manual_adjustment` ledger entry.
 
 This closes the domain open question “what adjustment threshold requires Approval?” for v1 (always).
@@ -126,9 +126,10 @@ Normalize to `<domain>.<resource>.<action>` and seed in Phase 6:
 | `stored_value.tender.redeem` | Redeem stored value as tender | store | no | yes |
 | `stored_value.tender.refund` | Refund to stored value | store | no | yes |
 | `stored_value.adjustment.create` | Create manual adjustments | store | yes | yes |
-| `stored_value.adjustment.approve` | Approve manual adjustments | store | — | yes |
+| `stored_value.adjustment.approve` | Approve another user’s manual adjustments | store | — | yes |
+| `stored_value.adjustment.approve_self` | Self-approve own manual adjustments (PIN + recorded approval) | store | — | yes |
 
-Replacement and transfer permissions remain deferred. Post-void keys remain under `pos.*` (`pos.post_void.create`, `pos.post_void.approve`).
+Replacement and transfer permissions remain deferred. Post-void keys remain under `pos.*` (`pos.post_void.create`, `pos.post_void.approve`, `pos.post_void.approve_self`).
 
 ### Out of scope (deferred)
 
