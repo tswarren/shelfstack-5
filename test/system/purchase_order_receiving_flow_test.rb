@@ -48,7 +48,7 @@ class PurchaseOrderReceivingFlowTest < ApplicationSystemTestCase
       find_field("Purchase order line").find(:option, text: /open 4/).select_option
       fill_in "Delivered quantity", with: "4"
       fill_in "Accepted quantity", with: "4"
-      fill_in "Actual unit cost (cents)", with: "700"
+      fill_in "Unit cost (cents)", with: "700"
       select "Actual", from: "Cost quality"
     end
     click_button "Create draft"
