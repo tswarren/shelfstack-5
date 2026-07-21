@@ -399,6 +399,5 @@ module Inventory
 
       RolePermission.where(role: membership.role, permission: permission).delete_all
     end
-
   end
 end
