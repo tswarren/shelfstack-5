@@ -1,0 +1,46 @@
+<% content_for :title, "Open purchase orders" %>
+
+<%= render "shared/page_header", title: "Open purchase orders",
+      subtitle: "Draft and ordered purchase orders with derived receiving state.",
+      breadcrumbs: [ { label: "Reports", path: reports_path }, { label: "Open purchase orders" } ],
+      actions: capture {
+        concat link_to("All purchase orders", purchase_orders_path, class: "button button-outline")
+      } %>
+
+<% if @purchase_orders.empty? %>
+  <%= render "shared/empty_state", title: "No open purchase orders",
+        body: "Draft or ordered purchase orders will appear here." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Open purchase orders</caption>
+      <thead>
+        <tr>
+          <th scope="col">Number</th>
+          <th scope="col">Vendor</th>
+          <th scope="col">Status</th>
+          <th scope="col">Receiving</th>
+          <th scope="col" class="num">Open quantity</th>
+          <th scope="col">Ordered on</th>
+          <% if @can_view_cost %><th scope="col" class="num">Expected total</th><% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% @purchase_orders.each do |po| %>
+          <tr>
+            <td><%= link_to po.purchase_order_number, po %></td>
+            <td><%= po.vendor.name %></td>
+            <td><%= status_badge(po.status.titleize, variant: purchase_order_status_variant(po.status)) %></td>
+            <td><%= status_badge(po.receiving_state.titleize, variant: purchase_order_receiving_state_variant(po.receiving_state)) %></td>
+            <td class="num"><%= po.purchase_order_lines.sum(&:open_quantity) %></td>
+            <td><%= po.ordered_on&.to_fs(:long) || "—" %></td>
+            <% if @can_view_cost %>
+              <td class="num"><%= format_money(po.purchase_order_lines.sum(:expected_extended_cost_cents)) %></td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "purchase order" %>
+<% end %>

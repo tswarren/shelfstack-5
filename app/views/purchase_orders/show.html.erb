@@ -141,7 +141,7 @@
           <%= label_tag "purchase_order_new_line_variant", "Product variant" %>
           <%= select_tag "purchase_order[new_lines_attributes][][product_variant_id]",
                 options_for_select(@vendor_variant_options),
-                { include_blank: true }, id: "purchase_order_new_line_variant", class: "input" %>
+                include_blank: true, id: "purchase_order_new_line_variant", class: "input" %>
         </div>
         <div class="field">
           <%= label_tag "purchase_order_new_line_quantity", "Ordered quantity" %>

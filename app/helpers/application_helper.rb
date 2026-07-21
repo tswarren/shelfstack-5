@@ -24,8 +24,12 @@ module ApplicationHelper
     end
   end
 
+  # `permission_key` accepts a single key or an array; an array is treated as
+  # "any of these" (e.g. a dashboard link reachable via several view permissions).
   def nav_item(label, path, permission_key: nil, match: nil)
-    return "".html_safe if permission_key.present? && !nav_permitted?(permission_key)
+    if permission_key.present?
+      return "".html_safe unless Array(permission_key).any? { |key| nav_permitted?(key) }
+    end
 
     active = nav_item_active?(path, match)
     link_opts = { class: [ "nav-item", ("is-active" if active) ].compact.join(" ") }

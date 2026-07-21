@@ -80,6 +80,13 @@ Rails.application.routes.draw do
   get "buyer_review", to: "buyer_review#index", as: :buyer_review_index
   post "buyer_review/:id/add_to_purchase_order", to: "buyer_review#add_to_purchase_order", as: :add_to_purchase_order
 
+  get "reports", to: "reports#index", as: :reports
+  get "reports/open_purchase_orders", to: "reports#open_purchase_orders", as: :open_purchase_orders_report
+  get "reports/on_order", to: "reports#on_order", as: :on_order_report
+  get "reports/receiving_history", to: "reports#receiving_history", as: :receiving_history_report
+  get "reports/customer_requests", to: "reports#customer_requests", as: :customer_requests_report
+  get "reports/allocation_events", to: "reports#allocation_events", as: :allocation_events_report
+
   get "register", to: "register#show", as: :register
 
   resources :business_days, only: %i[index new create] do

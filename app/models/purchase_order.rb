@@ -13,6 +13,11 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :closed_by_user, class_name: "User", optional: true
   has_many :purchase_order_lines, dependent: :restrict_with_exception
   has_many :purchase_order_allocations, through: :purchase_order_lines
+  # Declared so `form.fields_for :purchase_order_lines` generates the
+  # `_attributes`-suffixed param key `PurchaseOrdersController#lines_params`
+  # expects. Lines are actually persisted by `Purchasing::CreatePurchaseOrder`
+  # / `UpdateDraftPurchaseOrder`, not by Rails' nested-attributes writer.
+  accepts_nested_attributes_for :purchase_order_lines, allow_destroy: false
 
   attr_readonly :purchase_order_number
 

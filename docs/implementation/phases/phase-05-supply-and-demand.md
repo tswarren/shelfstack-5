@@ -1,6 +1,6 @@
 # Phase 5 — Supply and Demand
 
-**Status:** Ready to begin (governing baseline reconciled 2026-07-20)  
+**Status:** 5a–5g implemented on `phase/5-supply-and-demand`; hardened on `phase/5g-hardening`; ready for merge to `main` after CI  
 **Depends on:** Completed Phase 4 POS, inventory-reservation, exact-unit, UX-baseline, and test-hardening foundations  
 **Phase 4 gate status:** 4a–4e, 4f (`34f371f`, PR #30), and 4g (`c51dcca`, PR #31) merged to `main`  
 **Unlocks:** richer operations reporting in Phase 7; customer-request fulfilment through POS; later vendor-order lifecycle capabilities  
@@ -110,21 +110,26 @@ Permissions: [authorization-permissions.md](../../domains/authorization-permissi
 
 ## Exit criteria
 
-- [ ] Staff can search, import, or create a Product and return to demand entry
-- [ ] Every Product Request references a Product; Variant resolved before PO line
-- [ ] Four request types enter buyer review with correct obligation semantics
-- [ ] Non-customer requests close with auditable resolution and no supply allocations
-- [ ] Customer Requests derive reserved / allocated / uncovered quantities without double counting
-- [ ] Buyers create/update draft POs from buyer review; place/cancel/close consistently
-- [ ] PO lines support discount-from-list and direct-net cost with provenance
-- [ ] Derived `on_order` reconciles to ordered, accepted, and cancelled quantities
-- [ ] Multi-PO receipts; one PO line per receipt line; atomic/idempotent posting
-- [ ] Only accepted quantity increases On Hand; over-receipt / unlinked receive authorized explicitly
-- [ ] Receipt into negative On Hand splits deficit settlement and positive inventory correctly
-- [ ] Customer Request can allocate PO quantity and reserve physically confirmed stock
-- [ ] Receipt converts applicable allocations to Inventory Reservations; earlier supply can release redundant allocations
-- [ ] POS completion can create Product Request Fulfilment and close a fulfilled request
-- [ ] Existing Phase 4 POS sale paths work with received general stock
+- [x] Staff can search, import, or create a Product and return to demand entry
+- [x] Every Product Request references a Product; Variant resolved before PO line
+- [x] Four request types enter buyer review with correct obligation semantics
+- [x] Non-customer requests close with auditable resolution and no supply allocations
+- [x] Customer Requests derive reserved / allocated / uncovered quantities without double counting
+- [x] Buyers create/update draft POs from buyer review; place/cancel/close consistently
+- [x] PO lines support discount-from-list and direct-net cost with provenance
+- [x] Derived `on_order` reconciles to ordered, accepted, and cancelled quantities
+- [x] Multi-PO receipts; one PO line per receipt line; atomic/idempotent posting
+- [x] Only accepted quantity increases On Hand; over-receipt / unlinked receive authorized explicitly
+- [x] Receipt into negative On Hand splits deficit settlement and positive inventory correctly
+- [x] Customer Request can allocate PO quantity and reserve physically confirmed stock
+- [x] Receipt converts applicable allocations to Inventory Reservations; earlier supply can release redundant allocations
+- [x] POS completion can create Product Request Fulfilment and close a fulfilled request
+- [x] Existing Phase 4 POS sale paths work with received general stock
+
+Phase 5g added read-only operational views (`/reports`) over these posted facts, plus
+system-test coverage for the three critical end-to-end paths (vendor → PO → receipt →
+stock; customer request → allocation → receipt → POS fulfilment; non-customer resolve →
+PO without allocation). `bin/ci` and `test:system` pass on `phase/5g-hardening`.
 
 ## Out of scope / explicitly deferred
 
@@ -138,7 +143,6 @@ Do not design or seed these in Phase 5 scaffolding:
 - Vendor EDI / acknowledgements / cascading; automatic tier discounts; hard minimum enforcement
 - Freight / landed cost / AP; advanced PO approval routing
 - Full RTV / transfers / cross-store consolidation
-- Workflow stubs under `docs/workflows/` for purchasing/requests (add as slices land)
 
 ## Related
 

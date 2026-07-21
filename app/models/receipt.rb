@@ -13,6 +13,11 @@ class Receipt < ApplicationRecord
   belongs_to :posted_by_user, class_name: "User", optional: true
   belongs_to :cancelled_by_user, class_name: "User", optional: true
   has_many :receipt_lines, dependent: :restrict_with_exception
+  # Declared so `form.fields_for :receipt_lines` generates the
+  # `_attributes`-suffixed param key `ReceiptsController#lines_params`
+  # expects. Lines are actually persisted by `Inventory::CreateReceipt` /
+  # `UpdateDraftReceipt`, not by Rails' nested-attributes writer.
+  accepts_nested_attributes_for :receipt_lines, allow_destroy: false
 
   attr_readonly :receipt_number
 

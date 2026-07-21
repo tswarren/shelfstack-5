@@ -1,0 +1,60 @@
+<% content_for :title, "Reports" %>
+
+<%= render "shared/page_header", title: "Reports",
+      subtitle: "Read-only operational views over posted purchasing, receiving, and request facts." %>
+
+<div class="workspace-landing">
+  <% if @can_view_purchase_orders %>
+    <section class="card workspace-card">
+      <h2>Open purchase orders</h2>
+      <p class="muted">Draft and ordered purchase orders with derived receiving state.</p>
+      <div class="page-actions">
+        <%= link_to "View", open_purchase_orders_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+
+    <section class="card workspace-card">
+      <h2>On order</h2>
+      <p class="muted">Derived on-order quantity by product variant, summed across ordered purchase orders.</p>
+      <div class="page-actions">
+        <%= link_to "View", on_order_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+
+    <section class="card workspace-card">
+      <h2>Allocation events</h2>
+      <p class="muted">Append-only history of Purchase-Order Allocation conversions and releases.</p>
+      <div class="page-actions">
+        <%= link_to "View", allocation_events_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_receipts %>
+    <section class="card workspace-card">
+      <h2>Receiving history</h2>
+      <p class="muted">Receipt history and purchase orders that are only partially received.</p>
+      <div class="page-actions">
+        <%= link_to "View", receiving_history_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_requests %>
+    <section class="card workspace-card">
+      <h2>Buyer review</h2>
+      <p class="muted">Open Product Requests awaiting a buyer decision.</p>
+      <div class="page-actions">
+        <%= link_to "View", buyer_review_index_path, class: "button button-outline" %>
+      </div>
+    </section>
+
+    <section class="card workspace-card">
+      <h2>Customer request coverage</h2>
+      <p class="muted">Reserved, allocated, fulfilled, and uncovered quantity for Customer Requests.</p>
+      <div class="page-actions">
+        <%= link_to "View", customer_requests_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+</div>
