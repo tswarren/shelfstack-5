@@ -225,12 +225,16 @@ class PosLineItemsController < ApplicationController
 
   def create_stored_value_line
     account = if params[:create_account].present?
+      unless Current.user.can?("stored_value.account.create", store: Current.store)
+        redirect_to pos_transaction_path(@pos_transaction), alert: "missing permission stored_value.account.create"
+        return
+      end
+
       created = StoredValue::CreateAccount.call(
         organization: Current.organization,
         account_type: "gift_card",
         actor: Current.user,
         store: Current.store,
-        require_permission: true,
         alternate_identifier: params[:alternate_identifier].presence
       )
       unless created.success?

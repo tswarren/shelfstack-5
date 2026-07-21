@@ -40,11 +40,13 @@ module StoredValue
           created_by_user: @actor
         )
 
-        Administration::RecordAuditEvent.call(
-          actor: @actor, organization: @organization, store: @store,
-          action: "stored_value_account.created", subject: account,
-          metadata: { "account_number" => account.account_number, "account_type" => account.account_type }
-        )
+        if @store.present?
+          Administration::RecordAuditEvent.call(
+            actor: @actor, organization: @organization, store: @store,
+            action: "stored_value_account.created", subject: account,
+            metadata: { "account_number" => account.account_number, "account_type" => account.account_type }
+          )
+        end
       end
 
       Result.new(account: account, success?: true, error: nil)

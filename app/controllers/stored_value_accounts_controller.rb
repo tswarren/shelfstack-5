@@ -25,7 +25,6 @@ class StoredValueAccountsController < ApplicationController
       account_type: params.require(:stored_value_account)[:account_type],
       actor: Current.user,
       store: Current.store,
-      require_permission: true,
       alternate_identifier: params.dig(:stored_value_account, :alternate_identifier)
     )
     if result.success?
