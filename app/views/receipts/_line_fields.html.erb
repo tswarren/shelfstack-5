@@ -94,19 +94,15 @@
                 receipt_form_target: "costQuality",
                 action: "change->receipt-form#costEdited"
               } %>
-        <p class="field-hint">Defaults to PO expected cost, or list − discount, or vendor estimate. Choose Unknown to decline a suggestion.</p>
+        <p class="field-hint">Defaults to PO expected cost, or list − discount, or vendor estimate. Choose Unknown to decline a suggestion. Provenance is derived automatically.</p>
       </div>
 
       <div class="field">
         <%= f.label :cost_provenance, "Cost provenance", class: "field-label" %>
-        <%= f.select :cost_provenance,
-              Inventory::ResolveReceiptLineCost::CONTROLLED_PROVENANCES.map { |p| [ p.humanize, p ] },
-              { include_blank: true },
-              class: "input",
-              data: {
-                receipt_form_target: "costProvenance",
-                action: "change->receipt-form#costEdited"
-              } %>
+        <%= f.hidden_field :cost_provenance, data: { receipt_form_target: "costProvenance" } %>
+        <p class="field-hint" data-receipt-form-target="costProvenanceDisplay">
+          <%= f.object.cost_provenance.presence&.humanize || "Derived on save / post" %>
+        </p>
       </div>
     <% end %>
 

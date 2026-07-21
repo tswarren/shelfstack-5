@@ -6,6 +6,8 @@ module Inventory
     module_function
 
     def apply!(line, vendor:)
+      normalize_inconsistent_submitted_tuple!(line)
+
       case line.cost_quality
       when "unknown"
         line.actual_unit_cost_cents = nil
@@ -20,19 +22,17 @@ module Inventory
       end
 
       if line.actual_unit_cost_cents.present? && line.cost_provenance == "manual_receipt"
-        line.cost_quality = "actual" if line.cost_quality.blank?
+        line.cost_quality = line.cost_quality.presence_in(%w[actual estimated]) || "actual"
         return
       end
 
       if line.actual_unit_cost_cents.present? &&
          !ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s)
-        line.cost_provenance = "manual_receipt" if line.cost_provenance.blank?
-        line.cost_quality = "actual" if line.cost_quality.blank?
+        line.cost_provenance = "manual_receipt"
+        line.cost_quality = line.cost_quality.presence_in(%w[actual estimated]) || "actual"
         return
       end
 
-      # Auto provenance with amount: if context still matches, keep; otherwise recompute.
-      # Blank amount with auto/blank provenance: suggest.
       if line.actual_unit_cost_cents.present? &&
          ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s)
         suggestion = SuggestReceiptLineCost.call(
@@ -45,10 +45,10 @@ module Inventory
           line.cost_quality = "estimated"
           return
         end
-        # Context changed or amount drifted — recompute below.
       end
 
-      return if line.actual_unit_cost_cents.present? && line.cost_quality == "actual"
+      return if line.actual_unit_cost_cents.present? && line.cost_quality == "actual" &&
+                line.cost_provenance == "manual_receipt"
 
       suggestion = SuggestReceiptLineCost.call(
         purchase_order_line: line.purchase_order_line,
@@ -56,12 +56,10 @@ module Inventory
         vendor: vendor
       )
       if suggestion.blank?
-        # Context has no suggestion: clear stale auto values.
-        if ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s) ||
-           line.actual_unit_cost_cents.blank?
-          line.actual_unit_cost_cents = nil if ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s)
-          line.cost_quality = nil if ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s)
-          line.cost_provenance = nil if ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s)
+        if ResolveReceiptLineCost::AUTO_PROVENANCES.include?(line.cost_provenance.to_s)
+          line.actual_unit_cost_cents = nil
+          line.cost_quality = nil
+          line.cost_provenance = nil
         end
         return
       end
@@ -70,5 +68,24 @@ module Inventory
       line.cost_quality = suggestion.cost_quality
       line.cost_provenance = suggestion.cost_provenance
     end
+
+    def normalize_inconsistent_submitted_tuple!(line)
+      # Confirmed-zero provenance with a non-zero amount is not a confirmation of zero.
+      if line.cost_provenance == "confirmed_zero" && line.cost_quality != "confirmed_zero"
+        line.cost_provenance = nil
+      end
+      if line.cost_quality == "confirmed_zero"
+        line.actual_unit_cost_cents = 0
+        line.cost_provenance = "confirmed_zero"
+      end
+      if line.cost_quality == "unknown"
+        line.actual_unit_cost_cents = nil
+        line.cost_provenance = "unknown"
+      end
+      if line.cost_provenance == "unknown" && line.cost_quality != "unknown"
+        line.cost_provenance = nil
+      end
+    end
+    private_class_method :normalize_inconsistent_submitted_tuple!
   end
 end

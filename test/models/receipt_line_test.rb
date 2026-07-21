@@ -74,6 +74,46 @@ class ReceiptLineTest < ActiveSupport::TestCase
     assert_equal 3, line.sellable_accepted_quantity
   end
 
+  test "rejects actual cost with confirmed_zero provenance" do
+    line = @receipt.receipt_lines.build(
+      position: 1, product_variant: @variant, delivered_quantity: 1, accepted_quantity: 1,
+      actual_unit_cost_cents: 500, cost_quality: "actual", cost_provenance: "confirmed_zero"
+    )
+
+    assert_not line.valid?
+    assert_includes line.errors[:cost_provenance], "must be manual_receipt for actual cost"
+  end
+
+  test "unknown cost requires nil amount and unknown provenance" do
+    line = @receipt.receipt_lines.build(
+      position: 1, product_variant: @variant, delivered_quantity: 1, accepted_quantity: 1,
+      actual_unit_cost_cents: 100, cost_quality: "unknown", cost_provenance: "unknown"
+    )
+
+    assert_not line.valid?
+    assert_includes line.errors[:actual_unit_cost_cents], "must be blank for unknown cost"
+  end
+
+  test "confirmed_zero requires zero amount" do
+    line = @receipt.receipt_lines.build(
+      position: 1, product_variant: @variant, delivered_quantity: 1, accepted_quantity: 1,
+      actual_unit_cost_cents: 5, cost_quality: "confirmed_zero", cost_provenance: "confirmed_zero"
+    )
+
+    assert_not line.valid?
+    assert_includes line.errors[:actual_unit_cost_cents], "must be zero for confirmed zero cost"
+  end
+
+  test "auto provenance requires estimated quality" do
+    line = @receipt.receipt_lines.build(
+      position: 1, product_variant: @variant, delivered_quantity: 1, accepted_quantity: 1,
+      actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "purchase_order_expected"
+    )
+
+    assert_not line.valid?
+    assert_includes line.errors[:cost_quality], "must be estimated for suggested provenance"
+  end
+
   test "lines can only be changed while the receipt is draft" do
     line = receipt_lines(:draft_receipt_line1)
     @receipt.update_column(:status, "posted")

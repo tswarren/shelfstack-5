@@ -9,6 +9,6 @@ draft_receipt_line1:
   accepted_unavailable_quantity: 0
   actual_unit_cost_cents: 700
   cost_quality: actual
-  cost_provenance: vendor_source
+  cost_provenance: manual_receipt
   created_at: <%= Time.current %>
   updated_at: <%= Time.current %>

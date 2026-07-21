@@ -132,6 +132,12 @@ module Inventory
       released = allocation.purchase_order_allocation_events.where(event_type: "released").sum(:quantity)
       assert_equal 1, released
       assert_equal 2, po_line.reload.received_quantity
+
+      unavailable_line, sellable_line = created.receipt.receipt_lines.order(:position).to_a
+      assert_equal 1, unavailable_line.accepted_unavailable_quantity
+      assert_equal 0, sellable_line.accepted_unavailable_quantity
+      conversion = allocation.purchase_order_allocation_events.find_by!(event_type: "converted_to_reservation")
+      assert_equal sellable_line.id, conversion.receipt_line_id
     end
 
     test "a later receipt adds onto an existing active reservation for the same request" do

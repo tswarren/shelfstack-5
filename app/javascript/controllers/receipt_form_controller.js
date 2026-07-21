@@ -6,7 +6,8 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "vendor", "lines", "line", "lineTemplate", "removeButton", "position",
-    "variantSelect", "purchaseOrderLineSelect", "unitCost", "costQuality", "costProvenance"
+    "variantSelect", "purchaseOrderLineSelect", "unitCost", "costQuality",
+    "costProvenance", "costProvenanceDisplay"
   ]
   static values = { vendorCostSuggestions: Object }
 
@@ -14,7 +15,10 @@ export default class extends Controller {
     this.newIndex = Date.now()
     this.updateLineControls()
     this.refreshPurchaseOrderLineOptions()
-    this.lineTargets.forEach((line) => this.ensureCostMeta(line))
+    this.lineTargets.forEach((line) => {
+      this.ensureCostMeta(line)
+      this.syncProvenanceDisplay(line)
+    })
   }
 
   addLine() {
@@ -67,27 +71,40 @@ export default class extends Controller {
     if (!line) return
 
     const quality = line.querySelector("[data-receipt-form-target='costQuality']")
-    if (quality?.value === "unknown" || quality?.value === "confirmed_zero") {
-      line.dataset.costAutoSuggested = "false"
-      line.dataset.costSuggestionContext = this.contextKey(line)
-      if (quality.value === "unknown") {
-        const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
-        const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
-        if (unitCost) unitCost.value = ""
-        if (provenance) provenance.value = "unknown"
-      }
+    const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
+    const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
+
+    if (quality?.value === "unknown") {
+      line.dataset.costMode = "unknown"
+      if (unitCost) unitCost.value = ""
+      if (provenance) provenance.value = "unknown"
+      this.syncProvenanceDisplay(line)
       return
     }
 
-    line.dataset.costAutoSuggested = "false"
-    const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
-    if (provenance && (!provenance.value || this.isAutoProvenance(provenance.value))) {
-      provenance.value = "manual_receipt"
+    if (quality?.value === "confirmed_zero") {
+      line.dataset.costMode = "confirmed_zero"
+      if (unitCost) unitCost.value = "0"
+      if (provenance) provenance.value = "confirmed_zero"
+      this.syncProvenanceDisplay(line)
+      return
     }
-    const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
+
+    if (event.target === quality && !quality.value) {
+      line.dataset.costMode = "suggest"
+      this.applySuggestedCost(line)
+      return
+    }
+
+    line.dataset.costMode = "manual"
+    if (provenance) provenance.value = "manual_receipt"
     if (quality && unitCost?.value !== "" && !quality.value) {
       quality.value = "actual"
     }
+    if (quality && quality.value === "estimated" && provenance) {
+      provenance.value = "manual_receipt"
+    }
+    this.syncProvenanceDisplay(line)
   }
 
   refreshPurchaseOrderLineOptions({ clearIncompatible = false } = {}) {
@@ -131,36 +148,31 @@ export default class extends Controller {
     if (!unitCost) return
 
     this.ensureCostMeta(line)
+    const mode = line.dataset.costMode || "suggest"
+    if (mode === "unknown" || mode === "confirmed_zero" || mode === "manual") return
+
     const context = this.contextKey(line)
-    const auto = line.dataset.costAutoSuggested === "true"
-    const empty = unitCost.value === ""
-    const contextChanged = line.dataset.costSuggestionContext !== context
-
-    if (!auto && !empty) return
-
     const suggestion = this.suggestionFor(line)
     if (!suggestion) {
-      if (auto || empty) {
-        unitCost.value = ""
-        const quality = line.querySelector("[data-receipt-form-target='costQuality']")
-        const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
-        if (quality) quality.value = ""
-        if (provenance) provenance.value = ""
-        line.dataset.costAutoSuggested = "false"
-        line.dataset.costSuggestionContext = context
-      }
+      unitCost.value = ""
+      const quality = line.querySelector("[data-receipt-form-target='costQuality']")
+      const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
+      if (quality) quality.value = ""
+      if (provenance) provenance.value = ""
+      line.dataset.costMode = "suggest"
+      line.dataset.costSuggestionContext = context
+      this.syncProvenanceDisplay(line)
       return
     }
-
-    if (!auto && !empty && !contextChanged) return
 
     unitCost.value = suggestion.unit_cost_cents
     const quality = line.querySelector("[data-receipt-form-target='costQuality']")
     if (quality) quality.value = suggestion.cost_quality || "estimated"
     const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
     if (provenance) provenance.value = suggestion.cost_provenance || ""
-    line.dataset.costAutoSuggested = "true"
+    line.dataset.costMode = "suggest"
     line.dataset.costSuggestionContext = context
+    this.syncProvenanceDisplay(line)
   }
 
   suggestionFor(line) {
@@ -189,24 +201,33 @@ export default class extends Controller {
   }
 
   ensureCostMeta(line) {
-    if (line.dataset.costAutoSuggested == null) {
-      const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
+    if (line.dataset.costMode == null) {
+      const quality = line.querySelector("[data-receipt-form-target='costQuality']")?.value || ""
       const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")?.value || ""
-      const auto = unitCost && unitCost.value !== "" && this.isAutoProvenance(provenance)
-      line.dataset.costAutoSuggested = auto ? "true" : "false"
+      if (quality === "unknown") {
+        line.dataset.costMode = "unknown"
+      } else if (quality === "confirmed_zero") {
+        line.dataset.costMode = "confirmed_zero"
+      } else if (provenance === "manual_receipt" || quality === "actual") {
+        line.dataset.costMode = "manual"
+      } else {
+        line.dataset.costMode = "suggest"
+      }
     }
     if (line.dataset.costSuggestionContext == null) {
       line.dataset.costSuggestionContext = this.contextKey(line)
     }
   }
 
-  isAutoProvenance(value) {
-    return [
-      "purchase_order_expected",
-      "purchase_order_list_discount",
-      "vendor_source_expected",
-      "vendor_list_discount"
-    ].includes(value)
+  syncProvenanceDisplay(line) {
+    const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
+    const display = line.querySelector("[data-receipt-form-target='costProvenanceDisplay']")
+    if (!display) return
+
+    const value = provenance?.value || ""
+    display.textContent = value
+      ? value.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : "Derived on save / post"
   }
 
   updateLineControls() {

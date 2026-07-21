@@ -10,8 +10,9 @@ module Inventory
   # (Phase 5f, OD-007 — see below).
   #
   # Posting is receipt-level and PO-Line-grouped:
-  # lock Receipt → POs → PO Lines → Product Requests → inventory → aggregate
-  # received_quantity → convert → release. Allocations are JIT-locked last.
+  # lock Receipt → POs → PO Lines → Product Requests → snapshot costs →
+  # inventory → aggregate received_quantity → reserve → lock Allocations →
+  # append conversion events → release. Allocations are locked last.
   #
   # Idempotent — the whole posting runs in one transaction, so a failure
   # leaves no partial ledger, unit, or Purchase-Order-line effect; replaying
@@ -20,13 +21,23 @@ module Inventory
   class PostReceipt < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:receipt, :success?, :error, :replayed)
+    ConversionPlanEntry = Data.define(
+      :allocation_id, :product_request_id, :receipt_line_id, :quantity, :inventory_unit_id
+    )
 
     PRIORITY_RANK = { "urgent" => 0, "high" => 1, "normal" => 2 }.freeze
+
+    # Test hook: invoked immediately before Purchase Order Line locks are taken.
+    # Used by concurrency tests to force overlapping lock contention.
+    class << self
+      attr_accessor :before_po_line_lock
+    end
 
     def initialize(receipt:, actor:, store:)
       @receipt = receipt
       @actor = actor
       @store = store
+      @resolved_costs = {}
     end
 
     def call
@@ -49,6 +60,8 @@ module Inventory
         authorize_unlinked_lines!(grouped[nil])
         locked_po_lines = lock_and_validate_purchase_order_lines!(grouped)
         lock_allocation_product_requests!(locked_po_lines.keys)
+
+        snapshot_resolved_costs!(lines)
 
         posted_at = Time.current
         posting_key = "receipt:#{@receipt.id}"
@@ -115,13 +128,13 @@ module Inventory
       end
     end
 
-    # Lock POs then PO Lines in ascending ID order; revalidate aggregate over-receive.
     def lock_and_validate_purchase_order_lines!(grouped)
       po_line_ids = grouped.keys.compact.sort
       return {} if po_line_ids.empty?
 
       po_ids = PurchaseOrderLine.where(id: po_line_ids).distinct.pluck(:purchase_order_id).sort
       po_ids.each { |id| PurchaseOrder.lock.find(id) }
+      self.class.before_po_line_lock&.call
       locked = po_line_ids.index_with { |id| PurchaseOrderLine.lock.find(id) }
 
       locked.each do |po_line_id, po_line|
@@ -144,13 +157,24 @@ module Inventory
       locked
     end
 
-    # Discover allocation Product Requests under locked PO Lines; lock Requests only.
     def lock_allocation_product_requests!(po_line_ids)
       return if po_line_ids.blank?
 
       request_ids = PurchaseOrderAllocation.where(purchase_order_line_id: po_line_ids)
         .distinct.pluck(:product_request_id).sort
       request_ids.each { |id| ProductRequest.lock.find(id) }
+    end
+
+    def snapshot_resolved_costs!(lines)
+      lines.each do |line|
+        resolved = ResolveReceiptLineCost.call(receipt_line: line)
+        line.update!(
+          actual_unit_cost_cents: resolved.unit_cost_cents,
+          cost_quality: resolved.cost_quality,
+          cost_provenance: resolved.cost_provenance
+        )
+        @resolved_costs[line.id] = resolved
+      end
     end
 
     def post_inventory_line!(line, posting_key:, posted_at:)
@@ -252,8 +276,12 @@ module Inventory
     end
 
     def receipt_cost_inputs(line)
-      resolved = ResolveReceiptLineCost.call(receipt_line: line)
-      [ resolved.unit_cost_cents, resolved.ledger_cost_method, resolved.cost_quality ]
+      resolved = @resolved_costs.fetch(line.id)
+      [
+        resolved.unit_cost_cents,
+        resolved.ledger_cost_method,
+        resolved.ledger_cost_quality
+      ]
     end
 
     def update_received_quantities!(grouped, locked_po_lines)
@@ -279,46 +307,109 @@ module Inventory
     end
 
     def convert_quantity_allocations!(po_line, group_lines, variant, posted_at:)
-      remaining_to_convert = group_lines.sum do |line|
-        if line.respond_to?(:positive_sellable_quantity_for_conversion)
+      slices = group_lines.filter_map do |line|
+        qty = if line.respond_to?(:positive_sellable_quantity_for_conversion)
           line.positive_sellable_quantity_for_conversion
         else
           line.sellable_accepted_quantity
         end
+        next if qty.to_i <= 0
+
+        { receipt_line: line, remaining: qty.to_i }
       end
-      return unless remaining_to_convert.positive?
+      return if slices.blank?
 
-      representative_line = group_lines.min_by(&:id)
-      each_convertible_allocation(po_line) do |product_request, locked_allocation|
-        break unless remaining_to_convert.positive?
+      plan = build_quantity_conversion_plan(po_line, slices)
+      return if plan.blank?
 
-        convert_quantity = [ remaining_to_convert, locked_allocation.remaining_quantity ].min
-        next unless convert_quantity.positive?
-
-        reservation = reserve_for_request!(
-          variant: variant, product_request: product_request, additional_quantity: convert_quantity
-        )
-        record_conversion_event!(
-          locked_allocation, representative_line, reservation, convert_quantity, posted_at,
-          posting_key: "receipt:#{@receipt.id}:po_line:#{po_line.id}:allocation:#{locked_allocation.id}:convert"
-        )
-        remaining_to_convert -= convert_quantity
-      end
+      execute_conversion_plan!(plan, variant: variant, posted_at: posted_at, individual: false)
     end
 
     def convert_individual_allocations!(po_line, group_lines, variant, posted_at:)
-      units = group_lines.flat_map do |line|
-        line.respond_to?(:created_sellable_units_for_conversion) ? line.created_sellable_units_for_conversion : []
+      unit_pairs = group_lines.flat_map do |line|
+        units = line.respond_to?(:created_sellable_units_for_conversion) ? line.created_sellable_units_for_conversion : []
+        units.map { |unit| { inventory_unit: unit, receipt_line: line } }
       end
-      return if units.blank?
+      return if unit_pairs.blank?
 
-      representative_line = group_lines.min_by(&:id)
-      unit_index = 0
-      each_convertible_allocation(po_line) do |product_request, locked_allocation|
-        while unit_index < units.size && locked_allocation.remaining_quantity.positive?
-          unit = units[unit_index]
-          unit_index += 1
+      plan = build_individual_conversion_plan(po_line, unit_pairs)
+      return if plan.blank?
 
+      execute_conversion_plan!(plan, variant: variant, posted_at: posted_at, individual: true)
+    end
+
+    def build_quantity_conversion_plan(po_line, slices)
+      plan = []
+      working_slices = slices.map { |s| s.dup }
+
+      convertible_allocations(po_line).each do |allocation|
+        break if working_slices.all? { |s| s[:remaining] <= 0 }
+
+        product_request = ProductRequest.find(allocation.product_request_id)
+        next unless product_request.open?
+        next unless product_request.compatible_with_variant?(po_line.product_variant)
+
+        remaining_on_allocation = allocation.remaining_quantity
+        next unless remaining_on_allocation.positive?
+
+        working_slices.each do |slice|
+          break unless remaining_on_allocation.positive?
+          next unless slice[:remaining].positive?
+
+          qty = [ remaining_on_allocation, slice[:remaining] ].min
+          plan << ConversionPlanEntry.new(
+            allocation_id: allocation.id,
+            product_request_id: product_request.id,
+            receipt_line_id: slice[:receipt_line].id,
+            quantity: qty,
+            inventory_unit_id: nil
+          )
+          slice[:remaining] -= qty
+          remaining_on_allocation -= qty
+        end
+      end
+
+      plan
+    end
+
+    def build_individual_conversion_plan(po_line, unit_pairs)
+      plan = []
+      pair_index = 0
+
+      convertible_allocations(po_line).each do |allocation|
+        break if pair_index >= unit_pairs.size
+
+        product_request = ProductRequest.find(allocation.product_request_id)
+        next unless product_request.open?
+        next unless product_request.compatible_with_variant?(po_line.product_variant)
+
+        remaining_on_allocation = allocation.remaining_quantity
+        while remaining_on_allocation.positive? && pair_index < unit_pairs.size
+          pair = unit_pairs[pair_index]
+          pair_index += 1
+          plan << ConversionPlanEntry.new(
+            allocation_id: allocation.id,
+            product_request_id: product_request.id,
+            receipt_line_id: pair[:receipt_line].id,
+            quantity: 1,
+            inventory_unit_id: pair[:inventory_unit].id
+          )
+          remaining_on_allocation -= 1
+        end
+      end
+
+      plan
+    end
+
+    def execute_conversion_plan!(plan, variant:, posted_at:, individual:)
+      # Reserve first (Balance/Unit → Reservation), then lock Allocations last.
+      reservations_by_key = {}
+      plan.group_by { |entry| [ entry.product_request_id, entry.inventory_unit_id ] }.each do |(request_id, unit_id), entries|
+        quantity = entries.sum(&:quantity)
+        product_request = ProductRequest.find(request_id)
+
+        if individual
+          unit = InventoryUnit.find(unit_id)
           reservation_result = Reserve.call(
             store: @store, product_variant: variant, quantity: 1,
             source_type: "product_request", source_id: product_request.id,
@@ -326,16 +417,53 @@ module Inventory
           )
           raise Error, reservation_result.error unless reservation_result.success?
 
-          record_conversion_event!(
-            locked_allocation, representative_line, reservation_result.reservation, 1, posted_at,
-            posting_key: "receipt:#{@receipt.id}:po_line:#{po_line.id}:allocation:#{locked_allocation.id}:unit:#{unit.id}:convert"
+          reservations_by_key[[ request_id, unit_id ]] = reservation_result.reservation
+        else
+          reservation = reserve_for_request!(
+            variant: variant, product_request: product_request, additional_quantity: quantity
           )
-          locked_allocation = PurchaseOrderAllocation.lock.find(locked_allocation.id)
+          reservations_by_key[[ request_id, nil ]] = reservation
         end
+      end
+
+      allocation_ids = plan.map(&:allocation_id).uniq.sort
+      locked_allocations = allocation_ids.index_with { |id| PurchaseOrderAllocation.lock.find(id) }
+
+      remaining_by_allocation = locked_allocations.transform_values(&:remaining_quantity)
+      plan.each do |entry|
+        available = remaining_by_allocation.fetch(entry.allocation_id)
+        if available < entry.quantity
+          raise Error, "allocation #{entry.allocation_id} remaining quantity changed during posting"
+        end
+
+        reservation = if individual
+          reservations_by_key.fetch([ entry.product_request_id, entry.inventory_unit_id ])
+        else
+          reservations_by_key.fetch([ entry.product_request_id, nil ])
+        end
+
+        receipt_line = ReceiptLine.find(entry.receipt_line_id)
+        locked = locked_allocations.fetch(entry.allocation_id)
+        posting_key = if individual
+          "receipt:#{@receipt.id}:po_line:#{locked.purchase_order_line_id}:allocation:#{locked.id}:line:#{receipt_line.id}:unit:#{entry.inventory_unit_id}:convert"
+        else
+          "receipt:#{@receipt.id}:po_line:#{locked.purchase_order_line_id}:allocation:#{locked.id}:line:#{receipt_line.id}:convert"
+        end
+
+        record_conversion_event!(
+          locked, receipt_line, reservation, entry.quantity, posted_at, posting_key: posting_key
+        )
+        remaining_by_allocation[entry.allocation_id] = available - entry.quantity
       end
     end
 
-    # OD-007: release allocation overhang after aggregate received_quantity update.
+    def convertible_allocations(po_line)
+      PurchaseOrderAllocation.where(purchase_order_line_id: po_line.id)
+        .includes(:product_request, :purchase_order_allocation_events)
+        .select { |allocation| allocation.remaining_quantity.positive? }
+        .sort_by { |allocation| allocation_sort_key(allocation) }
+    end
+
     def release_unbacked_allocations!(locked_po_lines, posted_at:)
       locked_po_lines.each_value do |po_line|
         open_qty = po_line.reload.open_quantity
@@ -366,25 +494,6 @@ module Inventory
             posting_key: "receipt:#{@receipt.id}:po_line:#{po_line.id}:allocation:#{locked.id}:received_unavailable:#{release_qty}"
           )
         end
-      end
-    end
-
-    # Product Requests are already locked. JIT-lock each Allocation before use.
-    def each_convertible_allocation(po_line)
-      candidates = PurchaseOrderAllocation.where(purchase_order_line_id: po_line.id)
-        .includes(:product_request, :purchase_order_allocation_events)
-        .select { |allocation| allocation.remaining_quantity.positive? }
-        .sort_by { |allocation| allocation_sort_key(allocation) }
-
-      candidates.each do |allocation|
-        product_request = ProductRequest.find(allocation.product_request_id)
-        next unless product_request.open?
-        next unless product_request.compatible_with_variant?(po_line.product_variant)
-
-        locked_allocation = PurchaseOrderAllocation.lock.find(allocation.id)
-        next unless locked_allocation.remaining_quantity.positive?
-
-        yield product_request, locked_allocation
       end
     end
 

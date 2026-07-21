@@ -16,7 +16,9 @@ module Inventory
       AUTO_PROVENANCES + %w[manual_receipt unknown confirmed_zero]
     ).freeze
 
-    Result = Data.define(:unit_cost_cents, :cost_quality, :cost_provenance, :ledger_cost_method)
+    Result = Data.define(
+      :unit_cost_cents, :cost_quality, :cost_provenance, :ledger_cost_method, :ledger_cost_quality
+    )
 
     def initialize(receipt_line: nil, purchase_order_line: nil, product_variant: nil, vendor: nil, suggest_only: false)
       @receipt_line = receipt_line
@@ -47,14 +49,16 @@ module Inventory
           unit_cost_cents: nil,
           cost_quality: "unknown",
           cost_provenance: "unknown",
-          ledger_cost_method: "unknown"
+          ledger_cost_method: "unknown",
+          ledger_cost_quality: "unknown"
         )
       when "confirmed_zero"
         return Result.new(
           unit_cost_cents: 0,
-          cost_quality: "actual",
+          cost_quality: "confirmed_zero",
           cost_provenance: "confirmed_zero",
-          ledger_cost_method: "explicit"
+          ledger_cost_method: "explicit",
+          ledger_cost_quality: "actual"
         )
       end
 
@@ -65,7 +69,8 @@ module Inventory
           unit_cost_cents: line.actual_unit_cost_cents,
           cost_quality: "estimated",
           cost_provenance: line.cost_provenance.presence || "manual_receipt",
-          ledger_cost_method: "configured_estimate"
+          ledger_cost_method: "configured_estimate",
+          ledger_cost_quality: "estimated"
         )
       end
 
@@ -73,7 +78,8 @@ module Inventory
         unit_cost_cents: line.actual_unit_cost_cents,
         cost_quality: "actual",
         cost_provenance: line.cost_provenance.presence || "manual_receipt",
-        ledger_cost_method: "explicit"
+        ledger_cost_method: "explicit",
+        ledger_cost_quality: "actual"
       )
     end
 
@@ -140,7 +146,8 @@ module Inventory
         unit_cost_cents: unit_cost_cents,
         cost_quality: "estimated",
         cost_provenance: provenance,
-        ledger_cost_method: "configured_estimate"
+        ledger_cost_method: "configured_estimate",
+        ledger_cost_quality: "estimated"
       )
     end
 
@@ -149,7 +156,8 @@ module Inventory
         unit_cost_cents: nil,
         cost_quality: "unknown",
         cost_provenance: "unknown",
-        ledger_cost_method: "unknown"
+        ledger_cost_method: "unknown",
+        ledger_cost_quality: "unknown"
       )
     end
   end

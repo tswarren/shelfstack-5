@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1008,7 +1008,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_010000) do
     t.check_constraint "accepted_unavailable_quantity <= accepted_quantity", name: "receipt_lines_accepted_unavailable_within_accepted"
     t.check_constraint "accepted_unavailable_quantity >= 0", name: "receipt_lines_accepted_unavailable_nonneg"
     t.check_constraint "actual_unit_cost_cents IS NULL OR actual_unit_cost_cents >= 0", name: "receipt_lines_unit_cost_nonneg"
+    t.check_constraint "cost_provenance IS NULL OR (cost_provenance::text = ANY (ARRAY['purchase_order_expected'::character varying, 'purchase_order_list_discount'::character varying, 'vendor_source_expected'::character varying, 'vendor_list_discount'::character varying, 'manual_receipt'::character varying, 'unknown'::character varying, 'confirmed_zero'::character varying]::text[]))", name: "receipt_lines_cost_provenance_check"
     t.check_constraint "cost_quality IS NULL OR (cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'unknown'::character varying, 'confirmed_zero'::character varying]::text[]))", name: "receipt_lines_cost_quality_check"
+    t.check_constraint "cost_quality::text IS DISTINCT FROM 'confirmed_zero'::text OR actual_unit_cost_cents = 0 AND cost_provenance::text = 'confirmed_zero'::text", name: "receipt_lines_cost_confirmed_zero_tuple_check"
+    t.check_constraint "cost_quality::text IS DISTINCT FROM 'unknown'::text OR actual_unit_cost_cents IS NULL AND cost_provenance::text = 'unknown'::text", name: "receipt_lines_cost_unknown_tuple_check"
     t.check_constraint "delivered_quantity >= 0", name: "receipt_lines_delivered_nonneg"
     t.check_constraint "rejected_quantity >= 0", name: "receipt_lines_rejected_nonneg"
   end

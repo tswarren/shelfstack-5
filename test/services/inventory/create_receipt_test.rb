@@ -18,7 +18,7 @@ module Inventory
         receipt: receipt,
         lines_attributes: [
           { product_variant_id: @variant.id, delivered_quantity: 3, accepted_quantity: 3,
-            actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "vendor_source" }
+            actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "manual_receipt" }
         ],
         actor: @user,
         store: @store

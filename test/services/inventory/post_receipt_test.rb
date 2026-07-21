@@ -19,7 +19,7 @@ module Inventory
       receipt = build_receipt(lines_attributes: [
         { product_variant_id: @quantity_variant.id, purchase_order_line_id: po_line.id,
           delivered_quantity: 4, accepted_quantity: 4, actual_unit_cost_cents: 700,
-          cost_quality: "actual", cost_provenance: "vendor_source" }
+          cost_quality: "actual", cost_provenance: "manual_receipt" }
       ])
 
       result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
@@ -67,7 +67,7 @@ module Inventory
 
       receipt = build_receipt(lines_attributes: [
         { product_variant_id: @quantity_variant.id, delivered_quantity: 5, accepted_quantity: 5,
-          actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "vendor_source" }
+          actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "manual_receipt" }
       ])
 
       result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
@@ -158,7 +158,7 @@ module Inventory
       receipt = @store.receipts.create!(vendor: @vendor, receipt_number: "UNLINKED-1", status: "draft")
       receipt.receipt_lines.create!(
         product_variant: @quantity_variant, position: 0, delivered_quantity: 2, accepted_quantity: 2,
-        actual_unit_cost_cents: 700, cost_quality: "actual"
+        actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "manual_receipt"
       )
 
       result = PostReceipt.call(receipt: receipt, actor: @clerk, store: @store)
@@ -324,6 +324,40 @@ module Inventory
       assert_equal 6, po_line.reload.received_quantity
     end
 
+    test "posting snapshots resolved estimated cost onto the receipt line without cost-view permission" do
+      po_line = build_ordered_po_line(variant: @quantity_variant, ordered_quantity: 3, expected_unit_cost_cents: 640)
+      grant(@clerk, "inventory.receipt.create")
+      grant(@clerk, "inventory.receipt.post")
+      revoke(@clerk, "inventory.cost.view")
+      revoke(@clerk, "purchasing.cost.view")
+
+      created = CreateReceipt.call(
+        receipt: Receipt.new(vendor: @vendor),
+        lines_attributes: [ {
+          product_variant_id: @quantity_variant.id, purchase_order_line_id: po_line.id,
+          delivered_quantity: 2, accepted_quantity: 2
+        } ],
+        actor: @clerk, store: @store
+      )
+      assert created.success?, created.error
+      line = created.receipt.receipt_lines.first
+      assert_nil line.actual_unit_cost_cents
+      assert_nil line.cost_quality
+
+      result = PostReceipt.call(receipt: created.receipt, actor: @clerk, store: @store)
+      assert result.success?, result.error
+
+      line.reload
+      assert_equal 640, line.actual_unit_cost_cents
+      assert_equal "estimated", line.cost_quality
+      assert_equal "purchase_order_expected", line.cost_provenance
+
+      entry = InventoryLedgerEntry.find_by!(movement_type: "receipt", source: line)
+      assert_equal 640, entry.unit_cost_cents
+      assert_equal "configured_estimate", entry.cost_method
+      assert_equal "estimated", entry.cost_quality
+    end
+
     private
 
     def build_ordered_po_line(variant:, ordered_quantity:, expected_unit_cost_cents:)
@@ -356,6 +390,14 @@ module Inventory
     def grant(user, permission_code)
       membership = StoreMembership.find_by!(user: user, store: @store)
       RolePermission.find_or_create_by!(role: membership.role, permission: Permission.find_by!(code: permission_code))
+    end
+
+    def revoke(user, permission_code)
+      membership = StoreMembership.find_by!(user: user, store: @store)
+      permission = Permission.find_by(code: permission_code)
+      return if permission.blank?
+
+      RolePermission.where(role: membership.role, permission: permission).delete_all
     end
 
   end
