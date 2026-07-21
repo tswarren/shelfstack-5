@@ -45,11 +45,14 @@ module PosSetupHelper
     [ day, session_result.pos_session ]
   end
 
-  def pos_complete_cash_sale(session:, variant:, quantity:, actor:, cash:, key:)
+  def pos_complete_cash_sale(session:, variant:, quantity:, actor:, cash:, key:, product_request: nil)
     txn = Pos::OpenTransaction.call(pos_session: session, actor: actor).pos_transaction
-    line = Pos::AddLine.call(
-      pos_transaction: txn, product_variant: variant, quantity: quantity, actor: actor
-    ).pos_line_item
+    added = Pos::AddLine.call(
+      pos_transaction: txn, product_variant: variant, quantity: quantity, actor: actor, product_request: product_request
+    )
+    raise "add line failed: #{added.error}" unless added.success?
+
+    line = added.pos_line_item
     net = Pos::RecalculateTransaction.call(pos_transaction: txn).net_total_cents
     Pos::AddCashTender.call(
       pos_transaction: txn, tender_type: cash, amount_tendered_cents: net, actor: actor

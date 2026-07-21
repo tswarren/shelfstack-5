@@ -8,9 +8,9 @@ module Purchasing
   #
   #   * the Purchase-Order Line's open (unallocated) quantity — never claim
   #     more expected supply than the line can still deliver; and
-  #   * the Customer Request's uncovered quantity — requested minus already
-  #     confirmed physical Inventory Reservations minus already remaining
-  #     allocated quantity (fulfilled quantity is always zero until Phase 5f).
+  #   * the Customer Request's uncovered quantity — requested minus fulfilled
+  #     quantity minus already confirmed physical Inventory Reservations
+  #     minus already remaining allocated quantity (OD-007; `ProductRequest#uncovered_quantity`).
   #
   # Locks the Purchase-Order Line then the Product Request (in that order)
   # so concurrent allocation attempts against the same line or the same
@@ -54,11 +54,9 @@ module Purchasing
           raise Error, "quantity exceeds open (unallocated) quantity on the purchase-order line (#{available_on_line} available)"
         end
 
-        uncovered = product_request.requested_quantity -
-          reserved_quantity(product_request) -
-          remaining_allocated(product_request_id: product_request.id)
+        uncovered = product_request.uncovered_quantity
         if @quantity > uncovered
-          raise Error, "quantity exceeds the product request's uncovered quantity (#{[ uncovered, 0 ].max} uncovered)"
+          raise Error, "quantity exceeds the product request's uncovered quantity (#{uncovered} uncovered)"
         end
 
         allocation = PurchaseOrderAllocation.create!(
@@ -97,10 +95,6 @@ module Purchasing
 
     def remaining_allocated(scope_attrs)
       PurchaseOrderAllocation.where(scope_attrs).includes(:purchase_order_allocation_events).sum(&:remaining_quantity)
-    end
-
-    def reserved_quantity(product_request)
-      InventoryReservation.active.where(source_type: "product_request", source_id: product_request.id).sum(:quantity)
     end
   end
 end

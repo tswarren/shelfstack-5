@@ -19,6 +19,7 @@ class PosLineItem < ApplicationRecord
   belongs_to :pos_transaction
   belongs_to :product_variant, optional: true
   belongs_to :inventory_unit, optional: true
+  belongs_to :product_request, optional: true
   belongs_to :department
   belongs_to :tax_category, optional: true
   belongs_to :original_tax_category, class_name: "TaxCategory", optional: true
@@ -32,6 +33,7 @@ class PosLineItem < ApplicationRecord
   has_many :pos_line_item_taxes, dependent: :restrict_with_exception
   has_many :linked_return_lines, class_name: "PosLineItem", foreign_key: :original_pos_line_item_id,
            dependent: :restrict_with_exception, inverse_of: :original_pos_line_item
+  has_many :product_request_fulfillments, dependent: :restrict_with_exception
 
   validates :line_kind, presence: true, inclusion: { in: LINE_KINDS }
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
@@ -46,6 +48,8 @@ class PosLineItem < ApplicationRecord
   validates :return_disposition, inclusion: { in: RETURN_DISPOSITIONS }, allow_nil: true
   validates :return_source, inclusion: { in: RETURN_SOURCES }, allow_nil: true
   validate :return_direction_requires_linkage
+  validate :product_request_requires_product_sale
+  validate :product_request_matches_variant
 
   scope :pending, -> { where(status: "pending") }
   scope :sales, -> { where(direction: "sale") }
@@ -151,6 +155,21 @@ class PosLineItem < ApplicationRecord
     errors.add(:original_pos_line_item, "is required for return lines") if original_pos_line_item_id.blank?
     errors.add(:return_reason, "is required for return lines") if return_reason_id.blank?
     errors.add(:return_disposition, "is required for return lines") if return_disposition.blank?
+  end
+
+  # Mirrors the `pos_line_items_product_request_requires_product_sale` DB
+  # check constraint.
+  def product_request_requires_product_sale
+    return if product_request_id.blank?
+
+    errors.add(:product_request, "may only be set on product sale lines") unless line_kind == "product" && direction == "sale"
+  end
+
+  def product_request_matches_variant
+    return if product_request.blank? || product_variant.blank?
+    return if product_request.product_variant_id.blank? || product_request.product_variant_id == product_variant_id
+
+    errors.add(:product_request, "must match the line's product variant")
   end
 
   def individual_line_requires_unit
