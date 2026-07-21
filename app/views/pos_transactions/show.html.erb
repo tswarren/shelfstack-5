@@ -38,6 +38,10 @@
       <div class="form-actions">
         <%= link_to "Back to register", register_path, class: "button button-primary button-large",
               data: { "pos-register-target": "backToRegister" } %>
+        <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction %>
+          <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
+                class: "button button-ghost button-large" %>
+        <% end %>
       </div>
       <p class="field-hint">Press Enter to return to the register.</p>
     </section>

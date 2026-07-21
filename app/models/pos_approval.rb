@@ -5,7 +5,11 @@
 # are retained. Created by Pos::AuthorizeAction when a requester's authority or
 # permission is insufficient and an approver satisfies the action on their behalf.
 class PosApproval < ApplicationRecord
-  ACTION_TYPES = %w[price_override discount_apply tax_exemption tax_category_override cash_movement].freeze
+  ACTION_TYPES = %w[
+    price_override discount_apply tax_exemption tax_category_override cash_movement
+    post_void stored_value_adjustment
+  ].freeze
+  SELF_APPROVAL_ACTION_TYPES = %w[post_void].freeze
 
   belongs_to :store
   belongs_to :pos_session, optional: true
@@ -24,6 +28,7 @@ class PosApproval < ApplicationRecord
   def approver_differs_from_requester
     return if requested_by_user_id.blank? || approved_by_user_id.blank?
     return if requested_by_user_id != approved_by_user_id
+    return if SELF_APPROVAL_ACTION_TYPES.include?(action_type)
 
     errors.add(:approved_by_user, "must be a different user than the requester")
   end

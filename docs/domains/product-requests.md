@@ -173,6 +173,8 @@ fulfilled_by_user_id
 
 Supports partial fulfilment across several POS transactions and reservations. `pos_line_item_id` may later generalize for non-POS delivery.
 
+Linked returns and Phase 6 post-void of a fulfilled sale append `kind: reverse` facts through `Requests::ReverseFulfillment` (never edit the original fulfil fact). See [Phase 6 post-void eligibility](../implementation/decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md).
+
 ## Buyer-review queue
 
 Derived projection over open Product Requests and coverage. Not a PO-line flag, Product status, or inventory quantity. Customer obligations and non-customer open decisions must remain distinguishable.

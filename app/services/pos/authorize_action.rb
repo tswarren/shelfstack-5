@@ -1,18 +1,21 @@
 # frozen_string_literal: true
 
 module Pos
-  # Shared authorization workflow for Phase 4b restricted POS actions (price override,
-  # discount apply, tax exemption, tax category override). Separates permission,
+  # Shared authorization workflow for restricted POS actions. Separates permission,
   # numeric authority, and approval per ADR-0011:
   #
   # * the requester must hold `permission_key` to attempt the action at all —
   #   missing permission is a hard deny and cannot be bypassed by an approver;
-  # * when `limit_key` is present, the requester's own numeric authority governs
-  #   whether they may proceed directly or must escalate to an approver;
-  # * when `limit_key` is absent, holding `permission_key` is itself sufficient;
-  # * an approver must authenticate with their own credentials, hold
-  #   `approver_permission_key` (defaults to `permission_key`), and (for numeric
-  #   actions) have their own authority cover the requested value.
+  # * when `approval_mode: :always`, an approver must authenticate and a PosApproval
+  #   is always recorded (create alone never silently passes);
+  # * when `limit_key` is present (and approval_mode is not :always), the requester's
+  #   numeric authority governs whether they may proceed directly or must escalate;
+  # * when `limit_key` is absent and approval_mode is not :always, holding
+  #   `permission_key` is itself sufficient;
+  # * an approver must authenticate with their own credentials and hold
+  #   `approver_permission_key` (defaults to `permission_key`);
+  # * when approver == requester, `self_approver_permission_key` is required
+  #   (defaults denied — self-approval is opt-in per action).
   #
   # Does not persist anything for the underlying action itself — callers apply the
   # change only after this returns an `:allowed` or `:approved` status.
@@ -25,16 +28,20 @@ module Pos
 
     def initialize(store:, requester:, permission_key:, action_type:, reason: nil,
                     limit_key: nil, requested_value: nil,
+                    approval_mode: nil,
                     approver: nil, approver_pin: nil, approver_permission_key: nil,
+                    self_approver_permission_key: nil,
                     pos_transaction: nil, pos_line_item: nil, pos_session: nil)
       @store = store
       @requester = requester
       @permission_key = permission_key.to_s
       @approver_permission_key = (approver_permission_key || permission_key).to_s
+      @self_approver_permission_key = self_approver_permission_key&.to_s
       @action_type = action_type
       @reason = reason
       @limit_key = limit_key
       @requested_value = requested_value
+      @approval_mode = approval_mode&.to_sym
       @approver = approver
       @approver_pin = approver_pin
       @pos_transaction = pos_transaction
@@ -47,7 +54,9 @@ module Pos
         return denied("missing permission #{@permission_key}")
       end
 
-      if @limit_key.nil?
+      if @approval_mode == :always
+        escalate_with_approver
+      elsif @limit_key.nil?
         allowed
       else
         authorize_numeric_action
@@ -67,20 +76,35 @@ module Pos
 
     def escalate_with_approver
       return Result.new(status: :requires_approval, pos_approval: nil, error: "requires approval") if @approver.blank?
-      return denied("approver must differ from requester") if @approver.id == @requester&.id
       return denied("approver is not active") unless @approver.active? && !@approver.locked?
       return denied("approver credentials invalid") unless @approver.authenticate_pin(@approver_pin.to_s)
-      return denied("approver lacks #{@approver_permission_key}") unless approver_permitted?
+
+      if self_approval?
+        if @self_approver_permission_key.blank?
+          return denied("approver must differ from requester")
+        end
+        return denied("missing permission #{@self_approver_permission_key}") unless self_approver_permitted?
+      else
+        return denied("approver must differ from requester") if @approver.id == @requester&.id
+        return denied("approver lacks #{@approver_permission_key}") unless approver_permitted?
+      end
 
       authorization_limit_snapshot = nil
 
-      if @limit_key
+      if @limit_key && !self_approval?
         approver_authority = Authorization::EvaluateAuthority.call(
           user: @approver, store: @store, limit_key: @limit_key, requested_value: @requested_value
         )
         return denied("approver authority is also insufficient") unless approver_authority.allow?
 
         authorization_limit_snapshot = approver_authority.configured_limit
+      elsif @limit_key && self_approval?
+        self_authority = Authorization::EvaluateAuthority.call(
+          user: @approver, store: @store, limit_key: @limit_key, requested_value: @requested_value
+        )
+        return denied("self-approver authority is insufficient") unless self_authority.allow?
+
+        authorization_limit_snapshot = self_authority.configured_limit
       end
 
       approval = PosApproval.create!(
@@ -103,6 +127,10 @@ module Pos
       denied(e.message)
     end
 
+    def self_approval?
+      @approver.present? && @requester.present? && @approver.id == @requester.id
+    end
+
     def requester_permitted?
       Authorization::EvaluatePermission.call(user: @requester, store: @store, permission_key: @permission_key) == :allow
     end
@@ -110,6 +138,14 @@ module Pos
     def approver_permitted?
       Authorization::EvaluatePermission.call(
         user: @approver, store: @store, permission_key: @approver_permission_key
+      ) == :allow
+    end
+
+    def self_approver_permitted?
+      return false if @self_approver_permission_key.blank?
+
+      Authorization::EvaluatePermission.call(
+        user: @approver, store: @store, permission_key: @self_approver_permission_key
       ) == :allow
     end
 

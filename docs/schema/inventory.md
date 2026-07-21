@@ -11,7 +11,7 @@
 | Table | Purpose |
 | --- | --- |
 | `stock_balances` | Authoritative store × variant quantity and valuation state, including open provisional deficit cost |
-| `inventory_ledger_entries` | Append-only posted movements (`sale`, `customer_return`, adjustments, `receipt`, `receipt_deficit_settlement`, …) |
+| `inventory_ledger_entries` | Append-only posted movements (`sale`, `customer_return`, adjustments, `receipt`, `receipt_deficit_settlement`, …); Phase 6 adds `unavailable_delta` / `resulting_unavailable` (ledger-owned aggregate unavailable) and unique `reversal_of_entry_id` |
 | `inventory_reservations` | Active/historical commitments of present stock (quantity or exact unit); sources include `pos_line_item` and `product_request` |
 | `inventory_units` | Exact physical copies (`27` identifiers); individual tracking only; may record `acquisition_source_type = receipt_line` |
 | `inventory_adjustments` | Draft/posted/cancelled adjustment headers |

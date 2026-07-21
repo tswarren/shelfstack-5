@@ -230,13 +230,11 @@ module Inventory
           posted_at: posted_at,
           incoming_unit_cost_cents: unit_cost_cents,
           incoming_cost_method: cost_method,
-          incoming_cost_quality: cost_quality
+          incoming_cost_quality: cost_quality,
+          unavailable_delta: unavailable_positive_quantity,
+          availability_reason: unavailable_positive_quantity.positive? ? "accepted_unavailable" : nil
         )
         final_balance = result.stock_balance
-      end
-
-      if unavailable_positive_quantity.positive?
-        final_balance.update!(unavailable: final_balance.unavailable + unavailable_positive_quantity)
       end
 
       line.define_singleton_method(:positive_sellable_quantity_for_conversion) { sellable_positive_quantity }

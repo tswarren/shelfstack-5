@@ -55,6 +55,11 @@ Rails.application.routes.draw do
     end
   end
   resources :inventory_adjustment_reasons, except: %i[destroy]
+  resources :stored_value_accounts, only: %i[index show new create] do
+    member do
+      post :adjust
+    end
+  end
   resources :stock_balances, only: %i[index show]
   resources :inventory_adjustments, except: %i[destroy] do
     member do
@@ -108,6 +113,8 @@ Rails.application.routes.draw do
       post :recall
       post :cancel
       post :complete
+      get :post_void_form
+      post :post_void
     end
     resources :pos_line_items, only: %i[create update destroy] do
       member do

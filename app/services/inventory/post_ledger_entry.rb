@@ -28,6 +28,8 @@ module Inventory
       estimate_regular_price_cents: nil,
       estimate_margin_bps: nil,
       estimate_unit_cost_cents: nil,
+      unavailable_delta: 0,
+      availability_reason: nil,
       posted_at: nil
     )
       @store = store
@@ -48,6 +50,8 @@ module Inventory
       @estimate_regular_price_cents = estimate_regular_price_cents
       @estimate_margin_bps = estimate_margin_bps
       @estimate_unit_cost_cents = estimate_unit_cost_cents
+      @unavailable_delta = unavailable_delta.to_i
+      @availability_reason = availability_reason
       @posted_at = posted_at || Time.current
     end
 
@@ -76,12 +80,19 @@ module Inventory
         )
 
         deficit = compute_deficit_effect(balance, calc)
+        resulting_unavailable = balance.unavailable + @unavailable_delta
+        if resulting_unavailable.negative?
+          raise Error, "unavailable cannot become negative"
+        end
 
         entry = InventoryLedgerEntry.create!(
           store: @store,
           product_variant: @product_variant,
           movement_type: @movement_type,
           quantity_delta: @quantity_delta,
+          unavailable_delta: @unavailable_delta,
+          resulting_unavailable: resulting_unavailable,
+          availability_reason: @availability_reason,
           inventory_value_delta_cents: calc.inventory_value_delta_cents,
           movement_cost_cents: calc.movement_cost_cents,
           unit_cost_cents: calc.unit_cost_cents,
@@ -107,7 +118,7 @@ module Inventory
           posted_at: @posted_at
         )
 
-        apply_balance!(balance, calc, deficit)
+        apply_balance!(balance, calc, deficit, resulting_unavailable)
         Result.new(ledger_entry: entry, stock_balance: balance, replayed: false)
       end
     rescue ArgumentError => e
@@ -145,9 +156,10 @@ module Inventory
       end
     end
 
-    def apply_balance!(balance, calc, deficit)
+    def apply_balance!(balance, calc, deficit, resulting_unavailable)
       attrs = {
         on_hand: calc.resulting_on_hand,
+        unavailable: resulting_unavailable,
         inventory_value_cents: calc.resulting_inventory_value_cents || (calc.resulting_on_hand.positive? ? nil : 0),
         moving_average_cost_cents: calc.resulting_moving_average_cost_cents,
         cost_quality: calc.resulting_cost_quality
@@ -191,6 +203,17 @@ module Inventory
       settlement_variance_kind: nil
     )
     private_constant :NO_DEFICIT_EFFECT
+
+    # Public for exact reversals (ReverseLedgerEntry) that share OD-014 pool math.
+    def self.deficit_effect_for(balance:, resulting_on_hand:, movement_type:, unit_cost_cents:, cost_quality:, incoming_unit_cost_cents: nil)
+      poster = allocate
+      poster.instance_variable_set(:@movement_type, movement_type.to_s)
+      poster.instance_variable_set(:@incoming_unit_cost_cents, incoming_unit_cost_cents)
+      calc = Struct.new(:resulting_on_hand, :unit_cost_cents, :cost_quality).new(
+        resulting_on_hand, unit_cost_cents, cost_quality
+      )
+      poster.send(:compute_deficit_effect, balance, calc)
+    end
 
     # OD-014: negative On Hand is an aggregate Store-and-Variant deficit-cost
     # pool, never matched to individual outbound movements. Any movement that
@@ -310,6 +333,8 @@ module Inventory
         existing.product_variant_id == @product_variant.id &&
         existing.movement_type == @movement_type &&
         existing.quantity_delta == @quantity_delta &&
+        existing.unavailable_delta.to_i == @unavailable_delta &&
+        existing.availability_reason.to_s == @availability_reason.to_s &&
         existing.source_type == @source.class.name &&
         existing.source_id == @source.id &&
         existing.reason_code.to_s == @reason_code.to_s &&

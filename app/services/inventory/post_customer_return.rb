@@ -141,13 +141,10 @@ module Inventory
           posted_at: @posted_at,
           incoming_unit_cost_cents: unit_cost,
           incoming_cost_method: method,
-          incoming_cost_quality: quality
+          incoming_cost_quality: quality,
+          unavailable_delta: unavailable_delta,
+          availability_reason: unavailable_delta.positive? ? line.return_disposition : nil
         )
-
-        if unavailable_delta.positive?
-          balance = StockBalance.lock.find_by!(store: store, product_variant: variant)
-          balance.update!(unavailable: balance.unavailable + unavailable_delta)
-        end
 
         Result.new(ledger_entry: result.ledger_entry, inventory_unit: nil, success?: true,
                    error: nil, warnings: [], replayed: result.replayed)

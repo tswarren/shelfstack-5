@@ -1,0 +1,56 @@
+<section class="pos-panel" aria-label="Post-void">
+  <h2>Post-void receipt <%= @pos_transaction.receipt_number %></h2>
+  <p class="muted">Creates a new reversing transaction. The original receipt is not changed.</p>
+
+  <% if @eligibility.blockers.any? %>
+    <div class="flash flash-alert" role="alert">
+      <p>This transaction cannot be post-voided:</p>
+      <ul>
+        <% @eligibility.blockers.each do |blocker| %>
+          <li><%= blocker %></li>
+        <% end %>
+      </ul>
+    </div>
+    <p><%= link_to "Back", pos_transaction_path(@pos_transaction), class: "button button-ghost" %></p>
+  <% else %>
+    <%= form_with url: post_void_pos_transaction_path(@pos_transaction), method: :post, class: "form-stack" do %>
+      <div class="field">
+        <label class="field-label" for="post_void_reason">Reason</label>
+        <textarea name="post_void_reason" id="post_void_reason" class="input" required rows="3"></textarea>
+      </div>
+
+      <%= render "shared/approval_fields", prefix: "post_void" %>
+      <p class="field-hint">Leave approver username blank to self-approve (requires pos.post_void.approve_self).</p>
+
+      <% if @card_tenders.any? %>
+        <fieldset>
+          <legend>External card void / refund confirmation</legend>
+          <% @card_tenders.each do |tender| %>
+            <div class="form-grid">
+              <p><%= tender.tender_type.name %> · <%= pos_money(tender.amount_cents) %></p>
+              <div class="field">
+                <label class="field-label" for="card_auth_<%= tender.id %>">Authorization / void reference</label>
+                <input type="text" class="input"
+                       name="card_confirmations[<%= tender.id %>][authorization_code]"
+                       id="card_auth_<%= tender.id %>" required>
+              </div>
+              <div class="field">
+                <label class="field-label" for="card_term_<%= tender.id %>">Terminal reference</label>
+                <input type="text" class="input"
+                       name="card_confirmations[<%= tender.id %>][terminal_reference]"
+                       id="card_term_<%= tender.id %>">
+              </div>
+            </div>
+          <% end %>
+        </fieldset>
+      <% end %>
+
+      <input type="hidden" name="completion_idempotency_key" value="<%= SecureRandom.uuid %>">
+
+      <div class="form-actions">
+        <%= submit_tag "Post-void transaction", class: "button button-danger" %>
+        <%= link_to "Cancel", pos_transaction_path(@pos_transaction), class: "button button-ghost" %>
+      </div>
+    <% end %>
+  <% end %>
+</section>

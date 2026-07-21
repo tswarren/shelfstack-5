@@ -10,6 +10,10 @@
 - [ADR-0009: Complete POS Transactions Atomically and Idempotently](../adr/0009-atomic-idempotent-pos-completion.md)
 - [ADR-0012: Govern Stored Value Through Independent Accounts and an Append-Only Ledger](../adr/0012-stored-value-ledger.md)
 
+## Phase 6 operating policy
+
+v1 delivery choices (statuses, entry taxonomy, reload rules, POS line shape, permissions, post-void reverse rule) are accepted in [Phase 6 stored-value v1 operating policy](../implementation/decisions/phase-06-stored-value-v1-operating-policy.md). That note governs Phase 6 implementation; this domain retains durable ownership and invariants.
+
 ## Purpose
 
 This domain governs customer-held value represented by:
@@ -64,38 +68,35 @@ Suggested attributes:
 - Alternate Identifier;
 - status;
 - cached current balance;
-- issued timestamp;
-- optional Customer;
 - creation metadata.
 
-Potential statuses:
+Phase 6 statuses:
 
 ```text
 active
 suspended
-closed
-replaced
 ```
 
-The final lifecycle remains Open. `depleted` may be derived from balance rather than persisted.
+`depleted` is derived from balance rather than persisted. `closed` and `replaced` remain deferred with their workflows. Optional Customer identity remains deferred with the Customer domain.
 
 ## Stored-Value Ledger
 
 The Ledger is append-only and authoritative.
 
-Suggested Entry types:
+Phase 6 entry types:
 
 ```text
 issued
 reloaded
 redeemed
 refunded
-issuance_reversed
-redemption_reversed
 manual_adjustment
+reversal
 ```
 
-Each Entry retains account, signed amount, Entry type, related POS records, reversing Entry reference where applicable, performing User, Approval and reason for manual activity, and timestamp.
+A `reversal` entry references exactly one prior entry via `reverses_entry_id` and carries the exact opposite signed amount. Reporting classifies reversals from the referenced original entry type.
+
+Each Entry retains account, signed amount, Entry type, related POS records, reversing Entry reference where applicable, performing User, Approval and reason for manual activity, unique posting key, and timestamp.
 
 Positive amounts add value. Negative amounts consume value.
 
@@ -109,11 +110,13 @@ A Gift Card issuance is a POS Stored-Value sale line funded by ordinary Tender.
 
 It creates liability, not ordinary merchandise revenue.
 
+Stored-value POS lines do not use an ordinary merchandise Department. Account type and ledger entry type are the reporting dimensions.
+
 ### Reload
 
 A reload adds value to an existing account and is funded by ordinary Tender.
 
-Which account types may reload remains policy-specific.
+Phase 6 policy: gift cards may reload through POS; store credit and trade credit may not be cash-funded or reloaded through POS.
 
 ### Redemption
 
@@ -143,7 +146,9 @@ A Ledger Entry must not post without its completed originating POS activity, exc
 
 ## Manual adjustments
 
-Manual adjustment requires Permission, reason, performing User, and Approval where policy requires.
+Manual adjustment requires Permission, reason, performing User, and Approval.
+
+Phase 6 requires independent approval for every manual adjustment (no monetary threshold).
 
 It creates a new Entry and never overwrites history.
 
@@ -151,27 +156,32 @@ It creates a new Entry and never overwrites history.
 
 A correction creates reversing Entries.
 
-Post-Void of issuance may be blocked after any issued value has been redeemed.
+Post-Void of a positive POS-originated credit may be blocked after any later redemption from the account (Phase 6 conservative rule).
 
 The original Entry remains intact.
 
 ## Permissions
 
+Canonical keys live in [authorization-permissions.md](authorization-permissions.md). Phase 6 namespace:
+
 ```text
-stored_value.view_balance
-stored_value.view_ledger
+stored_value.account.view
+stored_value.ledger.view
+stored_value.account.create
+stored_value.account.suspend
 stored_value.issue
 stored_value.reload
-stored_value.redeem
-stored_value.refund
-stored_value.adjust
-stored_value.suspend
-stored_value.replace
+stored_value.tender.redeem
+stored_value.tender.refund
+stored_value.adjustment.create
+stored_value.adjustment.approve
 ```
+
+Replacement and transfer permissions remain deferred.
 
 ## Audit requirements
 
-Audit account creation, issuance, reload, redemption, refund, manual adjustment, suspension, replacement, reversal, blocked reversal, performing and approving Users, and related POS records.
+Audit account creation, issuance, reload, redemption, refund, manual adjustment, suspension, reversal, blocked reversal, performing and approving Users, and related POS records.
 
 ## Reporting requirements
 
@@ -186,6 +196,8 @@ Buyback is Deferred and is not defined as part of the current Stored-Value schem
 A future Buyback workflow may issue Trade Credit, but it also requires seller identity, merchandise evaluation, Product and Variant resolution, Inventory-Unit creation, acquisition cost, cash payout, and legal and Approval requirements.
 
 Buyback is acquisition, not Customer Return.
+
+Phase 6 may support redemption of authorized migrated or manually established trade-credit balances under ordinary balance rules without implementing buyback issuance.
 
 ## Invariants
 
@@ -204,11 +216,10 @@ Buyback is acquisition, not Customer Return.
 
 ## Open questions
 
-- What is the final account-status model?
-- Which account types may reload or transfer?
-- Is Customer identity required for Store Credit or Trade Credit?
-- What replacement and credential model is required?
-- Are expiration dates supported?
-- What legal jurisdiction rules apply?
-- What adjustment threshold requires Approval?
-- How will Buyback create Trade Credit?
+- Is Customer identity required for Store Credit or Trade Credit? (deferred with Customer domain)
+- What replacement and credential model is required? (deferred)
+- Are expiration dates supported? (deferred)
+- What legal jurisdiction rules apply? (deferred)
+- How will Buyback create Trade Credit? (deferred)
+
+Closed for Phase 6 v1 (see operating policy): account-status subset; reload-by-type; manual-adjustment approval always required; entry taxonomy with generic `reversal`.

@@ -127,6 +127,14 @@ Accepted behavior:
 - tax-exclusive prices in initial release; tax-inclusive pricing and jurisdiction-configurable line-level rounding remain deferred;
 - reusable tax-exemption masters remain deferred; transaction-scoped exemptions may exist earlier.
 
+## Phase 6 delivery decisions (accepted; not open)
+
+These are not open decisions. They live in decision notes and [architectural-locks.md](architectural-locks.md):
+
+- [Post-void eligibility and cross-domain reversal](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md)
+- [Inventory correction and OD-014 interaction](decisions/phase-06-inventory-correction-and-od-014.md) (interim post-settlement post-void block; OD-010 remains open)
+- [Stored-value v1 operating policy](decisions/phase-06-stored-value-v1-operating-policy.md)
+
 ## Already settled (do not reopen here)
 
 See [architectural-locks.md](architectural-locks.md):
@@ -138,7 +146,8 @@ See [architectural-locks.md](architectural-locks.md):
 - receipt header may span POs; one PO line per receipt line;
 - prefer derived `on_order`;
 - reporting source rules;
-- no display categories (ADR-0003).
+- no display categories (ADR-0003);
+- Phase 6 post-void / unavailable ledger / stored-value v1 locks (above).
 
 ## Sources
 

@@ -9,7 +9,8 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
   before_action -> { require_permission!("pos.transaction.cancel") }, only: %i[cancel]
   before_action -> { require_permission!("pos.transaction.complete") }, only: %i[complete]
-  before_action :set_transaction, only: %i[show suspend recall cancel complete]
+  before_action -> { require_permission!("pos.post_void.create") }, only: %i[post_void_form post_void]
+  before_action :set_transaction, only: %i[show suspend recall cancel complete post_void_form post_void]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
@@ -140,6 +141,59 @@ class PosTransactionsController < ApplicationController
       redirect_to pos_transaction_path(result.pos_transaction), notice: notice
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
+  def post_void_form
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
+    end
+
+    @eligibility = Pos::EvaluatePostVoidEligibility.call(
+      original_transaction: @pos_transaction, store: Current.store
+    )
+    @card_tenders = @pos_transaction.pos_tenders.where(status: "completed").select { |t|
+      t.tender_type.tender_category == "card"
+    }
+  end
+
+  def post_void
+    session = current_open_session
+    return unless session
+
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
+    end
+
+    approver = if params[:approver_username].present?
+      User.find_by(username: params[:approver_username].to_s.strip)
+    else
+      Current.user
+    end
+
+    card_confirmations = {}
+    if params[:card_confirmations].present?
+      params[:card_confirmations].each do |tender_id, attrs|
+        card_confirmations[tender_id.to_i] = attrs.permit(:authorization_code, :terminal_reference, :external_void_reference).to_h.symbolize_keys
+      end
+    end
+
+    result = Pos::PostVoidTransaction.call(
+      original_transaction: @pos_transaction,
+      pos_session: session,
+      actor: Current.user,
+      reason: params[:post_void_reason],
+      completion_idempotency_key: params[:completion_idempotency_key].presence || SecureRandom.uuid,
+      approver: approver,
+      approver_pin: params[:approver_pin],
+      card_confirmations: card_confirmations
+    )
+
+    if result.success?
+      redirect_to pos_transaction_path(result.pos_transaction),
+                  notice: (result.replayed ? "Post-void already recorded." : "Post-void completed.")
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
     end
   end
 

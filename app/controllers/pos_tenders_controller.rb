@@ -31,6 +31,31 @@ class PosTendersController < ApplicationController
         authorization_code: params[:authorization_code],
         terminal_reference: params[:terminal_reference].presence, actor: Current.user
       )
+    when "stored_value"
+      account = Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id]) ||
+                Current.organization.stored_value_accounts.find_by(account_number: params[:account_number].to_s.strip)
+      if params[:refund].present?
+        Pos::AddStoredValueRefundTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
+          actor: Current.user,
+          account: account,
+          original_pos_tender: params[:original_pos_tender_id].presence &&
+            PosTender.find_by(id: params[:original_pos_tender_id]),
+          create_store_credit: params[:create_store_credit].present?
+        )
+      else
+        if account.blank?
+          unsupported_tender_result("stored-value account is required")
+        else
+          Pos::AddStoredValueTender.call(
+            pos_transaction: @pos_transaction, tender_type: tender_type,
+            account: account,
+            amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+            actor: Current.user
+          )
+        end
+      end
     when "check"
       unsupported_tender_result("check tendering is not available yet")
     else
@@ -76,6 +101,8 @@ class PosTendersController < ApplicationController
     tender_type = params[:tender_type_id].presence && Current.organization.tender_types.find_by(id: params[:tender_type_id])
     case tender_type&.tender_category
     when "card" then "pos.tender.card_standalone"
+    when "stored_value"
+      params[:refund].present? ? "stored_value.tender.refund" : "stored_value.tender.redeem"
     when "cash" then "pos.tender.cash"
     else "pos.tender.cash"
     end

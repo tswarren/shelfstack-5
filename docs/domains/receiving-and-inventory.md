@@ -525,7 +525,7 @@ Audit Receipt posting and corrections, accepted and rejected quantities, cost ap
 - How is accepted damaged or inspection quantity represented?
 - What is the posted Receipt correction workflow? (`inventory.receipt.correct` is reserved and must not be seeded until that workflow is accepted.)
 - Is Available stored or calculated?
-- Are unavailable quantities cached by status?
+- Are unavailable quantities cached by status? (OD-010 remains open. Phase 6 requires aggregate `unavailable_delta` / `resulting_unavailable` on the inventory ledger for reversibility without deciding status buckets — [Phase 6 inventory correction](../implementation/decisions/phase-06-inventory-correction-and-od-014.md).)
 - Negative-inventory deficit allocation and settlement representation — accepted; [OD-014 decision](../implementation/decisions/od-014-negative-inventory-settlement.md).
 - Allocation-to-reservation conversion on receipt — accepted; [OD-007 decision](../implementation/decisions/od-007-allocation-receipt-and-fulfilment.md).
 - What is the Inventory Count model?

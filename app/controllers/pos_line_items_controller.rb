@@ -7,8 +7,11 @@ class PosLineItemsController < ApplicationController
   before_action :set_line_item, only: %i[update destroy override_price override_tax_category]
 
   def create
-    if params[:kind] == "open_ring"
+    case params[:kind]
+    when "open_ring"
       create_open_ring_line
+    when "stored_value"
+      create_stored_value_line
     else
       create_product_line
     end
@@ -213,6 +216,47 @@ class PosLineItemsController < ApplicationController
     )
     if result.success?
       redirect_to pos_transaction_path(@pos_transaction), notice: "Open-ring line added."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+  end
+
+  def create_stored_value_line
+    account = if params[:create_account].present?
+      created = StoredValue::CreateAccount.call(
+        organization: Current.organization,
+        account_type: "gift_card",
+        actor: Current.user,
+        store: Current.store,
+        require_permission: true,
+        alternate_identifier: params[:alternate_identifier].presence
+      )
+      unless created.success?
+        redirect_to pos_transaction_path(@pos_transaction), alert: created.error
+        return
+      end
+      created.account
+    else
+      Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id]) ||
+        Current.organization.stored_value_accounts.find_by(account_number: params[:account_number].to_s.strip)
+    end
+
+    if account.blank?
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Select or create a gift-card account."
+      return
+    end
+
+    result = Pos::AddStoredValueLine.call(
+      pos_transaction: @pos_transaction,
+      account: account,
+      operation: params[:stored_value_operation].presence || "issue",
+      amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+      actor: Current.user
+    )
+    if result.success?
+      redirect_to pos_transaction_path(@pos_transaction), notice: "Stored-value line added."
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end

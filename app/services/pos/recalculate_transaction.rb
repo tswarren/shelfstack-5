@@ -21,12 +21,16 @@ module Pos
         lines = transaction.pos_line_items.pending.order(:position).to_a
         sale_lines = lines.select { |line| line.direction == "sale" }
         return_lines = lines.select { |line| line.direction == "return" }
+        merchandise_sale_lines = sale_lines.reject { |line| line.line_kind == "stored_value" }
+        stored_value_sale_total = sale_lines.select { |line| line.line_kind == "stored_value" }
+                                            .sum(&:extended_price_cents)
 
-        sale_subtotal = sale_lines.sum(&:extended_price_cents)
+        sale_subtotal = merchandise_sale_lines.sum(&:extended_price_cents)
         return_subtotal = return_lines.sum(&:extended_price_cents)
-        sale_discounts = discount_total_for(sale_lines)
+        sale_discounts = discount_total_for(merchandise_sale_lines)
         return_discounts = discount_total_for(return_lines)
-        provisional_net = (sale_subtotal - sale_discounts) - (return_subtotal - return_discounts)
+        provisional_net = (sale_subtotal - sale_discounts + stored_value_sale_total) -
+                          (return_subtotal - return_discounts)
 
         if sale_discounts > sale_subtotal || return_discounts > return_subtotal
           return Result.new(success?: false,
@@ -52,7 +56,7 @@ module Pos
                             tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: true)
         end
 
-        sale_tax_result = calculate_sale_tax(transaction, sale_lines, persist: false)
+        sale_tax_result = calculate_sale_tax(transaction, merchandise_sale_lines, persist: false)
         if sale_tax_result[:blockers].any?
           # Do not wipe previously persisted provisional tax when calculation is blocked.
           existing_tax = pending_tax_total_cents(transaction)
@@ -70,7 +74,8 @@ module Pos
         return_tax_cents = persist_return_tax!(return_lines)
         sale_tax_cents = sale_tax_result[:tax_cents]
         tax_total = sale_tax_cents - return_tax_cents
-        net = (sale_subtotal - sale_discounts + sale_tax_cents) - (return_subtotal - return_discounts + return_tax_cents)
+        net = (sale_subtotal - sale_discounts + sale_tax_cents + stored_value_sale_total) -
+              (return_subtotal - return_discounts + return_tax_cents)
 
         Result.new(success?: true, blockers: [], warnings: sale_tax_result[:warnings],
                    subtotal_cents: sale_subtotal - return_subtotal,

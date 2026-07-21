@@ -38,6 +38,46 @@
     <% end %>
   </details>
 
+  <% if @tender_types.where(tender_category: "stored_value").exists? && Current.user.can?("stored_value.tender.redeem", store: Current.store) && @balance_due_cents.positive? %>
+    <details class="pos-panel">
+      <summary>Stored-value tender</summary>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <div class="field">
+          <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "stored_value"), :id, :name, {}, class: "input" %>
+        </div>
+        <div class="field">
+          <%= form.label :account_number, "Account number", class: "field-label" %>
+          <%= form.text_field :account_number, class: "input", autocomplete: "off", required: true %>
+        </div>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
+              id: "sv_tender_amount_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+        <div class="form-actions">
+          <%= form.submit "Redeem stored value", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
+  <% if @balance_due_cents.negative? && Current.user.can?("stored_value.tender.refund", store: Current.store) && @tender_types.where(tender_category: "stored_value").exists? %>
+    <details class="pos-panel">
+      <summary>Refund to store credit</summary>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
+        <%= hidden_field_tag :create_store_credit, "1" %>
+        <div class="field">
+          <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "stored_value"), :id, :name, {}, class: "input" %>
+        </div>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+              id: "sv_refund_amount_cents", value_cents: -@balance_due_cents %>
+        <div class="form-actions">
+          <%= form.submit "Issue store credit refund", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
   <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.cash", store: Current.store) %>
     <details class="pos-panel" open>
       <summary>Cash refund</summary>

@@ -28,6 +28,10 @@
       <%= nav_item "Inventory units", inventory_units_path, permission_key: "inventory.unit.manage" %>
     <% end %>
 
+    <%= nav_section "Stored value" do %>
+      <%= nav_item "Accounts", stored_value_accounts_path, permission_key: "stored_value.account.view" %>
+    <% end %>
+
     <%= nav_section "Operations" do %>
       <%= nav_item "Business days", business_days_path, permission_key: "pos.access" %>
     <% end %>

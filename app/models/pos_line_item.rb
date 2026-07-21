@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 class PosLineItem < ApplicationRecord
-  LINE_KINDS = %w[product open_ring].freeze
+  LINE_KINDS = %w[product open_ring stored_value].freeze
+  STORED_VALUE_OPERATIONS = %w[issue reload].freeze
   STATUSES = %w[pending completed removed].freeze
   DIRECTIONS = %w[sale return].freeze
   # Mirrors docs/domains/receiving-and-inventory.md "Return dispositions". Only
@@ -20,10 +21,12 @@ class PosLineItem < ApplicationRecord
   belongs_to :product_variant, optional: true
   belongs_to :inventory_unit, optional: true
   belongs_to :product_request, optional: true
-  belongs_to :department
+  belongs_to :department, optional: true
+  belongs_to :stored_value_account, optional: true
   belongs_to :tax_category, optional: true
   belongs_to :original_tax_category, class_name: "TaxCategory", optional: true
   belongs_to :original_pos_line_item, class_name: "PosLineItem", optional: true
+  belongs_to :reverses_pos_line_item, class_name: "PosLineItem", optional: true
   belongs_to :return_reason, optional: true
   belongs_to :created_by_user, class_name: "User"
   belongs_to :removed_by_user, class_name: "User", optional: true
@@ -33,7 +36,10 @@ class PosLineItem < ApplicationRecord
   has_many :pos_line_item_taxes, dependent: :restrict_with_exception
   has_many :linked_return_lines, class_name: "PosLineItem", foreign_key: :original_pos_line_item_id,
            dependent: :restrict_with_exception, inverse_of: :original_pos_line_item
+  has_one :post_void_reversing_line, class_name: "PosLineItem", foreign_key: :reverses_pos_line_item_id,
+         inverse_of: :reverses_pos_line_item, dependent: :restrict_with_exception
   has_many :product_request_fulfillments, dependent: :restrict_with_exception
+  has_many :stored_value_entries, dependent: :restrict_with_exception
 
   validates :line_kind, presence: true, inclusion: { in: LINE_KINDS }
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
@@ -43,8 +49,10 @@ class PosLineItem < ApplicationRecord
   validate :product_line_requires_variant
   validate :open_ring_forbids_variant
   validate :open_ring_requires_description_snapshot
+  validate :stored_value_line_shape
   validate :department_is_postable
   validate :individual_line_requires_unit
+  validates :stored_value_operation, inclusion: { in: STORED_VALUE_OPERATIONS }, allow_nil: true
   validates :return_disposition, inclusion: { in: RETURN_DISPOSITIONS }, allow_nil: true
   validates :return_source, inclusion: { in: RETURN_SOURCES }, allow_nil: true
   validate :return_direction_requires_linkage
@@ -140,7 +148,21 @@ class PosLineItem < ApplicationRecord
     errors.add(:description_snapshot, "must be resolved before save") if description_snapshot.blank?
   end
 
+  def stored_value_line_shape
+    return unless line_kind == "stored_value"
+
+    errors.add(:product_variant, "must be blank for stored-value lines") if product_variant.present?
+    errors.add(:inventory_unit, "must be blank for stored-value lines") if inventory_unit.present?
+    errors.add(:department, "must be blank for stored-value lines") if department.present?
+    errors.add(:tax_category, "must be blank for stored-value lines") if tax_category.present?
+    errors.add(:stored_value_account, "is required for stored-value lines") if stored_value_account.blank?
+    errors.add(:stored_value_operation, "is required for stored-value lines") if stored_value_operation.blank?
+    errors.add(:direction, "must be sale for stored-value lines") unless direction == "sale"
+    errors.add(:quantity, "must be 1 for stored-value lines") unless quantity == 1
+  end
+
   def department_is_postable
+    return if line_kind == "stored_value"
     return if department.blank?
     return if department.postable?
 
@@ -149,8 +171,11 @@ class PosLineItem < ApplicationRecord
 
   # Mirrors the `pos_line_items_return_requires_link` DB check constraint
   # (application validation complements, not replaces, database protection).
+  # Post-void reversing lines use `reverses_pos_line_item_id` instead of the
+  # customer-return linkage trio.
   def return_direction_requires_linkage
     return unless direction == "return"
+    return if reverses_pos_line_item_id.present?
 
     errors.add(:original_pos_line_item, "is required for return lines") if original_pos_line_item_id.blank?
     errors.add(:return_reason, "is required for return lines") if return_reason_id.blank?

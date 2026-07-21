@@ -13,6 +13,14 @@ class PosTender < ApplicationRecord
   belongs_to :voided_by_user, class_name: "User", optional: true
   belongs_to :removed_by_user, class_name: "User", optional: true
   belongs_to :external_void_confirmed_by_user, class_name: "User", optional: true
+  belongs_to :reverses_pos_tender, class_name: "PosTender", optional: true
+  belongs_to :original_pos_tender, class_name: "PosTender", optional: true
+  belongs_to :stored_value_account, optional: true
+  has_one :post_void_reversing_tender, class_name: "PosTender", foreign_key: :reverses_pos_tender_id,
+          inverse_of: :reverses_pos_tender, dependent: :restrict_with_exception
+  has_many :refund_tenders, class_name: "PosTender", foreign_key: :original_pos_tender_id,
+           inverse_of: :original_pos_tender, dependent: :restrict_with_exception
+  has_many :stored_value_entries, dependent: :restrict_with_exception
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }
   validates :status, presence: true, inclusion: { in: STATUSES }

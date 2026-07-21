@@ -16,13 +16,14 @@ module Pos
   # different key.
   #
   # Product-line tracking modes `quantity`, `individual` (Phase 4d), and `none`
-  # are in scope; Stored-Value posting remains out of scope (Phase 6).
+  # are in scope. Stored-value issue/reload lines and redeem/refund tenders post
+  # through StoredValue::PostEntry in the same completion transaction.
   #
   # Phase 5f: a sale line linked to a Customer Request (`Pos::AddLine`'s
   # `product_request:`) creates the Product Request Fulfilment fact in the
   # same transaction as its sale movement; a linked return of a fulfilled
   # sale line appends a reversing fulfilment fact instead of mutating the
-  # original (OD-007). Post-void reversal is Phase 6 and is not wired here.
+  # original (OD-007).
   class CompleteTransaction < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_transaction, :success?, :error, :warnings, :replayed)
@@ -87,6 +88,12 @@ module Pos
         }.uniq.sort
         locked_requests = linked_request_ids.index_with { |id| ProductRequest.lock.find(id) }
 
+        sv_account_ids = (
+          lines.filter_map(&:stored_value_account_id) +
+          tenders.filter_map(&:stored_value_account_id)
+        ).uniq.sort
+        locked_sv_accounts = sv_account_ids.index_with { |id| StoredValueAccount.lock.find(id) }
+
         lines.each do |line|
           if line.direction == "return" && line.line_kind == "product"
             posted = Inventory::PostCustomerReturn.call(pos_line_item: line, posted_by_user: @actor)
@@ -103,8 +110,12 @@ module Pos
             record_fulfilment_for_sale!(
               line, posted_at: now, converted_reservation: conversion&.reservation
             )
+          elsif line.sale? && line.line_kind == "stored_value"
+            post_stored_value_line!(line, transaction, locked_sv_accounts)
           end
         end
+
+        tenders.each { |tender| post_stored_value_tender!(tender, transaction, locked_sv_accounts) }
 
         lines.each { |line| line.update!(status: "completed", completed_at: now) }
         tenders.each { |tender| tender.update!(status: "completed", completed_at: now) }
@@ -137,11 +148,57 @@ module Pos
         Result.new(pos_transaction: transaction, success?: true, error: nil, warnings: warnings.uniq, replayed: false)
       end
     rescue Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique,
-           Inventory::ConvertReservation::Error, Inventory::PostCustomerReturn::Error => e
+           Inventory::ConvertReservation::Error, Inventory::PostCustomerReturn::Error,
+           StoredValue::PostEntry::Error => e
       Result.new(pos_transaction: nil, success?: false, error: e.message, warnings: [], replayed: false)
     end
 
     private
+
+    def post_stored_value_line!(line, transaction, locked_accounts)
+      account = locked_accounts.fetch(line.stored_value_account_id)
+      entry_type = line.stored_value_operation == "reload" ? "reloaded" : "issued"
+      StoredValue::PostEntry.call(
+        account: account,
+        store: transaction.store,
+        entry_type: entry_type,
+        amount_cents: line.extended_price_cents,
+        posting_key: "pos_line_item:#{line.id}:stored_value_#{entry_type}",
+        actor: @actor,
+        pos_transaction: transaction,
+        pos_line_item: line
+      )
+    end
+
+    def post_stored_value_tender!(tender, transaction, locked_accounts)
+      return if tender.stored_value_account_id.blank?
+
+      account = locked_accounts.fetch(tender.stored_value_account_id)
+      if tender.direction == "received"
+        StoredValue::PostEntry.call(
+          account: account,
+          store: transaction.store,
+          entry_type: "redeemed",
+          amount_cents: -tender.amount_cents,
+          posting_key: "pos_tender:#{tender.id}:stored_value_redeemed",
+          actor: @actor,
+          pos_transaction: transaction,
+          pos_tender: tender
+        )
+      elsif tender.direction == "refunded"
+        StoredValue::PostEntry.call(
+          account: account,
+          store: transaction.store,
+          entry_type: "refunded",
+          amount_cents: tender.amount_cents,
+          posting_key: "pos_tender:#{tender.id}:stored_value_refunded",
+          actor: @actor,
+          pos_transaction: transaction,
+          pos_tender: tender,
+          allow_suspended: true
+        )
+      end
+    end
 
     # Phase 5f (OD-007): a sale line linked to a Customer Request at
     # `Pos::AddLine` time creates the Product Request Fulfilment fact
@@ -189,6 +246,8 @@ module Pos
     # after a line was added, so re-check the persisted line department here.
     def validate_departments!(lines)
       lines.each do |line|
+        next if line.line_kind == "stored_value"
+
         department = line.department
         if department.nil? || !department.active? || !department.postable?
           raise Error, "line #{line.id} has a missing, inactive, or non-postable department"

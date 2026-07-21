@@ -170,6 +170,8 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.cash_movement.create` | Paid-in / paid-out / drops | store | 4c | `maximum_paid_out_cents` | yes | yes |
 | `pos.receipt.reprint` | Reprint receipts | store | 4c | — | no | yes |
 | `pos.post_void.create` | Create post-void corrections | store | 6 | — | yes | yes |
+| `pos.post_void.approve` | Independently approve another user’s post-void | store | 6 | — | — | yes |
+| `pos.post_void.approve_self` | Authorize one’s own post-void (still requires PIN re-auth and a recorded approval) | store | 6 | — | — | yes |
 
 ## Purchasing (Phase 5)
 
@@ -221,16 +223,38 @@ Canonical keys for Product Requests. On-order allocation uses `purchasing.alloca
 - `create` covers all four Phase 5 types. Split into type-scoped create keys only if role design later requires different creators for customer vs buyer-decision demand.
 - Customer-only actions use `requests.customer_request.*`. Non-customer requests do not reserve or fulfil through those keys.
 
-## Stored value and reporting
+## Stored value (Phase 6)
 
-Seed when the owning phase begins. Canonicalize domain lists to this grammar at that time:
+Canonical keys for Stored Value. Domain lists must match this catalog. Policy: [Phase 6 stored-value v1 operating policy](../implementation/decisions/phase-06-stored-value-v1-operating-policy.md).
+
+| Key | Description | Scope | Phase | Authority | Approvals | Audit |
+| --- | --- | --- | --- | --- | --- | --- |
+| `stored_value.account.view` | View account and current balance | store | 6 | — | no | no |
+| `stored_value.ledger.view` | View ledger history | store | 6 | — | no | no |
+| `stored_value.account.create` | Create zero-balance accounts | store | 6 | — | no | yes |
+| `stored_value.account.suspend` | Suspend or unsuspend accounts | store | 6 | — | no | yes |
+| `stored_value.issue` | Issue gift-card value through POS | store | 6 | — | no | yes |
+| `stored_value.reload` | Reload gift-card value through POS | store | 6 | — | no | yes |
+| `stored_value.tender.redeem` | Redeem stored value as tender | store | 6 | — | no | yes |
+| `stored_value.tender.refund` | Refund to stored value | store | 6 | — | no | yes |
+| `stored_value.adjustment.create` | Create manual balance adjustments | store | 6 | — | yes | yes |
+| `stored_value.adjustment.approve` | Independently approve manual adjustments | store | 6 | — | — | yes |
+
+### Stored-value evaluation
+
+- Replacement and transfer keys remain deferred.
+- Every manual adjustment requires independent `stored_value.adjustment.approve` in Phase 6 (no monetary threshold).
+- Post-void always requires `pos.post_void.create` plus a recorded approval: another user with `pos.post_void.approve`, or the same user with `pos.post_void.approve_self` (PIN re-auth still required). Holding only `pos.post_void.approve` does not imply self-approval.
+
+## Reporting
+
+Seed when Phase 7 begins. Canonicalize domain lists to this grammar at that time:
 
 | Namespace | Phase | Source domain list to normalize |
 | --- | --- | --- |
-| `stored_value.*` | 6 | [stored-value.md](stored-value.md) |
 | `reporting.*` | 7 | [reporting-and-reconciliation.md](reporting-and-reconciliation.md) |
 
-Until normalized, prefer adding explicit rows here before seeding those phases.
+Until normalized, prefer adding explicit rows here before seeding that phase.
 
 ## Seeding rules
 

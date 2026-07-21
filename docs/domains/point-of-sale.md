@@ -329,9 +329,11 @@ It releases provisional Reservations and creates no completed sale, Return, Tend
 
 Post-Void is a new Completed Transaction fully reversing an original Completed Transaction.
 
-It receives its own Receipt Number, uses original historical values, reverses lines, tax, cost, inventory, Tenders, and Stored Value, and may be blocked when full reversal is no longer possible.
+It receives its own Receipt Number, uses original historical values, reverses lines, tax, cost, inventory, Tenders, Stored Value, and Product Request fulfilment facts where applicable, and may be blocked when full reversal is no longer possible.
 
 Partial correction uses Customer Return or another explicit correction.
+
+Phase 6 delivery detail: [post-void eligibility and cross-domain reversal](../implementation/decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md); inventory / OD-014 interaction: [inventory correction](../implementation/decisions/phase-06-inventory-correction-and-od-014.md).
 
 ## Cash accountability
 

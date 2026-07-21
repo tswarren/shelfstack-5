@@ -1,0 +1,375 @@
+# frozen_string_literal: true
+
+module Pos
+  # Dedicated full post-void construction. Creates a new completed reversing
+  # transaction; never mutates the original. Supports sale merchandise and
+  # stored-value effects when eligibility allows.
+  class PostVoidTransaction < ApplicationService
+    Error = Class.new(StandardError)
+    Result = Data.define(:pos_transaction, :success?, :error, :replayed)
+
+    def initialize(
+      original_transaction:,
+      pos_session:,
+      actor:,
+      reason:,
+      completion_idempotency_key:,
+      approver:,
+      approver_pin:,
+      card_confirmations: {}
+    )
+      @original = original_transaction
+      @pos_session = pos_session
+      @actor = actor
+      @reason = reason.to_s
+      @completion_idempotency_key = completion_idempotency_key.to_s
+      @approver = approver
+      @approver_pin = approver_pin
+      @card_confirmations = card_confirmations || {}
+    end
+
+    def call
+      raise Error, "completion_idempotency_key is required" if @completion_idempotency_key.blank?
+      raise Error, "post_void_reason is required" if @reason.blank?
+
+      ActiveRecord::Base.transaction do
+        session = PosSession.lock.find(@pos_session.id)
+        raise Error, "session is not open" unless session.open?
+        raise Error, "business day is not open" unless session.business_day.open?
+
+        original = PosTransaction.lock.find(@original.id)
+
+        existing = PosTransaction.find_by(reverses_pos_transaction_id: original.id)
+        if existing
+          if existing.completion_idempotency_key == @completion_idempotency_key
+            return Result.new(pos_transaction: existing, success?: true, error: nil, replayed: true)
+          end
+          raise Error, "transaction has already been post-voided"
+        end
+
+        auth = AuthorizeAction.call(
+          store: original.store,
+          requester: @actor,
+          permission_key: "pos.post_void.create",
+          action_type: "post_void",
+          reason: @reason,
+          approval_mode: :always,
+          approver: @approver,
+          approver_pin: @approver_pin,
+          approver_permission_key: "pos.post_void.approve",
+          self_approver_permission_key: "pos.post_void.approve_self",
+          pos_transaction: original,
+          pos_session: session
+        )
+        raise Error, auth.error || "post-void approval required" unless auth.allowed? && auth.pos_approval
+
+        eligibility = EvaluatePostVoidEligibility.call(original_transaction: original, store: session.store)
+        raise Error, eligibility.blockers.join(", ") unless eligibility.eligible?
+
+        lines = original.pos_line_items.lock.where(status: "completed").order(:position, :id).to_a
+        tenders = original.pos_tenders.lock.where(status: "completed").order(:id).to_a
+        validate_card_confirmations!(tenders)
+
+        request_ids = lines.filter_map { |line|
+          next unless line.sale? && line.line_kind == "product"
+
+          fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: line.id, kind: "fulfill")
+          fulfillment&.product_request_id || line.product_request_id
+        }.uniq.sort
+        locked_requests = request_ids.index_with { |id| ProductRequest.lock.find(id) }
+
+        lock_inventory!(lines)
+        lock_stored_value!(lines, tenders)
+
+        now = Time.current
+        reversing = PosTransaction.create!(
+          store: original.store,
+          origin_pos_session: session,
+          active_pos_session: session,
+          cashier_user: @actor,
+          status: "open",
+          opened_at: now,
+          reverses_pos_transaction: original,
+          post_void_reason: @reason,
+          post_void_pos_approval: auth.pos_approval
+        )
+
+        line_map = {}
+        lines.each_with_index do |original_line, index|
+          reversing_line = build_reversing_line!(reversing, original_line, index, now)
+          line_map[original_line.id] = reversing_line
+          reverse_inventory!(original_line, reversing_line)
+          reverse_fulfillment!(original_line, reversing_line, now, locked_requests)
+          reverse_stored_value_line!(original_line, reversing_line, original)
+          copy_taxes_and_discounts!(original_line, reversing_line)
+        end
+
+        tenders.each do |original_tender|
+          reversing_tender = build_reversing_tender!(reversing, original_tender, now)
+          reverse_stored_value_tender!(original_tender, reversing_tender, original)
+        end
+
+        line_map.each_value { |line| line.update!(status: "completed", completed_at: now) }
+        reversing.pos_tenders.find_each { |tender| tender.update!(status: "completed", completed_at: now) }
+
+        store = Store.lock.find(original.store_id)
+        sequence = store.next_receipt_sequence
+        store.update!(next_receipt_sequence: sequence + 1)
+
+        reversing.update!(
+          status: "completed",
+          completed_at: now,
+          completed_by_user: @actor,
+          cashier_user: @actor,
+          completed_pos_session: session,
+          active_pos_session_id: nil,
+          receipt_number: format_receipt_number(store, sequence),
+          receipt_sequence: sequence,
+          completion_idempotency_key: @completion_idempotency_key,
+          subtotal_cents: -original.subtotal_cents.to_i,
+          discount_total_cents: -original.discount_total_cents.to_i,
+          tax_total_cents: -original.tax_total_cents.to_i,
+          net_total_cents: -original.net_total_cents.to_i
+        )
+
+        Administration::RecordAuditEvent.call(
+          actor: @actor, organization: store.organization, store: store,
+          action: "pos_transaction.post_voided", subject: reversing,
+          metadata: {
+            "original_pos_transaction_id" => original.id,
+            "receipt_number" => reversing.receipt_number,
+            "pos_approval_id" => auth.pos_approval.id
+          }
+        )
+
+        Result.new(pos_transaction: reversing, success?: true, error: nil, replayed: false)
+      end
+    rescue Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique,
+           Inventory::ReverseLedgerEntry::Error, Inventory::ReverseLedgerEntry::ConflictError,
+           StoredValue::PostEntry::Error => e
+      Result.new(pos_transaction: nil, success?: false, error: e.message, replayed: false)
+    end
+
+    private
+
+    def validate_card_confirmations!(tenders)
+      tenders.each do |tender|
+        next unless tender.tender_type.tender_category == "card"
+
+        confirmation = @card_confirmations[tender.id] || @card_confirmations[tender.id.to_s]
+        raise Error, "card tender #{tender.id} requires external void/refund confirmation" if confirmation.blank?
+
+        ref = confirmation[:authorization_code].presence || confirmation["authorization_code"].presence ||
+              confirmation[:terminal_reference].presence || confirmation["terminal_reference"].presence ||
+              confirmation[:external_void_reference].presence || confirmation["external_void_reference"].presence
+        raise Error, "card tender #{tender.id} confirmation reference is required" if ref.blank?
+      end
+    end
+
+    def lock_inventory!(lines)
+      variant_keys = lines.filter_map { |line|
+        next unless line.line_kind == "product"
+        next unless line.product_variant&.inventory_tracking_mode == "quantity"
+
+        [ line.pos_transaction.store_id, line.product_variant_id ]
+      }.uniq.sort
+
+      variant_keys.each do |store_id, variant_id|
+        StockBalance.lock.find_by(store_id: store_id, product_variant_id: variant_id) ||
+          Inventory::FindOrCreateStockBalance.call(
+            store: Store.find(store_id), product_variant: ProductVariant.find(variant_id)
+          )
+      end
+
+      unit_ids = lines.filter_map { |line|
+        next unless line.line_kind == "product"
+        next unless line.product_variant&.inventory_tracking_mode == "individual"
+
+        line.inventory_unit_id
+      }.compact.sort
+      unit_ids.each { |id| InventoryUnit.lock.find(id) }
+    end
+
+    def lock_stored_value!(lines, tenders)
+      ids = (
+        lines.filter_map(&:stored_value_account_id) +
+        tenders.filter_map(&:stored_value_account_id)
+      ).uniq.sort
+      ids.each { |id| StoredValueAccount.lock.find(id) }
+    end
+
+    def build_reversing_line!(reversing, original_line, index, now)
+      opposite = original_line.direction == "sale" ? "return" : "sale"
+      attrs = {
+        pos_transaction: reversing,
+        line_kind: original_line.line_kind,
+        direction: opposite,
+        status: "pending",
+        position: index,
+        quantity: original_line.quantity,
+        unit_price_cents: original_line.unit_price_cents,
+        product_variant_id: original_line.product_variant_id,
+        inventory_unit_id: original_line.inventory_unit_id,
+        department_id: original_line.department_id,
+        tax_category_id: original_line.tax_category_id,
+        original_tax_category_id: original_line.original_tax_category_id,
+        description_snapshot: original_line.description_snapshot,
+        cost_unit_cost_cents: original_line.cost_unit_cost_cents,
+        cost_extended_cents: original_line.cost_extended_cents,
+        cost_method_snapshot: original_line.cost_method_snapshot,
+        cost_quality_snapshot: original_line.cost_quality_snapshot,
+        reverses_pos_line_item: original_line,
+        created_by_user: @actor
+      }
+
+      if original_line.line_kind == "stored_value"
+        # Reversing SV lines keep sale direction + snapshots; link via reverses_*.
+        attrs[:direction] = "sale"
+        attrs[:stored_value_account_id] = original_line.stored_value_account_id
+        attrs[:stored_value_operation] = original_line.stored_value_operation
+        attrs[:stored_value_account_type_snapshot] = original_line.stored_value_account_type_snapshot
+        attrs[:stored_value_account_number_snapshot] = original_line.stored_value_account_number_snapshot
+      end
+
+      PosLineItem.create!(attrs)
+    end
+
+    def reverse_stored_value_line!(original_line, reversing_line, original_transaction)
+      return unless original_line.line_kind == "stored_value"
+
+      entry = StoredValueEntry.find_by!(pos_line_item_id: original_line.id)
+      StoredValue::PostEntry.call(
+        account: entry.stored_value_account,
+        store: original_transaction.store,
+        entry_type: "reversal",
+        amount_cents: -entry.amount_cents,
+        posting_key: "pos_line_item:#{reversing_line.id}:stored_value_reversal",
+        actor: @actor,
+        pos_transaction: reversing_line.pos_transaction,
+        pos_line_item: reversing_line,
+        reverses_entry: entry,
+        allow_suspended: true
+      )
+    end
+
+    def reverse_stored_value_tender!(original_tender, reversing_tender, original_transaction)
+      return if original_tender.stored_value_account_id.blank?
+
+      entry = StoredValueEntry.find_by!(pos_tender_id: original_tender.id)
+      StoredValue::PostEntry.call(
+        account: entry.stored_value_account,
+        store: original_transaction.store,
+        entry_type: "reversal",
+        amount_cents: -entry.amount_cents,
+        posting_key: "pos_tender:#{reversing_tender.id}:stored_value_reversal",
+        actor: @actor,
+        pos_transaction: reversing_tender.pos_transaction,
+        pos_tender: reversing_tender,
+        reverses_entry: entry,
+        allow_suspended: true
+      )
+    end
+
+    def reverse_inventory!(original_line, reversing_line)
+      return unless original_line.line_kind == "product"
+      return if original_line.product_variant.blank?
+
+      case original_line.product_variant.inventory_tracking_mode
+      when "quantity"
+        sale_entry = InventoryLedgerEntry.find_by(
+          posting_key: Inventory::ConvertReservation.posting_key(original_line)
+        )
+        return if sale_entry.blank?
+
+        Inventory::ReverseLedgerEntry.call(
+          reversal_of_entry: sale_entry,
+          source: reversing_line,
+          posting_key: "pos_line_item:#{reversing_line.id}:post_void_sale_reverse",
+          posted_by_user: @actor,
+          reason_code: "post_void",
+          reason_note: @reason
+        )
+      when "individual"
+        unit = InventoryUnit.lock.find(original_line.inventory_unit_id)
+        raise Error, "unit is not in a reversible sold state" unless unit.status == "sold"
+        raise Error, "unit was not sold on that line" unless unit.sold_pos_line_item_id == original_line.id
+
+        unit.update!(status: "available", sold_at: nil, sold_pos_line_item_id: nil)
+      end
+    end
+
+    def reverse_fulfillment!(original_line, reversing_line, now, locked_requests)
+      return unless original_line.sale? && original_line.line_kind == "product"
+
+      fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: original_line.id, kind: "fulfill")
+      request_id = fulfillment&.product_request_id || original_line.product_request_id
+      return if request_id.blank?
+
+      result = Requests::ReverseFulfillment.call(
+        original_pos_line_item: original_line,
+        return_pos_line_item: reversing_line,
+        actor: @actor,
+        reversed_at: now,
+        product_request: locked_requests[request_id]
+      )
+      raise Error, result.error unless result.success?
+    end
+
+    def copy_taxes_and_discounts!(original_line, reversing_line)
+      original_line.pos_line_item_taxes.find_each do |tax|
+        PosLineItemTax.create!(
+          pos_line_item: reversing_line,
+          tax_category_id: tax.tax_category_id,
+          store_tax_rule_id: tax.store_tax_rule_id,
+          store_tax_rate_id: tax.store_tax_rate_id,
+          rate: tax.rate,
+          taxable_amount_cents: tax.taxable_amount_cents,
+          amount_cents: tax.amount_cents,
+          treatment_snapshot: tax.treatment_snapshot,
+          taxable_fraction_snapshot: tax.taxable_fraction_snapshot,
+          compounds_on_prior_tax_snapshot: tax.compounds_on_prior_tax_snapshot,
+          receipt_code_snapshot: tax.receipt_code_snapshot,
+          position: tax.position
+        )
+      end
+
+      original_line.pos_discount_allocations.find_each do |alloc|
+        PosDiscountAllocation.create!(
+          pos_line_item: reversing_line,
+          pos_discount_id: alloc.pos_discount_id,
+          allocated_amount_cents: alloc.allocated_amount_cents,
+          eligible_amount_cents: alloc.eligible_amount_cents
+        )
+      end
+    end
+
+    def build_reversing_tender!(reversing, original_tender, now)
+      opposite = original_tender.direction == "received" ? "refunded" : "received"
+      confirmation = @card_confirmations[original_tender.id] || @card_confirmations[original_tender.id.to_s] || {}
+
+      PosTender.create!(
+        pos_transaction: reversing,
+        store: reversing.store,
+        tender_type: original_tender.tender_type,
+        direction: opposite,
+        status: "pending",
+        amount_cents: original_tender.amount_cents,
+        amount_tendered_cents: original_tender.amount_tendered_cents,
+        change_due_cents: original_tender.change_due_cents,
+        authorization_code: confirmation[:authorization_code] || confirmation["authorization_code"] ||
+                            original_tender.authorization_code,
+        terminal_reference: confirmation[:terminal_reference] || confirmation["terminal_reference"] ||
+                            original_tender.terminal_reference,
+        external_void_reference: confirmation[:external_void_reference] || confirmation["external_void_reference"],
+        stored_value_account_id: original_tender.stored_value_account_id,
+        reverses_pos_tender: original_tender,
+        created_by_user: @actor,
+        external_void_confirmed_by_user: original_tender.tender_type.tender_category == "card" ? @actor : nil
+      )
+    end
+
+    def format_receipt_number(store, sequence)
+      format("%s-%06d", store.code.to_s.upcase, sequence)
+    end
+  end
+end

@@ -150,6 +150,16 @@ If later cached on `stock_balances`, a single purchasing/receiving posting servi
 
 Never post `on_order` through the inventory ledger.
 
+## Phase 6 corrections and stored value
+
+Accepted delivery choices for Phase 6 (detail in decision notes):
+
+- Post-void is a full reversing completed transaction; eligibility, mixed-txn all-or-nothing policy, refund-tender linkage, and fulfilment reverse via `Requests::ReverseFulfillment` — [phase-06-post-void-eligibility-and-cross-domain-reversal.md](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md).
+- Aggregate inventory `unavailable` changes are ledger-owned (`unavailable_delta` / `resulting_unavailable`); OD-010 status buckets remain open — [phase-06-inventory-correction-and-od-014.md](decisions/phase-06-inventory-correction-and-od-014.md).
+- Post-void after OD-014 deficit settlement uses an interim eligibility block until the full correction algorithm lands — same decision note.
+- Stored-value v1: `active`/`suspended`; entry types including generic `reversal`; gift-card reload only; always-approve manual adjustments; nullable department on `stored_value` POS lines — [phase-06-stored-value-v1-operating-policy.md](decisions/phase-06-stored-value-v1-operating-policy.md).
+- Permissions: `pos.post_void.create` / `pos.post_void.approve` and canonical `stored_value.*` rows in [authorization-permissions.md](../domains/authorization-permissions.md).
+
 ## Reporting sources
 
 Reports must not reinterpret completed history or modify source records.
