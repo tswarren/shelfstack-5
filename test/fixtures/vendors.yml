@@ -12,3 +12,11 @@ inactive_vendor:
   code: OLDVND
   name: Old Vendor
   active: false
+
+small_press_direct:
+  organization: acme
+  code: SMLPRS
+  name: Small Press Direct
+  active: true
+  ordering_email: orders@smallpress.example.com
+  default_supplier_discount_bps: 3000

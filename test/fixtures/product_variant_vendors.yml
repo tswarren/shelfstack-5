@@ -10,3 +10,16 @@ sample_book_ingram:
   returnable: true
   preferred: true
   active: true
+
+upc_product_ingram:
+  product_variant: upc_product_standard
+  vendor: acme_distributor
+  vendor_item_code: "9780000000002"
+  list_cost_cents: 900
+  discount_bps: 2000
+  expected_unit_cost_cents: 720
+  minimum_order_quantity: 1
+  order_multiple: 1
+  returnable: true
+  preferred: true
+  active: true

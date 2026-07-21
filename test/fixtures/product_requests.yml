@@ -1,0 +1,66 @@
+open_customer_request:
+  store: main_street
+  request_type: customer_request
+  status: open
+  product: sample_book
+  requested_quantity: 2
+  priority: high
+  customer_reference: "CUST-4471"
+  requested_by_user: clerk
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+open_staff_suggestion:
+  store: main_street
+  request_type: staff_suggestion
+  status: open
+  product: upc_product
+  product_variant: upc_product_standard
+  requested_quantity: 5
+  priority: normal
+  requested_by_user: admin
+  assigned_buyer_user: admin
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+open_stock_replenishment:
+  store: main_street
+  request_type: stock_replenishment
+  status: open
+  product: upc_product
+  product_variant: upc_product_standard
+  requested_quantity: 10
+  priority: normal
+  requested_by_user: admin
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+resolved_frontlist:
+  store: main_street
+  request_type: frontlist_selection
+  status: closed
+  product: signed_book
+  product_variant: signed_book_standard
+  requested_quantity: 3
+  priority: normal
+  requested_by_user: admin
+  resolution: ordered
+  resolved_quantity: 3
+  resolved_at: <%= Time.current %>
+  resolved_by_user: admin
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>
+
+cancelled_staff_suggestion:
+  store: main_street
+  request_type: staff_suggestion
+  status: cancelled
+  product: upc_product
+  requested_quantity: 1
+  priority: normal
+  requested_by_user: clerk
+  resolved_at: <%= Time.current %>
+  resolved_by_user: admin
+  resolution_note: "Duplicate entry"
+  created_at: <%= Time.current %>
+  updated_at: <%= Time.current %>

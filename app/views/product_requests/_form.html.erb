@@ -1,0 +1,58 @@
+<%= form_with model: product_request, url: form_url, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: product_request %>
+
+  <section class="form-section">
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :request_type, "Request type", class: "field-label" %>
+        <%= form.select :request_type, ProductRequest::REQUEST_TYPES.map { |t| [ t.titleize, t ] },
+              {}, required: true, class: "input", disabled: product_request.persisted? %>
+      </div>
+      <div class="field">
+        <%= form.label :product_id, "Product", class: "field-label" %>
+        <%= form.collection_select :product_id, @products, :id, :name,
+              { include_blank: true }, required: true, class: "input", disabled: product_request.persisted? %>
+        <p class="field-hint">
+          Can't find the product?
+          <%= link_to "Search or create it", new_product_import_path(return_to: request.fullpath) %>.
+        </p>
+      </div>
+      <div class="field">
+        <%= form.label :product_variant_id, "Product variant (optional)", class: "field-label" %>
+        <%= form.collection_select :product_variant_id,
+              @product_variants.select { |v| product_request.product_id.blank? || v.product_id == product_request.product_id },
+              :id, ->(v) { variant_option_label(v) }, { include_blank: true }, class: "input" %>
+        <p class="field-hint">Resolve the exact variant before this request is added to a purchase order.</p>
+      </div>
+      <div class="field">
+        <%= form.label :requested_quantity, "Requested quantity", class: "field-label" %>
+        <%= form.number_field :requested_quantity, min: 1, required: true, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :priority, class: "field-label" %>
+        <%= form.select :priority, ProductRequest::PRIORITIES.map { |p| [ p.titleize, p ] }, {}, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :needed_by_on, "Needed by", class: "field-label" %>
+        <%= form.date_field :needed_by_on, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :customer_reference, "Customer reference (optional)", class: "field-label" %>
+        <%= form.text_field :customer_reference, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :assigned_buyer_user_id, "Assigned buyer (optional)", class: "field-label" %>
+        <%= form.collection_select :assigned_buyer_user_id, @buyers, :id, :username, { include_blank: true }, class: "input" %>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.label :notes, class: "field-label" %>
+      <%= form.text_area :notes, class: "input", rows: 3 %>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit(product_request.persisted? ? "Update request" : "Create request", class: "button button-primary") %>
+    <%= link_to "Cancel", product_request.persisted? ? product_request_path(product_request) : product_requests_path, class: "button button-outline" %>
+  </div>
+<% end %>

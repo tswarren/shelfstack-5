@@ -1,0 +1,86 @@
+<%= render "shared/page_header", title: "Search or create a product",
+      subtitle: "Thin product-from-demand path: search the local catalog first, then create a minimal product from structured attributes. Not a live external catalog." %>
+
+<% if @error.present? %>
+  <div class="ss-alert ss-alert-danger" role="alert"><%= @error %></div>
+<% end %>
+
+<% if @warnings.present? %>
+  <div class="ss-alert ss-alert-warning" role="alert">
+    <% @warnings.each do |warning| %><p><%= warning %></p><% end %>
+  </div>
+<% end %>
+
+<% if @duplicate_candidates.present? %>
+  <section class="record-section">
+    <h2>Possible duplicates</h2>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Possible duplicate products</caption>
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Identifier</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @duplicate_candidates.each do |candidate| %>
+            <tr>
+              <td><%= candidate.name %></td>
+              <td><%= candidate.identifier %></td>
+              <td><%= link_to "Use this product", return_to_with_product(@return_to, candidate), class: "button button-outline button-small" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>
+
+<%= form_with url: product_imports_path, method: :post, class: "form" do %>
+  <%= hidden_field_tag :return_to, @return_to %>
+  <% if @duplicate_candidates.present? %>
+    <%= hidden_field_tag :accept_duplicate_review, "1" %>
+    <p class="field-hint">Resubmitting will create a new product despite the possible duplicates above.</p>
+  <% end %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Product</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= label_tag "product_identifier", "Identifier (ISBN/UPC/EAN, optional)" %>
+        <%= text_field_tag "product[identifier]", @attrs[:identifier], id: "product_identifier", class: "input" %>
+      </div>
+      <div class="field">
+        <%= label_tag "product_name", "Name" %>
+        <%= text_field_tag "product[name]", @attrs[:name], id: "product_name", class: "input", required: true %>
+      </div>
+      <div class="field">
+        <%= label_tag "product_product_type", "Product type" %>
+        <%= text_field_tag "product[product_type]", @attrs[:product_type] || "book", id: "product_product_type", class: "input" %>
+      </div>
+      <%= render "shared/money_field", name: "product[list_price]", label: "List price",
+            value_cents: @attrs[:list_price_cents], id: "product_list_price" %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Standard variant</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= label_tag "product_inventory_tracking_mode", "Inventory tracking" %>
+        <%= select_tag "product[inventory_tracking_mode]",
+              options_for_select([ %w[Quantity quantity], %w[Individual individual], %w[None none] ], @attrs[:inventory_tracking_mode] || "quantity"),
+              id: "product_inventory_tracking_mode", class: "input" %>
+      </div>
+      <%= render "shared/money_field", name: "product[regular_price]", label: "Selling price",
+            value_cents: @attrs[:regular_price_cents], id: "product_regular_price" %>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= submit_tag "Create product", class: "button button-primary" %>
+    <%= link_to "Cancel", safe_local_path(@return_to, new_product_request_path), class: "button button-outline" %>
+  </div>
+<% end %>

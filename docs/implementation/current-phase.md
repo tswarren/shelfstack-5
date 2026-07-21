@@ -22,6 +22,7 @@
 - Phase 5 planning defaults locked (resolution columns, follow-up requests, allocation events, thin product path).
 - Phase 5a vendors/vendor sources and Phase 5b purchase orders merged into the Phase 5 integration branch.
 - Phase 5c (`phase/5c-receipts`, on the Phase 5 integration branch): Receipt/Receipt Line draft-post-cancel lifecycle, `Inventory::PostReceipt` (quantity and individual tracking, PO-line `received_quantity` update), and OD-014 negative-inventory settlement implemented generically in `Inventory::PostLedgerEntry` (deficit-pool creation/release + settlement variance apply to any quantity-tracked movement, not only receipts). PO-line allocation conversion remains Phase 5f.
+- Phase 5d (`phase/5d-product-requests`): `product_requests` (four types, required Product, optional Variant, non-customer resolution columns, optional `supersedes_product_request_id`); `Requests::{Create,Update,Assign,Resolve,Cancel}ProductRequest`; Buyer-review queue projection (`Purchasing::ReplenishmentSnapshot`); thin product-from-demand path (`Catalog::ImportProductMetadata`); and the buyer → draft Purchase Order seam (`Purchasing::AddDemandToDraftPurchaseOrder`) that never creates a Purchase-Order Allocation. Customer Request allocation/reservation/fulfilment remain Phase 5e/5f.
 
 ## Do not start yet
 

@@ -14,6 +14,7 @@ class Product < ApplicationRecord
   belongs_to :default_department, class_name: "Department", optional: true
   belongs_to :default_tax_category, class_name: "TaxCategory", optional: true
   has_many :product_variants, dependent: :restrict_with_exception
+  has_many :product_requests, dependent: :restrict_with_exception
 
   attr_readonly :identifier
 

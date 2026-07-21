@@ -28,6 +28,7 @@ class ProductVariant < ApplicationRecord
   has_many :vendors, through: :product_variant_vendors
   has_many :purchase_order_lines, dependent: :restrict_with_exception
   has_many :receipt_lines, dependent: :restrict_with_exception
+  has_many :product_requests, dependent: :restrict_with_exception
 
   attr_readonly :sku
 

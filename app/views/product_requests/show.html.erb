@@ -1,0 +1,110 @@
+<% content_for :title, "Product request ##{@product_request.id}" %>
+
+<%= render "shared/page_header",
+      title: "Product request ##{@product_request.id}",
+      subtitle: @product_request.product.name,
+      breadcrumbs: [ { label: "Product requests", path: product_requests_path }, { label: "##{@product_request.id}" } ],
+      actions: capture {
+        if @product_request.open? && Current.user.can?("requests.product_request.edit", store: Current.store)
+          concat link_to("Edit", edit_product_request_path(@product_request), class: "button button-outline")
+        end
+        concat link_to("Back to product requests", product_requests_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Request</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Type", @product_request.request_type.titleize ],
+    [ "Status", status_badge(@product_request.status.titleize, variant: product_request_status_variant(@product_request.status)) ],
+    [ "Priority", status_badge(@product_request.priority.titleize, variant: product_request_priority_variant(@product_request.priority)) ],
+    [ "Product", link_to(@product_request.product.name, @product_request.product) ],
+    [ "Product variant", @product_request.product_variant ? variant_option_label(@product_request.product_variant) : "Not yet resolved" ],
+    [ "Requested quantity", @product_request.requested_quantity ],
+    [ "Needed by", @product_request.needed_by_on ? formatted_store_date(@product_request.needed_by_on) : "—" ],
+    [ "Customer reference", @product_request.customer_reference.presence || "—" ],
+    [ "Requested by", @product_request.requested_by_user.username ],
+    [ "Assigned buyer", @product_request.assigned_buyer_user&.username || "—" ],
+    [ "Notes", @product_request.notes.presence || "—" ]
+  ] %>
+  <% if @product_request.supersedes_product_request_id.present? %>
+    <%= render "shared/record_summary", rows: [
+      [ "Follow-up for", link_to("Product request ##{@product_request.supersedes_product_request_id}", @product_request.supersedes_product_request) ]
+    ] %>
+  <% end %>
+  <% if @product_request.resolution.present? %>
+    <%= render "shared/record_summary", rows: [
+      [ "Resolution", @product_request.resolution.titleize ],
+      [ "Resolved quantity", @product_request.resolved_quantity.nil? ? "—" : @product_request.resolved_quantity ],
+      [ "Resolved at", formatted_datetime(@product_request.resolved_at) ],
+      [ "Resolved by", @product_request.resolved_by_user&.username || "—" ],
+      [ "Resolution note", @product_request.resolution_note.presence || "—" ]
+    ] %>
+  <% end %>
+</section>
+
+<% if @product_request.open? && Current.user.can?("requests.product_request.assign", store: Current.store) %>
+  <section class="record-section">
+    <h2>Assign buyer</h2>
+    <%= form_with url: assign_product_request_path(@product_request), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= label_tag "product_request_assigned_buyer_user_id", "Buyer" %>
+        <%= collection_select :product_request, :assigned_buyer_user_id, @buyers, :id, :username,
+              { include_blank: true, selected: @product_request.assigned_buyer_user_id }, class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Assign buyer", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @product_request.open? && @product_request.non_customer_request? && Current.user.can?("requests.product_request.resolve", store: Current.store) %>
+  <section class="record-section">
+    <h2>Resolve</h2>
+    <p class="field-hint">Records the buyer's terminal decision. "Deferred" leaves the request open.</p>
+    <%= form_with url: resolve_product_request_path(@product_request), method: :post, class: "form" do |form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= label_tag "product_request_resolution", "Resolution" %>
+          <%= select_tag "product_request[resolution]",
+                options_for_select(ProductRequest::RESOLUTIONS.map { |r| [ r.titleize, r ] }),
+                id: "product_request_resolution", class: "input", required: true %>
+        </div>
+        <div class="field">
+          <%= label_tag "product_request_resolved_quantity", "Resolved quantity (defaults to requested)" %>
+          <%= number_field_tag "product_request[resolved_quantity]", nil, min: 0, max: @product_request.requested_quantity,
+                id: "product_request_resolved_quantity", class: "input" %>
+        </div>
+      </div>
+      <div class="field">
+        <%= label_tag "product_request_resolution_note", "Resolution note" %>
+        <%= text_area_tag "product_request[resolution_note]", nil, id: "product_request_resolution_note", class: "input", rows: 2 %>
+      </div>
+      <div class="checkbox-group">
+        <label>
+          <%= check_box_tag "product_request[create_follow_up]", "1", false, id: "product_request_create_follow_up" %>
+          Create a follow-up request for residual quantity when ordering less than requested
+        </label>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Resolve request", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @product_request.open? && Current.user.can?("requests.product_request.cancel", store: Current.store) %>
+  <section class="record-section">
+    <h2>Cancel</h2>
+    <%= form_with url: cancel_product_request_path(@product_request), method: :post, class: "form",
+          data: { turbo_confirm: "Cancel this product request?" } do |form| %>
+      <div class="field">
+        <%= label_tag "product_request_cancellation_reason", "Cancellation reason" %>
+        <%= text_field_tag "product_request[cancellation_reason]", nil, id: "product_request_cancellation_reason", class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Cancel request", class: "button button-danger" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
