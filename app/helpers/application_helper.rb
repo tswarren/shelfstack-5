@@ -63,6 +63,23 @@ module ApplicationHelper
     end
   end
 
+  def purchase_order_status_variant(status)
+    case status.to_s
+    when "ordered" then :info
+    when "closed" then :success
+    when "cancelled" then :danger
+    else :neutral
+    end
+  end
+
+  def purchase_order_receiving_state_variant(state)
+    case state.to_s
+    when "fully_received" then :success
+    when "partially_received" then :info
+    else :neutral
+    end
+  end
+
   def reservation_status_variant(status)
     case status.to_s
     when "active" then :info

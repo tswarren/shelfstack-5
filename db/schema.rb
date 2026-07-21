@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_031000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -809,6 +809,71 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
     t.check_constraint "variant_structure::text = 'single'::text", name: "products_variant_structure_single"
   end
 
+  create_table "purchase_order_lines", force: :cascade do |t|
+    t.integer "cancelled_quantity", default: 0, null: false
+    t.string "cost_entry_method", null: false
+    t.string "cost_provenance"
+    t.datetime "created_at", null: false
+    t.string "description_snapshot"
+    t.integer "discount_bps"
+    t.integer "expected_extended_cost_cents"
+    t.integer "expected_unit_cost_cents", null: false
+    t.string "identifier_snapshot"
+    t.integer "list_cost_cents"
+    t.text "notes"
+    t.integer "ordered_quantity", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "product_variant_id", null: false
+    t.bigint "product_variant_vendor_id"
+    t.bigint "purchase_order_id", null: false
+    t.integer "received_quantity", default: 0, null: false
+    t.boolean "returnable_snapshot"
+    t.string "sku_snapshot"
+    t.datetime "updated_at", null: false
+    t.string "vendor_item_code_snapshot"
+    t.index ["product_variant_id"], name: "index_purchase_order_lines_on_product_variant_id"
+    t.index ["product_variant_vendor_id"], name: "index_purchase_order_lines_on_product_variant_vendor_id"
+    t.index ["purchase_order_id"], name: "index_purchase_order_lines_on_purchase_order_id"
+    t.check_constraint "cancelled_quantity <= ordered_quantity", name: "po_lines_cancelled_quantity_within_ordered"
+    t.check_constraint "cancelled_quantity >= 0", name: "po_lines_cancelled_quantity_nonneg"
+    t.check_constraint "cost_entry_method::text = ANY (ARRAY['discount_from_list'::character varying, 'direct_net_cost'::character varying]::text[])", name: "po_lines_cost_entry_method_check"
+    t.check_constraint "discount_bps IS NULL OR discount_bps >= 0 AND discount_bps <= 10000", name: "po_lines_discount_bps_range"
+    t.check_constraint "expected_extended_cost_cents IS NULL OR expected_extended_cost_cents >= 0", name: "po_lines_expected_extended_cost_nonneg"
+    t.check_constraint "expected_unit_cost_cents >= 0", name: "po_lines_expected_unit_cost_nonneg"
+    t.check_constraint "list_cost_cents IS NULL OR list_cost_cents >= 0", name: "po_lines_list_cost_nonneg"
+    t.check_constraint "ordered_quantity > 0", name: "po_lines_ordered_quantity_positive"
+    t.check_constraint "received_quantity >= 0", name: "po_lines_received_quantity_nonneg"
+  end
+
+  create_table "purchase_orders", force: :cascade do |t|
+    t.bigint "buyer_user_id"
+    t.datetime "cancelled_at"
+    t.bigint "cancelled_by_user_id"
+    t.datetime "closed_at"
+    t.bigint "closed_by_user_id"
+    t.datetime "created_at", null: false
+    t.string "currency_code", limit: 3, null: false
+    t.date "expected_on"
+    t.text "notes"
+    t.datetime "ordered_at"
+    t.bigint "ordered_by_user_id"
+    t.date "ordered_on"
+    t.string "purchase_order_number", null: false
+    t.string "status", default: "draft", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "vendor_id", null: false
+    t.string "vendor_reference"
+    t.index ["buyer_user_id"], name: "index_purchase_orders_on_buyer_user_id"
+    t.index ["cancelled_by_user_id"], name: "index_purchase_orders_on_cancelled_by_user_id"
+    t.index ["closed_by_user_id"], name: "index_purchase_orders_on_closed_by_user_id"
+    t.index ["ordered_by_user_id"], name: "index_purchase_orders_on_ordered_by_user_id"
+    t.index ["store_id", "purchase_order_number"], name: "index_purchase_orders_on_store_and_number", unique: true
+    t.index ["store_id"], name: "index_purchase_orders_on_store_id"
+    t.index ["vendor_id"], name: "index_purchase_orders_on_vendor_id"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'ordered'::character varying, 'closed'::character varying, 'cancelled'::character varying]::text[])", name: "purchase_orders_status_check"
+  end
+
   create_table "return_policies", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
@@ -972,6 +1037,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
     t.string "email"
     t.string "legal_name"
     t.string "name", null: false
+    t.bigint "next_purchase_order_number", default: 1, null: false
     t.bigint "next_receipt_sequence", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone", limit: 30
@@ -986,6 +1052,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
     t.index ["organization_id", "code"], name: "index_stores_on_organization_id_and_code", unique: true
     t.index ["organization_id", "store_number"], name: "index_stores_on_organization_id_and_store_number", unique: true, where: "(store_number IS NOT NULL)"
     t.index ["organization_id"], name: "index_stores_on_organization_id"
+    t.check_constraint "next_purchase_order_number >= 1", name: "stores_next_purchase_order_number_positive"
     t.check_constraint "next_receipt_sequence >= 1", name: "stores_next_receipt_sequence_positive"
   end
 
@@ -1182,6 +1249,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
   add_foreign_key "products", "organizations"
   add_foreign_key "products", "product_formats"
   add_foreign_key "products", "tax_categories", column: "default_tax_category_id"
+  add_foreign_key "purchase_order_lines", "product_variant_vendors", on_delete: :restrict
+  add_foreign_key "purchase_order_lines", "product_variants", on_delete: :restrict
+  add_foreign_key "purchase_order_lines", "purchase_orders", on_delete: :restrict
+  add_foreign_key "purchase_orders", "stores", on_delete: :restrict
+  add_foreign_key "purchase_orders", "users", column: "buyer_user_id", on_delete: :restrict
+  add_foreign_key "purchase_orders", "users", column: "cancelled_by_user_id", on_delete: :restrict
+  add_foreign_key "purchase_orders", "users", column: "closed_by_user_id", on_delete: :restrict
+  add_foreign_key "purchase_orders", "users", column: "ordered_by_user_id", on_delete: :restrict
+  add_foreign_key "purchase_orders", "vendors", on_delete: :restrict
   add_foreign_key "return_policies", "organizations", on_delete: :restrict
   add_foreign_key "return_reasons", "organizations", on_delete: :restrict
   add_foreign_key "role_permissions", "permissions", on_delete: :restrict

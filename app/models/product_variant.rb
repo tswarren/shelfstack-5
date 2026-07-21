@@ -12,6 +12,12 @@ class ProductVariant < ApplicationRecord
   belongs_to :tax_category, class_name: "TaxCategory", optional: true
   belongs_to :merchandise_class, optional: true
   belongs_to :return_policy, optional: true
+
+  # Registered before the `dependent: :restrict_with_exception` associations
+  # below so the friendlier "last variant" validation error always wins over
+  # a raised DeleteRestrictionError when both conditions hold.
+  before_destroy :prevent_destroying_last_variant_of_sellable_product
+
   has_many :stock_balances, dependent: :restrict_with_exception
   has_many :inventory_ledger_entries, dependent: :restrict_with_exception
   has_many :inventory_reservations, dependent: :restrict_with_exception
@@ -20,6 +26,7 @@ class ProductVariant < ApplicationRecord
   has_many :pos_line_items, dependent: :restrict_with_exception
   has_many :product_variant_vendors, dependent: :restrict_with_exception
   has_many :vendors, through: :product_variant_vendors
+  has_many :purchase_order_lines, dependent: :restrict_with_exception
 
   attr_readonly :sku
 
@@ -39,8 +46,6 @@ class ProductVariant < ApplicationRecord
   validate :department_postable_when_present
   validate :sku_is_generated_28
   validate :single_structure_allows_only_one_variant, on: :create
-
-  before_destroy :prevent_destroying_last_variant_of_sellable_product
 
   delegate :organization, to: :product
 

@@ -1,0 +1,4 @@
+<%= render "shared/page_header", title: "New purchase order",
+      breadcrumbs: [ { label: "Purchase orders", path: purchase_orders_path }, { label: "New" } ] %>
+
+<%= render "form", purchase_order: @purchase_order %>
