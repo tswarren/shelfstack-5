@@ -7,6 +7,7 @@ main_street:
   currency_code: USD
   active: true
   next_purchase_order_number: 3
+  next_receipt_number: 2
 
 warehouse:
   organization: acme

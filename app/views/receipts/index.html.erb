@@ -1,0 +1,43 @@
+<%= render "shared/page_header", title: "Receipts",
+      subtitle: "Record vendor shipments and post accepted quantity into inventory.",
+      actions: capture {
+        if Current.user.can?("inventory.receipt.create", store: Current.store)
+          concat link_to("New receipt", new_receipt_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @receipts.empty? %>
+  <%= render "shared/empty_state", title: "No receipts yet",
+        body: "Create your first receipt to record a vendor shipment." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Receipts</caption>
+      <thead>
+        <tr>
+          <th scope="col">Number</th>
+          <th scope="col">Vendor</th>
+          <th scope="col">Status</th>
+          <th scope="col">Received at</th>
+          <% if @can_view_cost %><th scope="col" class="num">Accepted lines cost</th><% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <% @receipts.each do |receipt| %>
+          <tr>
+            <td><%= link_to receipt.receipt_number, receipt %></td>
+            <td><%= receipt.vendor.name %></td>
+            <td><%= status_badge(receipt.status.titleize, variant: receipt_status_variant(receipt.status)) %></td>
+            <td><%= receipt.received_at ? formatted_datetime(receipt.received_at) : "—" %></td>
+            <% if @can_view_cost %>
+              <td class="num">
+                <%= format_money(receipt.receipt_lines.sum { |l| l.actual_unit_cost_cents.to_i * l.accepted_quantity }) %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "receipt" %>
+<% end %>

@@ -53,5 +53,15 @@ module Inventory
 
       assert_nil unit.acquisition_cost_cents
     end
+
+    test "require_unit_manage_permission false allows a receiver without inventory.unit.manage" do
+      result = CreateInventoryUnit.call(
+        store: @store, product_variant: @variant, actor: @clerk, acquisition_cost_cents: 700,
+        acquisition_source_type: "receipt_line", require_unit_manage_permission: false
+      )
+
+      assert result.success?, result.error
+      assert_equal "receipt_line", result.inventory_unit.acquisition_source_type
+    end
   end
 end

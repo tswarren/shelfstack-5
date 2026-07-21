@@ -20,6 +20,8 @@
 - Phase 4g test hardening merged to `main` (PR #31) — Phase 5 integrity/security/browser gate satisfied.
 - Phase 5 governing decisions: ADR-0015, OD-007, OD-014 settlement; domains, schema exports, and permission catalog reconciled.
 - Phase 5 planning defaults locked (resolution columns, follow-up requests, allocation events, thin product path).
+- Phase 5a vendors/vendor sources and Phase 5b purchase orders merged into the Phase 5 integration branch.
+- Phase 5c (`phase/5c-receipts`, on the Phase 5 integration branch): Receipt/Receipt Line draft-post-cancel lifecycle, `Inventory::PostReceipt` (quantity and individual tracking, PO-line `received_quantity` update), and OD-014 negative-inventory settlement implemented generically in `Inventory::PostLedgerEntry` (deficit-pool creation/release + settlement variance apply to any quantity-tracked movement, not only receipts). PO-line allocation conversion remains Phase 5f.
 
 ## Do not start yet
 

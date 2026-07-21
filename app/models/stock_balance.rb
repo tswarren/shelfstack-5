@@ -11,6 +11,9 @@ class StockBalance < ApplicationRecord
   validates :unavailable, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :cost_quality, presence: true, inclusion: { in: COST_QUALITIES }
   validates :last_known_cost_quality, inclusion: { in: COST_QUALITIES }, allow_nil: true
+  validates :deficit_cost_quality, presence: true, inclusion: { in: COST_QUALITIES }
+  validates :open_provisional_deficit_cost_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 },
+            allow_nil: true
   # Uniqueness is enforced by the database unique index so create_or_find_by! can
   # rely on RecordNotUnique + savepoint under concurrent first-create.
   validate :store_and_variant_same_organization
@@ -18,6 +21,11 @@ class StockBalance < ApplicationRecord
 
   def available
     on_hand - reserved - unavailable
+  end
+
+  # OD-014: derived, never stored independently of on_hand.
+  def open_deficit_quantity
+    [ -on_hand, 0 ].max
   end
 
   private

@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 class InventoryLedgerEntry < ApplicationRecord
-  MOVEMENT_TYPES = %w[opening_inventory quantity_adjustment cost_correction sale customer_return].freeze
+  MOVEMENT_TYPES = %w[opening_inventory quantity_adjustment cost_correction sale customer_return receipt receipt_deficit_settlement].freeze
   COST_METHODS = %w[explicit configured_estimate moving_average last_known unknown].freeze
   COST_QUALITIES = %w[actual estimated mixed unknown].freeze
+  VARIANCE_KINDS = %w[ordinary late_cost_recognition].freeze
 
   belongs_to :store
   belongs_to :product_variant
@@ -17,6 +18,8 @@ class InventoryLedgerEntry < ApplicationRecord
   validates :cost_method, presence: true, inclusion: { in: COST_METHODS }
   validates :cost_quality, presence: true, inclusion: { in: COST_QUALITIES }
   validates :resulting_cost_quality, presence: true, inclusion: { in: COST_QUALITIES }
+  validates :provisional_deficit_cost_quality_snapshot, inclusion: { in: COST_QUALITIES }, allow_nil: true
+  validates :settlement_variance_kind, inclusion: { in: VARIANCE_KINDS }, allow_nil: true
   validates :posting_key, presence: true, uniqueness: true
   validates :posted_at, presence: true
   validate :store_and_variant_same_organization

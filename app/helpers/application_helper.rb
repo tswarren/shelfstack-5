@@ -80,6 +80,14 @@ module ApplicationHelper
     end
   end
 
+  def receipt_status_variant(status)
+    case status.to_s
+    when "posted" then :success
+    when "cancelled" then :danger
+    else :neutral
+    end
+  end
+
   def reservation_status_variant(status)
     case status.to_s
     when "active" then :info

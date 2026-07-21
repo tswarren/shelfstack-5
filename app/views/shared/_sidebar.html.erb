@@ -17,6 +17,7 @@
 
     <%= nav_section "Inventory" do %>
       <%= nav_item "Stock", stock_balances_path, permission_key: "inventory.stock.view" %>
+      <%= nav_item "Receipts", receipts_path, permission_key: "inventory.receipt.view" %>
       <%= nav_item "Adjustments", inventory_adjustments_path, permission_key: "inventory.stock.view" %>
       <%= nav_item "Reservations", inventory_reservations_path, permission_key: "inventory.reservation.view" %>
       <%= nav_item "Inventory units", inventory_units_path, permission_key: "inventory.unit.manage" %>
