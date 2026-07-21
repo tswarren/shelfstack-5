@@ -123,6 +123,43 @@ module Inventory
       assert_equal "unknown", line.cost_provenance
     end
 
+    test "does not replace blank manual actual cost with a vendor suggestion" do
+      result = CreateReceipt.call(
+        receipt: Receipt.new(vendor: @vendor),
+        lines_attributes: [ {
+          product_variant_id: @variant.id,
+          delivered_quantity: 1,
+          accepted_quantity: 1,
+          actual_unit_cost_cents: nil,
+          cost_quality: "actual",
+          cost_provenance: "manual_receipt"
+        } ],
+        actor: @user,
+        store: @store
+      )
+
+      assert_not result.success?
+      assert_match(/required for actual cost|is invalid/i, result.error)
+
+      line = ReceiptLine.new(
+        product_variant: @variant,
+        delivered_quantity: 1,
+        accepted_quantity: 1,
+        rejected_quantity: 0,
+        accepted_unavailable_quantity: 0,
+        actual_unit_cost_cents: nil,
+        cost_quality: "actual",
+        cost_provenance: "manual_receipt"
+      )
+      ApplyReceiptLineCost.apply!(line, vendor: @vendor)
+
+      assert_nil line.actual_unit_cost_cents
+      assert_equal "actual", line.cost_quality
+      assert_equal "manual_receipt", line.cost_provenance
+      assert_not line.valid?
+      assert_includes line.errors[:actual_unit_cost_cents], "is required for actual cost"
+    end
+
     test "defaults unit cost from linked purchase-order expected cost" do
       po_line = purchase_order_lines(:ordered_po_line1)
       product_variant_vendors(:sample_book_ingram).update_columns(

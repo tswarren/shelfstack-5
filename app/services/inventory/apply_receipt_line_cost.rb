@@ -21,8 +21,15 @@ module Inventory
         return
       end
 
-      if line.actual_unit_cost_cents.present? && line.cost_provenance == "manual_receipt"
-        line.cost_quality = line.cost_quality.presence_in(%w[actual estimated]) || "actual"
+      # Preserve explicit operator manual mode even when the amount is blank so
+      # Receipt Line validation can reject the incomplete tuple instead of
+      # silently substituting a PO/vendor suggestion.
+      if line.cost_provenance == "manual_receipt"
+        if line.actual_unit_cost_cents.present?
+          line.cost_quality =
+            line.cost_quality.presence_in(%w[actual estimated]) || "actual"
+        end
+
         return
       end
 
