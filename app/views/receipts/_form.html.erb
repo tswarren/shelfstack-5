@@ -9,7 +9,11 @@
     <div class="form-grid">
       <div class="field">
         <%= form.label :vendor_id, "Vendor", class: "field-label" %>
-        <%= form.collection_select :vendor_id, @vendors, :id, :name, { include_blank: true }, required: true, class: "input" %>
+        <%= form.collection_select :vendor_id, @vendors, :id, :name,
+              { include_blank: true },
+              required: true,
+              class: "input",
+              data: { receipt_form_target: "vendor", action: "change->receipt-form#vendorChanged" } %>
       </div>
       <div class="field">
         <%= form.label :received_at, "Received at", class: "field-label" %>
@@ -32,7 +36,7 @@
     <div data-receipt-form-target="lines">
       <% lines.each_with_index do |line, index| %>
         <%= form.fields_for :receipt_lines, line, child_index: index do |line_form| %>
-          <%= render "line_fields", f: line_form, variants: @product_variants, purchase_order_lines: @purchase_order_lines %>
+          <%= render "line_fields", f: line_form, variants: @product_variants, purchase_order_lines: @purchase_order_lines, can_edit_cost: @can_edit_cost %>
         <% end %>
       <% end %>
     </div>
@@ -40,7 +44,7 @@
     <template data-receipt-form-target="lineTemplate">
       <%= form.fields_for :receipt_lines, ReceiptLine.new(delivered_quantity: 1, accepted_quantity: 1),
             child_index: "__INDEX__" do |line_form| %>
-        <%= render "line_fields", f: line_form, variants: @product_variants, purchase_order_lines: @purchase_order_lines %>
+        <%= render "line_fields", f: line_form, variants: @product_variants, purchase_order_lines: @purchase_order_lines, can_edit_cost: @can_edit_cost %>
       <% end %>
     </template>
   </section>

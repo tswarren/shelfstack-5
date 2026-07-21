@@ -18,6 +18,10 @@ module Purchasing
     end
 
     def call
+      unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.purchase_order.edit") == :allow
+        return failure("not permitted to edit purchase orders")
+      end
+
       ActiveRecord::Base.transaction do
         @purchase_order.reload.lock!
         return failure("only draft purchase orders can be edited") unless @purchase_order.draft?

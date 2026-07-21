@@ -7,7 +7,8 @@ class ProductRequestsController < ApplicationController
   before_action -> { require_permission!("requests.product_request.assign") }, only: %i[assign]
   before_action -> { require_permission!("requests.product_request.resolve") }, only: %i[resolve]
   before_action -> { require_permission!("requests.product_request.cancel") }, only: %i[cancel]
-  before_action :set_product_request, only: %i[show edit update assign resolve cancel]
+  before_action -> { require_permission!("requests.customer_request.reserve") }, only: %i[reserve]
+  before_action :set_product_request, only: %i[show edit update assign resolve cancel reserve]
 
   def index
     scope = Current.store.product_requests.includes(:product, :product_variant, :assigned_buyer_user).order(created_at: :desc)
@@ -25,19 +26,33 @@ class ProductRequestsController < ApplicationController
 
     @can_create_allocation = @product_request.open? && Current.user.can?("purchasing.allocation.create", store: Current.store)
     @can_release_allocation = Current.user.can?("purchasing.allocation.release", store: Current.store)
+    @can_reserve = @product_request.open? &&
+      @product_request.product_variant_id.present? &&
+      Current.user.can?("requests.customer_request.reserve", store: Current.store)
     @allocations = @product_request.purchase_order_allocations
       .includes(purchase_order_line: :purchase_order, purchase_order_allocation_events: [])
       .order(:created_at)
+    @active_reservations = InventoryReservation.active
+      .where(source_type: "product_request", source_id: @product_request.id)
+      .includes(:product_variant, :inventory_unit)
+
+    if @can_reserve && @product_request.product_variant&.inventory_tracking_mode == "individual"
+      @available_units = InventoryUnit.where(
+        store: Current.store,
+        product_variant: @product_request.product_variant,
+        status: "available"
+      ).order(:unit_identifier)
+    end
 
     if @can_create_allocation
       variant_ids = [ @product_request.product_variant_id ].compact
-      variant_scope = variant_ids.any? ? { product_variant_id: variant_ids } : { product_variant_id: @product_request.product.product_variant_ids }
-      @open_purchase_order_lines = PurchaseOrderLine.joins(:purchase_order)
+      variant_scope = variant_ids.any? ? { product_variant_id: variant_ids } : { product_variants: { product_id: @product_request.product_id } }
+      @open_purchase_order_lines = PurchaseOrderLine.joins(:purchase_order, :product_variant)
         .where(purchase_orders: { store_id: Current.store.id, status: "ordered" })
         .where(variant_scope)
         .includes(:product_variant, :purchase_order)
         .order("purchase_orders.purchase_order_number", :position)
-        .select { |line| line.open_quantity.positive? }
+        .select { |line| line.open_quantity.positive? && @product_request.compatible_with_variant?(line.product_variant) }
     end
   end
 
@@ -130,6 +145,26 @@ class ProductRequestsController < ApplicationController
     )
     if result.success?
       redirect_to result.product_request, notice: result.replayed ? "Already cancelled." : "Product request cancelled."
+    else
+      redirect_to @product_request, alert: result.error
+    end
+  end
+
+  def reserve
+    unit = if params[:inventory_unit_id].present?
+      InventoryUnit.find_by(id: params[:inventory_unit_id], store_id: Current.store.id)
+    end
+
+    result = Requests::ReserveInHouseInventory.call(
+      product_request: @product_request,
+      quantity: params[:quantity].presence || 1,
+      actor: Current.user,
+      store: Current.store,
+      physically_confirmed: params[:physically_confirmed],
+      inventory_unit: unit
+    )
+    if result.success?
+      redirect_to result.product_request, notice: "Reserved #{params[:quantity].presence || 1} unit(s) for this customer request."
     else
       redirect_to @product_request, alert: result.error
     end

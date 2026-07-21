@@ -31,6 +31,7 @@
           <th scope="col">Type</th>
           <th scope="col">Priority</th>
           <th scope="col" class="num">Requested</th>
+          <th scope="col" class="num">Uncovered</th>
           <th scope="col" class="num">On hand</th>
           <th scope="col" class="num">Available</th>
           <th scope="col" class="num">On order</th>
@@ -41,7 +42,8 @@
       </thead>
       <tbody>
         <% @product_requests.each do |product_request| %>
-          <% snapshot = @snapshots[product_request.id] %>
+          <% snapshot = @snapshots[product_request.id]
+             order_quantity = product_request.customer_request? ? product_request.uncovered_quantity : product_request.requested_quantity %>
           <tr>
             <td>
               <%= link_to product_request.product.name, product_request %>
@@ -50,6 +52,7 @@
             <td><%= product_request.request_type.titleize %></td>
             <td><%= status_badge(product_request.priority.titleize, variant: product_request_priority_variant(product_request.priority)) %></td>
             <td class="num"><%= product_request.requested_quantity %></td>
+            <td class="num"><%= product_request.customer_request? ? product_request.uncovered_quantity : "—" %></td>
             <td class="num"><%= snapshot ? snapshot.on_hand : "—" %></td>
             <td class="num"><%= snapshot ? snapshot.available : "—" %></td>
             <td class="num"><%= snapshot ? snapshot.on_order : "—" %></td>
@@ -62,6 +65,8 @@
             <td>
               <% if product_request.product_variant.blank? %>
                 <span class="muted">Resolve a variant first</span>
+              <% elsif product_request.customer_request? && order_quantity.zero? %>
+                <span class="muted">Fully covered</span>
               <% else %>
                 <%= form_with url: add_to_purchase_order_path(product_request), method: :post, class: "inline-form" do %>
                   <select name="vendor_id" class="input" required aria-label="Vendor">
@@ -70,7 +75,10 @@
                       <option value="<%= vendor.id %>"><%= vendor.name %></option>
                     <% end %>
                   </select>
-                  <%= number_field_tag :quantity, product_request.requested_quantity, min: 1, class: "input", style: "width: 5rem", "aria-label": "Quantity" %>
+                  <%= number_field_tag :quantity, order_quantity,
+                        min: 1,
+                        max: (product_request.customer_request? ? order_quantity : nil),
+                        class: "input", style: "width: 5rem", "aria-label": "Quantity" %>
                   <%= hidden_field_tag :product_variant_id, product_request.product_variant_id %>
                   <%= submit_tag "Add to PO", class: "button button-outline button-small" %>
                 <% end %>

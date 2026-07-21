@@ -125,11 +125,16 @@ Permissions: [authorization-permissions.md](../../domains/authorization-permissi
 - [x] Receipt converts applicable allocations to Inventory Reservations; earlier supply can release redundant allocations
 - [x] POS completion can create Product Request Fulfilment and close a fulfilled request
 - [x] Existing Phase 4 POS sale paths work with received general stock
+- [x] Customer Request show exposes in-house reserve (physical confirmation) and POS can link a sale line to an open request
+- [x] Cancel/update request releases excess reservations and allocations; fulfilment revalidates outstanding quantity under lock
+- [x] Receipt conversion uses only post-deficit positive sellable quantity; individual units convert one active hold per request
 
 Phase 5g added read-only operational views (`/reports`) over these posted facts, plus
 system-test coverage for the three critical end-to-end paths (vendor → PO → receipt →
 stock; customer request → allocation → receipt → POS fulfilment; non-customer resolve →
-PO without allocation). `bin/ci` and `test:system` pass on `phase/5g-hardening`.
+PO without allocation). Review follow-ups on `phase/5-supply-and-demand` harden product
+identity, cancel/update coverage, deficit×allocation interaction, cost gating, and the
+user-facing reserve/POS fulfilment path.
 
 ## Out of scope / explicitly deferred
 

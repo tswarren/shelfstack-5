@@ -97,6 +97,32 @@ class ProductRequest < ApplicationRecord
     [ requested_quantity - fulfilled_quantity - active_reserved_quantity - remaining_allocated_quantity, 0 ].max
   end
 
+  # Absolute committed supply that must not exceed requested quantity after an
+  # edit: fulfilled + active reserved + remaining allocated (before clamping).
+  def covered_quantity
+    fulfilled_quantity + active_reserved_quantity + remaining_allocated_quantity
+  end
+
+  # Supply/fulfilment against a Product Request always requires the Variant's
+  # Product to match the request. When the request already has a resolved
+  # Variant, that exact Variant is required as well.
+  def compatible_with_variant?(variant)
+    return false if variant.blank?
+
+    return false unless variant.product_id == product_id
+    return true if product_variant_id.blank?
+
+    product_variant_id == variant.id
+  end
+
+  def compatibility_error_for(variant)
+    return "product variant is required" if variant.blank?
+    return "product variant must belong to the requested product" unless variant.product_id == product_id
+    return "product variant must match the request's resolved variant" if product_variant_id.present? && product_variant_id != variant.id
+
+    nil
+  end
+
   private
 
   def resolved_quantity_within_requested

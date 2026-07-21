@@ -44,7 +44,7 @@
     <div data-purchase-order-form-target="lines">
       <% lines.each_with_index do |line, index| %>
         <%= form.fields_for :purchase_order_lines, line, child_index: index do |line_form| %>
-          <%= render "line_fields", f: line_form, variants: @product_variants, product_variant_vendors: @product_variant_vendors %>
+          <%= render "line_fields", f: line_form, variants: @product_variants, product_variant_vendors: @product_variant_vendors, can_edit_cost: @can_edit_cost %>
         <% end %>
       <% end %>
     </div>
@@ -52,7 +52,7 @@
     <template data-purchase-order-form-target="lineTemplate">
       <%= form.fields_for :purchase_order_lines, PurchaseOrderLine.new(ordered_quantity: 1, cost_entry_method: "discount_from_list"),
             child_index: "__INDEX__" do |line_form| %>
-        <%= render "line_fields", f: line_form, variants: @product_variants, product_variant_vendors: @product_variant_vendors %>
+        <%= render "line_fields", f: line_form, variants: @product_variants, product_variant_vendors: @product_variant_vendors, can_edit_cost: @can_edit_cost %>
       <% end %>
     </template>
   </section>

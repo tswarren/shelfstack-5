@@ -19,7 +19,7 @@ class PurchaseOrderAllocation < ApplicationRecord
   validates :product_request_id, uniqueness: { scope: :purchase_order_line_id }
   validate :product_request_is_customer_request
   validate :store_matches
-  validate :variant_matches_when_resolved
+  validate :variant_compatible_with_product_request
 
   # Appends a `released` event. Callers must hold a row lock on this
   # allocation (e.g. `PurchaseOrderAllocation.lock.find(...)`) before calling,
@@ -93,11 +93,12 @@ class PurchaseOrderAllocation < ApplicationRecord
     errors.add(:base, "purchase order line and product request must belong to the same store")
   end
 
-  def variant_matches_when_resolved
-    return if product_request.blank? || product_request.product_variant_id.blank?
-    return if purchase_order_line.blank?
-    return if product_request.product_variant_id == purchase_order_line.product_variant_id
+  def variant_compatible_with_product_request
+    return if product_request.blank? || purchase_order_line.blank?
 
-    errors.add(:product_request, "variant must match the purchase order line's variant")
+    variant = purchase_order_line.product_variant
+    return if product_request.compatible_with_variant?(variant)
+
+    errors.add(:product_request, product_request.compatibility_error_for(variant) || "is incompatible with the purchase order line")
   end
 end

@@ -24,6 +24,14 @@ class ReceiptLine < ApplicationRecord
   validate :variant_matches_store_organization
   validate :purchase_order_line_matches_receipt_vendor_and_store
 
+  # The receipt form's blank select option submits "" which must become nil —
+  # inclusion allow_nil does not treat blank strings as nil, and the DB check
+  # constraint rejects empty strings.
+  before_validation :normalize_blank_cost_quality
+  # Selecting a Purchase-Order Line without a variant adopts that line's item;
+  # an explicit mismatched variant is still rejected by validation below.
+  before_validation :derive_variant_from_purchase_order_line
+
   before_create :require_draft_parent
   before_update :require_draft_parent
   before_destroy :require_draft_parent
@@ -35,6 +43,17 @@ class ReceiptLine < ApplicationRecord
   end
 
   private
+
+  def normalize_blank_cost_quality
+    self.cost_quality = nil if cost_quality.blank?
+  end
+
+  def derive_variant_from_purchase_order_line
+    return if purchase_order_line.blank?
+    return if product_variant_id.present?
+
+    self.product_variant_id = purchase_order_line.product_variant_id
+  end
 
   def accepted_unavailable_within_accepted
     return if accepted_unavailable_quantity.nil? || accepted_quantity.nil?

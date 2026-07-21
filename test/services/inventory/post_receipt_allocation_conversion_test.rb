@@ -124,7 +124,7 @@ module Inventory
       assert_equal 6, balance.reserved
     end
 
-    test "does not convert allocations for individually tracked variants" do
+    test "converts one individually tracked unit allocation onto a customer request reservation" do
       individual_variant = product_variants(:signed_book_standard)
       po_line = build_ordered_po_line(ordered_quantity: 3, variant: individual_variant)
       request = ProductRequest.create!(
@@ -142,7 +142,38 @@ module Inventory
 
       result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
       assert result.success?, result.error
+
+      reservation = InventoryReservation.active.find_by!(source_type: "product_request", source_id: request.id)
+      assert_equal 1, reservation.quantity
+      assert_predicate reservation.inventory_unit, :present?
+      assert_equal 1, request.purchase_order_allocations.first.remaining_quantity
+    end
+
+    test "does not convert sellable quantity that only settled a negative on-hand deficit" do
+      StockBalance.create!(
+        store: @store, product_variant: @variant,
+        on_hand: -5, reserved: 0, unavailable: 0,
+        inventory_value_cents: 0, moving_average_cost_cents: nil, cost_quality: "unknown",
+        open_provisional_deficit_cost_cents: 3500, deficit_cost_quality: "actual"
+      )
+      po_line = build_ordered_po_line(ordered_quantity: 5)
+      request = ProductRequest.create!(
+        store: @store, request_type: "customer_request", product: @variant.product,
+        product_variant: @variant, requested_quantity: 2, requested_by_user: @admin
+      )
+      Purchasing::CreateAllocation.call(
+        purchase_order_line: po_line, product_request: request, quantity: 2, actor: @admin, store: @store
+      )
+
+      receipt = build_receipt(po_line, accepted_quantity: 2)
+      result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
+      assert result.success?, result.error
+
       refute InventoryReservation.exists?(source_type: "product_request", source_id: request.id)
+      assert_equal 2, request.purchase_order_allocations.first.remaining_quantity
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_equal(-3, balance.on_hand)
+      assert_equal 0, balance.reserved
     end
 
     private

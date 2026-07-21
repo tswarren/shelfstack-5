@@ -57,10 +57,12 @@ module Purchasing
     end
 
     test "adds demand for a customer request without resolving or closing it" do
-      customer_variant = @customer_request.product_variant || @variant
+      customer_variant = product_variants(:sample_book_standard)
+      assert_equal @customer_request.product_id, customer_variant.product_id
+
       result = AddDemandToDraftPurchaseOrder.call(
         store: @store, vendor: @vendor, product_request: @customer_request,
-        product_variant: @variant, quantity: 2, actor: @admin
+        product_variant: customer_variant, quantity: 2, actor: @admin
       )
 
       assert result.success?, result.error

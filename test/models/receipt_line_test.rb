@@ -40,6 +40,31 @@ class ReceiptLineTest < ActiveSupport::TestCase
     assert_includes line.errors[:purchase_order_line], "must belong to the receipt's vendor"
   end
 
+  test "purchase_order_line must match the receipt line product variant" do
+    po_line = purchase_order_lines(:ordered_po_line1)
+    other_variant = product_variants(:upc_product_standard)
+
+    line = @receipt.receipt_lines.build(
+      position: 1, product_variant: other_variant, purchase_order_line: po_line,
+      delivered_quantity: 1, accepted_quantity: 1
+    )
+
+    assert_not line.valid?
+    assert_includes line.errors[:purchase_order_line], "must match the line's product variant"
+  end
+
+  test "blank product variant is derived from the linked purchase order line" do
+    po_line = purchase_order_lines(:ordered_po_line1)
+
+    line = @receipt.receipt_lines.build(
+      position: 1, purchase_order_line: po_line,
+      delivered_quantity: 1, accepted_quantity: 1
+    )
+
+    assert line.valid?, line.errors.full_messages.to_sentence
+    assert_equal po_line.product_variant_id, line.product_variant_id
+  end
+
   test "sellable_accepted_quantity subtracts accepted_unavailable_quantity" do
     line = @receipt.receipt_lines.build(
       position: 1, product_variant: @variant, delivered_quantity: 5, accepted_quantity: 5,

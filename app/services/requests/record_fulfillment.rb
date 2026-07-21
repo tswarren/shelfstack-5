@@ -6,6 +6,11 @@ module Requests
   # from inside `Pos::CompleteTransaction`'s own transaction, after the line's
   # sale inventory movement has already posted — never on its own.
   #
+  # Under the Product Request lock, revalidates that the request remains open,
+  # belongs to the POS store, remains product/variant-compatible with the sale
+  # line, and that the fulfilment quantity does not exceed current outstanding
+  # quantity. AddLine checks are not authoritative at completion.
+  #
   # If the request carries an active in-house Inventory Reservation (from
   # `Requests::ReserveInHouseInventory` or `Inventory::PostReceipt`'s
   # allocation conversion), consumes up to `quantity` of it: fully releasing
@@ -13,11 +18,7 @@ module Requests
   # fulfilled without a prior formal Reservation (`inventory_reservation_id`
   # stays null) — fulfilment does not require a reservation to have existed.
   #
-  # Idempotent via unique `posting_key` (`pos_line_item:<id>:fulfillment`);
-  # `Pos::CompleteTransaction`'s own idempotency key already prevents replay
-  # from reaching this code twice under normal operation, but the guard is
-  # kept as defense-in-depth (OD-007 "duplicate fulfilment during POS
-  # completion retry" must be prevented).
+  # Idempotent via unique `posting_key` (`pos_line_item:<id>:fulfillment`).
   class RecordFulfillment < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:product_request_fulfillment, :product_request, :success?, :error, :replayed)
@@ -45,10 +46,21 @@ module Requests
         raise Error, "line does not reference this product request" unless @pos_line_item.product_request_id == @product_request.id
 
         product_request = ProductRequest.lock.find(@product_request.id)
-        raise Error, "fulfilment applies only to customer requests" unless product_request.customer_request?
-
         store = @pos_line_item.pos_transaction.store
         variant = @pos_line_item.product_variant
+
+        raise Error, "fulfilment applies only to customer requests" unless product_request.customer_request?
+        raise Error, "product request is not open" unless product_request.open?
+        raise Error, "product request store mismatch" unless product_request.store_id == store.id
+        unless product_request.compatible_with_variant?(variant)
+          raise Error, product_request.compatibility_error_for(variant)
+        end
+
+        outstanding = product_request.outstanding_quantity
+        if @quantity > outstanding
+          raise Error, "quantity exceeds the product request's outstanding quantity (#{outstanding} outstanding)"
+        end
+
         reservation = release_or_reduce_reservation!(store, variant, product_request)
 
         fulfillment = ProductRequestFulfillment.create!(

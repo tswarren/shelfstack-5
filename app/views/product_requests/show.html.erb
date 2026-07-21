@@ -111,6 +111,68 @@
 
 <% if @product_request.customer_request? %>
   <section class="record-section">
+    <h2>Coverage</h2>
+    <%= render "shared/record_summary", rows: [
+      [ "Requested", @product_request.requested_quantity ],
+      [ "Fulfilled", @product_request.fulfilled_quantity ],
+      [ "Outstanding", @product_request.outstanding_quantity ],
+      [ "Active reserved", @product_request.active_reserved_quantity ],
+      [ "Remaining allocated", @product_request.remaining_allocated_quantity ],
+      [ "Uncovered", @product_request.uncovered_quantity ]
+    ] %>
+    <% if @active_reservations.any? %>
+      <ul class="muted">
+        <% @active_reservations.each do |reservation| %>
+          <li>
+            Reservation #<%= reservation.id %> —
+            <%= reservation.quantity %> of <%= variant_option_label(reservation.product_variant) %>
+            <% if reservation.inventory_unit.present? %>
+              (unit <%= reservation.inventory_unit.unit_identifier %>)
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+
+  <% if @can_reserve && @product_request.uncovered_quantity.positive? %>
+    <section class="record-section">
+      <h2>Reserve in-house stock</h2>
+      <p class="field-hint">
+        Only reserve merchandise after physically confirming it is present.
+        This creates an Inventory Reservation for the customer request.
+      </p>
+      <%= form_with url: reserve_product_request_path(@product_request), method: :post, class: "form" do %>
+        <div class="form-grid">
+          <% if @product_request.product_variant.inventory_tracking_mode == "individual" %>
+            <div class="field">
+              <%= label_tag :inventory_unit_id, "Inventory unit" %>
+              <%= select_tag :inventory_unit_id,
+                    options_from_collection_for_select(@available_units || [], :id, :unit_identifier),
+                    include_blank: true, class: "input", required: true %>
+            </div>
+            <%= hidden_field_tag :quantity, 1 %>
+          <% else %>
+            <div class="field">
+              <%= label_tag :quantity, "Quantity" %>
+              <%= number_field_tag :quantity, 1, min: 1, max: @product_request.uncovered_quantity, class: "input", required: true %>
+            </div>
+          <% end %>
+        </div>
+        <div class="checkbox-group">
+          <label>
+            <%= check_box_tag :physically_confirmed, "1", false, required: true %>
+            I have physically confirmed this stock is present
+          </label>
+        </div>
+        <div class="form-actions">
+          <%= submit_tag "Reserve stock", class: "button button-primary" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <section class="record-section">
     <h2>Purchase-order allocations</h2>
     <p class="field-hint">
       Expected supply committed from an ordered purchase-order line to this request (ADR-0015).

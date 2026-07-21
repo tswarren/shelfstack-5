@@ -127,8 +127,11 @@ module Inventory
 
       update_purchase_order_line!(line)
 
-      if variant.inventory_tracking_mode == "quantity"
+      case variant.inventory_tracking_mode
+      when "quantity"
         convert_allocations_for_line!(line, variant, posted_at: posted_at)
+      when "individual"
+        convert_individual_allocations_for_line!(line, variant, posted_at: posted_at)
       end
     end
 
@@ -140,6 +143,12 @@ module Inventory
       open_deficit_quantity = balance.open_deficit_quantity
       settlement_quantity = [ line.accepted_quantity, open_deficit_quantity ].min
       positive_quantity = line.accepted_quantity - settlement_quantity
+      # Only quantity remaining after the deficit reaches zero is physically
+      # present positive stock. Prefer sellable units for that remainder so
+      # customer allocation conversion can use them; any leftover positive
+      # quantity (and never deficit-settlement quantity) may enter unavailable.
+      sellable_positive_quantity = [ line.sellable_accepted_quantity, positive_quantity ].min
+      unavailable_positive_quantity = positive_quantity - sellable_positive_quantity
 
       line_key = "#{posting_key}:line:#{line.id}"
       final_balance = balance
@@ -178,9 +187,11 @@ module Inventory
         final_balance = result.stock_balance
       end
 
-      if line.accepted_unavailable_quantity.to_i.positive?
-        final_balance.update!(unavailable: final_balance.unavailable + line.accepted_unavailable_quantity)
+      if unavailable_positive_quantity.positive?
+        final_balance.update!(unavailable: final_balance.unavailable + unavailable_positive_quantity)
       end
+
+      line.define_singleton_method(:positive_sellable_quantity_for_conversion) { sellable_positive_quantity }
     end
 
     def post_individual_line!(line, variant, posted_at:)
@@ -189,9 +200,14 @@ module Inventory
       unit_cost_cents, = receipt_cost_inputs(line)
       sellable = line.sellable_accepted_quantity
       unavailable = line.accepted_unavailable_quantity.to_i
+      created_sellable = []
 
-      sellable.times { create_unit!(line, variant, unit_cost_cents, "available", posted_at) }
+      sellable.times do
+        created_sellable << create_unit!(line, variant, unit_cost_cents, "available", posted_at)
+      end
       unavailable.times { create_unit!(line, variant, unit_cost_cents, "inspection", posted_at) }
+
+      line.define_singleton_method(:created_sellable_units_for_conversion) { created_sellable }
     end
 
     def create_unit!(line, variant, unit_cost_cents, status, posted_at)
@@ -208,24 +224,43 @@ module Inventory
       raise Error, "line #{line.position}: #{result.error}" unless result.success?
 
       result.inventory_unit.update!(status: status) unless status == "available"
+      result.inventory_unit
     end
 
-    # OD-014 "Unknown receipt cost": actual cost → confirmed vendor cost →
-    # PO expected cost as an estimate → unknown. `confirmed_zero` is a known
-    # actual cost of zero, distinct from a missing (unknown) cost.
+    # OD-014 "Unknown receipt cost": actual receipt cost → confirmed vendor
+    # source cost → linked PO expected cost as an estimate → unknown.
+    # `confirmed_zero` is a known actual cost of zero, distinct from unknown.
     def receipt_cost_inputs(line)
       case line.cost_quality
       when "confirmed_zero"
-        [ 0, "explicit", "actual" ]
+        return [ 0, "explicit", "actual" ]
       when "actual", "estimated"
         if line.actual_unit_cost_cents.present?
-          [ line.actual_unit_cost_cents, "explicit", line.cost_quality ]
-        else
-          [ nil, "unknown", "unknown" ]
+          return [ line.actual_unit_cost_cents, "explicit", line.cost_quality ]
         end
-      else
-        [ nil, "unknown", "unknown" ]
       end
+
+      if line.actual_unit_cost_cents.present?
+        quality = line.cost_quality.presence || "actual"
+        return [ line.actual_unit_cost_cents, "explicit", quality ] if %w[actual estimated].include?(quality)
+      end
+
+      source = line.purchase_order_line&.product_variant_vendor
+      if source&.expected_unit_cost_cents.present?
+        return [ source.expected_unit_cost_cents, "vendor_source", "actual" ]
+      end
+      if source&.list_cost_cents.present?
+        discount = source.discount_bps.to_i
+        estimated = Inventory::Rounding.round_half_up(source.list_cost_cents.to_i * (10_000 - discount), 10_000)
+        return [ estimated, "vendor_source", "estimated" ]
+      end
+
+      po_line = line.purchase_order_line
+      if po_line&.expected_unit_cost_cents.present?
+        return [ po_line.expected_unit_cost_cents, "purchase_order_expected", "estimated" ]
+      end
+
+      [ nil, "unknown", "unknown" ]
     end
 
     def update_purchase_order_line!(line)
@@ -236,47 +271,102 @@ module Inventory
       locked.update!(received_quantity: locked.received_quantity + line.accepted_quantity)
     end
 
-    # OD-007 "receipt posting": only sellable accepted quantity is usable
-    # expected supply — accepted-but-unavailable quantity (inspection,
-    # damage) is deliberately excluded.
+    # OD-007 "receipt posting": only sellable quantity that remains after
+    # deficit settlement is physically present and usable for conversion.
+    # Accepted-but-unavailable positive quantity is never converted.
     def convert_allocations_for_line!(line, variant, posted_at:)
       po_line = line.purchase_order_line
       return if po_line.blank?
 
-      remaining_to_convert = line.sellable_accepted_quantity
+      remaining_to_convert = if line.respond_to?(:positive_sellable_quantity_for_conversion)
+        line.positive_sellable_quantity_for_conversion
+      else
+        line.sellable_accepted_quantity
+      end
       return unless remaining_to_convert.positive?
 
+      each_convertible_allocation(po_line) do |product_request, locked_allocation|
+        break unless remaining_to_convert.positive?
+
+        convert_quantity = [ remaining_to_convert, locked_allocation.remaining_quantity ].min
+        next unless convert_quantity.positive?
+
+        reservation = reserve_for_request!(variant: variant, product_request: product_request, additional_quantity: convert_quantity)
+        record_conversion_event!(
+          locked_allocation, line, reservation, convert_quantity, posted_at,
+          posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked_allocation.id}:convert"
+        )
+        remaining_to_convert -= convert_quantity
+      end
+    end
+
+    # Exact-copy Customer Requests: each newly accepted available Inventory Unit
+    # may convert one remaining allocation unit onto that request. The active
+    # reservation unique index allows one unit reservation per request/variant,
+    # so a request already holding a unit is skipped until that hold is sold or
+    # released. Inspection/unavailable units are never converted.
+    def convert_individual_allocations_for_line!(line, variant, posted_at:)
+      po_line = line.purchase_order_line
+      return if po_line.blank?
+
+      units = line.respond_to?(:created_sellable_units_for_conversion) ? line.created_sellable_units_for_conversion : []
+      return if units.blank?
+
+      unit_index = 0
+      each_convertible_allocation(po_line) do |product_request, locked_allocation|
+        break if unit_index >= units.size
+
+        existing = InventoryReservation.active.find_by(
+          store_id: @store.id, product_variant_id: variant.id,
+          source_type: "product_request", source_id: product_request.id
+        )
+        next if existing.present?
+
+        unit = units[unit_index]
+        unit_index += 1
+
+        reservation_result = Reserve.call(
+          store: @store, product_variant: variant, quantity: 1,
+          source_type: "product_request", source_id: product_request.id,
+          actor: @actor, inventory_unit: unit
+        )
+        raise Error, reservation_result.error unless reservation_result.success?
+
+        record_conversion_event!(
+          locked_allocation, line, reservation_result.reservation, 1, posted_at,
+          posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked_allocation.id}:unit:#{unit.id}:convert"
+        )
+      end
+    end
+
+    def each_convertible_allocation(po_line)
       candidates = PurchaseOrderAllocation.where(purchase_order_line_id: po_line.id)
         .includes(:product_request, :purchase_order_allocation_events)
         .select { |allocation| allocation.remaining_quantity.positive? }
         .sort_by { |allocation| allocation_sort_key(allocation) }
 
       candidates.each do |allocation|
-        break unless remaining_to_convert.positive?
-
-        # Lock order: Purchase-Order Line (already locked above) -> Product
-        # Request -> allocation -> reservation, matching CreateAllocation's
-        # line-then-request order and serializing concurrent conversion,
-        # release, or in-house reservation against the same request.
         product_request = ProductRequest.lock.find(allocation.product_request_id)
+        next unless product_request.open?
+        next unless product_request.compatible_with_variant?(po_line.product_variant)
+
         locked_allocation = PurchaseOrderAllocation.lock.find(allocation.id)
-        convert_quantity = [ remaining_to_convert, locked_allocation.remaining_quantity ].min
-        next unless convert_quantity.positive?
+        next unless locked_allocation.remaining_quantity.positive?
 
-        reservation = reserve_for_request!(variant: variant, product_request: product_request, additional_quantity: convert_quantity)
-
-        locked_allocation.purchase_order_allocation_events.create!(
-          event_type: "converted_to_reservation",
-          quantity: convert_quantity,
-          receipt_line: line,
-          inventory_reservation: reservation,
-          occurred_at: posted_at,
-          user: @actor,
-          posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked_allocation.id}:convert"
-        )
-
-        remaining_to_convert -= convert_quantity
+        yield product_request, locked_allocation
       end
+    end
+
+    def record_conversion_event!(allocation, line, reservation, quantity, posted_at, posting_key:)
+      allocation.purchase_order_allocation_events.create!(
+        event_type: "converted_to_reservation",
+        quantity: quantity,
+        receipt_line: line,
+        inventory_reservation: reservation,
+        occurred_at: posted_at,
+        user: @actor,
+        posting_key: posting_key
+      )
     end
 
     # Adds `additional_quantity` on top of any existing active Inventory

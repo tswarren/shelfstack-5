@@ -63,5 +63,22 @@ module Inventory
       assert_not result.success?
       assert_match(/not permitted/i, result.error)
     end
+
+    test "accepts a blank cost_quality string from the form as nil (unknown on post)" do
+      result = CreateReceipt.call(
+        receipt: Receipt.new(vendor: @vendor),
+        lines_attributes: [ {
+          product_variant_id: @variant.id,
+          delivered_quantity: 1,
+          accepted_quantity: 1,
+          cost_quality: ""
+        } ],
+        actor: @user,
+        store: @store
+      )
+
+      assert result.success?, result.error
+      assert_nil result.receipt.receipt_lines.first.cost_quality
+    end
   end
 end

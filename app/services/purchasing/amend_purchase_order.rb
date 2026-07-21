@@ -29,6 +29,10 @@ module Purchasing
     end
 
     def call
+      unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.purchase_order.amend") == :allow
+        return Result.new(purchase_order: @purchase_order, success?: false, error: "not permitted to amend purchase orders")
+      end
+
       ActiveRecord::Base.transaction do
         @purchase_order.reload.lock!
 

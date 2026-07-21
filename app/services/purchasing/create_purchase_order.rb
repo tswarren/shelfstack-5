@@ -16,6 +16,10 @@ module Purchasing
     end
 
     def call
+      unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.purchase_order.create") == :allow
+        return Result.new(purchase_order: @purchase_order, success?: false, error: "not permitted to create purchase orders")
+      end
+
       ActiveRecord::Base.transaction do
         store = Store.lock.find(@store.id)
 

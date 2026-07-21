@@ -74,6 +74,7 @@ Rails.application.routes.draw do
       post :assign
       post :resolve
       post :cancel
+      post :reserve
     end
   end
   resources :product_imports, only: %i[new create]

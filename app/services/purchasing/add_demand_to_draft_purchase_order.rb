@@ -47,6 +47,7 @@ module Purchasing
 
       ActiveRecord::Base.transaction do
         store = Store.lock.find(@store.id)
+        lock_and_validate_product_request!
         purchase_order = resolve_purchase_order!(store)
         line = add_line!(purchase_order)
 
@@ -81,6 +82,26 @@ module Purchasing
 
     def resolving_product_request?
       @resolve_request && @product_request.present? && @product_request.non_customer_request?
+    end
+
+    def lock_and_validate_product_request!
+      return nil if @product_request.blank?
+
+      product_request = ProductRequest.lock.find(@product_request.id)
+      raise Error, "product request store mismatch" unless product_request.store_id == @store.id
+      raise Error, "product request is not open" unless product_request.open?
+      unless product_request.compatible_with_variant?(@product_variant)
+        raise Error, product_request.compatibility_error_for(@product_variant)
+      end
+
+      if product_request.customer_request?
+        uncovered = product_request.uncovered_quantity
+        if @quantity > uncovered
+          raise Error, "quantity exceeds the product request's uncovered quantity (#{uncovered} uncovered)"
+        end
+      end
+
+      @product_request = product_request
     end
 
     def authorized_for_purchase_order?
@@ -137,22 +158,15 @@ module Purchasing
         product_variant_vendor: source,
         ordered_quantity: @quantity,
         position: base_position,
-        cost_entry_method: cost_entry_method_for(source),
-        list_cost_cents: @list_cost_cents || source&.list_cost_cents,
-        discount_bps: @discount_bps || source&.discount_bps,
-        expected_unit_cost_cents: @expected_unit_cost_cents || source&.expected_unit_cost_cents
+        cost_entry_method: @cost_entry_method,
+        list_cost_cents: @list_cost_cents,
+        discount_bps: @discount_bps,
+        expected_unit_cost_cents: @expected_unit_cost_cents
       )
       line.cost_provenance = source.present? ? "vendor_source" : "manual_entry"
       Purchasing::LineSnapshot.apply!(line)
       line.save!
       line
-    end
-
-    def cost_entry_method_for(source)
-      return @cost_entry_method if @cost_entry_method.present?
-      return "discount_from_list" if @list_cost_cents.present? || source&.list_cost_cents.present?
-
-      "direct_net_cost"
     end
 
     def resolve_product_request!

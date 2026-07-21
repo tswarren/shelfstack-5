@@ -147,24 +147,26 @@
           <%= label_tag "purchase_order_new_line_quantity", "Ordered quantity" %>
           <%= number_field_tag "purchase_order[new_lines_attributes][][ordered_quantity]", nil, min: 1, id: "purchase_order_new_line_quantity", class: "input" %>
         </div>
-        <div class="field">
-          <%= label_tag "purchase_order_new_line_method", "Cost entry method" %>
-          <%= select_tag "purchase_order[new_lines_attributes][][cost_entry_method]",
-                options_for_select(PurchaseOrderLine::COST_ENTRY_METHODS.map { |m| [ m.titleize, m ] }),
-                id: "purchase_order_new_line_method", class: "input" %>
-        </div>
-        <div class="field">
-          <%= label_tag "purchase_order_new_line_list_cost", "List cost (cents)" %>
-          <%= number_field_tag "purchase_order[new_lines_attributes][][list_cost_cents]", nil, min: 0, id: "purchase_order_new_line_list_cost", class: "input" %>
-        </div>
-        <div class="field">
-          <%= label_tag "purchase_order_new_line_discount", "Discount (bps)" %>
-          <%= number_field_tag "purchase_order[new_lines_attributes][][discount_bps]", nil, min: 0, max: 10_000, id: "purchase_order_new_line_discount", class: "input" %>
-        </div>
-        <div class="field">
-          <%= label_tag "purchase_order_new_line_unit_cost", "Expected unit cost (cents)" %>
-          <%= number_field_tag "purchase_order[new_lines_attributes][][expected_unit_cost_cents]", nil, min: 0, id: "purchase_order_new_line_unit_cost", class: "input" %>
-        </div>
+        <% if @can_view_cost %>
+          <div class="field">
+            <%= label_tag "purchase_order_new_line_method", "Cost entry method" %>
+            <%= select_tag "purchase_order[new_lines_attributes][][cost_entry_method]",
+                  options_for_select(PurchaseOrderLine::COST_ENTRY_METHODS.map { |m| [ m.titleize, m ] }),
+                  id: "purchase_order_new_line_method", class: "input" %>
+          </div>
+          <div class="field">
+            <%= label_tag "purchase_order_new_line_list_cost", "List cost (cents)" %>
+            <%= number_field_tag "purchase_order[new_lines_attributes][][list_cost_cents]", nil, min: 0, id: "purchase_order_new_line_list_cost", class: "input" %>
+          </div>
+          <div class="field">
+            <%= label_tag "purchase_order_new_line_discount", "Discount (bps)" %>
+            <%= number_field_tag "purchase_order[new_lines_attributes][][discount_bps]", nil, min: 0, max: 10_000, id: "purchase_order_new_line_discount", class: "input" %>
+          </div>
+          <div class="field">
+            <%= label_tag "purchase_order_new_line_unit_cost", "Expected unit cost (cents)" %>
+            <%= number_field_tag "purchase_order[new_lines_attributes][][expected_unit_cost_cents]", nil, min: 0, id: "purchase_order_new_line_unit_cost", class: "input" %>
+          </div>
+        <% end %>
       </div>
 
       <div class="form-actions">

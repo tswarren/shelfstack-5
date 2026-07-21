@@ -102,8 +102,8 @@ module Pos
       raise Error, "fulfilment linkage applies only to customer requests" unless @product_request.customer_request?
       raise Error, "product request is not open" unless @product_request.open?
       raise Error, "product request store mismatch" unless @product_request.store_id == @pos_transaction.store_id
-      if @product_request.product_variant_id.present? && @product_request.product_variant_id != @product_variant.id
-        raise Error, "product request does not match the line's product variant"
+      unless @product_request.compatible_with_variant?(@product_variant)
+        raise Error, @product_request.compatibility_error_for(@product_variant)
       end
 
       outstanding = @product_request.outstanding_quantity

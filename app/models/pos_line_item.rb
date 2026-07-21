@@ -167,9 +167,9 @@ class PosLineItem < ApplicationRecord
 
   def product_request_matches_variant
     return if product_request.blank? || product_variant.blank?
-    return if product_request.product_variant_id.blank? || product_request.product_variant_id == product_variant_id
+    return if product_request.compatible_with_variant?(product_variant)
 
-    errors.add(:product_request, "must match the line's product variant")
+    errors.add(:product_request, product_request.compatibility_error_for(product_variant))
   end
 
   def individual_line_requires_unit

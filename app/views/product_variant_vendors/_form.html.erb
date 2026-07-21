@@ -34,7 +34,7 @@
     <h2 class="form-section-title">Cost and ordering</h2>
     <p class="muted">Cost fields are visible only to users with purchasing cost permission.</p>
     <div class="form-grid">
-      <% if Current.user.can?("purchasing.cost.view", store: Current.store) || Current.user.can?("purchasing.vendor_source.manage", store: Current.store) %>
+      <% if Current.user.can?("purchasing.cost.view", store: Current.store) %>
         <div class="field">
           <%= form.label :list_cost_cents, "List cost (cents)" %>
           <%= form.number_field :list_cost_cents, min: 0 %>
@@ -47,6 +47,8 @@
           <%= form.label :expected_unit_cost_cents, "Expected unit cost (cents)" %>
           <%= form.number_field :expected_unit_cost_cents, min: 0 %>
         </div>
+      <% else %>
+        <p class="muted">Cost fields require purchasing cost view permission.</p>
       <% end %>
       <div class="field">
         <%= form.label :minimum_order_quantity, "Minimum order quantity" %>

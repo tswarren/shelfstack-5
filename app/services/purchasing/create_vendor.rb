@@ -7,13 +7,20 @@ module Purchasing
       account_reference default_supplier_discount_bps notes
     ].freeze
 
-    def initialize(vendor:, actor:, organization:)
+    def initialize(vendor:, actor:, organization:, store: nil)
       @vendor = vendor
       @actor = actor
       @organization = organization
+      @store = store
     end
 
     def call
+      if @store.present? &&
+          Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor.manage") != :allow
+        @vendor.errors.add(:base, "not permitted to manage vendors")
+        return false
+      end
+
       ActiveRecord::Base.transaction do
         @vendor.save!
 

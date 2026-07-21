@@ -107,7 +107,9 @@ class ReceiptsController < ApplicationController
       .order("products.name", :name)
     @purchase_order_lines = PurchaseOrderLine.joins(:purchase_order)
       .where(purchase_orders: { store_id: Current.store.id, status: "ordered" })
-      .includes(:product_variant, :purchase_order)
+      .includes(:purchase_order, product_variant: :product)
+      .order("purchase_orders.purchase_order_number", :position)
+    @can_edit_cost = can_view_receipt_cost?
   end
 
   def header_params
@@ -115,13 +117,14 @@ class ReceiptsController < ApplicationController
   end
 
   def lines_params
-    raw = params.require(:receipt).permit(
-      receipt_lines_attributes: [
-        :id, :position, :product_variant_id, :purchase_order_line_id,
-        :delivered_quantity, :accepted_quantity, :rejected_quantity, :accepted_unavailable_quantity,
-        :actual_unit_cost_cents, :cost_quality, :cost_provenance, :discrepancy_reason, :notes
-      ]
-    )[:receipt_lines_attributes]
+    keys = [
+      :id, :position, :product_variant_id, :purchase_order_line_id,
+      :delivered_quantity, :accepted_quantity, :rejected_quantity, :accepted_unavailable_quantity,
+      :discrepancy_reason, :notes
+    ]
+    keys += %i[actual_unit_cost_cents cost_quality cost_provenance] if can_view_receipt_cost?
+
+    raw = params.require(:receipt).permit(receipt_lines_attributes: keys)[:receipt_lines_attributes]
     return [] if raw.blank?
 
     values = raw.respond_to?(:values) ? raw.values : Array(raw)

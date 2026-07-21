@@ -25,7 +25,8 @@ class VendorsController < ApplicationController
     if Purchasing::CreateVendor.call(
       vendor: @vendor,
       actor: Current.user,
-      organization: Current.organization
+      organization: Current.organization,
+      store: Current.store
     )
       redirect_to @vendor, notice: "Vendor created."
     else

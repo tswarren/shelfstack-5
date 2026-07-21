@@ -36,6 +36,19 @@ module Pos
           raise Error, "linked return quantity cannot be edited; remove and re-add the return line"
         end
 
+        if line.product_request_id.present?
+          product_request = ProductRequest.lock.find(line.product_request_id)
+          raise Error, "product request is not open" unless product_request.open?
+          unless product_request.compatible_with_variant?(line.product_variant)
+            raise Error, product_request.compatibility_error_for(line.product_variant)
+          end
+
+          outstanding = product_request.outstanding_quantity
+          if @quantity > outstanding
+            raise Error, "quantity exceeds the product request's outstanding quantity (#{outstanding} outstanding)"
+          end
+        end
+
         if line.line_kind == "product" && line.product_variant.inventory_tracking_mode == "quantity"
           reservation = Inventory::Reserve.call(
             store: transaction.store,

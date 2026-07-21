@@ -29,26 +29,28 @@
       <%= f.number_field :ordered_quantity, min: 1, class: "input" %>
     </div>
 
-    <div class="field">
-      <%= f.label :cost_entry_method, "Cost entry method", class: "field-label" %>
-      <%= f.select :cost_entry_method, PurchaseOrderLine::COST_ENTRY_METHODS.map { |m| [ m.titleize, m ] }, {}, class: "input" %>
-    </div>
+    <% if local_assigns.fetch(:can_edit_cost, true) %>
+      <div class="field">
+        <%= f.label :cost_entry_method, "Cost entry method", class: "field-label" %>
+        <%= f.select :cost_entry_method, PurchaseOrderLine::COST_ENTRY_METHODS.map { |m| [ m.titleize, m ] }, {}, class: "input" %>
+      </div>
 
-    <div class="field">
-      <%= f.label :list_cost_cents, "List cost (cents)", class: "field-label" %>
-      <%= f.number_field :list_cost_cents, min: 0, class: "input" %>
-    </div>
+      <div class="field">
+        <%= f.label :list_cost_cents, "List cost (cents)", class: "field-label" %>
+        <%= f.number_field :list_cost_cents, min: 0, class: "input" %>
+      </div>
 
-    <div class="field">
-      <%= f.label :discount_bps, "Discount (bps)", class: "field-label" %>
-      <%= f.number_field :discount_bps, min: 0, max: 10_000, class: "input" %>
-    </div>
+      <div class="field">
+        <%= f.label :discount_bps, "Discount (bps)", class: "field-label" %>
+        <%= f.number_field :discount_bps, min: 0, max: 10_000, class: "input" %>
+      </div>
 
-    <div class="field">
-      <%= f.label :expected_unit_cost_cents, "Expected unit cost (cents)", class: "field-label" %>
-      <%= f.number_field :expected_unit_cost_cents, min: 0, class: "input" %>
-      <p class="field-hint">Used directly for direct-net cost; derived automatically for discount-from-list.</p>
-    </div>
+      <div class="field">
+        <%= f.label :expected_unit_cost_cents, "Expected unit cost (cents)", class: "field-label" %>
+        <%= f.number_field :expected_unit_cost_cents, min: 0, class: "input" %>
+        <p class="field-hint">Used directly for direct-net cost; derived automatically for discount-from-list. Blank costs default from the vendor source.</p>
+      </div>
+    <% end %>
   </div>
 
   <%= f.hidden_field :id if f.object.id.present? %>

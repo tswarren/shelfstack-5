@@ -15,20 +15,20 @@ module Requests
   # `Inventory::PostReceipt` accumulates converted allocation quantity onto
   # the same row).
   #
-  # Scoped to quantity-tracked variants for Phase 5f: exact-copy (individual)
-  # in-house holds require picking a specific Inventory Unit, which is not
-  # yet part of any accepted workflow and is intentionally left as an open,
-  # documented gap rather than an invented heuristic.
+  # Quantity-tracked variants aggregate onto one active Reservation row.
+  # Individually tracked variants require an exact Inventory Unit and reserve
+  # quantity 1 (one active unit hold per request/variant).
   class ReserveInHouseInventory < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:product_request, :reservation, :success?, :error)
 
-    def initialize(product_request:, quantity:, actor:, store:, physically_confirmed: false)
+    def initialize(product_request:, quantity:, actor:, store:, physically_confirmed: false, inventory_unit: nil)
       @product_request = product_request
       @quantity = quantity.to_i
       @actor = actor
       @store = store
       @physically_confirmed = physically_confirmed
+      @inventory_unit = inventory_unit
     end
 
     def call
@@ -47,23 +47,39 @@ module Requests
 
         variant = product_request.product_variant
         raise Error, "product request has no resolved product variant to reserve" if variant.blank?
-        raise Error, "in-house reservation currently supports only quantity-tracked variants" unless variant.inventory_tracking_mode == "quantity"
 
         uncovered = product_request.uncovered_quantity
         if @quantity > uncovered
           raise Error, "quantity exceeds the product request's uncovered quantity (#{uncovered} uncovered)"
         end
 
-        existing = InventoryReservation.active.lock.find_by(
-          store_id: @store.id, product_variant_id: variant.id,
-          source_type: "product_request", source_id: product_request.id
-        )
-        target_quantity = (existing&.quantity || 0) + @quantity
+        reserve_result = case variant.inventory_tracking_mode
+        when "quantity"
+          raise Error, "inventory unit must not be given for quantity-tracked variants" if @inventory_unit.present?
 
-        reserve_result = Inventory::Reserve.call(
-          store: @store, product_variant: variant, quantity: target_quantity,
-          source_type: "product_request", source_id: product_request.id, actor: @actor
-        )
+          existing = InventoryReservation.active.lock.find_by(
+            store_id: @store.id, product_variant_id: variant.id,
+            source_type: "product_request", source_id: product_request.id
+          )
+          Inventory::Reserve.call(
+            store: @store, product_variant: variant, quantity: (existing&.quantity || 0) + @quantity,
+            source_type: "product_request", source_id: product_request.id, actor: @actor
+          )
+        when "individual"
+          raise Error, "quantity must be 1 for individually tracked variants" unless @quantity == 1
+          raise Error, "inventory unit is required for individually tracked variants" if @inventory_unit.blank?
+          unless product_request.compatible_with_variant?(@inventory_unit.product_variant)
+            raise Error, product_request.compatibility_error_for(@inventory_unit.product_variant)
+          end
+
+          Inventory::Reserve.call(
+            store: @store, product_variant: variant, quantity: 1,
+            source_type: "product_request", source_id: product_request.id,
+            actor: @actor, inventory_unit: @inventory_unit
+          )
+        else
+          raise Error, "in-house reservation requires a quantity- or individually tracked variant"
+        end
         raise Error, reserve_result.error unless reserve_result.success?
 
         Administration::RecordAuditEvent.call(
@@ -72,7 +88,11 @@ module Requests
           store: @store,
           action: "requests.customer_request.reserved",
           subject: product_request,
-          metadata: { "quantity" => @quantity, "inventory_reservation_id" => reserve_result.reservation.id }
+          metadata: {
+            "quantity" => @quantity,
+            "inventory_reservation_id" => reserve_result.reservation.id,
+            "inventory_unit_id" => @inventory_unit&.id
+          }
         )
 
         Result.new(product_request: product_request, reservation: reserve_result.reservation, success?: true, error: nil)

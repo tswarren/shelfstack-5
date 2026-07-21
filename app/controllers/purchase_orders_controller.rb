@@ -109,6 +109,7 @@ class PurchaseOrdersController < ApplicationController
       store: Current.store,
       cancel_lines_attributes: amend_cancel_lines_params,
       new_lines_attributes: amend_new_lines_params,
+      release_allocations_attributes: amend_release_allocations_params,
       reason: params.dig(:purchase_order, :amend_reason)
     )
     if result.success?
@@ -174,6 +175,7 @@ class PurchaseOrdersController < ApplicationController
     @buyers = User.joins(:store_memberships)
       .where(store_memberships: { store_id: Current.store.id })
       .distinct.order(:username)
+    @can_edit_cost = Current.user.can?("purchasing.cost.view", store: Current.store)
   end
 
   def header_params
@@ -182,13 +184,17 @@ class PurchaseOrdersController < ApplicationController
     )
   end
 
+  def line_attribute_keys
+    keys = %i[id position product_variant_id product_variant_vendor_id ordered_quantity returnable_snapshot notes]
+    if Current.user.can?("purchasing.cost.view", store: Current.store)
+      keys += %i[cost_entry_method list_cost_cents discount_bps expected_unit_cost_cents]
+    end
+    keys
+  end
+
   def lines_params
     raw = params.require(:purchase_order).permit(
-      purchase_order_lines_attributes: [
-        :id, :position, :product_variant_id, :product_variant_vendor_id,
-        :ordered_quantity, :cost_entry_method, :list_cost_cents, :discount_bps,
-        :expected_unit_cost_cents, :returnable_snapshot, :notes
-      ]
+      purchase_order_lines_attributes: line_attribute_keys
     )[:purchase_order_lines_attributes]
     return [] if raw.blank?
 
@@ -197,7 +203,11 @@ class PurchaseOrdersController < ApplicationController
   end
 
   def amend_cancel_lines_params
-    raw = params.dig(:purchase_order, :cancel_lines_attributes)
+    return [] unless params[:purchase_order].present?
+
+    raw = params.require(:purchase_order).permit(
+      cancel_lines_attributes: %i[id line_id cancelled_quantity]
+    )[:cancel_lines_attributes]
     return [] if raw.blank?
 
     values = raw.respond_to?(:values) ? raw.values : Array(raw)
@@ -206,11 +216,28 @@ class PurchaseOrdersController < ApplicationController
   end
 
   def amend_new_lines_params
-    raw = params.dig(:purchase_order, :new_lines_attributes)
+    return [] unless params[:purchase_order].present?
+
+    raw = params.require(:purchase_order).permit(
+      new_lines_attributes: line_attribute_keys
+    )[:new_lines_attributes]
     return [] if raw.blank?
 
     values = raw.respond_to?(:values) ? raw.values : Array(raw)
     values.map { |attrs| attrs.to_h.symbolize_keys }
       .select { |attrs| attrs[:product_variant_id].present? }
+  end
+
+  def amend_release_allocations_params
+    return [] unless params[:purchase_order].present?
+
+    raw = params.require(:purchase_order).permit(
+      release_allocations_attributes: %i[id allocation_id quantity reason note]
+    )[:release_allocations_attributes]
+    return [] if raw.blank?
+
+    values = raw.respond_to?(:values) ? raw.values : Array(raw)
+    values.map { |attrs| attrs.to_h.symbolize_keys }
+      .select { |attrs| attrs[:quantity].present? }
   end
 end

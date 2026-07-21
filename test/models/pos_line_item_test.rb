@@ -211,10 +211,10 @@ class PosLineItemTest < ActiveSupport::TestCase
     )
 
     refute line.valid?
-    assert_includes line.errors[:product_request], "must match the line's product variant"
+    assert_includes line.errors[:product_request], "product variant must belong to the requested product"
   end
 
-  test "product_request with no resolved variant skips the variant-match check" do
+  test "product_request with no resolved variant still requires the same product" do
     request = product_requests(:open_customer_request)
     refute request.product_variant_id.present?
 
@@ -225,5 +225,15 @@ class PosLineItemTest < ActiveSupport::TestCase
     )
 
     assert line.valid?, line.errors.full_messages.to_sentence
+
+    other_variant = product_variants(:upc_product_standard)
+    mismatched = PosLineItem.new(
+      pos_transaction: @transaction, line_kind: "product", status: "pending",
+      product_variant: other_variant, department: @department, quantity: 1,
+      unit_price_cents: 100, created_by_user: @admin, product_request: request
+    )
+
+    refute mismatched.valid?
+    assert_includes mismatched.errors[:product_request], "product variant must belong to the requested product"
   end
 end

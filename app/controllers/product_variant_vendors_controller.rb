@@ -73,10 +73,14 @@ class ProductVariantVendorsController < ApplicationController
   end
 
   def product_variant_vendor_params
-    params.require(:product_variant_vendor).permit(
+    keys = [
       :product_variant_id, :vendor_id, :vendor_item_code, :vendor_identifier,
-      :list_cost_cents, :discount_bps, :expected_unit_cost_cents,
       :minimum_order_quantity, :order_multiple, :returnable, :preferred, :active, :notes
-    )
+    ]
+    if Current.user.can?("purchasing.cost.view", store: Current.store)
+      keys += %i[list_cost_cents discount_bps expected_unit_cost_cents]
+    end
+
+    params.require(:product_variant_vendor).permit(*keys)
   end
 end

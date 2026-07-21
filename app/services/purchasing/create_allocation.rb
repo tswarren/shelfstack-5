@@ -42,8 +42,8 @@ module Purchasing
         raise Error, "purchase order line store mismatch" unless purchase_order.store_id == @store.id
         raise Error, "product request store mismatch" unless product_request.store_id == @store.id
         raise Error, "only ordered purchase orders can allocate quantity" unless purchase_order.ordered?
-        if product_request.product_variant_id.present? && product_request.product_variant_id != line.product_variant_id
-          raise Error, "product request variant does not match the purchase order line's variant"
+        unless product_request.compatible_with_variant?(line.product_variant)
+          raise Error, product_request.compatibility_error_for(line.product_variant)
         end
         if PurchaseOrderAllocation.exists?(purchase_order_line_id: line.id, product_request_id: product_request.id)
           raise Error, "an allocation already exists for this purchase-order line and product request"

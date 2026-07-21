@@ -69,5 +69,55 @@ module Purchasing
       assert_not result.success?
       assert_match(/at least one line/i, result.error)
     end
+
+    test "defaults blank cost fields from the preferred vendor source, not selling price" do
+      source = product_variant_vendors(:sample_book_ingram)
+      assert_not_equal @variant.regular_price_cents, source.expected_unit_cost_cents
+
+      po = PurchaseOrder.new(vendor: @vendor)
+      result = CreatePurchaseOrder.call(
+        purchase_order: po,
+        lines_attributes: [ {
+          product_variant_id: @variant.id,
+          ordered_quantity: 2,
+          cost_entry_method: "discount_from_list"
+        } ],
+        actor: @user,
+        store: @store
+      )
+
+      assert result.success?, result.error
+      line = result.purchase_order.purchase_order_lines.first
+      assert_equal source.id, line.product_variant_vendor_id
+      assert_equal source.list_cost_cents, line.list_cost_cents
+      assert_equal source.discount_bps, line.discount_bps
+      assert_equal 720, line.expected_unit_cost_cents
+      assert_not_equal @variant.regular_price_cents, line.expected_unit_cost_cents
+      assert_equal "vendor_source", line.cost_provenance
+    end
+
+    test "keeps an explicitly entered zero discount instead of overwriting from the source" do
+      source = product_variant_vendors(:sample_book_ingram)
+
+      po = PurchaseOrder.new(vendor: @vendor)
+      result = CreatePurchaseOrder.call(
+        purchase_order: po,
+        lines_attributes: [ {
+          product_variant_id: @variant.id,
+          product_variant_vendor_id: source.id,
+          ordered_quantity: 1,
+          cost_entry_method: "discount_from_list",
+          list_cost_cents: source.list_cost_cents,
+          discount_bps: 0
+        } ],
+        actor: @user,
+        store: @store
+      )
+
+      assert result.success?, result.error
+      line = result.purchase_order.purchase_order_lines.first
+      assert_equal 0, line.discount_bps
+      assert_equal source.list_cost_cents, line.expected_unit_cost_cents
+    end
   end
 end

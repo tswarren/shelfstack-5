@@ -42,5 +42,37 @@ module Requests
       assert_not result.success?
       assert_match(/not permitted/i, result.error)
     end
+
+    test "reducing requested quantity releases excess allocations" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 5)
+
+      vendor = vendors(:acme_distributor)
+      po = Purchasing::CreatePurchaseOrder.call(
+        purchase_order: PurchaseOrder.new(vendor: vendor),
+        lines_attributes: [ {
+          product_variant_id: variant.id, ordered_quantity: 5,
+          cost_entry_method: "direct_net_cost", expected_unit_cost_cents: 700
+        } ],
+        actor: @admin, store: @store
+      ).purchase_order
+      Purchasing::PlacePurchaseOrder.call(purchase_order: po, actor: @admin, store: @store)
+      allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: po.purchase_order_lines.first,
+        product_request: request, quantity: 5, actor: @admin, store: @store
+      ).purchase_order_allocation
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { requested_quantity: 2 }
+      )
+
+      assert result.success?, result.error
+      assert_equal 2, request.reload.requested_quantity
+      assert_equal 2, allocation.reload.remaining_quantity
+      assert_equal "request_quantity_reduced",
+                   allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
+    end
   end
 end
