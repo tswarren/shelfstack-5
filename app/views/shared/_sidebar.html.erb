@@ -32,6 +32,15 @@
       <%= nav_item "Business days", business_days_path, permission_key: "pos.access" %>
     <% end %>
 
+    <%= nav_section "Reports" do %>
+      <%= nav_item "Reports", reports_path, permission_key: [ "purchasing.purchase_order.view", "inventory.receipt.view", "requests.product_request.view" ] %>
+      <%= nav_item "Open purchase orders", open_purchase_orders_report_path, permission_key: "purchasing.purchase_order.view" %>
+      <%= nav_item "On order", on_order_report_path, permission_key: "purchasing.purchase_order.view" %>
+      <%= nav_item "Receiving history", receiving_history_report_path, permission_key: "inventory.receipt.view" %>
+      <%= nav_item "Customer request coverage", customer_requests_report_path, permission_key: "requests.product_request.view" %>
+      <%= nav_item "Allocation events", allocation_events_report_path, permission_key: "purchasing.purchase_order.view" %>
+    <% end %>
+
     <%= nav_section "Configuration" do %>
       <%= nav_item "Departments", departments_path, permission_key: "classification.view" %>
       <%= nav_item "Merchandise classes", merchandise_classes_path, permission_key: "classification.view" %>

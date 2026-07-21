@@ -294,6 +294,38 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - **Coverage formula.** `ProductRequest#uncovered_quantity` is now `requested_quantity − fulfilled_quantity − active_reserved_quantity − remaining_allocated_quantity` (each clamped at 0 overall; `fulfilled_quantity` nets `fulfill` minus `reverse` rows). Ordering demand (`Requests::CreateProductRequest`), posting a receipt, or creating an in-house reservation never by themselves close a Customer Request — only `Requests::RecordFulfillment` sets `status: fulfilled`, and only when `fulfilled_quantity >= requested_quantity`.
 - **Double-reservation window.** A sale line linked to a Customer Request creates its *own* `pos_line_item`-sourced reservation via `Pos::AddLine` (as always) in addition to any pre-existing `product_request`-sourced reservation from conversion/in-house-reserve; the two are temporarily both active (may transiently warn on negative `available`) until `Pos::CompleteTransaction` converts the POS line's reservation into the sale and `RecordFulfillment` consumes the Product Request's reservation in the same transaction — inventory is never double-counted once completion finishes.
 
+## Phase 5g — Operational views and hardening
+
+No new application services. `ReportsController` (Purchasing and Vendors / Receiving and
+Inventory / Product Requests) adds read-only operational views at `/reports` — a
+projection controller in the same sense as the Phase 5d Buyer-review queue, never a
+table, cache, or new workflow:
+
+| View | Data source | Permission |
+| --- | --- | --- |
+| Open purchase orders | `PurchaseOrder` (`draft`/`ordered`) + derived `receiving_state` | `purchasing.purchase_order.view` |
+| On order | `Purchasing::OnOrder` per store×variant | `purchasing.purchase_order.view` |
+| Receiving history | `Receipt` + partially received `PurchaseOrder`s (`receiving_state`) | `inventory.receipt.view` |
+| Customer request coverage | `ProductRequest` derived reserved/allocated/fulfilled/uncovered quantities | `requests.product_request.view` |
+| Allocation events | `PurchaseOrderAllocationEvent` (append-only history) | `purchasing.purchase_order.view` |
+
+The dashboard (`/reports`) links to these plus the existing Buyer-review queue
+(`BuyerReviewController`, Phase 5d). None of these views write to any record; they only
+read already-posted facts (AGENTS.md §4, "Reporting consumes posted source records").
+
+### Phase 5g notes
+
+- System-test coverage for the phase's three critical end-to-end paths (vendor → PO →
+  place → receive → verify stock; Customer Request → allocation → receipt-converted
+  reservation → POS fulfilment; non-customer resolve → PO without allocation) surfaced
+  and fixed two pre-existing defects, unrelated to the new views: `PurchaseOrder` and
+  `Receipt` were missing `accepts_nested_attributes_for` on their line associations (so
+  `form.fields_for` never emitted the `_attributes`-suffixed param key the create/update
+  controllers expected — the browser create forms were silently non-functional for
+  adding lines), and the Purchase Order show page's "Add new line" `select_tag` call
+  passed an invalid extra positional argument (`ActionView::Template::Error` on any
+  `ordered` PO with amend permission).
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:

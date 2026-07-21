@@ -96,7 +96,7 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged to `main` at `34f371f`, PR #30) and Phase 4g test hardening (merged to `main` at `c51dcca`, PR #31).
 
-**Active:** Phase 5 — Supply and Demand. See [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
+**Active:** Phase 5 — Supply and Demand. 5a–5g implemented and hardened on `phase/5-supply-and-demand` (exit criteria met; `bin/ci` and `test:system` green). Not yet merged to `main`. See [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
 
 **Phase 5 unlock (Option B — accepted; 4g gate satisfied):**
 

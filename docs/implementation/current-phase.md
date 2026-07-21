@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 5 — Supply and Demand  
-**Status:** Ready to begin (governing baseline + planning defaults locked)  
+**Status:** 5a–5g implemented; hardened on `phase/5g-hardening`; `bin/ci` and `test:system` green; ready for merge to `main` after review (still on `phase/5-supply-and-demand`, not `main`)  
 **Phase 4g merge:** `c51dcca823e4476b7f0f62441301d451e83307b2` (PR #31)  
 **Phase 4f merge:** `34f371f5590c6942f5291c5bd750a1d98756d13f` (PR #30)  
 **Design docs:** [../design/README.md](../design/README.md)  
@@ -9,10 +9,9 @@
 
 ## Immediate next work
 
-1. Write and execute the Phase 5 implementation plan from [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) (build order + planning defaults).
-2. Scaffold migrations from the reconciled proforma and [ShelfStack_Schema_Reconciliation_2026-07-20.xlsx](../exports/schema/ShelfStack_Schema_Reconciliation_2026-07-20.xlsx); seed Phase 5 permissions from [authorization-permissions.md](../domains/authorization-permissions.md).
-3. Continue residual 4g-5 backlog in parallel as needed.
-4. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md).
+1. Open a pull request merging `phase/5-supply-and-demand` to `main` (Phase 5 exit criteria are complete; see [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)).
+2. Continue residual 4g-5 backlog in parallel as needed.
+3. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md).
 
 ## Completed recently
 
@@ -25,6 +24,7 @@
 - Phase 5d (`phase/5d-product-requests`): `product_requests` (four types, required Product, optional Variant, non-customer resolution columns, optional `supersedes_product_request_id`); `Requests::{Create,Update,Assign,Resolve,Cancel}ProductRequest`; Buyer-review queue projection (`Purchasing::ReplenishmentSnapshot`); thin product-from-demand path (`Catalog::ImportProductMetadata`); and the buyer → draft Purchase Order seam (`Purchasing::AddDemandToDraftPurchaseOrder`) that never creates a Purchase-Order Allocation. Customer Request allocation/reservation/fulfilment remain Phase 5e/5f.
 - Phase 5e (`phase/5e-allocations`): `purchase_order_allocations`/`purchase_order_allocation_events` (append-only, `remaining_quantity`/`state` always derived from events, no stored fulfilment status); `Purchasing::CreateAllocation` (Customer Requests only, capped by both the PO Line's open quantity and the request's uncovered quantity) and `Purchasing::ReleaseAllocation` (structured reason codes, `posting_key` idempotency); `AmendPurchaseOrder`/`CancelPurchaseOrder` updated to atomically release or reject rather than silently letting cancelled/reduced supply fall below what is already allocated; minimal allocate/release UI on the Purchase Order and Product Request show pages. Conversion to Inventory Reservation and fulfilment implemented in Phase 5f.
 - Phase 5f (`phase/5f-fulfilment`): `Inventory::PostReceipt` now converts remaining `purchase_order_allocations` to `product_request`-sourced `InventoryReservation`s in the same posting transaction as the accepted quantity, in deterministic order (priority urgent>high>normal, then `needed_by_on` earlier-first with nulls last, then `created_at`), recording an append-only `converted_to_reservation` event per allocation touched; `Requests::ReserveInHouseInventory` reserves physically-confirmed on-hand quantity-tracked stock against a Customer Request (`requests.customer_request.reserve`, explicit `physically_confirmed: true` required); `product_request_fulfillments` (append-only, `kind: fulfill|reverse`, unique `posting_key`) records the demand-closing fact; `Pos::AddLine` accepts an optional `product_request:` linkage (capped by the request's outstanding quantity) and `Pos::CompleteTransaction` posts the fulfilment fact (`Requests::RecordFulfillment`, consuming/releasing the linked reservation and closing the request once fulfilled quantity meets requested quantity) or a reversing fulfilment on a linked return (`Requests::ReverseFulfillment`, reopening the request if it drops below fully fulfilled) atomically with the sale/return posting. `ProductRequest#uncovered_quantity` is now `requested - fulfilled - active_reserved - remaining_allocated`. Post-void reversal of a fulfilled sale line is Phase 6 (post-void itself is not yet implemented) and is intentionally not wired.
+- Phase 5g (`phase/5g-hardening`, exit gate): `ReportsController` adds read-only operational views (`/reports`) projecting posted facts only — open POs + derived receiving state, on-order by store×variant (`Purchasing::OnOrder`), receipt history + partially received POs, Customer Request coverage (reserved/allocated/fulfilled/uncovered), and allocation-event history — permission-gated by `purchasing.purchase_order.view` / `inventory.receipt.view` / `requests.product_request.view`. Added system tests for the three critical end-to-end paths (vendor → PO → place → receive → verify stock; Customer Request → allocation → receipt-converted reservation → POS fulfilment; non-customer resolve → PO without allocation), which surfaced and fixed two pre-existing defects: `PurchaseOrder`/`Receipt` were missing `accepts_nested_attributes_for` (so their line `fields_for` never produced the `_attributes`-suffixed params the controllers expected — the create forms were non-functional), and the PO show page's "Add new line" `select_tag` passed an invalid extra argument. Added `docs/workflows/purchase-order.md` and `docs/workflows/product-request.md` stubs.
 
 ## Do not start yet
 
