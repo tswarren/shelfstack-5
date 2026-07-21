@@ -1,0 +1,28 @@
+<% can_view_cost = Current.user.can?("purchasing.cost.view", store: Current.store) %>
+<%= render "shared/page_header",
+      title: "#{@product_variant_vendor.vendor.name} — #{@product_variant_vendor.product_variant.product.name}",
+      subtitle: @product_variant_vendor.product_variant.name,
+      actions: capture {
+        if Current.user.can?("purchasing.vendor_source.manage", store: Current.store)
+          concat link_to("Edit", edit_product_variant_vendor_path(@product_variant_vendor), class: "button button-secondary")
+        end
+      } %>
+
+<dl class="detail-list">
+  <div><dt>Vendor</dt><dd><%= link_to @product_variant_vendor.vendor.name, @product_variant_vendor.vendor %></dd></div>
+  <div><dt>Variant SKU</dt><dd><code><%= @product_variant_vendor.product_variant.sku %></code></dd></div>
+  <div><dt>Vendor item code</dt><dd><%= @product_variant_vendor.vendor_item_code.presence || "—" %></dd></div>
+  <div><dt>Vendor identifier</dt><dd><%= @product_variant_vendor.vendor_identifier.presence || "—" %></dd></div>
+  <% if can_view_cost %>
+    <div><dt>List cost</dt><dd><%= @product_variant_vendor.list_cost_cents.present? ? number_to_currency(@product_variant_vendor.list_cost_cents / 100.0) : "—" %></dd></div>
+    <div><dt>Discount</dt><dd><%= @product_variant_vendor.discount_bps.present? ? "#{@product_variant_vendor.discount_bps} bps" : "—" %></dd></div>
+    <div><dt>Expected unit cost</dt><dd><%= @product_variant_vendor.expected_unit_cost_cents.present? ? number_to_currency(@product_variant_vendor.expected_unit_cost_cents / 100.0) : "—" %></dd></div>
+  <% end %>
+  <div><dt>Minimum order quantity</dt><dd><%= @product_variant_vendor.minimum_order_quantity.presence || "—" %></dd></div>
+  <div><dt>Order multiple</dt><dd><%= @product_variant_vendor.order_multiple.presence || "—" %></dd></div>
+  <div><dt>Returnable</dt><dd><%= @product_variant_vendor.returnable.nil? ? "—" : (@product_variant_vendor.returnable? ? "Yes" : "No") %></dd></div>
+  <div><dt>Preferred</dt><dd><%= @product_variant_vendor.preferred? ? "Yes" : "No" %></dd></div>
+  <div><dt>Status</dt><dd><%= boolean_status @product_variant_vendor.active? %></dd></div>
+  <div><dt>Last ordered</dt><dd><%= @product_variant_vendor.last_ordered_at&.to_fs(:long) || "—" %></dd></div>
+  <div><dt>Last received</dt><dd><%= @product_variant_vendor.last_received_at&.to_fs(:long) || "—" %></dd></div>
+</dl>

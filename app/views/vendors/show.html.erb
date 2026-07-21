@@ -1,0 +1,59 @@
+<%= render "shared/page_header", title: @vendor.name,
+      subtitle: "Vendor #{@vendor.code}",
+      actions: capture {
+        if Current.user.can?("purchasing.vendor.manage", store: Current.store)
+          concat link_to("Edit", edit_vendor_path(@vendor), class: "button button-secondary")
+        end
+        if @can_manage_sources
+          concat link_to("Add source", new_product_variant_vendor_path(vendor_id: @vendor.id), class: "button button-primary")
+        end
+      } %>
+
+<dl class="detail-list">
+  <div><dt>Code</dt><dd><code><%= @vendor.code %></code></dd></div>
+  <div><dt>Legal name</dt><dd><%= @vendor.legal_name.presence || "—" %></dd></div>
+  <div><dt>Status</dt><dd><%= boolean_status @vendor.active? %></dd></div>
+  <div><dt>Ordering contact</dt><dd><%= @vendor.ordering_contact.presence || "—" %></dd></div>
+  <div><dt>Ordering email</dt><dd><%= @vendor.ordering_email.presence || "—" %></dd></div>
+  <div><dt>Phone</dt><dd><%= @vendor.phone.presence || "—" %></dd></div>
+  <div><dt>Account reference</dt><dd><%= @vendor.account_reference.presence || "—" %></dd></div>
+  <% if @can_view_cost %>
+    <div><dt>Default supplier discount</dt><dd><%= @vendor.default_supplier_discount_bps.present? ? "#{@vendor.default_supplier_discount_bps} bps" : "—" %></dd></div>
+  <% end %>
+  <div><dt>Notes</dt><dd><%= simple_format(@vendor.notes) if @vendor.notes.present? %><%= "—" if @vendor.notes.blank? %></dd></div>
+</dl>
+
+<h2 class="section-title">Vendor sources</h2>
+<% if @product_variant_vendors.empty? %>
+  <p class="muted">No variant sources for this vendor yet.</p>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Vendor sources</caption>
+      <thead>
+        <tr>
+          <th scope="col">Product</th>
+          <th scope="col">Variant</th>
+          <th scope="col">Vendor item</th>
+          <% if @can_view_cost %><th scope="col">Expected cost</th><% end %>
+          <th scope="col">Preferred</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @product_variant_vendors.each do |source| %>
+          <tr class="<%= "is-inactive" unless source.active? %>">
+            <td><%= link_to source.product_variant.product.name, source %></td>
+            <td><%= source.product_variant.name %></td>
+            <td><%= source.vendor_item_code.presence || "—" %></td>
+            <% if @can_view_cost %>
+              <td><%= source.expected_unit_cost_cents.present? ? number_to_currency(source.expected_unit_cost_cents / 100.0) : "—" %></td>
+            <% end %>
+            <td><%= source.preferred? ? "Yes" : "No" %></td>
+            <td><%= boolean_status source.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

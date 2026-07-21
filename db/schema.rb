@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -477,7 +477,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
     t.index ["tax_category_id"], name: "index_pos_line_item_taxes_on_tax_category_id"
     t.check_constraint "amount_cents >= 0", name: "pos_line_item_taxes_amount_non_negative"
     t.check_constraint "taxable_amount_cents >= 0", name: "pos_line_item_taxes_taxable_amount_non_negative"
-    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying::text, 'zero_rated'::character varying::text, 'exempt'::character varying::text, 'not_applicable'::character varying::text])", name: "pos_line_item_taxes_treatment_check"
+    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying, 'not_applicable'::character varying]::text[])", name: "pos_line_item_taxes_treatment_check"
   end
 
   create_table "pos_line_items", force: :cascade do |t|
@@ -710,6 +710,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
     t.index ["organization_id", "short_code"], name: "index_product_formats_on_organization_id_and_short_code", unique: true, where: "(short_code IS NOT NULL)"
     t.index ["organization_id"], name: "index_product_formats_on_organization_id"
     t.check_constraint "default_inventory_tracking_mode::text = ANY (ARRAY['quantity'::character varying::text, 'individual'::character varying::text, 'none'::character varying::text])", name: "product_formats_tracking_mode_check"
+  end
+
+  create_table "product_variant_vendors", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.integer "discount_bps"
+    t.integer "expected_unit_cost_cents"
+    t.datetime "last_ordered_at"
+    t.datetime "last_received_at"
+    t.integer "list_cost_cents"
+    t.integer "minimum_order_quantity"
+    t.text "notes"
+    t.integer "order_multiple"
+    t.boolean "preferred", default: false, null: false
+    t.bigint "product_variant_id", null: false
+    t.boolean "returnable"
+    t.datetime "updated_at", null: false
+    t.bigint "vendor_id", null: false
+    t.string "vendor_identifier"
+    t.string "vendor_item_code"
+    t.index ["product_variant_id", "vendor_id"], name: "index_product_variant_vendors_on_variant_and_vendor", unique: true
+    t.index ["product_variant_id"], name: "index_product_variant_vendors_on_product_variant_id"
+    t.index ["vendor_id"], name: "index_product_variant_vendors_on_vendor_id"
   end
 
   create_table "product_variants", force: :cascade do |t|
@@ -1024,6 +1047,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
     t.check_constraint "failed_login_attempts >= 0", name: "users_failed_login_attempts_non_negative"
   end
 
+  create_table "vendors", force: :cascade do |t|
+    t.string "account_reference"
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.integer "default_supplier_discount_bps"
+    t.string "legal_name"
+    t.string "name", null: false
+    t.text "notes"
+    t.string "ordering_contact"
+    t.string "ordering_email"
+    t.bigint "organization_id", null: false
+    t.string "phone"
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "code"], name: "index_vendors_on_organization_id_and_code", unique: true
+    t.index ["organization_id"], name: "index_vendors_on_organization_id"
+  end
+
   add_foreign_key "administrative_audit_events", "organizations", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "stores", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "users", column: "actor_user_id", on_delete: :restrict
@@ -1128,6 +1169,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
   add_foreign_key "pos_transactions", "users", column: "completed_by_user_id", on_delete: :restrict
   add_foreign_key "product_conditions", "organizations"
   add_foreign_key "product_formats", "organizations"
+  add_foreign_key "product_variant_vendors", "product_variants"
+  add_foreign_key "product_variant_vendors", "vendors"
   add_foreign_key "product_variants", "departments"
   add_foreign_key "product_variants", "merchandise_classes"
   add_foreign_key "product_variants", "product_conditions", column: "default_product_condition_id"
@@ -1158,4 +1201,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_021003) do
   add_foreign_key "tax_categories", "organizations"
   add_foreign_key "tender_types", "organizations", on_delete: :restrict
   add_foreign_key "users", "stores", column: "default_store_id", on_delete: :nullify
+  add_foreign_key "vendors", "organizations"
 end

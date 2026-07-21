@@ -18,6 +18,8 @@ class ProductVariant < ApplicationRecord
   has_many :inventory_adjustment_lines, dependent: :restrict_with_exception
   has_many :inventory_units, dependent: :restrict_with_exception
   has_many :pos_line_items, dependent: :restrict_with_exception
+  has_many :product_variant_vendors, dependent: :restrict_with_exception
+  has_many :vendors, through: :product_variant_vendors
 
   attr_readonly :sku
 

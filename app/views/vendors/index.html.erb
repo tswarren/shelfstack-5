@@ -1,0 +1,34 @@
+<%= render "shared/page_header", title: "Vendors",
+      subtitle: "Organizations from which the bookstore purchases merchandise.",
+      actions: capture {
+        if Current.user.can?("purchasing.vendor.manage", store: Current.store)
+          concat link_to("New vendor", new_vendor_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @vendors.empty? %>
+  <%= render "shared/empty_state", title: "No vendors yet",
+        body: "Create your first vendor to begin purchasing." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Vendors</caption>
+      <thead>
+        <tr>
+          <th scope="col">Code</th>
+          <th scope="col">Name</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @vendors.each do |vendor| %>
+          <tr class="<%= "is-inactive" unless vendor.active? %>">
+            <td><code><%= vendor.code %></code></td>
+            <td><%= link_to vendor.name, vendor %></td>
+            <td><%= boolean_status vendor.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
