@@ -1,10 +1,11 @@
 # Phase 5 — Supply and Demand
 
-**Status:** 5a–5g implemented on `phase/5-supply-and-demand`; hardened on `phase/5g-hardening`; ready for merge to `main` after CI  
+**Status:** Complete — merged to `main` at `2e3e119` (PR #34)  
 **Depends on:** Completed Phase 4 POS, inventory-reservation, exact-unit, UX-baseline, and test-hardening foundations  
 **Phase 4 gate status:** 4a–4e, 4f (`34f371f`, PR #30), and 4g (`c51dcca`, PR #31) merged to `main`  
 **Unlocks:** richer operations reporting in Phase 7; customer-request fulfilment through POS; later vendor-order lifecycle capabilities  
-**Governing docs:** [ADR-0015](../../adr/0015-product-backed-demand-and-customer-supply-commitments.md); [ADR-0007](../../adr/0007-purchasing-receiving-and-inventory-events.md); [ADR-0013](../../adr/0013-govern-quantity-tracked-inventory-cost.md); [OD-007](../decisions/od-007-allocation-receipt-and-fulfilment.md); [OD-014 settlement](../decisions/od-014-negative-inventory-settlement.md); [vendors-and-purchasing](../../domains/vendors-and-purchasing.md); [product-requests](../../domains/product-requests.md); [receiving-and-inventory](../../domains/receiving-and-inventory.md); [ordering-and-acquisition-planning](../../domains/ordering-and-acquisition-planning.md); [lifecycle boundaries](../phase-05-ordering-scope-and-future-lifecycle-boundaries.md); [architectural-locks](../architectural-locks.md)
+**Governing docs:** [ADR-0015](../../adr/0015-product-backed-demand-and-customer-supply-commitments.md); [ADR-0007](../../adr/0007-purchasing-receiving-and-inventory-events.md); [ADR-0013](../../adr/0013-govern-quantity-tracked-inventory-cost.md); [OD-007](../decisions/od-007-allocation-receipt-and-fulfilment.md); [OD-014 settlement](../decisions/od-014-negative-inventory-settlement.md); [vendors-and-purchasing](../../domains/vendors-and-purchasing.md); [product-requests](../../domains/product-requests.md); [receiving-and-inventory](../../domains/receiving-and-inventory.md); [ordering-and-acquisition-planning](../../domains/ordering-and-acquisition-planning.md); [lifecycle boundaries](../phase-05-ordering-scope-and-future-lifecycle-boundaries.md); [architectural-locks](../architectural-locks.md)  
+**Pre-production follow-up:** [#33](https://github.com/tswarren/shelfstack-5/issues/33) (receipt cost migration/tuple SQL hardening; deterministic concurrency barrier)
 
 ## Goal
 

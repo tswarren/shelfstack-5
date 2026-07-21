@@ -61,8 +61,8 @@ flowchart TD
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
 | 4 | Point of sale (4a–4e) + UX Baseline (4f) | Complete — merged to `main` at `34f371f` (PR #30) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) |
 | 4g | Test hardening | Complete — merged to `main` at `c51dcca` (PR #31) | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
-| 5 | Supply and demand | Ready for merge — 5a–5g on `phase/5-supply-and-demand` (exit criteria met; not yet on `main`) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
-| 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
+| 5 | Supply and demand | Complete — merged to `main` at `2e3e119` (PR #34) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
+| 6 | Corrections and stored value | Not started — next planning focus | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
 
@@ -94,22 +94,15 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged to `main` at `34f371f`, PR #30) and Phase 4g test hardening (merged to `main` at `c51dcca`, PR #31).
+Completed: Phases 0–5 product delivery. Phase 5 Supply and Demand merged to `main` at `2e3e119` (PR #34). Phase 4g test hardening remains at `c51dcca` (PR #31).
 
-**Active:** Phase 5 — Supply and Demand. 5a–5g implemented and hardened on `phase/5-supply-and-demand` (exit criteria met; `bin/ci` and `test:system` green). Not yet merged to `main`. See [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
+**Active:** Phase 6 — Corrections and Stored Value (planning only). See [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) and [current-phase.md](current-phase.md). Do not invent unresolved post-void or stored-value details beyond ADR-0008 / ADR-0012.
 
-**Phase 5 unlock (Option B — accepted; 4g gate satisfied):**
+**Phase 5 follow-up (non-blocking):** [#33](https://github.com/tswarren/shelfstack-5/issues/33) — receipt cost migration/tuple SQL hardening and deterministic concurrency barrier before durable databases.
 
-| Phase 5 work | Gate | Status |
-| --- | --- | --- |
-| Foundational purchasing (vendors, POs, quantity receiving, quantity requests/allocations) | After **4c** + **UX Baseline merge** + **4g-1–3 integrity gate** | Unlocked |
-| Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Unlocked |
-| Return/refund-oriented fulfilment paths | **4e** recommended + same | Unlocked |
-
-1. Scaffold Phase 5 from the reconciled baseline ([phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)): vendors → POs → receipts + OD-014 settlement → product-backed demand → customer allocations (OD-007) → fulfilment. Authority: [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md). Planning defaults in that phase plan are binding for scaffolding.
-2. Schema exports and Phase 5 permission catalog are reconciled; treat migrations as authoritative only when they match ADRs/domains.
-3. Residual 4g-5 broader coverage may continue alongside Phase 5.
-4. Phases 6–7 as separate epics.
+1. Plan Phase 6 corrections (post-void reversing records) and stored-value ledger without mutating completed POS history.
+2. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close without accepted decisions.
+3. Phase 7 reporting remains a separate epic after Phase 6.
 
 
 
