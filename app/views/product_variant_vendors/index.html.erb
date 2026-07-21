@@ -1,0 +1,42 @@
+<%= render "shared/page_header", title: "Vendor sources",
+      subtitle: "Vendor-specific sourcing and expected cost for product variants.",
+      actions: capture {
+        if Current.user.can?("purchasing.vendor_source.manage", store: Current.store)
+          concat link_to("New source", new_product_variant_vendor_path, class: "button button-primary")
+        end
+      } %>
+
+<% if @product_variant_vendors.empty? %>
+  <%= render "shared/empty_state", title: "No vendor sources yet",
+        body: "Link a vendor to a product variant to record expected cost and ordering rules." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Vendor sources</caption>
+      <thead>
+        <tr>
+          <th scope="col">Vendor</th>
+          <th scope="col">Product</th>
+          <th scope="col">Variant</th>
+          <th scope="col">Vendor item</th>
+          <% if @can_view_cost %><th scope="col">Expected cost</th><% end %>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @product_variant_vendors.each do |source| %>
+          <tr class="<%= "is-inactive" unless source.active? %>">
+            <td><%= link_to source.vendor.code, source %></td>
+            <td><%= source.product_variant.product.name %></td>
+            <td><%= source.product_variant.name %></td>
+            <td><%= source.vendor_item_code.presence || "—" %></td>
+            <% if @can_view_cost %>
+              <td><%= source.expected_unit_cost_cents.present? ? number_to_currency(source.expected_unit_cost_cents / 100.0) : "—" %></td>
+            <% end %>
+            <td><%= boolean_status source.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

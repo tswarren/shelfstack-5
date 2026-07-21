@@ -18,6 +18,7 @@ class Organization < ApplicationRecord
   has_many :inventory_adjustment_reasons, dependent: :restrict_with_exception
   has_many :tender_types, dependent: :restrict_with_exception
   has_many :cash_movement_types, dependent: :restrict_with_exception
+  has_many :vendors, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: true
   validates :name, presence: true

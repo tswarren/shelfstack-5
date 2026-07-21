@@ -273,3 +273,113 @@ catalog_editor_product_edit:
 catalog_editor_variant_edit:
   role: catalog_editor
   permission: variant_edit
+
+# Phase 5 admin grants
+
+admin_purchasing_vendor_view:
+  role: administrator
+  permission: purchasing_vendor_view
+
+admin_purchasing_vendor_manage:
+  role: administrator
+  permission: purchasing_vendor_manage
+
+admin_purchasing_vendor_source_view:
+  role: administrator
+  permission: purchasing_vendor_source_view
+
+admin_purchasing_vendor_source_manage:
+  role: administrator
+  permission: purchasing_vendor_source_manage
+
+admin_purchasing_cost_view:
+  role: administrator
+  permission: purchasing_cost_view
+
+admin_purchasing_purchase_order_view:
+  role: administrator
+  permission: purchasing_purchase_order_view
+
+admin_purchasing_purchase_order_create:
+  role: administrator
+  permission: purchasing_purchase_order_create
+
+admin_purchasing_purchase_order_edit:
+  role: administrator
+  permission: purchasing_purchase_order_edit
+
+admin_purchasing_purchase_order_place:
+  role: administrator
+  permission: purchasing_purchase_order_place
+
+admin_purchasing_purchase_order_amend:
+  role: administrator
+  permission: purchasing_purchase_order_amend
+
+admin_purchasing_purchase_order_cancel:
+  role: administrator
+  permission: purchasing_purchase_order_cancel
+
+admin_purchasing_purchase_order_close:
+  role: administrator
+  permission: purchasing_purchase_order_close
+
+admin_purchasing_allocation_create:
+  role: administrator
+  permission: purchasing_allocation_create
+
+admin_purchasing_allocation_release:
+  role: administrator
+  permission: purchasing_allocation_release
+
+admin_requests_product_request_view:
+  role: administrator
+  permission: requests_product_request_view
+
+admin_requests_product_request_create:
+  role: administrator
+  permission: requests_product_request_create
+
+admin_requests_product_request_edit:
+  role: administrator
+  permission: requests_product_request_edit
+
+admin_requests_product_request_assign:
+  role: administrator
+  permission: requests_product_request_assign
+
+admin_requests_product_request_resolve:
+  role: administrator
+  permission: requests_product_request_resolve
+
+admin_requests_product_request_cancel:
+  role: administrator
+  permission: requests_product_request_cancel
+
+admin_requests_customer_request_reserve:
+  role: administrator
+  permission: requests_customer_request_reserve
+
+admin_requests_customer_request_fulfill:
+  role: administrator
+  permission: requests_customer_request_fulfill
+
+admin_inventory_receipt_view:
+  role: administrator
+  permission: inventory_receipt_view
+
+admin_inventory_receipt_create:
+  role: administrator
+  permission: inventory_receipt_create
+
+admin_inventory_receipt_post:
+  role: administrator
+  permission: inventory_receipt_post
+
+admin_inventory_receipt_receive_unlinked:
+  role: administrator
+  permission: inventory_receipt_receive_unlinked
+
+admin_inventory_receipt_over_receive:
+  role: administrator
+  permission: inventory_receipt_over_receive

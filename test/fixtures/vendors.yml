@@ -1,0 +1,14 @@
+acme_distributor:
+  organization: acme
+  code: INGRAM
+  name: Ingram Book Company
+  legal_name: Ingram Content Group LLC
+  active: true
+  ordering_email: orders@example.com
+  default_supplier_discount_bps: 4000
+
+inactive_vendor:
+  organization: acme
+  code: OLDVND
+  name: Old Vendor
+  active: false

@@ -1,0 +1,85 @@
+<%= form_with model: product_variant_vendor, class: "stack-form" do |form| %>
+  <%= render "shared/form_errors", record: product_variant_vendor %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Source</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :vendor_id, "Vendor" %>
+        <%= form.collection_select :vendor_id, @vendors, :id, :name, { include_blank: true },
+              required: true, disabled: product_variant_vendor.persisted? %>
+      </div>
+      <div class="field">
+        <%= form.label :product_variant_id, "Product variant" %>
+        <%= form.select :product_variant_id,
+              options_for_select(
+                @product_variants.map { |v| [ "#{v.product.name} — #{v.name} (#{v.sku})", v.id ] },
+                product_variant_vendor.product_variant_id
+              ),
+              { include_blank: true },
+              required: true, disabled: product_variant_vendor.persisted? %>
+      </div>
+      <div class="field">
+        <%= form.label :vendor_item_code, "Vendor item code" %>
+        <%= form.text_field :vendor_item_code %>
+      </div>
+      <div class="field">
+        <%= form.label :vendor_identifier, "Vendor identifier" %>
+        <%= form.text_field :vendor_identifier %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Cost and ordering</h2>
+    <p class="muted">Cost fields are visible only to users with purchasing cost permission.</p>
+    <div class="form-grid">
+      <% if Current.user.can?("purchasing.cost.view", store: Current.store) || Current.user.can?("purchasing.vendor_source.manage", store: Current.store) %>
+        <div class="field">
+          <%= form.label :list_cost_cents, "List cost (cents)" %>
+          <%= form.number_field :list_cost_cents, min: 0 %>
+        </div>
+        <div class="field">
+          <%= form.label :discount_bps, "Discount (bps)" %>
+          <%= form.number_field :discount_bps, min: 0, max: 10_000 %>
+        </div>
+        <div class="field">
+          <%= form.label :expected_unit_cost_cents, "Expected unit cost (cents)" %>
+          <%= form.number_field :expected_unit_cost_cents, min: 0 %>
+        </div>
+      <% end %>
+      <div class="field">
+        <%= form.label :minimum_order_quantity, "Minimum order quantity" %>
+        <%= form.number_field :minimum_order_quantity, min: 0 %>
+      </div>
+      <div class="field">
+        <%= form.label :order_multiple %>
+        <%= form.number_field :order_multiple, min: 0 %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Flags</h2>
+    <div class="checkbox-group">
+      <label><%= form.check_box :returnable %> Returnable</label>
+      <label><%= form.check_box :preferred %> Preferred source</label>
+      <label><%= form.check_box :active %> Source is active</label>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Notes</h2>
+    <div class="field">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, rows: 3 %>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit class: "button button-primary" %>
+    <%= link_to "Cancel",
+          product_variant_vendor.persisted? ? product_variant_vendor : product_variant_vendors_path,
+          class: "button button-secondary" %>
+  </div>
+<% end %>

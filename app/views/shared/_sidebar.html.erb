@@ -9,6 +9,11 @@
       <%= nav_item "Products", products_path, permission_key: "catalog.product.view" %>
     <% end %>
 
+    <%= nav_section "Purchasing" do %>
+      <%= nav_item "Vendors", vendors_path, permission_key: "purchasing.vendor.view" %>
+      <%= nav_item "Vendor sources", product_variant_vendors_path, permission_key: "purchasing.vendor_source.view" %>
+    <% end %>
+
     <%= nav_section "Inventory" do %>
       <%= nav_item "Stock", stock_balances_path, permission_key: "inventory.stock.view" %>
       <%= nav_item "Adjustments", inventory_adjustments_path, permission_key: "inventory.stock.view" %>
