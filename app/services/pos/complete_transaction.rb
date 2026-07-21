@@ -17,6 +17,12 @@ module Pos
   #
   # Product-line tracking modes `quantity`, `individual` (Phase 4d), and `none`
   # are in scope; Stored-Value posting remains out of scope (Phase 6).
+  #
+  # Phase 5f: a sale line linked to a Customer Request (`Pos::AddLine`'s
+  # `product_request:`) creates the Product Request Fulfilment fact in the
+  # same transaction as its sale movement; a linked return of a fulfilled
+  # sale line appends a reversing fulfilment fact instead of mutating the
+  # original (OD-007). Post-void reversal is Phase 6 and is not wired here.
   class CompleteTransaction < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_transaction, :success?, :error, :warnings, :replayed)
@@ -63,20 +69,43 @@ module Pos
         tenders = transaction.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
         validate_tenders_settle!(tenders, recalculation.net_total_cents)
 
+        now = Time.current
         warnings = recalculation.warnings.dup
+
+        # Lock linked Product Requests before inventory conversion so completion
+        # and POS edits share: Transaction → Lines → Product Request → Balance → Reservation.
+        linked_request_ids = lines.filter_map { |line|
+          if line.sale? && line.line_kind == "product" && line.product_request_id.present?
+            line.product_request_id
+          elsif line.direction == "return" && line.line_kind == "product"
+            original = line.original_pos_line_item
+            next if original.blank?
+
+            fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: original.id, kind: "fulfill")
+            fulfillment&.product_request_id || original.product_request_id
+          end
+        }.uniq.sort
+        locked_requests = linked_request_ids.index_with { |id| ProductRequest.lock.find(id) }
+
         lines.each do |line|
           if line.direction == "return" && line.line_kind == "product"
             posted = Inventory::PostCustomerReturn.call(pos_line_item: line, posted_by_user: @actor)
             raise Error, posted.error unless posted.success?
             warnings.concat(posted.warnings)
-          elsif inventory_tracked_product_line?(line)
-            conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
-            raise Error, conversion.error unless conversion.success?
-            warnings.concat(conversion.warnings)
+            reverse_fulfilment_for_return!(line, posted_at: now, locked_requests: locked_requests)
+          elsif line.sale? && line.line_kind == "product"
+            conversion = nil
+            if inventory_tracked_product_line?(line)
+              conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
+              raise Error, conversion.error unless conversion.success?
+              warnings.concat(conversion.warnings)
+            end
+            record_fulfilment_for_sale!(
+              line, posted_at: now, converted_reservation: conversion&.reservation
+            )
           end
         end
 
-        now = Time.current
         lines.each { |line| line.update!(status: "completed", completed_at: now) }
         tenders.each { |tender| tender.update!(status: "completed", completed_at: now) }
 
@@ -113,6 +142,42 @@ module Pos
     end
 
     private
+
+    # Phase 5f (OD-007): a sale line linked to a Customer Request at
+    # `Pos::AddLine` time creates the Product Request Fulfilment fact
+    # atomically with its sale inventory movement, closing the request when
+    # fully fulfilled.
+    def record_fulfilment_for_sale!(line, posted_at:, converted_reservation: nil)
+      return if line.product_request_id.blank?
+
+      result = Requests::RecordFulfillment.call(
+        product_request: line.product_request, pos_line_item: line, actor: @actor,
+        quantity: line.quantity, fulfilled_at: posted_at,
+        converted_reservation: converted_reservation
+      )
+      raise Error, result.error unless result.success?
+    end
+
+    # A linked return of a completed sale line that fulfilled a Customer
+    # Request appends a `reverse` fulfilment fact rather than mutating the
+    # original (ADR-0008); a no-op when the original line was never linked.
+    def reverse_fulfilment_for_return!(line, posted_at:, locked_requests: {})
+      original = line.original_pos_line_item
+      return if original.blank?
+
+      fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: original.id, kind: "fulfill")
+      request_id = fulfillment&.product_request_id || original.product_request_id
+      product_request = locked_requests[request_id] if request_id
+
+      result = Requests::ReverseFulfillment.call(
+        original_pos_line_item: original,
+        return_pos_line_item: line,
+        actor: @actor,
+        reversed_at: posted_at,
+        product_request: product_request
+      )
+      raise Error, result.error unless result.success?
+    end
 
     def inventory_tracked_product_line?(line)
       line.line_kind == "product" &&

@@ -192,11 +192,144 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - Remaining returnable quantity is `original.quantity − sum(pending/completed linked returns)`.
 - Free-text cancellation/removal/override reasons remain free text; Return Reasons are organization master data (`docs/exports/return_reasons.csv`).
 
+## Phase 5a — Vendors
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Purchasing::CreateVendor` / `UpdateVendor` | Vendors and Purchasing | 5a | Yes | No | Vendor | Organization, actor, vendor attrs | Persisted `Vendor` + audit; code unique within organization |
+| `Purchasing::CreateProductVariantVendor` / `UpdateProductVariantVendor` | Vendors and Purchasing | 5a | Yes | No | Product Variant Vendor | Variant, vendor, source attrs (vendor item code, cost, MOQ, order multiple, returnable) | Persisted vendor-source link + audit; unique per (variant, vendor) |
+
+## Phase 5b — Purchase orders
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Purchasing::CreatePurchaseOrder` | Vendors and Purchasing | 5b | Yes | No | Store (`lock`, number sequence) | Store, vendor, actor, header + lines attrs | Draft `PurchaseOrder` with store-scoped never-reused number and store currency; snapshots description/SKU/identifier/vendor-item/returnable via `LineSnapshot`; audit |
+| `Purchasing::UpdateDraftPurchaseOrder` | Vendors and Purchasing | 5b | Yes | No | Purchase Order (`reload.lock!`) | Draft Purchase Order, header attrs, replacement lines | Updated header + fully replaced line set; rejected once no longer draft; audit |
+| `Purchasing::PlacePurchaseOrder` | Vendors and Purchasing | 5b | Yes | Yes (replaying an ordered PO is a no-op) | Purchase Order (`reload.lock!`) | Draft Purchase Order, actor, store | `ordered` status; `ordered_at`/`ordered_by_user`/`ordered_on`; soft MOQ/multiple warnings via `ThresholdWarnings`; audit |
+| `Purchasing::AmendPurchaseOrder` | Vendors and Purchasing | 5b | Yes | No | Purchase Order (`reload.lock!`), then affected Lines (`lock`) | Ordered Purchase Order, actor, cancel-quantity attrs (+ reason), and/or new-line attrs | Increases supply via new lines and/or reduces expected quantity via `cancelled_quantity` (never decreases, never edits identity fields in place); audit |
+| `Purchasing::CancelPurchaseOrder` | Vendors and Purchasing | 5b | Yes | Yes (replaying a cancelled PO is a no-op) | Purchase Order (`reload.lock!`) | Draft or ordered Purchase Order with no received quantity, actor, optional reason | `cancelled` status + `cancelled_at`/`cancelled_by_user`; rejects if any line has received quantity or PO is closed; audit |
+| `Purchasing::ClosePurchaseOrder` | Vendors and Purchasing | 5b | Yes | Yes (replaying a closed PO is a no-op) | Purchase Order (`reload.lock!`) | Ordered Purchase Order where every line's `open_quantity` is zero, actor | `closed` status + `closed_at`/`closed_by_user`; no reopen workflow; audit |
+| `Purchasing::ApplyBulkDiscountToDraftLines` | Vendors and Purchasing | 5b | Yes | No | Purchase Order (`reload.lock!`) | Draft Purchase Order, selected `discount_from_list` line IDs, discount bps, actor | Updated `discount_bps`/`cost_provenance` on selected lines; expected unit/extended cost recompute deterministically; audit |
+| `Purchasing::OnOrder` | Vendors and Purchasing | 5b | No | Yes | None | Store, product variant | Derived on-order quantity: `max(ordered − received − cancelled, 0)` summed across `ordered` Purchase Order Lines only; never cached or posted through the inventory ledger |
+| `Purchasing::ThresholdWarnings` | Vendors and Purchasing | 5b | No | Yes | None | Purchase-order lines (with optional vendor source) | Soft warning strings for vendor minimum-order-quantity and order-multiple mismatches; never blocks placement |
+
+### Phase 5b notes
+
+- Purchase-order commercial lifecycle is `draft → ordered → (closed | cancelled)`; receiving progress (`receiving_state`: `not_received`/`partially_received`/`fully_received`) is derived from line quantity and is never a commercial status.
+- Line identity (variant, vendor source, quantity, cost fields, snapshots) is immutable once the parent Purchase Order is placed; only `cancelled_quantity` may change afterward, and only via `AmendPurchaseOrder`.
+- `expected_unit_cost_cents` is deterministic for `discount_from_list` lines (`list_cost_cents` × (1 − discount_bps)) via `Inventory::Rounding`, and manual for `direct_net_cost` lines; `expected_extended_cost_cents` is always a derived rollup.
+- Receipt posting and PO-line receiving allocation are implemented in Phase 5c below; PO-line **allocation** to Customer Requests lands in Phase 5e (`Purchasing::CreateAllocation`/`ReleaseAllocation`), with conversion to Inventory Reservation implemented in Phase 5f.
+
+## Phase 5c — Receipts and OD-014 negative-inventory settlement
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Inventory::CreateReceipt` | Receiving and Inventory | 5c | Yes | No | Store (`lock`, number sequence) | Store, vendor, actor, header + lines attrs | Draft `Receipt` with a store-scoped never-reused number; audit |
+| `Inventory::UpdateDraftReceipt` | Receiving and Inventory | 5c | Yes | No | Receipt (`reload.lock!`) | Draft Receipt, header attrs, replacement lines | Updated header + fully replaced line set; rejected once no longer draft; audit |
+| `Inventory::CancelReceipt` | Receiving and Inventory | 5c | Yes | Yes (replaying a cancelled Receipt is a no-op) | Receipt (`reload.lock!`) | Draft Receipt, actor, optional reason | `cancelled` status + `cancelled_at`/`cancelled_by_user`; draft only — a posted Receipt has no correction workflow yet; audit |
+| `Inventory::PostReceipt` | Receiving and Inventory | 5c (extended 5f) | Yes | Yes (replaying a posted Receipt is a no-op; the whole posting is one transaction) | Receipt (`reload.lock!`), then per line: Stock Balance (via `FindOrCreateStockBalance`) or Purchase Order Line (`lock`); then per converted allocation: Product Request (`lock`), `PurchaseOrderAllocation` (`lock`), existing `InventoryReservation` (`lock`, via `Inventory::Reserve`) | Draft Receipt, actor, store | Only accepted quantity enters inventory (never rejected); quantity-tracked lines call `PostLedgerEntry` and split into a `receipt_deficit_settlement` entry then a `receipt` entry when prior On Hand is negative (OD-014); individual lines call `CreateInventoryUnit` per accepted unit (`require_unit_manage_permission: false`); linked lines advance `PurchaseOrderLine#received_quantity`; permission checks: `inventory.receipt.post` always, `inventory.receipt.receive_unlinked` when a line has no PO Line, `inventory.receipt.over_receive` when accepted quantity exceeds the PO Line's open quantity; **Phase 5f:** for a quantity-tracked linked line, after posting the accepted-into-inventory movement, converts that PO Line's remaining `PurchaseOrderAllocation`s to `product_request`-sourced `InventoryReservation`s (via `Inventory::Reserve`, accumulating onto any existing active reservation for the same request/variant) up to the newly sellable-accepted quantity, in deterministic order (priority `urgent`>`high`>`normal`, then `needed_by_on` ascending with nulls last, then `created_at`), recording one `converted_to_reservation` `PurchaseOrderAllocationEvent` per allocation touched (`posting_key` scoped to receipt+line+allocation); individually tracked lines are not converted (out of scope); audit |
+
+### Phase 5c notes
+
+- `Inventory::PostLedgerEntry` and `Inventory::CalculateQuantityCost` gained `receipt` and `receipt_deficit_settlement` movement kinds. `receipt` reuses the existing opening/customer-return inbound cost path (valid because it only ever runs from a zero-or-positive prior On Hand); `receipt_deficit_settlement` never creates inventory value (`inventory_value_delta_cents` is always zero) and never crosses above zero On Hand.
+- OD-014 deficit-pool bookkeeping (`stock_balances.open_provisional_deficit_cost_cents`/`deficit_cost_quality`) is maintained generically inside `PostLedgerEntry#apply_balance!` for **any** quantity-tracked movement whose resulting On Hand crosses the deficit boundary (not only receipts): an outbound movement that drives On Hand further negative adds provisional cost to the pool using that movement's own resolved unit cost/quality (whatever `CalculateQuantityCost` already resolved for the sale/adjustment); any movement that reduces the deficit (settlement, linked return, quantity-only correction) releases pool cost proportionally, in full when the deficit reaches zero. Settlement variance (`provisional_cost_released_cents`/`settlement_variance_cents`/`settlement_variance_kind`) is only ever recorded on `receipt_deficit_settlement` entries, per OD-014's "linked returns and quantity-only corrections do not create ordinary receipt cost variance."
+- `Inventory::CreateInventoryUnit` gained `require_unit_manage_permission:` (default `true`) so `PostReceipt` can create receipt-sourced units under the receiver's own `inventory.receipt.post` authorization instead of requiring `inventory.unit.manage`.
+- Receipt Line `cost_quality` accepts `confirmed_zero` (a known actual cost of zero) in addition to the ledger's `actual`/`estimated`/`unknown`; `PostReceipt` maps `confirmed_zero` to ledger `cost_quality: "actual"` with a zero unit cost, and any other missing/unknown line cost to ledger `cost_quality: "unknown"` with a null unit cost (never zero).
+- An individually tracked line's `accepted_unavailable_quantity` creates units with status `inspection` rather than `available`; there is no dedicated "receiving unavailable" Unit status.
+- PO-line **allocation** (committing on-order supply to Customer Request allocations) is implemented in Phase 5e below (not by `PostReceipt`); converting an allocation to an Inventory Reservation at receipt time is implemented in Phase 5f (`PostReceipt` itself, extended — see below).
+
+## Phase 5d — Product Requests, buyer review, and the PO seam
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Requests::CreateProductRequest` | Product Requests | 5d | Yes | No | None | Store, actor, optional requesting user, attributes (`request_type`, product, optional variant, quantity, priority, needed-by, customer reference, notes, optional `supersedes_product_request_id`) | Persisted open `ProductRequest`; audit; never changes On Hand or On Order |
+| `Requests::UpdateProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open Product Request, actor, mutable attrs (variant, quantity, priority, needed-by, customer reference, notes) | Updated request while still `open`; rejected once no longer open; audit |
+| `Requests::AssignProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open Product Request, buyer user, actor | Updated `assigned_buyer_user`; rejected once no longer open; audit |
+| `Requests::ResolveProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open non-customer Product Request, resolution code (`ordered`/`declined`/`deferred`/`duplicate`/`superseded`/`no_longer_needed`), optional resolved quantity/note, optional follow-up flag | `deferred` leaves status `open`; `declined` sets `declined`; all other codes `closed`; partial `ordered` quantity can create a linked follow-up `ProductRequest` (`supersedes_product_request_id` → original) via `Requests::CreateProductRequest`; refuses Customer Requests (fulfilment is a later phase); audit |
+| `Requests::CancelProductRequest` | Product Requests | 5d | Yes | Yes (replaying a cancelled request is a no-op) | Product Request (`reload.lock!`) | Open Product Request, actor, optional cancellation reason | `cancelled` status; distinct from buyer resolution (no resolution code recorded); audit |
+| `Catalog::ImportProductMetadata` | Catalog and Products | 5d | Yes (delegates to `Catalog::CreateProduct`) | No | Sequence + product uniqueness (via `Catalog::CreateProduct`) | Organization, actor, store, structured attributes hash, optional `accept_duplicate_review`/`accept_identifier_warning` | Thin product-from-demand path: local-catalog identifier/SKU lookup plus a name search surface likely duplicates as review candidates before creating; `accept_duplicate_review: true` creates anyway; not a live external-catalog integration |
+| `Purchasing::ReplenishmentSnapshot` | Vendors and Purchasing | 5d | No | Yes | None | Store, product variant | Buyer-review read model: On Hand/Reserved/Unavailable/Available (from `StockBalance`), derived On Order (`Purchasing::OnOrder`), current selling price, and expected (preferred active vendor source) or last-known unit cost; never persisted |
+| `Purchasing::AddDemandToDraftPurchaseOrder` | Vendors and Purchasing | 5d | Yes | No | Store (`lock`, number sequence when creating), Purchase Order (`lock`) | Store, vendor, quantity, actor, optional Product Request/variant/vendor source/explicit draft Purchase Order/cost fields | Resolves the exact Product Variant and a vendor source, then adds an ordered-quantity line to an existing or newly created draft Purchase Order for that vendor; for non-Customer Requests optionally resolves the Product Request as `ordered` via `Requests::ResolveProductRequest`; Customer Requests are never auto-resolved; never creates a Purchase-Order Allocation (deferred to Phase 5e/5f) |
+
+### Phase 5d notes
+
+- `product_requests` unifies `customer_request`, `staff_suggestion`, `stock_replenishment`, and `frontlist_selection` demand. Customer Requests remain open fulfilment obligations (allocation/reservation/fulfilment are later-phase work); the other three types are buyer-decision records resolved by `Requests::ResolveProductRequest`.
+- Non-customer resolution fields (`resolution`, `resolved_quantity`, `resolved_at`, `resolved_by_user_id`, `resolution_note`) live directly on `product_requests` (no separate resolution-event table), per the Phase 5 planning defaults.
+- The Buyer-review queue (`BuyerReviewController`) is a read-only projection over open `ProductRequest` rows plus `Purchasing::ReplenishmentSnapshot` — never a table, PO-line flag, or inventory quantity.
+- `Purchasing::AddDemandToDraftPurchaseOrder` reuses an existing draft Purchase Order for the same Store × Vendor when one exists and none is explicitly specified, otherwise creates one (mirroring `Purchasing::CreatePurchaseOrder`'s numbering); it never targets an already-`ordered` Purchase Order.
+- Purchase-Order Allocation (committing expected supply to a Customer Request) lands in Phase 5e below and is not performed by any Phase 5d service.
+
+## Phase 5e — Purchase-order allocations to Customer Requests
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Purchasing::CreateAllocation` | Vendors and Purchasing | 5e | Yes | No | Purchase Order Line (`lock!`), then Product Request (`lock!`) | Purchase Order Line, Customer-Request `ProductRequest`, quantity, actor, store | Persisted `PurchaseOrderAllocation` committing expected (not physical) supply; capped by both the line's open-minus-already-allocated quantity and the request's `uncovered_quantity` (`requested − fulfilled − active_reserved − remaining_allocated`, per Phase 5f); refuses non-Customer-Request types; audit |
+| `Purchasing::ReleaseAllocation` | Vendors and Purchasing | 5e | Yes | Yes (`posting_key`) | `PurchaseOrderAllocation` (`lock!`) | Allocation, quantity, structured reason code, actor, optional note/`posting_key`/`occurred_at` | Appends a `released` `PurchaseOrderAllocationEvent`; capped at `remaining_quantity`; replaying the same `posting_key` returns the original event without double-releasing; audit |
+
+### Phase 5e notes
+
+- `purchase_order_allocations` (immutable `purchase_order_line_id`/`product_request_id`/`quantity`/`created_by_user_id`, unique per line+request pair) records only the *original* committed quantity; it carries no `status`/`received`/`fulfilled` column. `remaining_quantity` (`quantity − converted_quantity − released_quantity`) and presentation-only `state` (`active`/`partially_resolved`/`converted`/`released`/`resolved_mixed`, derived from the `converted_to_reservation`/`released` event mix) are always derived from the append-only `purchase_order_allocation_events` ledger, never stored. `converted`/`partially_resolved` states are populated starting Phase 5f (`Inventory::PostReceipt` conversion).
+- `purchase_order_allocation_events` supports `event_type: released` (from `ReleaseAllocation`) and `converted_to_reservation` (requiring both `receipt_line_id` and `inventory_reservation_id`, written by `Inventory::PostReceipt` — Phase 5f). Events are append-only (`readonly?` after creation) and a nullable-but-unique `posting_key` gives both `ReleaseAllocation` and the Phase 5f conversion path replay idempotency.
+- `released` events require one structured `reason` code: `purchase_order_cancelled`, `line_quantity_cancelled`, `vendor_unavailable`, `received_unavailable`, `request_cancelled`, `request_quantity_reduced`, `fulfilled_from_earlier_supply`, `reallocated_to_other_supply`, `manual_release`. Free-text detail is optional (`note`), never a substitute for the code.
+- Allocating never changes `on_hand`, `on_order`, or creates an `InventoryReservation` — it only commits a share of a Purchase Order Line's still-open expected quantity to a specific Customer Request, per ADR-0015.
+- `Purchasing::AmendPurchaseOrder` now accepts `release_allocations_attributes` and releases those allocations (inside the same transaction, before applying cancellations) so a caller can atomically shrink `cancelled_quantity` and free the allocated quantity it depends on; without a matching release, reducing a line's open quantity below its `remaining_allocated` is rejected.
+- `Purchasing::CancelPurchaseOrder` automatically releases every remaining allocated quantity on the Purchase Order's lines (reason `purchase_order_cancelled`) inside its own transaction before cancelling — cancellation is never blocked by outstanding allocations, and the release is always auditable.
+- Minimal UI: allocate/release forms and a status table on both the Purchase Order show page (per-line, listing allocations to Customer Requests) and the Product Request show page (per-request, listing allocations from Purchase Order Lines), gated by `purchasing.allocation.create`/`purchasing.allocation.release`.
+
+## Phase 5f — Reservation conversion and Product Request fulfilment
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Requests::ReserveInHouseInventory` | Product Requests | 5f | Yes | No | Product Request (`lock`), existing active `InventoryReservation` (`lock`, via `Inventory::Reserve`) | Customer-Request `ProductRequest`, quantity, actor, store, `physically_confirmed:` (must be explicitly `true`) | Active `product_request`-sourced `InventoryReservation` (accumulated onto any existing one for the same request/variant) reflecting physically-present, already-counted stock; capped by `uncovered_quantity`; quantity-tracked variants only (individually tracked in-house holds are out of scope); requires `requests.customer_request.reserve`; audit |
+| `Requests::RecordFulfillment` | Product Requests | 5f | Yes | Yes (`posting_key: pos_line_item:<id>:fulfillment`) | Product Request (`lock`), any active `product_request` `InventoryReservation` for it (`lock`, via `Inventory::Reserve`/`ReleaseReservation`) | Sale `PosLineItem` linked to a Customer Request (`pos_line_item.product_request`), quantity, actor, `fulfilled_at` | Appends a `kind: fulfill` `ProductRequestFulfillment`; releases the linked reservation in full or reduces it by the fulfilled quantity; closes the Product Request (`status: fulfilled`) once `fulfilled_quantity >= requested_quantity`; requires `requests.customer_request.fulfill`; replaying the same `posting_key` returns the original fact unchanged; audit. Always called from inside `Pos::CompleteTransaction`, never standalone from a controller |
+| `Requests::ReverseFulfillment` | Product Requests | 5f | Yes | Yes (`posting_key: pos_line_item:<return line id>:fulfillment_reverse`) | Original `ProductRequestFulfillment` (`lock`), Product Request (`lock`, only if reopening) | Linked-return `PosLineItem` (`original_pos_line_item` pointing at a fulfilled sale line), actor, `reversed_at` | Appends a `kind: reverse` `ProductRequestFulfillment` (`linked_fulfilment_id` → the original fact; never edits it) for `min(return quantity, original quantity − already reversed)`; reopens the Product Request (`status: open`) if fulfilled quantity drops back below requested quantity; a no-op result (still `success?`) when the original sale line was never linked to a Customer Request or is already fully reversed; audit. Always called from inside `Pos::CompleteTransaction`, never standalone |
+
+### Phase 5f notes
+
+- **Receipt → reservation conversion.** `Inventory::PostReceipt` (Phase 5c, extended) now converts a quantity-tracked PO Line's remaining `PurchaseOrderAllocation`s into `product_request`-sourced `InventoryReservation`s in the same transaction as posting the accepted quantity into inventory, up to that line's newly sellable-accepted quantity. When accepted quantity cannot satisfy every open allocation, conversion order is deterministic: request `priority` (`urgent` > `high` > `normal`), then `needed_by_on` ascending with nulls last, then `created_at`. Each allocation touched gets exactly one `converted_to_reservation` `PurchaseOrderAllocationEvent` (`posting_key: receipt:<id>:line:<id>:allocation:<id>:convert`) referencing the Receipt Line and the resulting Reservation. Individually tracked variants are never converted (Phase 5f in-house/allocation conversion is quantity-tracked only). The existing `Purchasing::ReleaseAllocation` path (cancel, unavailable, earlier supply, etc.) is unchanged and still the only way to resolve an allocation without a physical reservation.
+- **In-house reservation.** `Requests::ReserveInHouseInventory` is the *only* way to create a `product_request`-sourced `InventoryReservation` from counted-but-not-yet-received stock; it deliberately requires an explicit `physically_confirmed: true` argument (there is no default) so a caller cannot reserve inventory that has not actually been counted/located. It shares the same accumulate-onto-existing-reservation pattern as the receipt-conversion path (lock the Product Request, then the existing active reservation, then call `Inventory::Reserve` with the new total).
+- **`product_request_fulfillments`.** Append-only fact table: `product_request_id`, nullable `inventory_reservation_id` (a walk-in sale with no prior reservation still fulfils), `pos_line_item_id`, positive `quantity`, `kind` (`fulfill`/`reverse`), `linked_fulfilment_id` (required on `reverse`, forbidden on `fulfill`; points at the original fact — a reversal is never itself reversed), `fulfilled_at`, `fulfilled_by_user_id`, and a unique `posting_key`. `ProductRequestFulfillment` forbids `update`/`destroy` (`readonly?`/`before_destroy`) — corrections are always new rows.
+- **POS wiring.** `Pos::AddLine` accepts an optional `product_request:` (validated: must be a Customer Request, open, same store, matching variant if one is already resolved, and quantity ≤ the request's `outstanding_quantity`); `pos_line_items.product_request_id` is DB-constrained to product/sale lines only. Inside `Pos::CompleteTransaction`'s existing per-line loop (same top-level transaction as tax/eligibility/tender revalidation, reservation conversion, and receipt numbering — OD-014/ADR "POS completion is atomic"), a sale line linked to a Product Request calls `Requests::RecordFulfillment` right after its `Inventory::ConvertReservation`; a linked return calls `Requests::ReverseFulfillment` right after its `Inventory::PostCustomerReturn`. Any failure (including a denied `requests.customer_request.fulfill`) raises and rolls back the entire completion — no partial fulfilment fact, reservation change, or sale/return posting survives a failed completion.
+- **Post-void.** Post-void is Phase 6 and does not exist yet in this codebase; `Requests::ReverseFulfillment` is written generically (keyed off the *return* `PosLineItem`, not the completion path) so a future post-void-of-a-fulfilled-sale can call it the same way returns do, but nothing wires that today. This is a documented gap, not a silent omission.
+- **Coverage formula.** `ProductRequest#uncovered_quantity` is now `requested_quantity − fulfilled_quantity − active_reserved_quantity − remaining_allocated_quantity` (each clamped at 0 overall; `fulfilled_quantity` nets `fulfill` minus `reverse` rows). Ordering demand (`Requests::CreateProductRequest`), posting a receipt, or creating an in-house reservation never by themselves close a Customer Request — only `Requests::RecordFulfillment` sets `status: fulfilled`, and only when `fulfilled_quantity >= requested_quantity`.
+- **Double-reservation window.** A sale line linked to a Customer Request creates its *own* `pos_line_item`-sourced reservation via `Pos::AddLine` (as always) in addition to any pre-existing `product_request`-sourced reservation from conversion/in-house-reserve; the two are temporarily both active (may transiently warn on negative `available`) until `Pos::CompleteTransaction` converts the POS line's reservation into the sale and `RecordFulfillment` consumes the Product Request's reservation in the same transaction — inventory is never double-counted once completion finishes.
+
+## Phase 5g — Operational views and hardening
+
+No new application services. `ReportsController` (Purchasing and Vendors / Receiving and
+Inventory / Product Requests) adds read-only operational views at `/reports` — a
+projection controller in the same sense as the Phase 5d Buyer-review queue, never a
+table, cache, or new workflow:
+
+| View | Data source | Permission |
+| --- | --- | --- |
+| Open purchase orders | `PurchaseOrder` (`draft`/`ordered`) + derived `receiving_state` | `purchasing.purchase_order.view` |
+| On order | `Purchasing::OnOrder` per store×variant | `purchasing.purchase_order.view` |
+| Receiving history | `Receipt` + partially received `PurchaseOrder`s (`receiving_state`) | `inventory.receipt.view` |
+| Customer request coverage | `ProductRequest` derived reserved/allocated/fulfilled/uncovered quantities | `requests.product_request.view` |
+| Allocation events | `PurchaseOrderAllocationEvent` (append-only history) | `purchasing.purchase_order.view` |
+
+The dashboard (`/reports`) links to these plus the existing Buyer-review queue
+(`BuyerReviewController`, Phase 5d). None of these views write to any record; they only
+read already-posted facts (AGENTS.md §4, "Reporting consumes posted source records").
+
+### Phase 5g notes
+
+- System-test coverage for the phase's three critical end-to-end paths (vendor → PO →
+  place → receive → verify stock; Customer Request → allocation → receipt-converted
+  reservation → POS fulfilment; non-customer resolve → PO without allocation) surfaced
+  and fixed two pre-existing defects, unrelated to the new views: `PurchaseOrder` and
+  `Receipt` were missing `accepts_nested_attributes_for` on their line associations (so
+  `form.fields_for` never emitted the `_attributes`-suffixed param key the create/update
+  controllers expected — the browser create forms were silently non-functional for
+  adding lines), and the Purchase Order show page's "Add new line" `select_tag` call
+  passed an invalid extra positional argument (`ActionView::Template::Error` on any
+  `ordered` PO with amend permission).
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 5: receipt posting, PO placement, allocation services
 - Phase 6: stored-value posting, post-void
 
 ## Related

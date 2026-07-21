@@ -1,0 +1,67 @@
+<%= form_with model: vendor, class: "stack-form" do |form| %>
+  <%= render "shared/form_errors", object: vendor %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :code %>
+        <%= form.text_field :code, required: true, disabled: vendor.persisted? %>
+      </div>
+      <div class="field">
+        <%= form.label :name %>
+        <%= form.text_field :name, required: true %>
+      </div>
+      <div class="field">
+        <%= form.label :legal_name %>
+        <%= form.text_field :legal_name %>
+      </div>
+      <div class="field">
+        <%= form.label :account_reference, "Account reference" %>
+        <%= form.text_field :account_reference %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Ordering contact</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :ordering_contact %>
+        <%= form.text_field :ordering_contact %>
+      </div>
+      <div class="field">
+        <%= form.label :ordering_email %>
+        <%= form.email_field :ordering_email %>
+      </div>
+      <div class="field">
+        <%= form.label :phone %>
+        <%= form.text_field :phone %>
+      </div>
+      <div class="field">
+        <%= form.label :default_supplier_discount_bps, "Default supplier discount (bps)" %>
+        <%= form.number_field :default_supplier_discount_bps, min: 0, max: 10_000 %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Notes</h2>
+    <div class="field">
+      <%= form.label :notes %>
+      <%= form.text_area :notes, rows: 4 %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Status</h2>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Vendor is active</label>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit class: "button button-primary" %>
+    <%= link_to "Cancel", vendor.persisted? ? vendor : vendors_path, class: "button button-secondary" %>
+  </div>
+<% end %>

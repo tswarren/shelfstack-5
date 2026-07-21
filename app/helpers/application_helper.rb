@@ -24,8 +24,12 @@ module ApplicationHelper
     end
   end
 
+  # `permission_key` accepts a single key or an array; an array is treated as
+  # "any of these" (e.g. a dashboard link reachable via several view permissions).
   def nav_item(label, path, permission_key: nil, match: nil)
-    return "".html_safe if permission_key.present? && !nav_permitted?(permission_key)
+    if permission_key.present?
+      return "".html_safe unless Array(permission_key).any? { |key| nav_permitted?(key) }
+    end
 
     active = nav_item_active?(path, match)
     link_opts = { class: [ "nav-item", ("is-active" if active) ].compact.join(" ") }
@@ -63,6 +67,31 @@ module ApplicationHelper
     end
   end
 
+  def purchase_order_status_variant(status)
+    case status.to_s
+    when "ordered" then :info
+    when "closed" then :success
+    when "cancelled" then :danger
+    else :neutral
+    end
+  end
+
+  def purchase_order_receiving_state_variant(state)
+    case state.to_s
+    when "fully_received" then :success
+    when "partially_received" then :info
+    else :neutral
+    end
+  end
+
+  def receipt_status_variant(status)
+    case status.to_s
+    when "posted" then :success
+    when "cancelled" then :danger
+    else :neutral
+    end
+  end
+
   def reservation_status_variant(status)
     case status.to_s
     when "active" then :info
@@ -78,6 +107,34 @@ module ApplicationHelper
     when "sold" then :neutral
     when "damaged", "discarded" then :danger
     else :warning
+    end
+  end
+
+  def product_request_status_variant(status)
+    case status.to_s
+    when "open" then :info
+    when "closed", "fulfilled" then :success
+    when "declined", "cancelled" then :danger
+    else :neutral
+    end
+  end
+
+  # Derived allocation label only (OD-007) — never a persisted status.
+  def allocation_state_variant(state)
+    case state.to_s
+    when "active" then :info
+    when "converted" then :success
+    when "released" then :neutral
+    when "resolved_mixed" then :warning
+    else :neutral
+    end
+  end
+
+  def product_request_priority_variant(priority)
+    case priority.to_s
+    when "urgent" then :danger
+    when "high" then :warning
+    else :neutral
     end
   end
 
@@ -286,8 +343,30 @@ module ApplicationHelper
     "#{rate_text} applies (#{tax_treatment_label(rule.treatment).downcase}) to #{category_text}. #{compound}"
   end
 
+  # Returns to the originating demand-entry form with a Product selected
+  # (ordering-and-acquisition-planning.md §3.1 return-to-workflow step).
+  def return_to_with_product(return_to, product)
+    if return_to.present?
+      uri = URI.parse(return_to)
+      query = Rack::Utils.parse_nested_query(uri.query)
+      query["product_id"] = product.id
+      "#{uri.path}?#{query.to_query}"
+    else
+      new_product_request_path(product_id: product.id)
+    end
+  end
+
   def configured_override_label(value)
     value.present? ? value.name : "Inherit"
+  end
+
+  # Guards a user-supplied `return_to` param before it is rendered as an
+  # href: only a same-app root-relative path is allowed, never an absolute
+  # URL, protocol-relative URL, or non-http(s) scheme (e.g. `javascript:`).
+  def safe_local_path(path, fallback)
+    return fallback if path.blank?
+
+    path.start_with?("/") && !path.start_with?("//") ? path : fallback
   end
 
   private

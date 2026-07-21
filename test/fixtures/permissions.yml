@@ -358,3 +358,167 @@ pos_return_create:
   permission_group: pos
   active: true
 
+
+# Phase 5
+
+purchasing_vendor_view:
+  code: purchasing.vendor.view
+  name: View vendors
+  permission_group: purchasing
+  active: true
+
+purchasing_vendor_manage:
+  code: purchasing.vendor.manage
+  name: Manage vendors
+  permission_group: purchasing
+  active: true
+
+purchasing_vendor_source_view:
+  code: purchasing.vendor_source.view
+  name: View vendor sources
+  permission_group: purchasing
+  active: true
+
+purchasing_vendor_source_manage:
+  code: purchasing.vendor_source.manage
+  name: Manage vendor sources
+  permission_group: purchasing
+  active: true
+
+purchasing_cost_view:
+  code: purchasing.cost.view
+  name: View purchasing cost
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_view:
+  code: purchasing.purchase_order.view
+  name: View purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_create:
+  code: purchasing.purchase_order.create
+  name: Create purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_edit:
+  code: purchasing.purchase_order.edit
+  name: Edit draft purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_place:
+  code: purchasing.purchase_order.place
+  name: Place purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_amend:
+  code: purchasing.purchase_order.amend
+  name: Amend placed purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_cancel:
+  code: purchasing.purchase_order.cancel
+  name: Cancel purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_purchase_order_close:
+  code: purchasing.purchase_order.close
+  name: Close purchase orders
+  permission_group: purchasing
+  active: true
+
+purchasing_allocation_create:
+  code: purchasing.allocation.create
+  name: Create PO allocations
+  permission_group: purchasing
+  active: true
+
+purchasing_allocation_release:
+  code: purchasing.allocation.release
+  name: Release PO allocations
+  permission_group: purchasing
+  active: true
+
+requests_product_request_view:
+  code: requests.product_request.view
+  name: View product requests
+  permission_group: requests
+  active: true
+
+requests_product_request_create:
+  code: requests.product_request.create
+  name: Create product requests
+  permission_group: requests
+  active: true
+
+requests_product_request_edit:
+  code: requests.product_request.edit
+  name: Edit product requests
+  permission_group: requests
+  active: true
+
+requests_product_request_assign:
+  code: requests.product_request.assign
+  name: Assign product request buyers
+  permission_group: requests
+  active: true
+
+requests_product_request_resolve:
+  code: requests.product_request.resolve
+  name: Resolve product requests
+  permission_group: requests
+  active: true
+
+requests_product_request_cancel:
+  code: requests.product_request.cancel
+  name: Cancel product requests
+  permission_group: requests
+  active: true
+
+requests_customer_request_reserve:
+  code: requests.customer_request.reserve
+  name: Reserve for customer requests
+  permission_group: requests
+  active: true
+
+requests_customer_request_fulfill:
+  code: requests.customer_request.fulfill
+  name: Fulfill customer requests
+  permission_group: requests
+  active: true
+
+inventory_receipt_view:
+  code: inventory.receipt.view
+  name: View receipts
+  permission_group: inventory
+  active: true
+
+inventory_receipt_create:
+  code: inventory.receipt.create
+  name: Create receipts
+  permission_group: inventory
+  active: true
+
+inventory_receipt_post:
+  code: inventory.receipt.post
+  name: Post receipts
+  permission_group: inventory
+  active: true
+
+inventory_receipt_receive_unlinked:
+  code: inventory.receipt.receive_unlinked
+  name: Receive unlinked lines
+  permission_group: inventory
+  active: true
+
+inventory_receipt_over_receive:
+  code: inventory.receipt.over_receive
+  name: Over-receive
+  permission_group: inventory
+  active: true

@@ -36,6 +36,13 @@ class PosTransactionsController < ApplicationController
       .includes(:discount_reason, :target_pos_line_item, :pos_discount_allocations)
       .order(:position, :id)
     @line_discounts_by_line_id = @pos_discounts.select { |d| d.scope == "line" }.group_by(&:target_pos_line_item_id)
+    if @pos_transaction.editable?
+      @fulfillable_customer_requests = Current.store.product_requests.open_requests
+        .where(request_type: "customer_request")
+        .includes(:product, :product_variant)
+        .order(:created_at)
+        .select { |request| request.outstanding_quantity.positive? }
+    end
     @transaction_discounts = @pos_discounts.select { |d| d.scope == "transaction" }
     # Sort the full hierarchy (including non-postable parents), then offer only
     # active postable departments so open-ring children keep parent-relative order.
@@ -165,6 +172,7 @@ class PosTransactionsController < ApplicationController
     {
       "query" => stored["query"].to_s,
       "quantity" => (stored["quantity"].presence || 1).to_i,
+      "product_request_id" => stored["product_request_id"],
       "candidates" => candidates
     }
   end

@@ -54,6 +54,11 @@ module Inventory
         calculate_sale
       when :customer_return_discard
         calculate_customer_return_discard
+      when :receipt_deficit_settlement
+        calculate_receipt_deficit_settlement(@prior_on_hand + @quantity_delta)
+      when :receipt
+        raise ArgumentError, "quantity_delta must be positive for a receipt" unless @quantity_delta.positive?
+        calculate_quantity_movement
       when :opening_inventory, :quantity_only, :customer_return
         calculate_quantity_movement
       else
@@ -123,6 +128,44 @@ module Inventory
           update_last_known: false
         )
       end
+    end
+
+    # OD-014: settles negative On Hand toward zero. Creates no positive
+    # inventory asset (value delta is always zero) and never crosses above
+    # zero on_hand — Inventory::PostReceipt splits a Receipt Line's accepted
+    # quantity into a settlement portion and a separate :receipt entry when
+    # the accepted quantity exceeds the open deficit.
+    def calculate_receipt_deficit_settlement(resulting_on_hand)
+      raise ArgumentError, "quantity_delta must be positive for receipt_deficit_settlement" unless @quantity_delta.positive?
+      raise ArgumentError, "receipt_deficit_settlement requires negative prior on_hand" unless @prior_on_hand.negative?
+      raise ArgumentError, "receipt_deficit_settlement must not cross above zero on_hand" if resulting_on_hand.positive?
+
+      unit = @incoming_unit_cost_cents
+      quality = @incoming_cost_quality.presence
+      method = @incoming_cost_method.presence
+
+      if unit.present?
+        movement_cost = Rounding.multiply_round_half_up(unit, @quantity_delta)
+        quality ||= "actual"
+        method ||= "explicit"
+      else
+        movement_cost = nil
+        quality = "unknown"
+        method = "unknown"
+      end
+
+      Result.new(
+        resulting_on_hand: resulting_on_hand,
+        resulting_inventory_value_cents: 0,
+        resulting_moving_average_cost_cents: nil,
+        resulting_cost_quality: "unknown",
+        inventory_value_delta_cents: 0,
+        unit_cost_cents: unit,
+        movement_cost_cents: movement_cost,
+        cost_method: method,
+        cost_quality: quality,
+        update_last_known: false
+      )
     end
 
     def calculate_cost_correction

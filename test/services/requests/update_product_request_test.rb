@@ -1,0 +1,179 @@
+# frozen_string_literal: true
+
+require "test_helper"
+
+module Requests
+  class UpdateProductRequestTest < ActiveSupport::TestCase
+    setup do
+      @store = stores(:main_street)
+      @admin = users(:admin)
+      @clerk = users(:clerk)
+      @request = product_requests(:open_stock_replenishment)
+    end
+
+    test "updates mutable attributes while open" do
+      result = UpdateProductRequest.call(
+        product_request: @request, actor: @admin, store: @store,
+        attributes: { requested_quantity: 20, priority: "urgent", notes: "Bestseller restock" }
+      )
+
+      assert result.success?, result.error
+      assert_equal 20, result.product_request.requested_quantity
+      assert_equal "urgent", result.product_request.priority
+      assert_equal "Bestseller restock", result.product_request.notes
+    end
+
+    test "refuses to edit a closed request" do
+      result = UpdateProductRequest.call(
+        product_request: product_requests(:resolved_frontlist), actor: @admin, store: @store,
+        attributes: { requested_quantity: 99 }
+      )
+
+      assert_not result.success?
+      assert_match(/only open requests/i, result.error)
+    end
+
+    test "denies an actor without requests.product_request.edit" do
+      result = UpdateProductRequest.call(
+        product_request: @request, actor: @clerk, store: @store,
+        attributes: { requested_quantity: 20 }
+      )
+
+      assert_not result.success?
+      assert_match(/not permitted/i, result.error)
+    end
+
+    test "reducing requested quantity releases excess allocations" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 5)
+
+      vendor = vendors(:acme_distributor)
+      po = Purchasing::CreatePurchaseOrder.call(
+        purchase_order: PurchaseOrder.new(vendor: vendor),
+        lines_attributes: [ {
+          product_variant_id: variant.id, ordered_quantity: 5,
+          cost_entry_method: "direct_net_cost", expected_unit_cost_cents: 700
+        } ],
+        actor: @admin, store: @store
+      ).purchase_order
+      Purchasing::PlacePurchaseOrder.call(purchase_order: po, actor: @admin, store: @store)
+      allocation = Purchasing::CreateAllocation.call(
+        purchase_order_line: po.purchase_order_lines.first,
+        product_request: request, quantity: 5, actor: @admin, store: @store
+      ).purchase_order_allocation
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { requested_quantity: 2 }
+      )
+
+      assert result.success?, result.error
+      assert_equal 2, request.reload.requested_quantity
+      assert_equal 2, allocation.reload.remaining_quantity
+      assert_equal "request_quantity_reduced",
+                   allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
+    end
+
+    test "rejects clearing a resolved variant while allocations remain" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 2)
+
+      vendor = vendors(:acme_distributor)
+      po = Purchasing::CreatePurchaseOrder.call(
+        purchase_order: PurchaseOrder.new(vendor: vendor),
+        lines_attributes: [ {
+          product_variant_id: variant.id, ordered_quantity: 2,
+          cost_entry_method: "direct_net_cost", expected_unit_cost_cents: 700
+        } ],
+        actor: @admin, store: @store
+      ).purchase_order
+      Purchasing::PlacePurchaseOrder.call(purchase_order: po, actor: @admin, store: @store)
+      assert Purchasing::CreateAllocation.call(
+        purchase_order_line: po.purchase_order_lines.first,
+        product_request: request, quantity: 2, actor: @admin, store: @store
+      ).success?
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { product_variant_id: nil }
+      )
+
+      assert_not result.success?
+      assert_match(/cannot change variant/i, result.error)
+      assert_equal variant.id, request.reload.product_variant_id
+    end
+
+    test "rejects nil-to-variant when an existing fulfilment used a different variant" do
+      hardcover = product_variants(:sample_book_standard)
+      other_variant = product_variants(:upc_product_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: nil, requested_quantity: 2)
+
+      day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = Pos::OpenSession.call(
+        business_day: day, store: @store, pos_device: pos_devices(:register_1), cashier: @admin, actor: @admin
+      ).pos_session
+      txn = Pos::OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
+      line = PosLineItem.create!(
+        pos_transaction: txn, line_kind: "product", status: "completed", direction: "sale",
+        product_variant: hardcover, department: departments(:books_new), quantity: 1,
+        unit_price_cents: 1000, created_by_user: @admin, product_request: request
+      )
+      ProductRequestFulfillment.create!(
+        product_request: request, pos_line_item: line, quantity: 1, kind: "fulfill",
+        fulfilled_at: Time.current, fulfilled_by_user: @admin, posting_key: "variant-fulfill-guard"
+      )
+      # Historical fulfilment line identity is authoritative even if later catalog
+      # edits would no longer allow creating that combination through POS.
+      line.update_columns(product_variant_id: other_variant.id)
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { product_variant_id: hardcover.id }
+      )
+
+      assert_not result.success?
+      assert_match(/fulfilments are not compatible/i, result.error)
+      assert_nil request.reload.product_variant_id
+    end
+
+    test "rejects reducing requested quantity below pending POS-held coverage" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 5)
+
+      StockBalance.create!(
+        store: @store, product_variant: variant,
+        on_hand: 5, reserved: 0, unavailable: 0,
+        inventory_value_cents: 5000, moving_average_cost_cents: 1000, cost_quality: "actual"
+      )
+      assert Inventory::Reserve.call(
+        store: @store, product_variant: variant, quantity: 5,
+        source_type: "product_request", source_id: request.id, actor: @admin
+      ).success?
+
+      day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = Pos::OpenSession.call(
+        business_day: day, store: @store, pos_device: pos_devices(:register_1),
+        cash_drawer: cash_drawers(:drawer_1), opening_cash_cents: 0, cashier: @admin, actor: @admin
+      ).pos_session
+      txn = Pos::OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
+      line = Pos::AddLine.call(
+        pos_transaction: txn, product_variant: variant, quantity: 5, actor: @admin, product_request: request
+      ).pos_line_item
+      assert line.present?
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { requested_quantity: 3 }
+      )
+
+      assert_not result.success?
+      assert_match(/pending POS-held/i, result.error)
+      assert_equal 5, request.reload.requested_quantity
+      assert_equal 5, request.pos_held_reserved_quantity
+    end
+  end
+end

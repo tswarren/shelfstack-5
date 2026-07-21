@@ -18,6 +18,9 @@
               <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
                 <%= hidden_field_tag :product_variant_id, variant["id"] %>
                 <%= hidden_field_tag :quantity, qty %>
+                <% if @scan_resolution["product_request_id"].present? %>
+                  <%= hidden_field_tag :product_request_id, @scan_resolution["product_request_id"] %>
+                <% end %>
                 <%= form.submit "Add #{variant["label"]}", class: "button button-small button-outline" %>
               <% end %>
             <% end %>

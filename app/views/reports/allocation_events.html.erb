@@ -1,0 +1,43 @@
+<% content_for :title, "Allocation events" %>
+
+<%= render "shared/page_header", title: "Allocation events",
+      subtitle: "Append-only history of Purchase-Order Allocation conversions and releases (OD-007). Never editable.",
+      breadcrumbs: [ { label: "Reports", path: reports_path }, { label: "Allocation events" } ] %>
+
+<% if @events.empty? %>
+  <%= render "shared/empty_state", title: "No allocation events yet",
+        body: "Conversions to Inventory Reservation and allocation releases will appear here." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Allocation events</caption>
+      <thead>
+        <tr>
+          <th scope="col">Occurred</th>
+          <th scope="col">Event</th>
+          <th scope="col">Purchase order</th>
+          <th scope="col">Product request</th>
+          <th scope="col" class="num">Quantity</th>
+          <th scope="col">Reason</th>
+          <th scope="col">User</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @events.each do |event| %>
+          <% allocation = event.purchase_order_allocation %>
+          <% line = allocation.purchase_order_line %>
+          <tr>
+            <td><%= formatted_datetime(event.occurred_at) %></td>
+            <td><%= status_badge(event.event_type.titleize, variant: event.event_type == "converted_to_reservation" ? :success : :neutral) %></td>
+            <td><%= link_to line.purchase_order.purchase_order_number, line.purchase_order %></td>
+            <td><%= link_to "Request ##{allocation.product_request_id}", allocation.product_request %></td>
+            <td class="num"><%= event.quantity %></td>
+            <td><%= event.reason&.titleize || "—" %></td>
+            <td><%= event.user.username %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "allocation event" %>
+<% end %>

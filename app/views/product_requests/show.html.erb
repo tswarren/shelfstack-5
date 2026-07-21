@@ -1,0 +1,259 @@
+<% content_for :title, "Product request ##{@product_request.id}" %>
+
+<%= render "shared/page_header",
+      title: "Product request ##{@product_request.id}",
+      subtitle: @product_request.product.name,
+      breadcrumbs: [ { label: "Product requests", path: product_requests_path }, { label: "##{@product_request.id}" } ],
+      actions: capture {
+        if @product_request.open? && Current.user.can?("requests.product_request.edit", store: Current.store)
+          concat link_to("Edit", edit_product_request_path(@product_request), class: "button button-outline")
+        end
+        concat link_to("Back to product requests", product_requests_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Request</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Type", @product_request.request_type.titleize ],
+    [ "Status", status_badge(@product_request.status.titleize, variant: product_request_status_variant(@product_request.status)) ],
+    [ "Priority", status_badge(@product_request.priority.titleize, variant: product_request_priority_variant(@product_request.priority)) ],
+    [ "Product", link_to(@product_request.product.name, @product_request.product) ],
+    [ "Product variant", @product_request.product_variant ? variant_option_label(@product_request.product_variant) : "Not yet resolved" ],
+    [ "Requested quantity", @product_request.requested_quantity ],
+    [ "Needed by", @product_request.needed_by_on ? formatted_store_date(@product_request.needed_by_on) : "—" ],
+    [ "Customer reference", @product_request.customer_reference.presence || "—" ],
+    [ "Requested by", @product_request.requested_by_user.username ],
+    [ "Assigned buyer", @product_request.assigned_buyer_user&.username || "—" ],
+    [ "Notes", @product_request.notes.presence || "—" ]
+  ] %>
+  <% if @product_request.supersedes_product_request_id.present? %>
+    <%= render "shared/record_summary", rows: [
+      [ "Follow-up for", link_to("Product request ##{@product_request.supersedes_product_request_id}", @product_request.supersedes_product_request) ]
+    ] %>
+  <% end %>
+  <% if @product_request.resolution.present? %>
+    <%= render "shared/record_summary", rows: [
+      [ "Resolution", @product_request.resolution.titleize ],
+      [ "Resolved quantity", @product_request.resolved_quantity.nil? ? "—" : @product_request.resolved_quantity ],
+      [ "Resolved at", formatted_datetime(@product_request.resolved_at) ],
+      [ "Resolved by", @product_request.resolved_by_user&.username || "—" ],
+      [ "Resolution note", @product_request.resolution_note.presence || "—" ]
+    ] %>
+  <% end %>
+</section>
+
+<% if @product_request.open? && Current.user.can?("requests.product_request.assign", store: Current.store) %>
+  <section class="record-section">
+    <h2>Assign buyer</h2>
+    <%= form_with url: assign_product_request_path(@product_request), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= label_tag "product_request_assigned_buyer_user_id", "Buyer" %>
+        <%= collection_select :product_request, :assigned_buyer_user_id, @buyers, :id, :username,
+              { include_blank: true, selected: @product_request.assigned_buyer_user_id }, class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Assign buyer", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @product_request.open? && @product_request.non_customer_request? && Current.user.can?("requests.product_request.resolve", store: Current.store) %>
+  <section class="record-section">
+    <h2>Resolve</h2>
+    <p class="field-hint">Records the buyer's terminal decision. "Deferred" leaves the request open.</p>
+    <%= form_with url: resolve_product_request_path(@product_request), method: :post, class: "form" do |form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= label_tag "product_request_resolution", "Resolution" %>
+          <%= select_tag "product_request[resolution]",
+                options_for_select(ProductRequest::RESOLUTIONS.map { |r| [ r.titleize, r ] }),
+                id: "product_request_resolution", class: "input", required: true %>
+        </div>
+        <div class="field">
+          <%= label_tag "product_request_resolved_quantity", "Resolved quantity (defaults to requested)" %>
+          <%= number_field_tag "product_request[resolved_quantity]", nil, min: 0, max: @product_request.requested_quantity,
+                id: "product_request_resolved_quantity", class: "input" %>
+        </div>
+      </div>
+      <div class="field">
+        <%= label_tag "product_request_resolution_note", "Resolution note" %>
+        <%= text_area_tag "product_request[resolution_note]", nil, id: "product_request_resolution_note", class: "input", rows: 2 %>
+      </div>
+      <div class="checkbox-group">
+        <label>
+          <%= check_box_tag "product_request[create_follow_up]", "1", false, id: "product_request_create_follow_up" %>
+          Create a follow-up request for residual quantity when ordering less than requested
+        </label>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Resolve request", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @product_request.open? && Current.user.can?("requests.product_request.cancel", store: Current.store) %>
+  <section class="record-section">
+    <h2>Cancel</h2>
+    <%= form_with url: cancel_product_request_path(@product_request), method: :post, class: "form",
+          data: { turbo_confirm: "Cancel this product request?" } do |form| %>
+      <div class="field">
+        <%= label_tag "product_request_cancellation_reason", "Cancellation reason" %>
+        <%= text_field_tag "product_request[cancellation_reason]", nil, id: "product_request_cancellation_reason", class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Cancel request", class: "button button-danger" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<% if @product_request.customer_request? %>
+  <section class="record-section">
+    <h2>Coverage</h2>
+    <%= render "shared/record_summary", rows: [
+      [ "Requested", @product_request.requested_quantity ],
+      [ "Fulfilled", @product_request.fulfilled_quantity ],
+      [ "Outstanding", @product_request.outstanding_quantity ],
+      [ "Active reserved", @product_request.active_reserved_quantity ],
+      [ "Remaining allocated", @product_request.remaining_allocated_quantity ],
+      [ "Uncovered", @product_request.uncovered_quantity ]
+    ] %>
+    <% if @active_reservations.any? %>
+      <ul class="muted">
+        <% @active_reservations.each do |reservation| %>
+          <li>
+            Reservation #<%= reservation.id %> —
+            <%= reservation.quantity %> of <%= variant_option_label(reservation.product_variant) %>
+            <% if reservation.inventory_unit.present? %>
+              (unit <%= reservation.inventory_unit.unit_identifier %>)
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+
+  <% if @can_reserve && @product_request.uncovered_quantity.positive? %>
+    <section class="record-section">
+      <h2>Reserve in-house stock</h2>
+      <p class="field-hint">
+        Only reserve merchandise after physically confirming it is present.
+        This creates an Inventory Reservation for the customer request.
+      </p>
+      <%= form_with url: reserve_product_request_path(@product_request), method: :post, class: "form" do %>
+        <div class="form-grid">
+          <% if @product_request.product_variant.inventory_tracking_mode == "individual" %>
+            <div class="field">
+              <%= label_tag :inventory_unit_id, "Inventory unit" %>
+              <%= select_tag :inventory_unit_id,
+                    options_from_collection_for_select(@available_units || [], :id, :unit_identifier),
+                    include_blank: true, class: "input", required: true %>
+            </div>
+            <%= hidden_field_tag :quantity, 1 %>
+          <% else %>
+            <div class="field">
+              <%= label_tag :quantity, "Quantity" %>
+              <%= number_field_tag :quantity, 1, min: 1, max: @product_request.uncovered_quantity, class: "input", required: true %>
+            </div>
+          <% end %>
+        </div>
+        <div class="checkbox-group">
+          <label>
+            <%= check_box_tag :physically_confirmed, "1", false, required: true %>
+            I have physically confirmed this stock is present
+          </label>
+        </div>
+        <div class="form-actions">
+          <%= submit_tag "Reserve stock", class: "button button-primary" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <section class="record-section">
+    <h2>Purchase-order allocations</h2>
+    <p class="field-hint">
+      Expected supply committed from an ordered purchase-order line to this request (ADR-0015).
+      Allocating never reserves physical stock or changes On Hand.
+    </p>
+    <% if @allocations.any? %>
+      <div class="table-container">
+        <table class="data-table">
+          <caption class="sr-only">Purchase-order allocations for this request</caption>
+          <thead>
+            <tr>
+              <th scope="col">Purchase order</th>
+              <th scope="col">Line</th>
+              <th scope="col" class="num">Allocated</th>
+              <th scope="col" class="num">Remaining</th>
+              <th scope="col">State</th>
+              <% if @can_release_allocation %><th scope="col">Release</th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @allocations.each do |allocation| %>
+              <% line = allocation.purchase_order_line %>
+              <tr>
+                <td><%= link_to line.purchase_order.purchase_order_number, line.purchase_order %></td>
+                <td><%= variant_option_label(line.product_variant) %></td>
+                <td class="num"><%= allocation.quantity %></td>
+                <td class="num"><%= allocation.remaining_quantity %></td>
+                <td><%= status_badge(allocation.state.titleize, variant: allocation_state_variant(allocation.state)) %></td>
+                <% if @can_release_allocation %>
+                  <td>
+                    <% if allocation.remaining_quantity.positive? %>
+                      <%= form_with url: release_purchase_order_allocation_path(allocation), method: :post do |form| %>
+                        <%= hidden_field_tag :redirect_target, "product_request" %>
+                        <%= number_field_tag "purchase_order_allocation[quantity]", allocation.remaining_quantity,
+                              min: 1, max: allocation.remaining_quantity, class: "input", "aria-label": "Release quantity" %>
+                        <%= select_tag "purchase_order_allocation[reason]",
+                              options_for_select(PurchaseOrderAllocationEvent::RELEASE_REASONS.map { |r| [ r.titleize, r ] }, "request_cancelled"),
+                              class: "input" %>
+                        <%= form.submit "Release", class: "button button-outline button-small" %>
+                      <% end %>
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="muted">No allocations yet.</p>
+    <% end %>
+
+    <% if @can_create_allocation %>
+      <h3 class="form-section-title">Create allocation</h3>
+      <% if @open_purchase_order_lines.any? %>
+        <%= form_with url: purchase_order_allocations_path, method: :post, class: "form" do |form| %>
+          <%= hidden_field_tag :redirect_target, "product_request" %>
+          <%= hidden_field_tag "purchase_order_allocation[product_request_id]", @product_request.id %>
+          <div class="form-grid">
+            <div class="field">
+              <%= label_tag "purchase_order_allocation_line", "Purchase order line" %>
+              <%= select_tag "purchase_order_allocation[purchase_order_line_id]",
+                    options_for_select(@open_purchase_order_lines.map { |l|
+                      [ "#{l.purchase_order.purchase_order_number} — #{variant_option_label(l.product_variant)} (open #{l.open_quantity})", l.id ]
+                    }),
+                    include_blank: true, id: "purchase_order_allocation_line", class: "input" %>
+            </div>
+            <div class="field">
+              <%= label_tag "purchase_order_allocation_quantity", "Quantity" %>
+              <%= number_field_tag "purchase_order_allocation[quantity]", 1, min: 1, id: "purchase_order_allocation_quantity", class: "input" %>
+            </div>
+          </div>
+          <div class="form-actions">
+            <%= form.submit "Create allocation", class: "button button-primary" %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="muted">No ordered purchase-order lines with open quantity are available to allocate.</p>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>

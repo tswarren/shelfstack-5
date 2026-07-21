@@ -31,14 +31,21 @@ Keep workflows record-level. Screen layout belongs elsewhere.
 | [individually-tracked-sale.md](individually-tracked-sale.md) | Delivered | Phase 4d |
 | [suspended-transaction.md](suspended-transaction.md) | Delivered | Phase 4a |
 | [customer-return.md](customer-return.md) | Delivered | Phase 4e |
-| [post-void.md](post-void.md) | Stub | Phase 6 |
-| [purchasing-and-receiving.md](purchasing-and-receiving.md) | Stub | Phase 5 |
-| [customer-request-fulfillment.md](customer-request-fulfillment.md) | Stub | Phase 5 |
-| [business-day-close.md](business-day-close.md) | Stub | Phase 4 / 7 |
-| [stored-value.md](stored-value.md) | Stub | Phase 6 |
+| [purchase-order.md](purchase-order.md) | Minimal stub, points to service catalog | Phase 5a/5b/5c/5e |
+| [product-request.md](product-request.md) | Minimal stub, points to service catalog | Phase 5d/5e/5f |
+| [post-void.md](post-void.md) | Stub (not yet written) | Phase 6 |
+| [business-day-close.md](business-day-close.md) | Stub (not yet written) | Phase 4 / 7 |
+| [stored-value.md](stored-value.md) | Stub (not yet written) | Phase 6 |
 
 ## Phase 4 notes
 
 - Completion ordered steps and failure/idempotency behavior live in [pos-completion.md](pos-completion.md).
 - Opening stock → sale path: [opening-stock.md](opening-stock.md) → [quantity-tracked-sale.md](quantity-tracked-sale.md) → [pos-completion.md](pos-completion.md).
 - Linked returns: [customer-return.md](customer-return.md).
+
+## Phase 5 notes
+
+- Purchasing and receiving: [purchase-order.md](purchase-order.md); receiving itself
+  (`Inventory::PostReceipt`) has no dedicated workflow doc yet — see the Phase 5c/5f
+  service-catalog entries.
+- Demand and fulfilment: [product-request.md](product-request.md).

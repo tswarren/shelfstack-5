@@ -1,0 +1,4 @@
+<%= render "shared/page_header", title: "Edit receipt",
+      breadcrumbs: [ { label: "Receipts", path: receipts_path }, { label: @receipt.receipt_number, path: receipt_path(@receipt) }, { label: "Edit" } ] %>
+
+<%= render "form", receipt: @receipt %>

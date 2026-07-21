@@ -1,0 +1,47 @@
+<% content_for :title, "Customer request coverage" %>
+
+<%= render "shared/page_header", title: "Customer request coverage",
+      subtitle: "Reserved, allocated, fulfilled, and uncovered quantity for Customer Requests (OD-007).",
+      breadcrumbs: [ { label: "Reports", path: reports_path }, { label: "Customer request coverage" } ],
+      actions: capture {
+        concat link_to("All product requests", product_requests_path, class: "button button-outline")
+      } %>
+
+<% if @product_requests.empty? %>
+  <%= render "shared/empty_state", title: "No customer requests yet",
+        body: "Customer Requests will appear here with their fulfilment coverage." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Customer request coverage</caption>
+      <thead>
+        <tr>
+          <th scope="col">Product</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="num">Requested</th>
+          <th scope="col" class="num">Fulfilled</th>
+          <th scope="col" class="num">Reserved</th>
+          <th scope="col" class="num">Allocated</th>
+          <th scope="col" class="num">Uncovered</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @product_requests.each do |request| %>
+          <tr>
+            <td>
+              <%= link_to request.product.name, request %>
+              <div class="muted"><%= request.customer_reference.presence || "—" %></div>
+            </td>
+            <td><%= status_badge(request.status.titleize, variant: product_request_status_variant(request.status)) %></td>
+            <td class="num"><%= request.requested_quantity %></td>
+            <td class="num"><%= request.fulfilled_quantity %></td>
+            <td class="num"><%= request.active_reserved_quantity %></td>
+            <td class="num"><%= request.remaining_allocated_quantity %></td>
+            <td class="num"><%= request.uncovered_quantity %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "customer request" %>
+<% end %>

@@ -61,7 +61,7 @@ flowchart TD
 | 3 | Quantity inventory bootstrap | Complete | [phases/phase-03-quantity-inventory-bootstrap.md](phases/phase-03-quantity-inventory-bootstrap.md) |
 | 4 | Point of sale (4a–4e) + UX Baseline (4f) | Complete — merged to `main` at `34f371f` (PR #30) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) |
 | 4g | Test hardening | Complete — merged to `main` at `c51dcca` (PR #31) | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
-| 5 | Supply and demand | Ready to begin — Phase 4g gate satisfied | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
+| 5 | Supply and demand | Ready for merge — 5a–5g on `phase/5-supply-and-demand` (exit criteria met; not yet on `main`) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
 | 6 | Corrections and stored value | Not started | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
@@ -96,7 +96,7 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged to `main` at `34f371f`, PR #30) and Phase 4g test hardening (merged to `main` at `c51dcca`, PR #31).
 
-**Active:** Phase 5 — Supply and Demand. See [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
+**Active:** Phase 5 — Supply and Demand. 5a–5g implemented and hardened on `phase/5-supply-and-demand` (exit criteria met; `bin/ci` and `test:system` green). Not yet merged to `main`. See [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md).
 
 **Phase 5 unlock (Option B — accepted; 4g gate satisfied):**
 
@@ -106,8 +106,8 @@ Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged t
 | Unit-dependent fulfilment (unit-backed receipt lines, exact-copy request fulfilment) | After **4d** + same | Unlocked |
 | Return/refund-oriented fulfilment paths | **4e** recommended + same | Unlocked |
 
-1. Scaffold Phase 5 from the reconciled baseline ([phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)): vendors → POs → receipts + OD-014 settlement → product-backed demand → customer allocations (OD-007) → fulfilment. Authority: [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md).
-2. Update Schema Dictionary exports and permission catalog before treating migrations as authoritative.
+1. Scaffold Phase 5 from the reconciled baseline ([phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)): vendors → POs → receipts + OD-014 settlement → product-backed demand → customer allocations (OD-007) → fulfilment. Authority: [ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md). Planning defaults in that phase plan are binding for scaffolding.
+2. Schema exports and Phase 5 permission catalog are reconciled; treat migrations as authoritative only when they match ADRs/domains.
 3. Residual 4g-5 broader coverage may continue alongside Phase 5.
 4. Phases 6–7 as separate epics.
 
@@ -115,7 +115,8 @@ Completed: Phases 0–4 product delivery (4a–4e + 4f UX Baseline Gate merged t
 
 ## Schema and seed inputs
 
-- Reconciled proforma: [../exports/schema/](../exports/schema/)
+- Reconciled proforma CSVs and workbook: [../exports/schema/](../exports/schema/)
+- Current reconciliation workbook: [../exports/schema/ShelfStack_Schema_Reconciliation_2026-07-20.xlsx](../exports/schema/ShelfStack_Schema_Reconciliation_2026-07-20.xlsx)
 - Classification seed CSVs: [../exports/departments.csv](../exports/departments.csv), [../exports/tax_categories.csv](../exports/tax_categories.csv), [../exports/merchandise_classes.csv](../exports/merchandise_classes.csv)
 - Pre-scaffolding reconciliation note: [schema-reconciliation-display-categories-and-demand-allocation.md](schema-reconciliation-display-categories-and-demand-allocation.md)
 

@@ -1,0 +1,60 @@
+<% lines = receipt.receipt_lines.to_a
+   lines = [ receipt.receipt_lines.build(delivered_quantity: 1, accepted_quantity: 1, position: 0) ] if lines.empty? %>
+
+<%= form_with model: receipt, class: "form",
+      data: {
+        controller: "receipt-form",
+        receipt_form_vendor_cost_suggestions_value: (@vendor_cost_suggestions || {}).to_json
+      } do |form| %>
+  <%= render "shared/form_errors", object: receipt %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Document</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :vendor_id, "Vendor", class: "field-label" %>
+        <%= form.collection_select :vendor_id, @vendors, :id, :name,
+              { include_blank: true },
+              required: true,
+              class: "input",
+              data: { receipt_form_target: "vendor", action: "change->receipt-form#vendorChanged" } %>
+      </div>
+      <div class="field">
+        <%= form.label :received_at, "Received at", class: "field-label" %>
+        <%= form.datetime_field :received_at, class: "input" %>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.label :notes, class: "field-label" %>
+      <%= form.text_area :notes, class: "input", rows: 3 %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <div class="page-header-row">
+      <h2 class="form-section-title">Lines</h2>
+      <button type="button" class="button button-outline button-small"
+              data-action="receipt-form#addLine">Add line</button>
+    </div>
+
+    <div data-receipt-form-target="lines">
+      <% lines.each_with_index do |line, index| %>
+        <%= form.fields_for :receipt_lines, line, child_index: index do |line_form| %>
+          <%= render "line_fields", f: line_form, variants: @product_variants, purchase_order_lines: @purchase_order_lines, can_edit_cost: @can_edit_cost %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <template data-receipt-form-target="lineTemplate">
+      <%= form.fields_for :receipt_lines, ReceiptLine.new(delivered_quantity: 1, accepted_quantity: 1),
+            child_index: "__INDEX__" do |line_form| %>
+        <%= render "line_fields", f: line_form, variants: @product_variants, purchase_order_lines: @purchase_order_lines, can_edit_cost: @can_edit_cost %>
+      <% end %>
+    </template>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit(receipt.persisted? ? "Update draft" : "Create draft", class: "button button-primary") %>
+    <%= link_to "Cancel", receipt.persisted? ? receipt_path(receipt) : receipts_path, class: "button button-outline" %>
+  </div>
+<% end %>

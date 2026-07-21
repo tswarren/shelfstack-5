@@ -211,8 +211,8 @@ Audit Request creation, Product/quantity changes, priority and needed-by changes
 
 ## Open questions
 
-- Resolution storage shape (columns vs events) and supersession links.
-- Lightweight non-authoritative navigation hint from resolved non-customer request to PO session.
-- Substitution authorization.
-- Unclaimed reservation release policy.
-- Whether every fulfilment requires a POS Transaction in every case (Phase 5 baseline assumes POS fulfilment fact).
+Phase 5 scaffolding defaults are locked in [phase-05-supply-and-demand.md](../implementation/phases/phase-05-supply-and-demand.md) (resolution columns, follow-up on partial order, optional supersession, `inventory.reservation.release` for unclaimed holds). Remaining later work:
+
+- Whether a non-authoritative non-customer ↔ PO navigation hint is worth implementing.
+- Substitution authorization (out of Phase 5).
+- Whether every fulfilment must require a POS Transaction in every future case (Phase 5 baseline assumes POS fulfilment fact).

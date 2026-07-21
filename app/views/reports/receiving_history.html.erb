@@ -1,0 +1,83 @@
+<% content_for :title, "Receiving history" %>
+
+<%= render "shared/page_header", title: "Receiving history",
+      subtitle: "Receipt history and purchase orders that are only partially received.",
+      breadcrumbs: [ { label: "Reports", path: reports_path }, { label: "Receiving history" } ],
+      actions: capture {
+        concat link_to("All receipts", receipts_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Receipts</h2>
+  <% if @receipts.empty? %>
+    <%= render "shared/empty_state", title: "No receipts yet",
+          body: "Draft, posted, and cancelled receipts will appear here." %>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Receipt history</caption>
+        <thead>
+          <tr>
+            <th scope="col">Number</th>
+            <th scope="col">Vendor</th>
+            <th scope="col">Status</th>
+            <th scope="col">Received at</th>
+            <% if @can_view_cost %><th scope="col" class="num">Accepted value</th><% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @receipts.each do |receipt| %>
+            <tr>
+              <td><%= link_to receipt.receipt_number, receipt %></td>
+              <td><%= receipt.vendor.name %></td>
+              <td><%= status_badge(receipt.status.titleize, variant: receipt_status_variant(receipt.status)) %></td>
+              <td><%= receipt.received_at ? formatted_datetime(receipt.received_at) : "—" %></td>
+              <% if @can_view_cost %>
+                <td class="num">
+                  <%= format_money(receipt.receipt_lines.sum { |line| (line.actual_unit_cost_cents || 0) * line.accepted_quantity.to_i }) %>
+                </td>
+              <% end %>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "shared/pagination", pagy: @pagy, item_name: "receipt" %>
+  <% end %>
+</section>
+
+<% if @partially_received_orders %>
+  <section class="record-section">
+    <h2>Partially received purchase orders</h2>
+    <p class="field-hint">Ordered purchase orders where some, but not all, open quantity has been accepted.</p>
+    <% if @partially_received_orders.empty? %>
+      <p class="muted">No purchase orders are currently partially received.</p>
+    <% else %>
+      <div class="table-container">
+        <table class="data-table">
+          <caption class="sr-only">Partially received purchase orders</caption>
+          <thead>
+            <tr>
+              <th scope="col">Number</th>
+              <th scope="col">Vendor</th>
+              <th scope="col" class="num">Ordered</th>
+              <th scope="col" class="num">Received</th>
+              <th scope="col" class="num">Open</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @partially_received_orders.each do |po| %>
+              <tr>
+                <td><%= link_to po.purchase_order_number, po %></td>
+                <td><%= po.vendor.name %></td>
+                <td class="num"><%= po.purchase_order_lines.sum(&:ordered_quantity) %></td>
+                <td class="num"><%= po.purchase_order_lines.sum(&:received_quantity) %></td>
+                <td class="num"><%= po.purchase_order_lines.sum(&:open_quantity) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+<% end %>

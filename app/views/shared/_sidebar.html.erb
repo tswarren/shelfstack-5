@@ -9,8 +9,20 @@
       <%= nav_item "Products", products_path, permission_key: "catalog.product.view" %>
     <% end %>
 
+    <%= nav_section "Requests" do %>
+      <%= nav_item "Product requests", product_requests_path, permission_key: "requests.product_request.view" %>
+      <%= nav_item "Buyer review", buyer_review_index_path, permission_key: "requests.product_request.view" %>
+    <% end %>
+
+    <%= nav_section "Purchasing" do %>
+      <%= nav_item "Vendors", vendors_path, permission_key: "purchasing.vendor.view" %>
+      <%= nav_item "Vendor sources", product_variant_vendors_path, permission_key: "purchasing.vendor_source.view" %>
+      <%= nav_item "Purchase orders", purchase_orders_path, permission_key: "purchasing.purchase_order.view" %>
+    <% end %>
+
     <%= nav_section "Inventory" do %>
       <%= nav_item "Stock", stock_balances_path, permission_key: "inventory.stock.view" %>
+      <%= nav_item "Receipts", receipts_path, permission_key: "inventory.receipt.view" %>
       <%= nav_item "Adjustments", inventory_adjustments_path, permission_key: "inventory.stock.view" %>
       <%= nav_item "Reservations", inventory_reservations_path, permission_key: "inventory.reservation.view" %>
       <%= nav_item "Inventory units", inventory_units_path, permission_key: "inventory.unit.manage" %>
@@ -18,6 +30,15 @@
 
     <%= nav_section "Operations" do %>
       <%= nav_item "Business days", business_days_path, permission_key: "pos.access" %>
+    <% end %>
+
+    <%= nav_section "Reports" do %>
+      <%= nav_item "Reports", reports_path, permission_key: [ "purchasing.purchase_order.view", "inventory.receipt.view", "requests.product_request.view" ] %>
+      <%= nav_item "Open purchase orders", open_purchase_orders_report_path, permission_key: "purchasing.purchase_order.view" %>
+      <%= nav_item "On order", on_order_report_path, permission_key: "purchasing.purchase_order.view" %>
+      <%= nav_item "Receiving history", receiving_history_report_path, permission_key: "inventory.receipt.view" %>
+      <%= nav_item "Customer request coverage", customer_requests_report_path, permission_key: "requests.product_request.view" %>
+      <%= nav_item "Allocation events", allocation_events_report_path, permission_key: "purchasing.purchase_order.view" %>
     <% end %>
 
     <%= nav_section "Configuration" do %>

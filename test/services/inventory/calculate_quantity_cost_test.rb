@@ -276,5 +276,95 @@ module Inventory
       assert_equal "explicit", result.cost_method
       assert_equal "actual", result.cost_quality
     end
+
+    test "receipt into zero balance creates positive inventory at incoming cost" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: 0,
+        prior_inventory_value_cents: 0,
+        prior_moving_average_cost_cents: nil,
+        prior_cost_quality: "unknown",
+        quantity_delta: 2,
+        movement_kind: :receipt,
+        incoming_unit_cost_cents: 700,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual"
+      )
+
+      assert_equal 2, result.resulting_on_hand
+      assert_equal 1400, result.resulting_inventory_value_cents
+      assert_equal 700, result.resulting_moving_average_cost_cents
+      assert_equal "actual", result.resulting_cost_quality
+      assert_equal 1400, result.inventory_value_delta_cents
+    end
+
+    test "receipt requires a positive quantity delta" do
+      assert_raises(ArgumentError) do
+        CalculateQuantityCost.call(
+          prior_on_hand: 0,
+          prior_inventory_value_cents: 0,
+          prior_moving_average_cost_cents: nil,
+          prior_cost_quality: "unknown",
+          quantity_delta: -1,
+          movement_kind: :receipt
+        )
+      end
+    end
+
+    test "receipt_deficit_settlement moves on_hand toward zero with no asset value change" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: -3,
+        prior_inventory_value_cents: 0,
+        prior_moving_average_cost_cents: nil,
+        prior_cost_quality: "unknown",
+        quantity_delta: 2,
+        movement_kind: :receipt_deficit_settlement,
+        incoming_unit_cost_cents: 700,
+        incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual"
+      )
+
+      assert_equal(-1, result.resulting_on_hand)
+      assert_equal 0, result.resulting_inventory_value_cents
+      assert_nil result.resulting_moving_average_cost_cents
+      assert_equal "unknown", result.resulting_cost_quality
+      assert_equal 0, result.inventory_value_delta_cents
+      assert_equal 700, result.unit_cost_cents
+      assert_equal 1400, result.movement_cost_cents
+      assert_equal "actual", result.cost_quality
+    end
+
+    test "receipt_deficit_settlement with unknown cost records unknown quality" do
+      result = CalculateQuantityCost.call(
+        prior_on_hand: -3,
+        prior_inventory_value_cents: 0,
+        prior_moving_average_cost_cents: nil,
+        prior_cost_quality: "unknown",
+        quantity_delta: 3,
+        movement_kind: :receipt_deficit_settlement,
+        incoming_unit_cost_cents: nil
+      )
+
+      assert_equal 0, result.resulting_on_hand
+      assert_equal 0, result.resulting_inventory_value_cents
+      assert_equal 0, result.inventory_value_delta_cents
+      assert_nil result.unit_cost_cents
+      assert_nil result.movement_cost_cents
+      assert_equal "unknown", result.cost_quality
+      assert_equal "unknown", result.cost_method
+    end
+
+    test "receipt_deficit_settlement must not cross above zero on_hand" do
+      assert_raises(ArgumentError) do
+        CalculateQuantityCost.call(
+          prior_on_hand: -1,
+          prior_inventory_value_cents: 0,
+          prior_moving_average_cost_cents: nil,
+          prior_cost_quality: "unknown",
+          quantity_delta: 5,
+          movement_kind: :receipt_deficit_settlement,
+          incoming_unit_cost_cents: 700
+        )
+      end
+    end
   end
 end

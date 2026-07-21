@@ -1,0 +1,69 @@
+<%= render "shared/page_header", title: "Product requests",
+      subtitle: "Customer requests, staff suggestions, stock replenishment, and frontlist selections.",
+      actions: capture {
+        if Current.user.can?("requests.product_request.create", store: Current.store)
+          concat link_to("New product request", new_product_request_path, class: "button button-primary")
+        end
+        if Current.user.can?("requests.product_request.view", store: Current.store)
+          concat link_to("Buyer review", buyer_review_index_path, class: "button button-outline")
+        end
+      } %>
+
+<%= form_with url: product_requests_path, method: :get, class: "form" do %>
+  <div class="form-grid">
+    <div class="field">
+      <label class="field-label" for="pr_filter_status">Status</label>
+      <select id="pr_filter_status" name="status" class="input" onchange="this.form.submit()">
+        <option value="">All</option>
+        <% ProductRequest::STATUSES.each do |status| %>
+          <option value="<%= status %>" <%= "selected" if params[:status] == status %>><%= status.titleize %></option>
+        <% end %>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="pr_filter_type">Type</label>
+      <select id="pr_filter_type" name="request_type" class="input" onchange="this.form.submit()">
+        <option value="">All</option>
+        <% ProductRequest::REQUEST_TYPES.each do |type| %>
+          <option value="<%= type %>" <%= "selected" if params[:request_type] == type %>><%= type.titleize %></option>
+        <% end %>
+      </select>
+    </div>
+  </div>
+<% end %>
+
+<% if @product_requests.empty? %>
+  <%= render "shared/empty_state", title: "No product requests yet",
+        body: "Create a request to record demand for a product." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Product requests</caption>
+      <thead>
+        <tr>
+          <th scope="col">Product</th>
+          <th scope="col">Type</th>
+          <th scope="col">Status</th>
+          <th scope="col">Priority</th>
+          <th scope="col" class="num">Requested qty</th>
+          <th scope="col">Buyer</th>
+          <th scope="col">Needed by</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @product_requests.each do |product_request| %>
+          <tr>
+            <td><%= link_to product_request.product.name, product_request %></td>
+            <td><%= product_request.request_type.titleize %></td>
+            <td><%= status_badge(product_request.status.titleize, variant: product_request_status_variant(product_request.status)) %></td>
+            <td><%= status_badge(product_request.priority.titleize, variant: product_request_priority_variant(product_request.priority)) %></td>
+            <td class="num"><%= product_request.requested_quantity %></td>
+            <td><%= product_request.assigned_buyer_user&.username || "—" %></td>
+            <td><%= product_request.needed_by_on ? formatted_store_date(product_request.needed_by_on) : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "product request" %>
+<% end %>

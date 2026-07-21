@@ -2,7 +2,8 @@
 
 module Pos
   # Soft-remove only: retains the line row with status "removed" and releases any
-  # active reservation. Never deletes the row.
+  # active reservation. When the line was fulfilling a still-open Customer
+  # Request, returns the commitment to that request rather than dropping it.
   class RemoveLine < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_line_item, :success?, :error, :warnings)
@@ -18,7 +19,8 @@ module Pos
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
 
       ActiveRecord::Base.transaction do
-        # Canonical order: transaction before line (matches completion lock order).
+        # Lock order: POS Transaction → POS Line → Product Request →
+        # Stock Balance/Unit → Reservation.
         transaction = PosTransaction.lock.find(@pos_line_item.pos_transaction_id)
         raise Error, "transaction is not open for editing" unless transaction.editable?
 
@@ -26,13 +28,30 @@ module Pos
         raise Error, "line is not pending" unless line.pending?
         raise Error, "line does not belong to the locked transaction" unless line.pos_transaction_id == transaction.id
 
+        product_request = nil
+        if line.product_request_id.present?
+          product_request = ProductRequest.lock.find(line.product_request_id)
+        end
+
         reservation = InventoryReservation.active.find_by(
           source_type: "pos_line_item",
           source_id: line.id
         )
         if reservation
-          released = Inventory::ReleaseReservation.call(reservation: reservation, actor: @actor, release_reason: @reason || "line removed")
-          raise Error, released.error unless released.success?
+          returned = Pos::ReturnReservationToProductRequest.call(
+            reservation: reservation,
+            product_request: product_request,
+            product_variant: line.product_variant,
+            actor: @actor
+          )
+          raise Error, returned.error unless returned.success?
+
+          unless returned.returned?
+            released = Inventory::ReleaseReservation.call(
+              reservation: reservation, actor: @actor, release_reason: @reason || "line removed"
+            )
+            raise Error, released.error unless released.success?
+          end
         end
 
         line.update!(

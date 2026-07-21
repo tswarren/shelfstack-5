@@ -19,6 +19,24 @@
         <label class="field-label" for="scan_quantity">Qty</label>
         <%= form.number_field :quantity, id: "scan_quantity", value: 1, min: 1, class: "input input-qty" %>
       </div>
+      <% if @fulfillable_customer_requests.present? %>
+        <div class="field">
+          <label class="field-label" for="scan_product_request_id">Customer request (optional)</label>
+          <%= form.select :product_request_id,
+                @fulfillable_customer_requests.map { |request|
+                  label = "##{request.id} — #{request.product.name}"
+                  label += " / #{request.product_variant.name}" if request.product_variant
+                  label += " (#{request.outstanding_quantity} outstanding)"
+                  [ label, request.id ]
+                },
+                { include_blank: "None" },
+                id: "scan_product_request_id", class: "input" %>
+          <p class="field-hint">
+            Select a request and click Add line to ring up its item (no scan needed when the variant is resolved).
+            Or scan an item with a request selected to link that scan to the request.
+          </p>
+        </div>
+      <% end %>
       <%= form.submit "Add line", class: "button button-primary" %>
     <% end %>
 

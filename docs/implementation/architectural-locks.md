@@ -126,6 +126,16 @@ See [product-requests.md](../domains/product-requests.md) and [ordering-and-acqu
 - After placement: vendor, store, currency, and line identity are immutable; reduce quantity via `cancelled_quantity`; no reopen in Phase 5.
 - Purchase-Order Allocations commit expected supply only to Customer Requests (ADR-0015).
 
+## Phase 5 scaffolding defaults
+
+Binding for migrations and first implementation slices; full table in [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md):
+
+- Non-customer resolution columns on `product_requests` (not a resolution-event table).
+- Partial non-customer order: close original + follow-up request when residual demand remains.
+- Allocation quantity events + separate Product Request Fulfilment (OD-007).
+- Thin product search/import/create return path only.
+- Do not seed `inventory.receipt.correct` until a correction workflow is accepted.
+
 ## On-order quantity
 
 `on_order` is expected supply, not physical inventory.

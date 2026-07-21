@@ -88,6 +88,13 @@ class PosLineItemsController < ApplicationController
       return
     end
 
+    # Selecting a Customer Request alone should add that request's item —
+    # staff should not have to re-scan an already-identified demand line.
+    if params[:product_request_id].present? && params[:query].blank?
+      add_line_from_product_request
+      return
+    end
+
     resolved = Pos::ResolveScan.call(organization: Current.organization, query: params[:query], store: Current.store)
     if resolved.variant.blank?
       if resolved.error == "ambiguous_match"
@@ -106,6 +113,44 @@ class PosLineItemsController < ApplicationController
     add_line(resolved.variant, inventory_unit: resolved.inventory_unit)
   end
 
+  def add_line_from_product_request
+    product_request = Current.store.product_requests.find_by(id: params[:product_request_id])
+    if product_request.blank?
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a valid customer request."
+      return
+    end
+
+    variant = product_request.product_variant
+    if variant.blank?
+      variants = product_request.product.product_variants.where(status: "active", sellable: true).to_a
+      if variants.size == 1
+        variant = variants.first
+      else
+        redirect_to pos_transaction_path(@pos_transaction),
+          alert: "This customer request has no resolved variant. Scan or search for the exact item, then keep the request selected."
+        return
+      end
+    end
+
+    inventory_unit = nil
+    if variant.inventory_tracking_mode == "individual"
+      reservation = InventoryReservation.active.find_by(
+        store_id: Current.store.id,
+        product_variant_id: variant.id,
+        source_type: "product_request",
+        source_id: product_request.id
+      )
+      inventory_unit = reservation&.inventory_unit
+      if inventory_unit.blank?
+        redirect_to pos_transaction_path(@pos_transaction),
+          alert: "Scan the reserved inventory unit for this customer request, or reserve a unit on the request first."
+        return
+      end
+    end
+
+    add_line(variant, inventory_unit: inventory_unit)
+  end
+
   def add_selected_variant
     variant = ProductVariant.joins(:product)
                             .where(products: { organization_id: Current.organization.id })
@@ -119,11 +164,16 @@ class PosLineItemsController < ApplicationController
   end
 
   def add_line(variant, inventory_unit: nil)
+    product_request = if params[:product_request_id].present?
+      Current.store.product_requests.find_by(id: params[:product_request_id])
+    end
+
     result = Pos::AddLine.call(
       pos_transaction: @pos_transaction,
       product_variant: variant,
       quantity: params[:quantity].presence || 1,
       inventory_unit: inventory_unit,
+      product_request: product_request,
       actor: Current.user
     )
     if result.success?
@@ -141,7 +191,8 @@ class PosLineItemsController < ApplicationController
     session[:pos_scan_resolution] = {
       "transaction_id" => @pos_transaction.id,
       "query" => query.to_s,
-      "quantity" => (quantity.presence || 1).to_i
+      "quantity" => (quantity.presence || 1).to_i,
+      "product_request_id" => params[:product_request_id].presence
     }
   end
 

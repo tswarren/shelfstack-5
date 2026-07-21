@@ -32,6 +32,28 @@ Rails.application.routes.draw do
   resources :product_formats, except: %i[destroy]
   resources :product_conditions, except: %i[destroy]
   resources :products, except: %i[destroy]
+  resources :vendors, except: %i[destroy]
+  resources :product_variant_vendors, except: %i[destroy], path: "vendor_sources"
+  resources :purchase_orders, except: %i[destroy] do
+    member do
+      post :place
+      post :amend
+      post :cancel
+      post :close
+      post :bulk_discount
+    end
+  end
+  resources :purchase_order_allocations, only: %i[create] do
+    member do
+      post :release
+    end
+  end
+  resources :receipts, except: %i[destroy] do
+    member do
+      post :post
+      post :cancel
+    end
+  end
   resources :inventory_adjustment_reasons, except: %i[destroy]
   resources :stock_balances, only: %i[index show]
   resources :inventory_adjustments, except: %i[destroy] do
@@ -46,6 +68,25 @@ Rails.application.routes.draw do
     end
   end
   resources :inventory_units, only: %i[index show new create]
+
+  resources :product_requests, except: %i[destroy] do
+    member do
+      post :assign
+      post :resolve
+      post :cancel
+      post :reserve
+    end
+  end
+  resources :product_imports, only: %i[new create]
+  get "buyer_review", to: "buyer_review#index", as: :buyer_review_index
+  post "buyer_review/:id/add_to_purchase_order", to: "buyer_review#add_to_purchase_order", as: :add_to_purchase_order
+
+  get "reports", to: "reports#index", as: :reports
+  get "reports/open_purchase_orders", to: "reports#open_purchase_orders", as: :open_purchase_orders_report
+  get "reports/on_order", to: "reports#on_order", as: :on_order_report
+  get "reports/receiving_history", to: "reports#receiving_history", as: :receiving_history_report
+  get "reports/customer_requests", to: "reports#customer_requests", as: :customer_requests_report
+  get "reports/allocation_events", to: "reports#allocation_events", as: :allocation_events_report
 
   get "register", to: "register#show", as: :register
 

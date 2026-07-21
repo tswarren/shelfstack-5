@@ -69,8 +69,14 @@
               <td><%= entry.movement_type.to_s.titleize %></td>
               <td class="num"><%= entry.quantity_delta %></td>
               <% if @can_view_cost %>
-                <td class="num"><%= entry.inventory_value_delta_cents.nil? ? "unknown" : inventory_money(entry.inventory_value_delta_cents) %></td>
-                <td><%= entry.cost_quality %></td>
+                <td class="num">
+                  <% if entry.inventory_value_delta_cents.nil? %>
+                    —
+                  <% else %>
+                    <%= inventory_money(entry.inventory_value_delta_cents) %>
+                  <% end %>
+                </td>
+                <td><%= status_badge(entry.cost_quality.titleize, variant: cost_quality_variant(entry.cost_quality)) %></td>
               <% end %>
               <td><%= entry.reason_code %><%= " — #{entry.reason_note}" if entry.reason_note.present? %></td>
             </tr>

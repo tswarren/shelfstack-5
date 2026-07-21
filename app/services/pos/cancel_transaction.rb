@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Pos
-  # Cancellation releases provisional reservations, soft-removes pending lines
+  # Cancellation releases provisional reservations (returning request-linked
+  # holds to open Product Requests), soft-removes pending lines
   # (so cancelled return lines do not consume returnable quantity), resolves
   # provisional Tender activity, and creates no completed sale/inventory/tax effect.
   class CancelTransaction < ApplicationService
@@ -28,9 +29,26 @@ module Pos
                 "confirm the external terminal void first"
         end
 
-        transaction.pos_line_items.pending.where(line_kind: "product").find_each do |line|
+        pending_lines = transaction.pos_line_items.pending.order(:id).lock.to_a
+        request_ids = pending_lines.filter_map(&:product_request_id).uniq.sort
+        locked_requests = request_ids.index_with { |id| ProductRequest.lock.find(id) }
+
+        pending_lines.each do |line|
+          next unless line.line_kind == "product"
+
           reservation = InventoryReservation.active.find_by(source_type: "pos_line_item", source_id: line.id)
           next if reservation.blank?
+
+          product_request = locked_requests[line.product_request_id]
+          returned = Pos::ReturnReservationToProductRequest.call(
+            reservation: reservation,
+            product_request: product_request,
+            product_variant: line.product_variant,
+            actor: @actor
+          )
+          raise Error, returned.error unless returned.success?
+
+          next if returned.returned?
 
           released = Inventory::ReleaseReservation.call(
             reservation: reservation,
@@ -43,7 +61,7 @@ module Pos
         # Soft-remove pending lines so cancelled linked returns no longer consume
         # remaining_returnable_quantity on the original sale line.
         now = Time.current
-        transaction.pos_line_items.pending.find_each do |line|
+        pending_lines.each do |line|
           line.update!(
             status: "removed",
             removed_at: now,

@@ -1,0 +1,117 @@
+<%# locals: f:, variants:, purchase_order_lines:, can_edit_cost: %>
+<% can_edit_cost = local_assigns.fetch(:can_edit_cost, false) %>
+<fieldset class="adjustment-line" data-receipt-form-target="line">
+  <div class="adjustment-line-header">
+    <span class="adjustment-line-title">Line</span>
+    <button type="button" class="button button-small button-danger"
+            data-receipt-form-target="removeButton"
+            data-action="receipt-form#removeLine">Remove</button>
+  </div>
+
+  <div class="form-grid">
+    <div class="field">
+      <%= f.label :product_variant_id, "Variant", class: "field-label" %>
+      <%= f.select :product_variant_id,
+            variants.map { |v| [ variant_option_label(v, include_tracking: true), v.id ] },
+            { include_blank: true },
+            class: "input",
+            data: {
+              receipt_form_target: "variantSelect",
+              action: "change->receipt-form#variantChanged"
+            } %>
+    </div>
+
+    <div class="field">
+      <%= f.label :purchase_order_line_id, "Purchase order line", class: "field-label" %>
+      <%= f.select :purchase_order_line_id,
+            purchase_order_lines.map { |l|
+              label = [
+                l.purchase_order.purchase_order_number,
+                l.product_variant.product.name,
+                (l.description_snapshot.presence || l.product_variant.name),
+                "open #{l.open_quantity}"
+              ].join(" — ")
+              option_data = {
+                vendor_id: l.purchase_order.vendor_id,
+                product_variant_id: l.product_variant_id
+              }
+              if can_edit_cost
+                suggestion = Inventory::SuggestReceiptLineCost.call(purchase_order_line: l)
+                if suggestion
+                  option_data[:suggested_unit_cost_cents] = suggestion.unit_cost_cents
+                  option_data[:suggested_cost_quality] = suggestion.cost_quality
+                  option_data[:suggested_cost_provenance] = suggestion.cost_provenance
+                end
+              end
+              [ label, l.id, { data: option_data } ]
+            },
+            { include_blank: "None (unlinked)" },
+            class: "input",
+            data: {
+              receipt_form_target: "purchaseOrderLineSelect",
+              action: "change->receipt-form#purchaseOrderLineChanged"
+            } %>
+      <p class="field-hint">Only open lines for this receipt’s vendor and the selected variant are offered. Leave blank for an unlinked receipt line (receive-unlinked permission required to post).</p>
+    </div>
+
+    <div class="field">
+      <%= f.label :delivered_quantity, "Delivered quantity", class: "field-label" %>
+      <%= f.number_field :delivered_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :accepted_quantity, "Accepted quantity", class: "field-label" %>
+      <%= f.number_field :accepted_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :rejected_quantity, "Rejected quantity", class: "field-label" %>
+      <%= f.number_field :rejected_quantity, min: 0, class: "input" %>
+    </div>
+
+    <div class="field">
+      <%= f.label :accepted_unavailable_quantity, "Accepted but unavailable", class: "field-label" %>
+      <%= f.number_field :accepted_unavailable_quantity, min: 0, class: "input" %>
+    </div>
+
+    <% if can_edit_cost %>
+      <div class="field">
+        <%= f.label :actual_unit_cost_cents, "Unit cost (cents)", class: "field-label" %>
+        <%= f.number_field :actual_unit_cost_cents, min: 0, class: "input",
+              data: {
+                receipt_form_target: "unitCost",
+                action: "input->receipt-form#costEdited"
+              } %>
+      </div>
+
+      <div class="field">
+        <%= f.label :cost_quality, "Cost quality", class: "field-label" %>
+        <%= f.select :cost_quality,
+              ReceiptLine::COST_QUALITIES.map { |q| [ q.titleize, q ] },
+              { include_blank: "Suggest from PO / vendor" },
+              class: "input",
+              data: {
+                receipt_form_target: "costQuality",
+                action: "change->receipt-form#costEdited"
+              } %>
+        <p class="field-hint">Defaults to PO expected cost, or list − discount, or vendor estimate. Choose Unknown to decline a suggestion. Provenance is derived automatically.</p>
+      </div>
+
+      <div class="field">
+        <%= f.label :cost_provenance, "Cost provenance", class: "field-label" %>
+        <%= f.hidden_field :cost_provenance, data: { receipt_form_target: "costProvenance" } %>
+        <p class="field-hint" data-receipt-form-target="costProvenanceDisplay">
+          <%= f.object.cost_provenance.presence&.humanize || "Derived on save / post" %>
+        </p>
+      </div>
+    <% end %>
+
+    <div class="field">
+      <%= f.label :discrepancy_reason, "Discrepancy reason", class: "field-label" %>
+      <%= f.text_field :discrepancy_reason, class: "input" %>
+    </div>
+  </div>
+
+  <%= f.hidden_field :id if f.object.id.present? %>
+  <%= f.hidden_field :position, data: { receipt_form_target: "position" } %>
+</fieldset>

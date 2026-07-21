@@ -93,15 +93,14 @@ module Inventory
         raise Error, "unit belongs to a different store" unless unit.store_id == @store.id
         raise Error, "unit belongs to a different variant" unless unit.product_variant_id == @product_variant.id
 
-        reservation = InventoryReservation.active.lock.find_by(
-          store_id: @store.id,
-          product_variant_id: @product_variant.id,
-          source_type: @source_type,
-          source_id: @source_id
-        )
+        # One active reservation per exact unit. The same product_request (or
+        # other source) may hold several units via separate reservation rows.
+        reservation = InventoryReservation.active.lock.find_by(inventory_unit_id: unit.id)
 
         if reservation
-          raise Error, "source already reserves a different unit" unless reservation.inventory_unit_id == unit.id
+          unless reservation.source_type == @source_type && reservation.source_id == @source_id
+            raise Error, "unit is already reserved by another source"
+          end
         else
           # `unit.status` is the single authoritative gate (kept in sync with the
           # active Reservation by this service), so this alone rules out double

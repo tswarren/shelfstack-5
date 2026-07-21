@@ -1,0 +1,32 @@
+<% content_for :title, "On order" %>
+
+<%= render "shared/page_header", title: "On order",
+      subtitle: "Derived on-order quantity by Product Variant (Purchasing::OnOrder), summed across ordered purchase orders only. Never cached or posted through the inventory ledger.",
+      breadcrumbs: [ { label: "Reports", path: reports_path }, { label: "On order" } ] %>
+
+<% if @rows.empty? %>
+  <%= render "shared/empty_state", title: "Nothing on order",
+        body: "Variants with open ordered-quantity on a placed purchase order will appear here." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">On order by product variant</caption>
+      <thead>
+        <tr>
+          <th scope="col">Product</th>
+          <th scope="col">Variant</th>
+          <th scope="col" class="num">On order</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @rows.each do |row| %>
+          <tr>
+            <td><%= link_to row.product_variant.product.name, row.product_variant.product %></td>
+            <td><%= variant_option_label(row.product_variant) %></td>
+            <td class="num"><%= row.on_order_quantity %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

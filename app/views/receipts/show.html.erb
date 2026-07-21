@@ -1,0 +1,101 @@
+<% content_for :title, @receipt.receipt_number %>
+
+<%= render "shared/page_header",
+      title: @receipt.receipt_number,
+      subtitle: @receipt.vendor.name,
+      breadcrumbs: [ { label: "Receipts", path: receipts_path }, { label: @receipt.receipt_number } ],
+      actions: capture {
+        if @can_post
+          concat button_to("Post receipt", post_receipt_path(@receipt), method: :post,
+                class: "button button-primary",
+                form: { data: { turbo_confirm: "Post this receipt? Accepted quantity will enter inventory." } })
+        end
+        if @receipt.draft? && Current.user.can?("inventory.receipt.create", store: Current.store)
+          concat link_to("Edit draft", edit_receipt_path(@receipt), class: "button button-outline")
+        end
+        concat link_to("Back to receipts", receipts_path, class: "button button-outline")
+      } %>
+
+<section class="record-section">
+  <h2>Document</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Status", status_badge(@receipt.status.titleize, variant: receipt_status_variant(@receipt.status)) ],
+    [ "Vendor", @receipt.vendor.name ],
+    [ "Received at", @receipt.received_at ? formatted_datetime(@receipt.received_at) : "—" ],
+    [ "Received by", @receipt.received_by_user&.username || "—" ],
+    [ "Notes", @receipt.notes.presence || "—" ]
+  ] %>
+  <% if @receipt.posted? %>
+    <%= render "shared/record_summary", rows: [
+      [ "Posted at", formatted_datetime(@receipt.posted_at) ],
+      [ "Posted by", @receipt.posted_by_user&.username || "—" ]
+    ] %>
+  <% end %>
+  <% if @receipt.cancelled? %>
+    <%= render "shared/record_summary", rows: [
+      [ "Cancelled at", formatted_datetime(@receipt.cancelled_at) ],
+      [ "Cancelled by", @receipt.cancelled_by_user&.username || "—" ],
+      [ "Cancellation reason", @receipt.cancellation_reason.presence || "—" ]
+    ] %>
+  <% end %>
+</section>
+
+<section class="record-section">
+  <h2>Lines</h2>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Receipt lines</caption>
+      <thead>
+        <tr>
+          <th scope="col">Variant</th>
+          <th scope="col">Purchase order line</th>
+          <th scope="col" class="num">Delivered</th>
+          <th scope="col" class="num">Accepted</th>
+          <th scope="col" class="num">Rejected</th>
+          <th scope="col" class="num">Unavailable</th>
+          <% if @can_view_cost %><th scope="col" class="num">Unit cost</th><% end %>
+          <th scope="col">Cost quality</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @receipt.receipt_lines.order(:position).each do |line| %>
+          <tr>
+            <td><%= variant_option_label(line.product_variant) %></td>
+            <td>
+              <% if line.purchase_order_line %>
+                <%= link_to line.purchase_order_line.purchase_order.purchase_order_number, line.purchase_order_line.purchase_order %>
+              <% else %>
+                <span class="muted">Unlinked</span>
+              <% end %>
+            </td>
+            <td class="num"><%= line.delivered_quantity %></td>
+            <td class="num"><%= line.accepted_quantity %></td>
+            <td class="num"><%= line.rejected_quantity %></td>
+            <td class="num"><%= line.accepted_unavailable_quantity %></td>
+            <% if @can_view_cost %>
+              <td class="num"><%= format_money(line.actual_unit_cost_cents) %></td>
+            <% end %>
+            <td><%= status_badge(line.cost_quality&.titleize || "—", variant: cost_quality_variant(line.cost_quality)) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<% if @can_cancel %>
+  <section class="record-section">
+    <h2>Cancel</h2>
+    <p class="field-hint">Cancellation is only permitted while the receipt is a draft.</p>
+    <%= form_with url: cancel_receipt_path(@receipt), method: :post, class: "form",
+          data: { turbo_confirm: "Cancel this receipt?" } do |form| %>
+      <div class="field">
+        <%= form.label "receipt[cancellation_reason]", "Cancellation reason" %>
+        <%= form.text_field "receipt[cancellation_reason]", id: "receipt_cancellation_reason", class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Cancel receipt", class: "button button-danger" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
