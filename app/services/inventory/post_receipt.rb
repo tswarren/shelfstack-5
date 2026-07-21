@@ -5,16 +5,32 @@ module Inventory
   # inventory (rejected never does). Quantity-tracked lines settle open
   # negative On Hand before creating positive inventory (OD-014); individual
   # lines create one Inventory Unit per accepted unit. Linked lines advance
-  # the Purchase Order Line's received_quantity; PO-line allocation
-  # conversion is a later phase (5f) concern and is not performed here.
+  # the Purchase Order Line's received_quantity and (quantity-tracked only)
+  # convert applicable Purchase-Order Allocations into Inventory Reservations
+  # (Phase 5f, OD-007 — see below).
   #
   # Idempotent — the whole posting runs in one transaction, so a failure
   # leaves no partial ledger, unit, or Purchase-Order-line effect; replaying
   # an already-posted Receipt is a no-op success (posting_key/posted_at are
   # only ever assigned once, at successful completion).
+  #
+  # Phase 5f: for a quantity-tracked line linked to a Purchase-Order Line,
+  # once the accepted sellable quantity is posted, converts as much remaining
+  # Purchase-Order Allocation quantity on that line into Inventory
+  # Reservations for the allocations' Customer Requests as the accepted
+  # sellable quantity allows (OD-007 "receipt posting"). Deterministic order
+  # when accepted quantity cannot satisfy every remaining allocation: request
+  # priority (urgent > high > normal), `needed_by_on` (earlier first, nulls
+  # last), then `created_at`. Unavailable/inspection-held accepted quantity is
+  # never converted (it is not usable expected supply for a customer).
+  # Allocation quantity this posting cannot satisfy is left as remaining
+  # future supply — releasing it (cancellation, unavailability, earlier
+  # supply) is `Purchasing::ReleaseAllocation`'s job, not this service's.
   class PostReceipt < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:receipt, :success?, :error, :replayed)
+
+    PRIORITY_RANK = { "urgent" => 0, "high" => 1, "normal" => 2 }.freeze
 
     def initialize(receipt:, actor:, store:)
       @receipt = receipt
@@ -110,6 +126,10 @@ module Inventory
       end
 
       update_purchase_order_line!(line)
+
+      if variant.inventory_tracking_mode == "quantity"
+        convert_allocations_for_line!(line, variant, posted_at: posted_at)
+      end
     end
 
     def post_quantity_line!(line, variant, posting_key:, posted_at:)
@@ -214,6 +234,81 @@ module Inventory
 
       locked = PurchaseOrderLine.lock.find(po_line.id)
       locked.update!(received_quantity: locked.received_quantity + line.accepted_quantity)
+    end
+
+    # OD-007 "receipt posting": only sellable accepted quantity is usable
+    # expected supply — accepted-but-unavailable quantity (inspection,
+    # damage) is deliberately excluded.
+    def convert_allocations_for_line!(line, variant, posted_at:)
+      po_line = line.purchase_order_line
+      return if po_line.blank?
+
+      remaining_to_convert = line.sellable_accepted_quantity
+      return unless remaining_to_convert.positive?
+
+      candidates = PurchaseOrderAllocation.where(purchase_order_line_id: po_line.id)
+        .includes(:product_request, :purchase_order_allocation_events)
+        .select { |allocation| allocation.remaining_quantity.positive? }
+        .sort_by { |allocation| allocation_sort_key(allocation) }
+
+      candidates.each do |allocation|
+        break unless remaining_to_convert.positive?
+
+        # Lock order: Purchase-Order Line (already locked above) -> Product
+        # Request -> allocation -> reservation, matching CreateAllocation's
+        # line-then-request order and serializing concurrent conversion,
+        # release, or in-house reservation against the same request.
+        product_request = ProductRequest.lock.find(allocation.product_request_id)
+        locked_allocation = PurchaseOrderAllocation.lock.find(allocation.id)
+        convert_quantity = [ remaining_to_convert, locked_allocation.remaining_quantity ].min
+        next unless convert_quantity.positive?
+
+        reservation = reserve_for_request!(variant: variant, product_request: product_request, additional_quantity: convert_quantity)
+
+        locked_allocation.purchase_order_allocation_events.create!(
+          event_type: "converted_to_reservation",
+          quantity: convert_quantity,
+          receipt_line: line,
+          inventory_reservation: reservation,
+          occurred_at: posted_at,
+          user: @actor,
+          posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked_allocation.id}:convert"
+        )
+
+        remaining_to_convert -= convert_quantity
+      end
+    end
+
+    # Adds `additional_quantity` on top of any existing active Inventory
+    # Reservation for this Customer Request/variant (`Inventory::Reserve`
+    # sets an absolute quantity, so the current locked quantity is read
+    # first; the Product Request lock taken by the caller serializes this
+    # read-then-set against concurrent writers of the same reservation).
+    def reserve_for_request!(variant:, product_request:, additional_quantity:)
+      existing = InventoryReservation.active.lock.find_by(
+        store_id: @store.id, product_variant_id: variant.id,
+        source_type: "product_request", source_id: product_request.id
+      )
+      target_quantity = (existing&.quantity || 0) + additional_quantity
+
+      result = Reserve.call(
+        store: @store, product_variant: variant, quantity: target_quantity,
+        source_type: "product_request", source_id: product_request.id, actor: @actor
+      )
+      raise Error, result.error unless result.success?
+
+      result.reservation
+    end
+
+    def allocation_sort_key(allocation)
+      request = allocation.product_request
+      [
+        PRIORITY_RANK.fetch(request.priority, PRIORITY_RANK.size),
+        request.needed_by_on.nil? ? 1 : 0,
+        request.needed_by_on || request.created_at.to_date,
+        request.created_at,
+        allocation.id
+      ]
     end
   end
 end

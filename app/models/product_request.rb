@@ -24,6 +24,7 @@ class ProductRequest < ApplicationRecord
            foreign_key: :supersedes_product_request_id, inverse_of: :supersedes_product_request,
            dependent: :restrict_with_exception
   has_many :purchase_order_allocations, dependent: :restrict_with_exception
+  has_many :product_request_fulfillments, dependent: :restrict_with_exception
 
   validates :request_type, presence: true, inclusion: { in: REQUEST_TYPES }
   validates :status, presence: true, inclusion: { in: STATUSES }
@@ -63,6 +64,37 @@ class ProductRequest < ApplicationRecord
 
   def non_customer_request?
     !customer_request?
+  end
+
+  def fulfilled?
+    status == "fulfilled"
+  end
+
+  # Sum of valid Product Request Fulfilments (OD-007 "fulfilled quantity =
+  # sum of valid Product Request Fulfilments"): append-only `fulfill` rows
+  # minus their `reverse` rows.
+  def fulfilled_quantity
+    product_request_fulfillments.where(kind: "fulfill").sum(:quantity) -
+      product_request_fulfillments.where(kind: "reverse").sum(:quantity)
+  end
+
+  # OD-007 "outstanding quantity = requested quantity − fulfilled quantity".
+  def outstanding_quantity
+    [ requested_quantity - fulfilled_quantity, 0 ].max
+  end
+
+  def active_reserved_quantity
+    InventoryReservation.active.where(source_type: "product_request", source_id: id).sum(:quantity)
+  end
+
+  def remaining_allocated_quantity
+    purchase_order_allocations.includes(:purchase_order_allocation_events).sum(&:remaining_quantity)
+  end
+
+  # OD-007 "uncovered quantity = requested − fulfilled − active reservations
+  # − remaining allocations"; must never be negative.
+  def uncovered_quantity
+    [ requested_quantity - fulfilled_quantity - active_reserved_quantity - remaining_allocated_quantity, 0 ].max
   end
 
   private

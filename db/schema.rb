@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -505,6 +505,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
     t.integer "position", default: 0, null: false
     t.datetime "price_overridden_at"
     t.bigint "price_overridden_by_user_id"
+    t.bigint "product_request_id"
     t.bigint "product_variant_id"
     t.integer "quantity", default: 1, null: false
     t.text "remove_reason"
@@ -527,6 +528,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
     t.index ["original_tax_category_id"], name: "index_pos_line_items_on_original_tax_category_id"
     t.index ["pos_transaction_id"], name: "index_pos_line_items_on_pos_transaction_id"
     t.index ["price_overridden_by_user_id"], name: "index_pos_line_items_on_price_overridden_by_user_id"
+    t.index ["product_request_id"], name: "index_pos_line_items_on_product_request_id"
     t.index ["product_variant_id"], name: "index_pos_line_items_on_product_variant_id"
     t.index ["removed_by_user_id"], name: "index_pos_line_items_on_removed_by_user_id"
     t.index ["return_reason_id"], name: "index_pos_line_items_on_return_reason_id"
@@ -542,6 +544,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
     t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "pos_line_items_unit_quantity_one"
     t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL", name: "pos_line_items_product_variant_matches_kind"
     t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying::text, 'open_ring'::character varying::text])", name: "pos_line_items_line_kind_check"
+    t.check_constraint "product_request_id IS NULL OR line_kind::text = 'product'::text AND direction::text = 'sale'::text", name: "pos_line_items_product_request_requires_product_sale"
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
     t.check_constraint "return_disposition IS NULL OR (return_disposition::text = ANY (ARRAY['return_to_stock'::character varying::text, 'inspection_required'::character varying::text, 'damaged'::character varying::text, 'return_to_vendor'::character varying::text, 'discard'::character varying::text, 'non_inventory'::character varying::text]))", name: "pos_line_items_return_disposition_check"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'completed'::character varying::text, 'removed'::character varying::text])", name: "pos_line_items_status_check"
@@ -716,6 +719,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
     t.index ["organization_id", "short_code"], name: "index_product_formats_on_organization_id_and_short_code", unique: true, where: "(short_code IS NOT NULL)"
     t.index ["organization_id"], name: "index_product_formats_on_organization_id"
     t.check_constraint "default_inventory_tracking_mode::text = ANY (ARRAY['quantity'::character varying::text, 'individual'::character varying::text, 'none'::character varying::text])", name: "product_formats_tracking_mode_check"
+  end
+
+  create_table "product_request_fulfillments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "fulfilled_at", null: false
+    t.bigint "fulfilled_by_user_id", null: false
+    t.bigint "inventory_reservation_id"
+    t.string "kind", default: "fulfill", null: false
+    t.bigint "linked_fulfilment_id"
+    t.bigint "pos_line_item_id", null: false
+    t.string "posting_key", null: false
+    t.bigint "product_request_id", null: false
+    t.integer "quantity", null: false
+    t.index ["fulfilled_by_user_id"], name: "index_product_request_fulfillments_on_fulfilled_by_user_id"
+    t.index ["inventory_reservation_id"], name: "index_product_request_fulfillments_on_inventory_reservation_id"
+    t.index ["linked_fulfilment_id"], name: "index_product_request_fulfillments_on_linked_fulfilment_id"
+    t.index ["pos_line_item_id"], name: "index_product_request_fulfillments_on_pos_line_item_id"
+    t.index ["posting_key"], name: "index_product_request_fulfillments_on_posting_key", unique: true
+    t.index ["product_request_id"], name: "index_product_request_fulfillments_on_product_request_id"
+    t.check_constraint "kind::text = 'fulfill'::text AND linked_fulfilment_id IS NULL OR kind::text = 'reverse'::text AND linked_fulfilment_id IS NOT NULL", name: "prf_reverse_requires_link"
+    t.check_constraint "kind::text = ANY (ARRAY['fulfill'::character varying, 'reverse'::character varying]::text[])", name: "prf_kind_check"
+    t.check_constraint "quantity > 0", name: "prf_quantity_positive"
   end
 
   create_table "product_requests", force: :cascade do |t|
@@ -1348,6 +1373,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
   add_foreign_key "pos_line_items", "inventory_units", on_delete: :restrict
   add_foreign_key "pos_line_items", "pos_line_items", column: "original_pos_line_item_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_line_items", "product_requests", on_delete: :restrict
   add_foreign_key "pos_line_items", "product_variants", on_delete: :restrict
   add_foreign_key "pos_line_items", "return_reasons", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", column: "original_tax_category_id", on_delete: :restrict
@@ -1383,6 +1409,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_050000) do
   add_foreign_key "pos_transactions", "users", column: "completed_by_user_id", on_delete: :restrict
   add_foreign_key "product_conditions", "organizations"
   add_foreign_key "product_formats", "organizations"
+  add_foreign_key "product_request_fulfillments", "inventory_reservations", on_delete: :restrict
+  add_foreign_key "product_request_fulfillments", "pos_line_items", on_delete: :restrict
+  add_foreign_key "product_request_fulfillments", "product_request_fulfillments", column: "linked_fulfilment_id", on_delete: :restrict
+  add_foreign_key "product_request_fulfillments", "product_requests", on_delete: :restrict
+  add_foreign_key "product_request_fulfillments", "users", column: "fulfilled_by_user_id", on_delete: :restrict
   add_foreign_key "product_requests", "product_requests", column: "supersedes_product_request_id", on_delete: :restrict
   add_foreign_key "product_requests", "product_variants", on_delete: :restrict
   add_foreign_key "product_requests", "products", on_delete: :restrict

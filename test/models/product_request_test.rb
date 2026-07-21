@@ -111,4 +111,44 @@ class ProductRequestTest < ActiveSupport::TestCase
     assert_not_includes ProductRequest.open_requests, product_requests(:resolved_frontlist)
     assert_not_includes ProductRequest.open_requests, product_requests(:cancelled_staff_suggestion)
   end
+
+  test "uncovered_quantity subtracts fulfilled, actively reserved, and remaining allocated quantity" do
+    variant = product_variants(:sample_book_standard)
+    request = ProductRequest.create!(
+      store: @store, request_type: "customer_request", product: variant.product,
+      product_variant: variant, requested_quantity: 10, requested_by_user: @user
+    )
+    assert_equal 10, request.uncovered_quantity
+
+    day = Pos::OpenBusinessDay.call(store: @store, actor: @user).business_day
+    session = Pos::OpenSession.call(
+      business_day: day, store: @store, pos_device: pos_devices(:register_1), cashier: @user, actor: @user
+    ).pos_session
+    txn = Pos::OpenTransaction.call(pos_session: session, actor: @user).pos_transaction
+    line = PosLineItem.create!(
+      pos_transaction: txn, line_kind: "product", status: "completed", direction: "sale",
+      product_variant: variant, department: departments(:books_new), quantity: 2,
+      unit_price_cents: 1000, created_by_user: @user, product_request: request
+    )
+    ProductRequestFulfillment.create!(
+      product_request: request, pos_line_item: line, quantity: 2, kind: "fulfill",
+      fulfilled_at: Time.current, fulfilled_by_user: @user, posting_key: "coverage-test-fulfill"
+    )
+    assert_equal 2, request.reload.fulfilled_quantity
+
+    InventoryReservation.create!(
+      store: @store, product_variant: variant, quantity: 3, status: "active",
+      source_type: "product_request", source_id: request.id, reserved_at: Time.current
+    )
+    assert_equal 3, request.reload.active_reserved_quantity
+
+    allocation = PurchaseOrderAllocation.create!(
+      purchase_order_line: purchase_order_lines(:ordered_po_line1), product_request: request,
+      quantity: 5, created_by_user: @user
+    )
+    allocation.release!(quantity: 1, reason: "manual_release", actor: @user)
+    assert_equal 4, request.reload.remaining_allocated_quantity
+
+    assert_equal 10 - 2 - 3 - 4, request.uncovered_quantity
+  end
 end

@@ -158,4 +158,72 @@ class PosLineItemTest < ActiveSupport::TestCase
 
     assert_equal 0, return_line.remaining_returnable_quantity
   end
+
+  test "product_request may be set on a product sale line" do
+    request = product_requests(:open_staff_suggestion)
+    line = PosLineItem.new(
+      pos_transaction: @transaction, line_kind: "product", status: "pending",
+      product_variant: request.product_variant, department: @department, quantity: 1,
+      unit_price_cents: 100, created_by_user: @admin, product_request: request
+    )
+
+    assert line.valid?, line.errors.full_messages.to_sentence
+  end
+
+  test "product_request is rejected on a return line" do
+    request = product_requests(:open_staff_suggestion)
+    original = PosLineItem.create!(
+      pos_transaction: @transaction, line_kind: "product", status: "completed",
+      product_variant: request.product_variant, department: @department, quantity: 1,
+      unit_price_cents: 100, created_by_user: @admin
+    )
+
+    line = PosLineItem.new(
+      pos_transaction: @transaction, line_kind: "product", status: "pending",
+      product_variant: request.product_variant, department: @department, quantity: 1,
+      unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      original_pos_line_item: original, return_reason: return_reasons(:unwanted),
+      return_disposition: "return_to_stock", product_request: request
+    )
+
+    refute line.valid?
+    assert_includes line.errors[:product_request], "may only be set on product sale lines"
+  end
+
+  test "product_request is rejected on an open_ring line" do
+    request = product_requests(:open_staff_suggestion)
+    line = PosLineItem.new(
+      pos_transaction: @transaction, line_kind: "open_ring", status: "pending",
+      department: @department, quantity: 1, unit_price_cents: 100,
+      created_by_user: @admin, description_snapshot: "Misc", product_request: request
+    )
+
+    refute line.valid?
+    assert_includes line.errors[:product_request], "may only be set on product sale lines"
+  end
+
+  test "product_request must match the line's product variant" do
+    request = product_requests(:open_staff_suggestion)
+    line = PosLineItem.new(
+      pos_transaction: @transaction, line_kind: "product", status: "pending",
+      product_variant: @variant, department: @department, quantity: 1,
+      unit_price_cents: 100, created_by_user: @admin, product_request: request
+    )
+
+    refute line.valid?
+    assert_includes line.errors[:product_request], "must match the line's product variant"
+  end
+
+  test "product_request with no resolved variant skips the variant-match check" do
+    request = product_requests(:open_customer_request)
+    refute request.product_variant_id.present?
+
+    line = PosLineItem.new(
+      pos_transaction: @transaction, line_kind: "product", status: "pending",
+      product_variant: @variant, department: @department, quantity: 1,
+      unit_price_cents: 100, created_by_user: @admin, product_request: request
+    )
+
+    assert line.valid?, line.errors.full_messages.to_sentence
+  end
 end

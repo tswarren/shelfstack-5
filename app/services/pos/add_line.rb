@@ -5,17 +5,19 @@ module Pos
     Error = Class.new(StandardError)
     Result = Data.define(:pos_line_item, :success?, :error, :warnings)
 
-    def initialize(pos_transaction:, product_variant:, actor:, quantity: 1, inventory_unit: nil)
+    def initialize(pos_transaction:, product_variant:, actor:, quantity: 1, inventory_unit: nil, product_request: nil)
       @pos_transaction = pos_transaction
       @product_variant = product_variant
       @actor = actor
       @quantity = quantity.to_i
       @inventory_unit = inventory_unit
+      @product_request = product_request
     end
 
     def call
       raise Error, "transaction is not open for editing" unless @pos_transaction.editable?
       raise Error, "quantity must be positive" unless @quantity.positive?
+      validate_product_request!
 
       eligibility = Catalog::SaleEligibility.call(variant: @product_variant, store: @pos_transaction.store)
       raise Error, "not eligible for sale: #{eligibility.blockers.join(', ')}" if eligibility.blockers.any?
@@ -48,7 +50,8 @@ module Pos
           quantity: @quantity,
           unit_price_cents: resolved_unit_price_cents(individual),
           position: next_position,
-          created_by_user: @actor
+          created_by_user: @actor,
+          product_request: @product_request
         )
 
         if @product_variant.inventory_tracking_mode == "quantity"
@@ -88,6 +91,26 @@ module Pos
     end
 
     private
+
+    # Links the line to a Customer Request the sale is fulfilling (OD-007);
+    # `Pos::CompleteTransaction` creates the Product Request Fulfilment fact
+    # from this link at completion, so it must be validated up front rather
+    # than left for completion to discover.
+    def validate_product_request!
+      return if @product_request.blank?
+
+      raise Error, "fulfilment linkage applies only to customer requests" unless @product_request.customer_request?
+      raise Error, "product request is not open" unless @product_request.open?
+      raise Error, "product request store mismatch" unless @product_request.store_id == @pos_transaction.store_id
+      if @product_request.product_variant_id.present? && @product_request.product_variant_id != @product_variant.id
+        raise Error, "product request does not match the line's product variant"
+      end
+
+      outstanding = @product_request.outstanding_quantity
+      if @quantity > outstanding
+        raise Error, "quantity exceeds the product request's outstanding quantity (#{outstanding} outstanding)"
+      end
+    end
 
     def next_position
       (@pos_transaction.pos_line_items.maximum(:position) || -1) + 1
