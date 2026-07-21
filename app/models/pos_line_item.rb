@@ -112,10 +112,11 @@ class PosLineItem < ApplicationRecord
 
   # Domain invariant "Linked Returns do not exceed remaining quantity": counts
   # completed linked returns and pending linked returns only while their owning
-  # transaction is still open or suspended. Cancelled transactions soft-remove
-  # pending lines; this join is a safety net if a pending line somehow remains.
+  # transaction is still open or suspended. A completed post-void reversing line
+  # (or completed post-void of the owning transaction) consumes the entire quantity.
   def remaining_returnable_quantity
     return 0 unless sale?
+    return 0 if post_voided?
 
     already_returned = PosLineItem
       .joins(:pos_transaction)
@@ -126,6 +127,13 @@ class PosLineItem < ApplicationRecord
       )
       .sum(:quantity)
     quantity - already_returned
+  end
+
+  def post_voided?
+    return true if post_void_reversing_line&.completed?
+    return true if pos_transaction&.post_void_transaction&.completed?
+
+    false
   end
 
   private

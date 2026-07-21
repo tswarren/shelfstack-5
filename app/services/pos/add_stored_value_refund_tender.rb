@@ -2,6 +2,8 @@
 
 module Pos
   # Refund to stored value: restore an original SV tender, or issue store credit.
+  # When linked sales still have remaining refundable SV tenders, those must be
+  # restored first unless an exception approval is supplied.
   class AddStoredValueRefundTender < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_tender, :account, :success?, :error, :warnings)
@@ -13,7 +15,9 @@ module Pos
       actor:,
       account: nil,
       original_pos_tender: nil,
-      create_store_credit: false
+      create_store_credit: false,
+      exception_approver: nil,
+      exception_approver_pin: nil
     )
       @pos_transaction = pos_transaction
       @tender_type = tender_type
@@ -22,6 +26,8 @@ module Pos
       @account = account
       @original_pos_tender = original_pos_tender
       @create_store_credit = create_store_credit
+      @exception_approver = exception_approver
+      @exception_approver_pin = exception_approver_pin
     end
 
     def call
@@ -48,8 +54,9 @@ module Pos
         raise Error, "no refund balance due" if refund_due.zero?
         raise Error, "refund exceeds balance due (#{refund_due})" if @amount_cents > refund_due
 
-        account = resolve_account!(transaction)
         original = lock_and_validate_original!(transaction)
+        enforce_original_tender_first!(transaction, original)
+        account = resolve_account!(transaction, original)
 
         tender = PosTender.create!(
           pos_transaction: transaction, store: transaction.store, tender_type: @tender_type,
@@ -69,9 +76,8 @@ module Pos
 
     private
 
-    def resolve_account!(transaction)
-      if @original_pos_tender.present?
-        original = PosTender.lock.find(@original_pos_tender.id)
+    def resolve_account!(transaction, original)
+      if original.present?
         raise Error, "original tender has no stored-value account" if original.stored_value_account_id.blank?
 
         return StoredValueAccount.lock.find(original.stored_value_account_id)
@@ -101,22 +107,81 @@ module Pos
     def lock_and_validate_original!(transaction)
       return nil if @original_pos_tender.blank?
 
+      original_txn = PosTransaction.lock.find(@original_pos_tender.pos_transaction_id)
+      raise Error, "original tender's transaction has been post-voided" if original_txn.post_voided?
+      raise Error, "original tender is not linked to this return transaction" unless linked_original_transaction?(transaction, original_txn)
+
       original = PosTender.lock.find(@original_pos_tender.id)
       raise Error, "original tender is not completed" unless original.completed?
       raise Error, "original tender is not a received tender" unless original.direction == "received"
       raise Error, "original tender has no stored-value account" if original.stored_value_account_id.blank?
+      raise Error, "original tender has been post-voided" if original.post_voided?
+      raise Error, "original tender store mismatch" unless original.store_id == transaction.store_id
+      raise Error, "original tender must be stored_value" unless original.tender_type.tender_category == "stored_value"
 
-      remaining = remaining_refundable_cents(original)
+      remaining = original.remaining_refundable_cents
       raise Error, "refund exceeds remaining refundable on original tender (#{remaining})" if @amount_cents > remaining
 
       original
     end
 
-    def remaining_refundable_cents(original)
-      prior = PosTender
-        .where(original_pos_tender_id: original.id, status: %w[pending authorized completed])
-        .sum(:amount_cents)
-      original.amount_cents - prior
+    def enforce_original_tender_first!(transaction, chosen_original)
+      remaining = remaining_linked_sv_originals(transaction)
+      return if remaining.empty?
+
+      if chosen_original.present?
+        unless remaining.any? { |t| t.id == chosen_original.id }
+          raise Error, "original tender is not a remaining refundable stored-value tender on a linked sale"
+        end
+        return
+      end
+
+      # Bypass only with mandatory independent approval (reuse refund permission).
+      auth = AuthorizeAction.call(
+        store: transaction.store,
+        requester: @actor,
+        permission_key: "stored_value.tender.refund",
+        action_type: "stored_value_refund_exception",
+        reason: "bypass original stored-value tender restoration",
+        approval_mode: :always,
+        approver: @exception_approver,
+        approver_pin: @exception_approver_pin,
+        approver_permission_key: "stored_value.tender.refund",
+        pos_transaction: transaction
+      )
+      return if auth.allowed? && auth.pos_approval
+
+      raise Error,
+            "restore remaining original stored-value tender(s) first " \
+            "(#{remaining.map(&:id).join(', ')}) or supply exception approval"
+    end
+
+    def remaining_linked_sv_originals(transaction)
+      linked_sale_ids = transaction.pos_line_items.pending.returns
+        .where.not(original_pos_line_item_id: nil)
+        .includes(original_pos_line_item: :pos_transaction)
+        .map { |line| line.original_pos_line_item.pos_transaction_id }
+        .uniq
+
+      return [] if linked_sale_ids.empty?
+
+      PosTender
+        .joins(:tender_type)
+        .where(
+          pos_transaction_id: linked_sale_ids,
+          direction: "received",
+          status: "completed",
+          store_id: transaction.store_id,
+          tender_types: { tender_category: "stored_value" }
+        )
+        .order(:id)
+        .select { |tender| tender.remaining_refundable_cents.positive? }
+    end
+
+    def linked_original_transaction?(transaction, original_txn)
+      transaction.pos_line_items.pending.returns.any? { |line|
+        line.original_pos_line_item&.pos_transaction_id == original_txn.id
+      }
     end
 
     def already_refunded_cents(transaction)

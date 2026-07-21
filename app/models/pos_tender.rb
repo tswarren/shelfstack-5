@@ -48,6 +48,23 @@ class PosTender < ApplicationRecord
     UNRESOLVED_STATUSES.include?(status)
   end
 
+  # Remaining amount that may still be refunded against this received tender.
+  # A completed post-void reversing tender consumes the entire original amount.
+  def remaining_refundable_cents
+    return 0 unless direction == "received"
+    return 0 if post_voided?
+
+    prior = refund_tenders.where(status: %w[pending authorized completed]).sum(:amount_cents)
+    amount_cents - prior
+  end
+
+  def post_voided?
+    return true if post_void_reversing_tender&.completed?
+    return true if pos_transaction&.post_void_transaction&.completed?
+
+    false
+  end
+
   private
 
   def store_matches_transaction

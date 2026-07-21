@@ -94,7 +94,93 @@ module Pos
       )
     end
 
+    test "refund must restore original SV tender before issuing new store credit" do
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      assert AddStoredValueTender.call(
+        pos_transaction: sale, tender_type: @sv_tender, account: @account,
+        amount_cents: sale_net, actor: @admin
+      ).success?
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-sv-restore"
+      ).success?
+      sale_line = sale.pos_line_items.where(status: "completed").first
+      original_tender = sale.pos_tenders.where(status: "completed").first
+
+      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      assert AddLinkedReturnLine.call(
+        pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+      ).success?
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+
+      denied = AddStoredValueRefundTender.call(
+        pos_transaction: ret, tender_type: @sv_tender, amount_cents: refund_due,
+        actor: @admin, create_store_credit: true
+      )
+      refute denied.success?
+      assert_match(/restore remaining original/, denied.error)
+
+      restored = AddStoredValueRefundTender.call(
+        pos_transaction: ret, tender_type: @sv_tender, amount_cents: refund_due,
+        actor: @admin, original_pos_tender: original_tender
+      )
+      assert restored.success?, restored.error
+      assert_equal @account.id, restored.account.id
+    end
+
+    test "exception approval allows store credit while original SV remains" do
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      assert AddStoredValueTender.call(
+        pos_transaction: sale, tender_type: @sv_tender, account: @account,
+        amount_cents: sale_net, actor: @admin
+      ).success?
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-sv-exception"
+      ).success?
+      sale_line = sale.pos_line_items.where(status: "completed").first
+
+      other = create_other_approver
+      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      assert AddLinkedReturnLine.call(
+        pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+      ).success?
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+
+      allowed = AddStoredValueRefundTender.call(
+        pos_transaction: ret, tender_type: @sv_tender, amount_cents: refund_due,
+        actor: @admin, create_store_credit: true,
+        exception_approver: other, exception_approver_pin: "9999"
+      )
+      assert allowed.success?, allowed.error
+      assert_equal "store_credit", allowed.account.account_type
+    end
+
     private
+
+    def create_other_approver
+      admin_role = roles(:administrator)
+      user = User.create!(
+        username: "sv_refund_approver_#{SecureRandom.hex(2)}",
+        user_number: rand(10_000..99_999),
+        first_name: "Refund",
+        last_name: "Approver",
+        password: "password123",
+        pin: "9999",
+        pin_confirmation: "9999",
+        active: true,
+        default_store: @store
+      )
+      StoreMembership.create!(user: user, store: @store, role: admin_role, active: true)
+      user
+    end
+
 
     def open_inventory(variant, quantity:, unit_cost_cents:)
       reason = inventory_adjustment_reasons(:opening_initial)

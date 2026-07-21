@@ -64,6 +64,10 @@ class PosTransaction < ApplicationRecord
     pos_tax_exemptions.exists?
   end
 
+  def post_voided?
+    post_void_transaction&.completed? == true
+  end
+
   private
 
   def assign_public_id

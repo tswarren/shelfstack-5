@@ -8,6 +8,7 @@
   <section class="panel">
     <h2>Manual adjustment</h2>
     <%= form_with url: adjust_stored_value_account_path(@account), method: :post, class: "form" do |form| %>
+      <%= form.hidden_field :posting_key, value: @adjustment_posting_key, name: "posting_key" %>
       <div class="field">
         <%= form.label :adjustment_reason_id, "Reason", class: "field-label" %>
         <%= form.collection_select :adjustment_reason_id, @adjustment_reasons, :id, :name, {}, class: "input" %>

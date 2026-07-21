@@ -15,6 +15,7 @@ module StoredValue
     AccountNotActiveError = Class.new(Error)
     InsufficientBalanceError = Class.new(Error)
     IdempotencyConflictError = Class.new(Error)
+    ReversalError = Class.new(Error)
 
     Result = Data.define(:entry, :account, :replayed)
 
@@ -65,6 +66,8 @@ module StoredValue
           raise AccountNotActiveError, "account #{account.account_number} is not active"
         end
 
+        locked_original = validate_and_lock_reversal!(account)
+
         resulting_balance = account.current_balance_cents + @amount_cents
         if resulting_balance.negative?
           raise InsufficientBalanceError, "insufficient balance on account #{account.account_number}"
@@ -78,7 +81,7 @@ module StoredValue
           pos_transaction: @pos_transaction,
           pos_line_item: @pos_line_item,
           pos_tender: @pos_tender,
-          reverses_entry: @reverses_entry,
+          reverses_entry: locked_original || @reverses_entry,
           stored_value_adjustment_reason: @adjustment_reason,
           description: @description,
           created_by_user: @actor,
@@ -94,8 +97,14 @@ module StoredValue
     rescue ArgumentError => e
       raise Error, e.message
     rescue ActiveRecord::RecordNotUnique
-      existing = StoredValueEntry.find_by!(posting_key: @posting_key)
-      replay_or_conflict!(existing)
+      existing = StoredValueEntry.find_by(posting_key: @posting_key)
+      if existing
+        replay_or_conflict!(existing)
+      elsif @reverses_entry.present?
+        raise ReversalError, "entry #{@reverses_entry.id} is already reversed"
+      else
+        raise
+      end
     end
 
     private
@@ -106,6 +115,30 @@ module StoredValue
       raise Error, "store is required" if @store.blank?
       raise Error, "unsupported entry_type: #{@entry_type}" unless StoredValueEntry::ENTRY_TYPES.include?(@entry_type)
       raise Error, "amount_cents must be nonzero" if @amount_cents.zero?
+
+      if @entry_type == "reversal" && @reverses_entry.blank?
+        raise ReversalError, "reversal requires reverses_entry"
+      end
+      if @reverses_entry.present? && @entry_type != "reversal"
+        raise ReversalError, "reverses_entry requires entry_type reversal"
+      end
+    end
+
+    def validate_and_lock_reversal!(account)
+      return nil if @reverses_entry.blank?
+
+      original = StoredValueEntry.lock.find(@reverses_entry.id)
+      unless original.stored_value_account_id == account.id
+        raise ReversalError, "reversal account must match original entry account"
+      end
+      unless @amount_cents == -original.amount_cents
+        raise ReversalError, "reversal amount must be the exact inverse of the original entry"
+      end
+      if StoredValueEntry.exists?(reverses_entry_id: original.id)
+        raise ReversalError, "entry #{original.id} is already reversed"
+      end
+
+      original
     end
 
     def replay_or_conflict!(existing)

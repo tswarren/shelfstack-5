@@ -13,6 +13,7 @@ class StoredValueAccountsController < ApplicationController
   def show
     @entries = @account.stored_value_entries.order(created_at: :desc, id: :desc).limit(100)
     @adjustment_reasons = Current.organization.stored_value_adjustment_reasons.where(active: true).order(:position, :name)
+    @adjustment_posting_key = SecureRandom.uuid
   end
 
   def new
@@ -54,10 +55,12 @@ class StoredValueAccountsController < ApplicationController
       actor: Current.user,
       description: params[:description],
       approver: approver,
-      approver_pin: params[:approver_pin]
+      approver_pin: params[:approver_pin],
+      posting_key: params.require(:posting_key)
     )
     if result.success?
-      redirect_to @account, notice: "Adjustment posted."
+      notice = result.replayed ? "Adjustment already posted." : "Adjustment posted."
+      redirect_to @account, notice: notice
     else
       redirect_to @account, alert: result.error
     end

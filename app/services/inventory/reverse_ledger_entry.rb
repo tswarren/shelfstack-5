@@ -4,9 +4,9 @@ module Inventory
   # Exact historical reversal of one inventory ledger entry.
   #
   # Applies the inverse of the original quantity, inventory-value, unavailable,
-  # and eligible deficit-pool effects. Derives the resulting current balance and
-  # carrying average deterministically. Never reprices or recosts the original
-  # movement (Phase 6 / ADR-0008 / ADR-0013).
+  # and deficit-pool effects. For OD-014 Case 1 (still-open deficit), uses the
+  # exact provisional contribution of the original entry rather than proportional
+  # current-pool release (Phase 6 / ADR-0008 / ADR-0013).
   class ReverseLedgerEntry < ApplicationService
     Error = Class.new(StandardError)
     ConflictError = Class.new(Error)
@@ -74,13 +74,7 @@ module Inventory
           movement_cost_cents: original.movement_cost_cents
         )
 
-        deficit = PostLedgerEntry.deficit_effect_for(
-          balance: balance,
-          resulting_on_hand: resulting_on_hand,
-          movement_type: original.movement_type,
-          unit_cost_cents: original.unit_cost_cents,
-          cost_quality: original.cost_quality
-        )
+        deficit = exact_deficit_inverse(original, balance, resulting_on_hand)
 
         entry = InventoryLedgerEntry.create!(
           store: original.store,
@@ -140,6 +134,118 @@ module Inventory
     )
     private_constant :ReversalCalc
 
+    DeficitInverse = Data.define(
+      :changed,
+      :resulting_open_provisional_deficit_cost_cents,
+      :resulting_deficit_cost_quality,
+      :provisional_cost_released_cents,
+      :provisional_deficit_cost_quality_snapshot
+    )
+    private_constant :DeficitInverse
+
+    NO_DEFICIT = DeficitInverse.new(
+      changed: false,
+      resulting_open_provisional_deficit_cost_cents: nil,
+      resulting_deficit_cost_quality: nil,
+      provisional_cost_released_cents: nil,
+      provisional_deficit_cost_quality_snapshot: nil
+    )
+    private_constant :NO_DEFICIT
+
+    # Exact inverse of the original entry's deficit-pool effect (Case 1).
+    # Does not use proportional current-pool math from PostLedgerEntry.
+    def exact_deficit_inverse(original, balance, resulting_on_hand)
+      prior_on_hand = original.resulting_on_hand - original.quantity_delta
+      prior_deficit_qty = [ -prior_on_hand, 0 ].max
+      original_deficit_qty = [ -original.resulting_on_hand, 0 ].max
+
+      if original_deficit_qty > prior_deficit_qty
+        reverse_deficit_increase(original, balance, resulting_on_hand, original_deficit_qty - prior_deficit_qty)
+      elsif original_deficit_qty < prior_deficit_qty
+        reverse_deficit_release(original, balance, resulting_on_hand)
+      else
+        NO_DEFICIT
+      end
+    end
+
+    def reverse_deficit_increase(original, balance, resulting_on_hand, created_qty)
+      exact_added = exact_provisional_added(original, created_qty)
+      resulting_deficit_qty = [ -resulting_on_hand, 0 ].max
+      prior_pool = balance.open_provisional_deficit_cost_cents
+      prior_quality = balance.deficit_cost_quality
+
+      if resulting_deficit_qty.zero?
+        return DeficitInverse.new(
+          changed: true,
+          resulting_open_provisional_deficit_cost_cents: 0,
+          resulting_deficit_cost_quality: "unknown",
+          provisional_cost_released_cents: prior_pool,
+          provisional_deficit_cost_quality_snapshot: prior_quality
+        )
+      end
+
+      if exact_added.nil? || prior_pool.nil?
+        resulting_pool = nil
+        resulting_quality = "unknown"
+        released = prior_pool
+      else
+        resulting_pool = prior_pool - exact_added
+        raise Error, "exact deficit reverse would make provisional pool negative" if resulting_pool.negative?
+
+        resulting_quality = prior_quality
+        released = exact_added
+      end
+
+      DeficitInverse.new(
+        changed: true,
+        resulting_open_provisional_deficit_cost_cents: resulting_pool,
+        resulting_deficit_cost_quality: resulting_quality,
+        provisional_cost_released_cents: released,
+        provisional_deficit_cost_quality_snapshot: prior_quality
+      )
+    end
+
+    def reverse_deficit_release(original, balance, resulting_on_hand)
+      released = original.provisional_cost_released_cents
+      snapshot_quality = original.provisional_deficit_cost_quality_snapshot
+      prior_pool = balance.open_provisional_deficit_cost_cents
+      resulting_deficit_qty = [ -resulting_on_hand, 0 ].max
+
+      if resulting_deficit_qty.zero?
+        return DeficitInverse.new(
+          changed: true,
+          resulting_open_provisional_deficit_cost_cents: 0,
+          resulting_deficit_cost_quality: "unknown",
+          provisional_cost_released_cents: nil,
+          provisional_deficit_cost_quality_snapshot: nil
+        )
+      end
+
+      if released.nil? || prior_pool.nil?
+        resulting_pool = nil
+        resulting_quality = "unknown"
+      else
+        resulting_pool = prior_pool + released
+        resulting_quality = snapshot_quality.presence || balance.deficit_cost_quality
+      end
+
+      DeficitInverse.new(
+        changed: true,
+        resulting_open_provisional_deficit_cost_cents: resulting_pool,
+        resulting_deficit_cost_quality: resulting_quality,
+        provisional_cost_released_cents: nil,
+        provisional_deficit_cost_quality_snapshot: nil
+      )
+    end
+
+    def exact_provisional_added(original, created_qty)
+      return nil if created_qty <= 0
+      return nil if original.unit_cost_cents.blank?
+      return nil unless CalculateQuantityCost::KNOWN_QUALITIES.include?(original.cost_quality.to_s)
+
+      Rounding.multiply_round_half_up(original.unit_cost_cents, created_qty)
+    end
+
     def resulting_valuation(balance, resulting_on_hand, inventory_value_delta)
       if resulting_on_hand <= 0
         return [ 0, nil, "unknown" ]
@@ -147,8 +253,6 @@ module Inventory
 
       prior_value = balance.inventory_value_cents
       if prior_value.nil? && balance.on_hand <= 0
-        # Restoring into positive from zero/negative with an explicit historical
-        # value delta — treat the delta as the new carrying value when positive.
         resulting_value = inventory_value_delta.positive? ? inventory_value_delta : nil
       else
         resulting_value = (prior_value || 0) + inventory_value_delta

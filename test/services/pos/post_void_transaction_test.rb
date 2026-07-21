@@ -103,6 +103,93 @@ module Pos
       assert_match(/approve_self/, result.error)
     end
 
+    test "post-void clones discounts onto the reversing transaction" do
+      open_sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: open_sale, product_variant: @variant, quantity: 2, actor: @admin)
+      line = open_sale.pos_line_items.pending.first
+      assert ApplyDiscount.call(
+        pos_transaction: open_sale, scope: "line", method: "fixed_amount",
+        pos_line_item: line, amount_cents: 100, actor: @admin
+      ).success?
+      assert ApplyDiscount.call(
+        pos_transaction: open_sale, scope: "transaction", method: "fixed_amount",
+        amount_cents: 50, actor: @admin
+      ).success?
+      net = RecalculateTransaction.call(pos_transaction: open_sale).net_total_cents
+      AddCashTender.call(pos_transaction: open_sale, tender_type: @cash, amount_tendered_cents: net, actor: @admin)
+      assert CompleteTransaction.call(
+        pos_transaction: open_sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-disc"
+      ).success?
+      open_sale.reload
+      original_discount_ids = open_sale.pos_discounts.pluck(:id)
+      original_alloc_sum = PosDiscountAllocation.where(pos_discount_id: original_discount_ids).sum(:allocated_amount_cents)
+
+      result = PostVoidTransaction.call(
+        original_transaction: open_sale, pos_session: @session, actor: @admin,
+        reason: "discounted void", completion_idempotency_key: "pv-disc",
+        approver: @admin, approver_pin: "1234"
+      )
+      assert result.success?, result.error
+      reversing = result.pos_transaction
+      refute_empty reversing.pos_discounts
+      reversing.pos_discounts.each do |discount|
+        refute_includes original_discount_ids, discount.id
+      end
+      assert_equal original_alloc_sum,
+                   PosDiscountAllocation.where(pos_discount_id: original_discount_ids).sum(:allocated_amount_cents)
+      assert PosDiscountAllocation.where(pos_discount_id: reversing.pos_discounts.select(:id)).exists?
+    end
+
+    test "individual unit sale post-void restores unit availability" do
+      unit_variant = product_variants(:signed_book_standard)
+      unit = Inventory::CreateInventoryUnit.call(
+        store: @store, product_variant: unit_variant, actor: @admin, acquisition_cost_cents: 1500
+      ).inventory_unit
+      txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: txn, product_variant: unit_variant, actor: @admin, inventory_unit: unit)
+      net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+      AddCashTender.call(pos_transaction: txn, tender_type: @cash, amount_tendered_cents: net, actor: @admin)
+      assert CompleteTransaction.call(
+        pos_transaction: txn, pos_session: @session, actor: @admin, completion_idempotency_key: "unit-sale"
+      ).success?
+      assert_equal "sold", unit.reload.status
+
+      result = PostVoidTransaction.call(
+        original_transaction: txn, pos_session: @session, actor: @admin,
+        reason: "unit void", completion_idempotency_key: "pv-unit",
+        approver: @admin, approver_pin: "1234"
+      )
+      assert result.success?, result.error
+      assert_equal "available", unit.reload.status
+      assert_nil unit.sold_pos_line_item_id
+    end
+
+    test "concurrent post-void allows only one success" do
+      results = {}
+      barrier = Concurrent::CyclicBarrier.new(2)
+      t1 = Thread.new do
+        barrier.wait
+        results[:a] = PostVoidTransaction.call(
+          original_transaction: @transaction, pos_session: @session, actor: @admin,
+          reason: "race a", completion_idempotency_key: "pv-race-a",
+          approver: @admin, approver_pin: "1234"
+        )
+      end
+      t2 = Thread.new do
+        barrier.wait
+        results[:b] = PostVoidTransaction.call(
+          original_transaction: @transaction, pos_session: @session, actor: @admin,
+          reason: "race b", completion_idempotency_key: "pv-race-b",
+          approver: @admin, approver_pin: "1234"
+        )
+      end
+      [ t1, t2 ].each(&:join)
+      successes = results.values.count(&:success?)
+      assert_equal 1, successes
+      assert_equal 1, PosTransaction.where(reverses_pos_transaction_id: @transaction.id).count
+    end
+
     private
 
     def open_inventory(variant, quantity:, unit_cost_cents:)

@@ -35,14 +35,19 @@ class PosTendersController < ApplicationController
       account = Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id]) ||
                 Current.organization.stored_value_accounts.find_by(account_number: params[:account_number].to_s.strip)
       if params[:refund].present?
+        original = scoped_original_refund_tender(params[:original_pos_tender_id])
+        exception_approver = if params[:exception_approver_username].present?
+          User.find_by(username: params[:exception_approver_username].to_s.strip.downcase)
+        end
         Pos::AddStoredValueRefundTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
           actor: Current.user,
           account: account,
-          original_pos_tender: params[:original_pos_tender_id].presence &&
-            PosTender.find_by(id: params[:original_pos_tender_id]),
-          create_store_credit: params[:create_store_credit].present?
+          original_pos_tender: original,
+          create_store_credit: params[:create_store_credit].present?,
+          exception_approver: exception_approver,
+          exception_approver_pin: params[:exception_approver_pin]
         )
       else
         if account.blank?
@@ -118,5 +123,21 @@ class PosTendersController < ApplicationController
 
   def unsupported_tender_result(message)
     Data.define(:success?, :error, :warnings).new(success?: false, error: message, warnings: [])
+  end
+
+  # Original SV tenders must belong to this store and to a sale linked by a
+  # return line on the current transaction.
+  def scoped_original_refund_tender(id)
+    return nil if id.blank?
+
+    tender = Current.store.pos_tenders.find_by(id: id)
+    return nil if tender.blank?
+
+    linked_sale_ids = @pos_transaction.pos_line_items.returns.filter_map { |line|
+      line.original_pos_line_item&.pos_transaction_id
+    }.uniq
+    return nil unless linked_sale_ids.include?(tender.pos_transaction_id)
+
+    tender
   end
 end

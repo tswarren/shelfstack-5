@@ -1,10 +1,14 @@
 # Phase 6 — Corrections and Stored Value
 
-**Status:** Implementation in progress — gates 6a–6e landed in working tree; exit-criteria checklist pending merge hardening  
+**Status:** Implementation in progress — gates 6a–6e + review remediation (post-void consume returnable, eligibility-after-locks, exact Case-1 deficit reverse, SV refund restore-first, discount clone, AdjustBalance idempotency)  
 **Depends on:** Phase 4c, Phase 4d, Phase 4e; Phase 5 fulfilment integration (post-void must reverse Product Request fulfilment facts)  
 **Chronologically follows:** Phase 5 — purchasing and receiving are not conceptual prerequisites for stored value  
 **Unlocks:** correction, tender-refund, stored-value liability, and exception reporting in Phase 7  
 **Governing docs:** ADR-0002, ADR-0008, ADR-0009, ADR-0011, ADR-0012; [stored-value](../../domains/stored-value.md); [point-of-sale](../../domains/point-of-sale.md); [post-void eligibility](../decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md); [inventory correction / OD-014](../decisions/phase-06-inventory-correction-and-od-014.md); [stored-value v1 policy](../decisions/phase-06-stored-value-v1-operating-policy.md)
+
+### Pre-production data note (unavailable ledger)
+
+After applying the `unavailable_delta` / `resulting_unavailable` migration, **reset or re-seed** pre-production operational inventory and POS transactional data. Zero-backfilled historical ledger rows are not authoritative unavailable history; do not invent a production backfill in this phase.
 
 ## Goal
 
@@ -69,18 +73,20 @@ Permissions: [authorization-permissions.md](../../domains/authorization-permissi
 
 ## Exit criteria
 
+Proven by tests in this branch unless noted:
+
 - [x] Completed transactions, lines, tenders, inventory entries, stored-value entries, and fulfilment facts remain immutable
-- [x] Post-void creates one new completed transaction linked to one original; uses exact historical facts; current config is not consulted
-- [x] Quantity and individually tracked inventory effects reverse exactly when eligible; unavailable reverses through the ledger
-- [x] Prior returns, refunds, downstream unit activity, consumed stored value, or OD-014 settlement state block post-void where full reversal is impossible
-- [x] Post-void of a fulfilled sale reverses fulfilment via `Requests::ReverseFulfillment` and reopens the request when derived quantity requires it
-- [x] Gift-card issue/reload and SV redeem/refund commit atomically with POS; ledger append-only; cache reconciles; concurrent redeem cannot overspend
-- [x] Completion and post-void remain idempotent when stored value participates
-- [x] Store credit may issue through eligible refund; trade-credit infrastructure exists without buyback issuance
+- [x] Post-void creates one new completed transaction linked to one original; uses exact historical facts; current config is not consulted (incl. cloned `PosDiscount` rows)
+- [x] Quantity-tracked inventory reverse (incl. OD-014 Case-1 exact deficit pool) and individually tracked unit restore when eligible; unavailable reverses through the ledger
+- [x] Prior returns, refunds, post-void consumption of returnable/refundable, downstream unit activity, consumed stored value, or OD-014 later deficit reduction block post-void / later return-refund where full reversal is impossible
+- [x] Post-void of a fulfilled sale reverses fulfilment via `Requests::ReverseFulfillment` and reopens the request when derived quantity requires it (happy-path covered; broader matrix remains in decision notes)
+- [x] Gift-card issue/reload and SV redeem/refund commit atomically with POS; ledger append-only; cache reconciles; concurrent redeem cannot overspend; original-tender-first refund + exception approval
+- [x] Completion and post-void remain idempotent when stored value participates; AdjustBalance posting_key idempotent
+- [x] Store credit may issue through eligible refund when no original SV remains (or with exception approval); trade-credit infrastructure exists without buyback issuance
 - [ ] Mixed sale+return post-void supported only when every effect is reversible (all-or-nothing) — **retained block** until fulfilment restoration lands
 - [x] Restricted activity retains requester, approver, reason, store, and source relationships
 
-**Retained interim blocks:** OD-014 later-deficit-reduction; return-containing post-void (needs fulfilment restoration).
+**Retained interim blocks:** OD-014 post-settlement algorithm (later-deficit-reduction still blocks); return-containing / mixed-txn post-void (needs fulfilment restoration).
 
 ## Test categories
 

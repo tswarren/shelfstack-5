@@ -63,9 +63,8 @@ module Pos
         )
         raise Error, auth.error || "post-void approval required" unless auth.allowed? && auth.pos_approval
 
-        eligibility = EvaluatePostVoidEligibility.call(original_transaction: original, store: session.store)
-        raise Error, eligibility.blockers.join(", ") unless eligibility.eligible?
-
+        # Canonical lock order (Pos::CompletionLockOrder): lines/tenders →
+        # product requests → inventory → SV, then re-check eligibility under locks.
         lines = original.pos_line_items.lock.where(status: "completed").order(:position, :id).to_a
         tenders = original.pos_tenders.lock.where(status: "completed").order(:id).to_a
         validate_card_confirmations!(tenders)
@@ -78,8 +77,11 @@ module Pos
         }.uniq.sort
         locked_requests = request_ids.index_with { |id| ProductRequest.lock.find(id) }
 
-        lock_inventory!(lines)
-        lock_stored_value!(lines, tenders)
+        CompletionLockOrder.lock_inventory_for_lines!(lines)
+        CompletionLockOrder.lock_stored_value_accounts!(lines, tenders)
+
+        eligibility = EvaluatePostVoidEligibility.call(original_transaction: original, store: session.store)
+        raise Error, eligibility.blockers.join(", ") unless eligibility.eligible?
 
         now = Time.current
         reversing = PosTransaction.create!(
@@ -96,12 +98,16 @@ module Pos
 
         line_map = {}
         lines.each_with_index do |original_line, index|
-          reversing_line = build_reversing_line!(reversing, original_line, index, now)
-          line_map[original_line.id] = reversing_line
+          line_map[original_line.id] = build_reversing_line!(reversing, original_line, index, now)
+        end
+        discount_map = clone_discounts!(original, reversing, line_map)
+
+        lines.each do |original_line|
+          reversing_line = line_map[original_line.id]
           reverse_inventory!(original_line, reversing_line)
           reverse_fulfillment!(original_line, reversing_line, now, locked_requests)
           reverse_stored_value_line!(original_line, reversing_line, original)
-          copy_taxes_and_discounts!(original_line, reversing_line)
+          copy_taxes_and_discounts!(original_line, reversing_line, discount_map)
         end
 
         tenders.each do |original_tender|
@@ -166,36 +172,25 @@ module Pos
       end
     end
 
-    def lock_inventory!(lines)
-      variant_keys = lines.filter_map { |line|
-        next unless line.line_kind == "product"
-        next unless line.product_variant&.inventory_tracking_mode == "quantity"
-
-        [ line.pos_transaction.store_id, line.product_variant_id ]
-      }.uniq.sort
-
-      variant_keys.each do |store_id, variant_id|
-        StockBalance.lock.find_by(store_id: store_id, product_variant_id: variant_id) ||
-          Inventory::FindOrCreateStockBalance.call(
-            store: Store.find(store_id), product_variant: ProductVariant.find(variant_id)
-          )
+    def clone_discounts!(original, reversing, line_map)
+      PosDiscount.where(pos_transaction_id: original.id).order(:id).each_with_object({}) do |discount, map|
+        target = discount.target_pos_line_item_id.present? ? line_map[discount.target_pos_line_item_id] : nil
+        cloned = PosDiscount.create!(
+          pos_transaction: reversing,
+          scope: discount.scope,
+          method: discount.method,
+          tax_treatment: discount.tax_treatment,
+          applied_amount_cents: discount.applied_amount_cents,
+          base_amount_cents: discount.base_amount_cents,
+          rate_bps: discount.rate_bps,
+          requested_amount_cents: discount.requested_amount_cents,
+          discount_reason_id: discount.discount_reason_id,
+          position: discount.position,
+          created_by_user: @actor,
+          target_pos_line_item: target
+        )
+        map[discount.id] = cloned
       end
-
-      unit_ids = lines.filter_map { |line|
-        next unless line.line_kind == "product"
-        next unless line.product_variant&.inventory_tracking_mode == "individual"
-
-        line.inventory_unit_id
-      }.compact.sort
-      unit_ids.each { |id| InventoryUnit.lock.find(id) }
-    end
-
-    def lock_stored_value!(lines, tenders)
-      ids = (
-        lines.filter_map(&:stored_value_account_id) +
-        tenders.filter_map(&:stored_value_account_id)
-      ).uniq.sort
-      ids.each { |id| StoredValueAccount.lock.find(id) }
     end
 
     def build_reversing_line!(reversing, original_line, index, now)
@@ -315,7 +310,7 @@ module Pos
       raise Error, result.error unless result.success?
     end
 
-    def copy_taxes_and_discounts!(original_line, reversing_line)
+    def copy_taxes_and_discounts!(original_line, reversing_line, discount_map)
       original_line.pos_line_item_taxes.find_each do |tax|
         PosLineItemTax.create!(
           pos_line_item: reversing_line,
@@ -323,6 +318,8 @@ module Pos
           store_tax_rule_id: tax.store_tax_rule_id,
           store_tax_rate_id: tax.store_tax_rate_id,
           rate: tax.rate,
+          # Magnitudes stay non-negative (DB check); commercial sign is on the
+          # reversing transaction totals and opposite line direction.
           taxable_amount_cents: tax.taxable_amount_cents,
           amount_cents: tax.amount_cents,
           treatment_snapshot: tax.treatment_snapshot,
@@ -336,7 +333,7 @@ module Pos
       original_line.pos_discount_allocations.find_each do |alloc|
         PosDiscountAllocation.create!(
           pos_line_item: reversing_line,
-          pos_discount_id: alloc.pos_discount_id,
+          pos_discount: discount_map.fetch(alloc.pos_discount_id),
           allocated_amount_cents: alloc.allocated_amount_cents,
           eligible_amount_cents: alloc.eligible_amount_cents
         )

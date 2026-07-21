@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+# Pre-production assumption: after this migration, reset/re-seed operational
+# inventory and POS transactional data. Zero-backfilled historical
+# `resulting_unavailable` / `unavailable_delta` rows are not authoritative
+# unavailable history (see phase-06 and docs/schema/inventory.md).
 class AddUnavailableToInventoryLedgerEntries < ActiveRecord::Migration[8.1]
   def change
     change_table :inventory_ledger_entries, bulk: true do |t|

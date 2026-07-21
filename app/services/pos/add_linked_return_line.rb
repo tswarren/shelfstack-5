@@ -26,6 +26,8 @@ module Pos
       raise Error, "original line must be a completed sale" unless @original.completed?
       raise Error, "original line must be a sale line" unless @original.direction == "sale"
       raise Error, "stores must match" unless @original.pos_transaction.store_id == @pos_transaction.store_id
+      raise Error, "original transaction has been post-voided" if @original.pos_transaction.post_voided?
+      raise Error, "original line has been post-voided" if @original.post_voided?
 
       unless Authorization::EvaluatePermission.call(
         user: @actor, store: @pos_transaction.store, permission_key: "pos.return.create"
@@ -38,11 +40,13 @@ module Pos
         raise Error, "transaction is not open" unless transaction.open?
         raise Error, "commercial fields are locked by unresolved tenders" unless transaction.editable?
 
-        # Lock the original (already-completed) line so two concurrent linked
-        # returns against it serialize their remaining-quantity check instead of
-        # both reading a stale "remaining" value (domain invariant "Linked
-        # Returns do not exceed remaining quantity").
+        # Lock original transaction then line (canonical order) so concurrent
+        # post-void / return activity serializes remaining-quantity checks.
+        original_txn = PosTransaction.lock.find(@original.pos_transaction_id)
+        raise Error, "original transaction has been post-voided" if original_txn.post_voided?
+
         original = PosLineItem.lock.find(@original.id)
+        raise Error, "original line has been post-voided" if original.post_voided?
         remaining = original.remaining_returnable_quantity
         raise Error, "return quantity exceeds remaining returnable quantity (#{remaining})" if @quantity > remaining
 

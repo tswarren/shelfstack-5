@@ -124,5 +124,51 @@ module Inventory
         )
       end
     end
+
+    test "OD-014 Case 1: exact deficit reverse restores prior pool not proportional share" do
+      # Open 1 @ $10, sell to zero (seeds last_known), sell into deficit @ $10.
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 1, incoming_unit_cost_cents: 1000, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "def-open",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "def-to-zero",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "def-prior",
+        posted_by_user: @user
+      )
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_equal(-1, balance.on_hand)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+
+      # Deepen deficit with a second sale after last_known is raised to $20.
+      balance.update!(last_known_unit_cost_cents: 2000, last_known_cost_quality: "actual")
+      sale = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "def-sale",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal(-2, balance.on_hand)
+      assert_equal 3000, balance.open_provisional_deficit_cost_cents
+      assert_equal 2000, sale.ledger_entry.unit_cost_cents
+
+      # Exact reverse restores $10; proportional current-pool release would yield $15.
+      ReverseLedgerEntry.call(
+        reversal_of_entry: sale.ledger_entry,
+        source: @line,
+        posting_key: "def-sale:reverse",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal(-1, balance.on_hand)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+    end
   end
 end

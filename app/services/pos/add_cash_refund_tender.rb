@@ -23,6 +23,7 @@ module Pos
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
+        assert_no_post_voided_linked_originals!(transaction)
 
         recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
         TenderGuards.assert_no_calculation_blockers!(recalculation)
@@ -44,6 +45,14 @@ module Pos
     end
 
     private
+
+    def assert_no_post_voided_linked_originals!(transaction)
+      transaction.pos_line_items.pending.returns.find_each do |line|
+        original = line.original_pos_line_item
+        next if original.blank?
+        raise Error, "cannot refund against a post-voided original sale" if original.post_voided?
+      end
+    end
 
     def already_refunded_cents(transaction)
       transaction.pos_tenders.unresolved.where(direction: "refunded").sum(:amount_cents)

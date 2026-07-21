@@ -73,8 +73,8 @@ module Pos
         now = Time.current
         warnings = recalculation.warnings.dup
 
-        # Lock linked Product Requests before inventory conversion so completion
-        # and POS edits share: Transaction → Lines → Product Request → Balance → Reservation.
+        # Canonical lock order (Pos::CompletionLockOrder): after lines/tenders,
+        # Product Requests → Inventory → Stored-Value Accounts → receipt sequence.
         linked_request_ids = lines.filter_map { |line|
           if line.sale? && line.line_kind == "product" && line.product_request_id.present?
             line.product_request_id
@@ -88,11 +88,10 @@ module Pos
         }.uniq.sort
         locked_requests = linked_request_ids.index_with { |id| ProductRequest.lock.find(id) }
 
-        sv_account_ids = (
-          lines.filter_map(&:stored_value_account_id) +
-          tenders.filter_map(&:stored_value_account_id)
-        ).uniq.sort
-        locked_sv_accounts = sv_account_ids.index_with { |id| StoredValueAccount.lock.find(id) }
+        validate_linked_returns_and_refunds!(lines, tenders)
+
+        CompletionLockOrder.lock_inventory_for_lines!(lines)
+        locked_sv_accounts = CompletionLockOrder.lock_stored_value_accounts!(lines, tenders)
 
         lines.each do |line|
           if line.direction == "return" && line.line_kind == "product"
@@ -154,6 +153,48 @@ module Pos
     end
 
     private
+
+    # Lock original sale transactions/lines (sorted) and re-check post-void /
+    # remaining returnable quantity and refundable tender amounts under locks.
+    def validate_linked_returns_and_refunds!(lines, tenders)
+      return_lines = lines.select { |line| line.direction == "return" && line.original_pos_line_item_id.present? }
+      original_txn_ids = return_lines.map { |line| line.original_pos_line_item.pos_transaction_id }.uniq.sort
+      original_txn_ids.each { |id| PosTransaction.lock.find(id) }
+
+      original_line_ids = return_lines.map(&:original_pos_line_item_id).uniq.sort
+      locked_originals = original_line_ids.index_with { |id| PosLineItem.lock.find(id) }
+
+      return_lines.each do |line|
+        original = locked_originals.fetch(line.original_pos_line_item_id)
+        raise Error, "original sale line #{original.id} has been post-voided" if original.post_voided?
+        # Pending return lines on this txn already count against remaining; allow
+        # exactly this line's quantity (and siblings) without double-counting
+        # by comparing against remaining + this txn's pending returns of original.
+        pending_here = return_lines
+          .select { |other| other.original_pos_line_item_id == original.id }
+          .sum(&:quantity)
+        available = original.remaining_returnable_quantity + pending_here
+        if pending_here > available
+          raise Error, "return quantity exceeds remaining returnable for line #{original.id}"
+        end
+      end
+
+      tenders.select { |t| t.direction == "refunded" && t.original_pos_tender_id.present? }.each do |tender|
+        original_txn = PosTransaction.lock.find(tender.original_pos_tender.pos_transaction_id)
+        raise Error, "original tender's transaction has been post-voided" if original_txn.post_voided?
+
+        original = PosTender.lock.find(tender.original_pos_tender_id)
+        raise Error, "original tender #{original.id} has been post-voided" if original.post_voided?
+
+        pending_here = tenders
+          .select { |other| other.original_pos_tender_id == original.id }
+          .sum(&:amount_cents)
+        available = original.remaining_refundable_cents + pending_here
+        if pending_here > available
+          raise Error, "refund exceeds remaining refundable on original tender #{original.id}"
+        end
+      end
+    end
 
     def post_stored_value_line!(line, transaction, locked_accounts)
       account = locked_accounts.fetch(line.stored_value_account_id)

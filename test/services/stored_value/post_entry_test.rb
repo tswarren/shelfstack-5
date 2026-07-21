@@ -94,5 +94,42 @@ module StoredValue
       assert results.values.any? { |v| v.is_a?(String) && v.match?(/insufficient/) }
       assert_equal 0, @account.reload.current_balance_cents
     end
+
+    test "reversal requires exact inverse amount and same account" do
+      issued = PostEntry.call(
+        account: @account, store: @store, entry_type: "issued", amount_cents: 1000,
+        posting_key: "sv-rev-issue", actor: @admin
+      ).entry
+
+      assert_raises(PostEntry::ReversalError) do
+        PostEntry.call(
+          account: @account, store: @store, entry_type: "reversal", amount_cents: -500,
+          posting_key: "sv-rev-wrong-amt", actor: @admin, reverses_entry: issued
+        )
+      end
+
+      other = CreateAccount.call(
+        organization: @org, account_type: "gift_card", actor: @admin
+      ).account
+      assert_raises(PostEntry::ReversalError) do
+        PostEntry.call(
+          account: other, store: @store, entry_type: "reversal", amount_cents: -1000,
+          posting_key: "sv-rev-wrong-acct", actor: @admin, reverses_entry: issued
+        )
+      end
+
+      PostEntry.call(
+        account: @account, store: @store, entry_type: "reversal", amount_cents: -1000,
+        posting_key: "sv-rev-ok", actor: @admin, reverses_entry: issued
+      )
+      assert_equal 0, @account.reload.current_balance_cents
+
+      assert_raises(PostEntry::ReversalError) do
+        PostEntry.call(
+          account: @account, store: @store, entry_type: "reversal", amount_cents: -1000,
+          posting_key: "sv-rev-double", actor: @admin, reverses_entry: issued
+        )
+      end
+    end
   end
 end

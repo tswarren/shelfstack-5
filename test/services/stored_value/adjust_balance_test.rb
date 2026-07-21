@@ -97,5 +97,52 @@ module StoredValue
       refute result.success?
       assert_match(/description/i, result.error)
     end
+
+    test "same posting_key replays without a second entry" do
+      first = AdjustBalance.call(
+        account: @account, store: @store, amount_cents: 250, adjustment_reason: @reason,
+        actor: @admin, description: "note",
+        approver: @approver, approver_pin: "4321",
+        posting_key: "sv-adj-idem"
+      )
+      assert first.success?, first.error
+
+      second = AdjustBalance.call(
+        account: @account, store: @store, amount_cents: 250, adjustment_reason: @reason,
+        actor: @admin, description: "note",
+        approver: @approver, approver_pin: "4321",
+        posting_key: "sv-adj-idem"
+      )
+      assert second.success?, second.error
+      assert second.replayed
+      assert_equal first.entry.id, second.entry.id
+      assert_equal 250, @account.reload.current_balance_cents
+      assert_equal 1, StoredValueEntry.where(posting_key: "sv-adj-idem").count
+    end
+
+    test "failed posting rolls back approval" do
+      approvals_before = PosApproval.count
+      original = PostEntry.method(:call)
+      PostEntry.define_singleton_method(:call) do |**|
+        raise PostEntry::Error, "injected failure"
+      end
+
+      begin
+        result = AdjustBalance.call(
+          account: @account, store: @store, amount_cents: 100, adjustment_reason: @reason,
+          actor: @admin, description: "note",
+          approver: @approver, approver_pin: "4321",
+          posting_key: "sv-adj-fail"
+        )
+        refute result.success?
+        assert_match(/injected failure/, result.error)
+      ensure
+        PostEntry.define_singleton_method(:call, original)
+      end
+
+      assert_equal 0, @account.reload.current_balance_cents
+      refute StoredValueEntry.exists?(posting_key: "sv-adj-fail")
+      assert_equal approvals_before, PosApproval.count
+    end
   end
 end

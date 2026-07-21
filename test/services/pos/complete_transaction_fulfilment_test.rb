@@ -235,5 +235,32 @@ module Pos
       assert request.reload.fulfilled?
       assert txn.completed?
     end
+
+    test "post-void of a fulfilled sale reverses fulfilment and reopens the request" do
+      reserved = Requests::ReserveInHouseInventory.call(
+        product_request: @request, quantity: 2, actor: @admin, store: @store, physically_confirmed: true
+      )
+      assert reserved.success?, reserved.error
+
+      txn, line, = pos_complete_cash_sale(
+        session: @session, variant: @variant, quantity: 2, actor: @admin, cash: @cash,
+        key: "fulfil-then-void", product_request: @request
+      )
+      assert @request.reload.fulfilled?
+
+      result = PostVoidTransaction.call(
+        original_transaction: txn, pos_session: @session, actor: @admin,
+        reason: "fulfilment void", completion_idempotency_key: "pv-fulfil",
+        approver: @admin, approver_pin: "1234"
+      )
+      assert result.success?, result.error
+
+      reverse = ProductRequestFulfillment.find_by(pos_line_item_id: result.pos_transaction.pos_line_items.first.id, kind: "reverse")
+      assert reverse || ProductRequestFulfillment.exists?(kind: "reverse", product_request_id: @request.id)
+      @request.reload
+      refute @request.fulfilled?
+      assert_equal 0, @request.fulfilled_quantity
+      assert ProductRequestFulfillment.exists?(pos_line_item_id: line.id, kind: "fulfill")
+    end
   end
 end
