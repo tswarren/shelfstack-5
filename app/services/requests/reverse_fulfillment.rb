@@ -5,7 +5,7 @@ module Requests
   # return (or, later, a post-void) reverses a completed sale line that had
   # fulfilled a request. Never edits or deletes the original `fulfill`
   # ProductRequestFulfillment (ADR-0008 "completed activity is immutable");
-  # appends a `reverse` row referencing it via `linked_fulfilment_id` instead.
+  # appends a `reverse` row referencing it via `linked_fulfillment_id` instead.
   #
   # A no-op success (no row created) when the original sale line was never
   # linked to a Product Request, or when its fulfilled quantity has already
@@ -17,14 +17,18 @@ module Requests
   # below its requested quantity, the request reopens (`status: "open"`) —
   # it remains a continuing obligation, per domain "Customer Requests remain
   # open as fulfilment obligations".
+  #
+  # Lock order: Product Request → Fulfilment (callers that already hold the
+  # Product Request lock may pass `product_request:` to skip re-locking).
   class ReverseFulfillment < ApplicationService
     Result = Data.define(:product_request_fulfillment, :success?, :error, :replayed)
 
-    def initialize(original_pos_line_item:, return_pos_line_item:, actor:, reversed_at: nil)
+    def initialize(original_pos_line_item:, return_pos_line_item:, actor:, reversed_at: nil, product_request: nil)
       @original = original_pos_line_item
       @return_line = return_pos_line_item
       @actor = actor
       @reversed_at = reversed_at || Time.current
+      @product_request = product_request
     end
 
     def call
@@ -36,6 +40,12 @@ module Requests
           return Result.new(product_request_fulfillment: existing, success?: true, error: nil, replayed: true)
         end
 
+        fulfill_preview = ProductRequestFulfillment.find_by(pos_line_item_id: @original.id, kind: "fulfill")
+        if fulfill_preview.blank?
+          return Result.new(product_request_fulfillment: nil, success?: true, error: nil, replayed: false)
+        end
+
+        product_request = @product_request || ProductRequest.lock.find(fulfill_preview.product_request_id)
         fulfillment = ProductRequestFulfillment.lock.find_by(pos_line_item_id: @original.id, kind: "fulfill")
         if fulfillment.blank?
           return Result.new(product_request_fulfillment: nil, success?: true, error: nil, replayed: false)
@@ -49,7 +59,7 @@ module Requests
         end
 
         reversal = ProductRequestFulfillment.create!(
-          product_request: fulfillment.product_request,
+          product_request: product_request,
           pos_line_item: @return_line,
           quantity: reverse_quantity,
           kind: "reverse",
@@ -59,14 +69,13 @@ module Requests
           posting_key: posting_key
         )
 
-        reopen_if_needed!(fulfillment.product_request)
+        reopen_if_needed!(product_request)
 
-        product_request = fulfillment.product_request
         Administration::RecordAuditEvent.call(
           actor: @actor,
           organization: product_request.store.organization,
           store: product_request.store,
-          action: "requests.customer_request.fulfilment_reversed",
+          action: "requests.customer_request.fulfillment_reversed",
           subject: product_request,
           metadata: { "pos_line_item_id" => @return_line.id, "quantity" => reverse_quantity, "linked_fulfilment_id" => fulfillment.id }
         )

@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 // Keeps receipt-line Purchase-Order Line options scoped to the receipt vendor
 // and the line's Product Variant so a line cannot be linked to a different item.
-// Also defaults unit cost from PO / vendor list−discount suggestions.
+// Defaults unit cost from PO / vendor suggestions while preserving manual edits.
 export default class extends Controller {
   static targets = [
     "vendor", "lines", "line", "lineTemplate", "removeButton", "position",
@@ -11,11 +11,10 @@ export default class extends Controller {
   static values = { vendorCostSuggestions: Object }
 
   connect() {
-    // Unique index for lines added client-side; large enough to never collide
-    // with the server-rendered 0..n indices.
     this.newIndex = Date.now()
     this.updateLineControls()
     this.refreshPurchaseOrderLineOptions()
+    this.lineTargets.forEach((line) => this.ensureCostMeta(line))
   }
 
   addLine() {
@@ -24,10 +23,12 @@ export default class extends Controller {
     this.linesTarget.appendChild(fragment)
     this.updateLineControls()
     this.refreshPurchaseOrderLineOptions()
+    const line = this.lineTargets[this.lineTargets.length - 1]
+    this.ensureCostMeta(line)
+    this.applySuggestedCost(line)
   }
 
   removeLine(event) {
-    // Always retain at least one line row.
     if (this.lineTargets.length <= 1) return
 
     event.target.closest("[data-receipt-form-target='line']").remove()
@@ -58,7 +59,35 @@ export default class extends Controller {
     }
 
     this.refreshLinePurchaseOrderOptions(line)
-    this.applySuggestedCost(line, { force: true })
+    this.applySuggestedCost(line)
+  }
+
+  costEdited(event) {
+    const line = event.target.closest("[data-receipt-form-target='line']")
+    if (!line) return
+
+    const quality = line.querySelector("[data-receipt-form-target='costQuality']")
+    if (quality?.value === "unknown" || quality?.value === "confirmed_zero") {
+      line.dataset.costAutoSuggested = "false"
+      line.dataset.costSuggestionContext = this.contextKey(line)
+      if (quality.value === "unknown") {
+        const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
+        const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
+        if (unitCost) unitCost.value = ""
+        if (provenance) provenance.value = "unknown"
+      }
+      return
+    }
+
+    line.dataset.costAutoSuggested = "false"
+    const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
+    if (provenance && (!provenance.value || this.isAutoProvenance(provenance.value))) {
+      provenance.value = "manual_receipt"
+    }
+    const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
+    if (quality && unitCost?.value !== "" && !quality.value) {
+      quality.value = "actual"
+    }
   }
 
   refreshPurchaseOrderLineOptions({ clearIncompatible = false } = {}) {
@@ -97,26 +126,41 @@ export default class extends Controller {
     }
   }
 
-  applySuggestedCost(line, { force = false } = {}) {
+  applySuggestedCost(line) {
     const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
     if (!unitCost) return
 
-    if (!force && unitCost.value !== "") return
+    this.ensureCostMeta(line)
+    const context = this.contextKey(line)
+    const auto = line.dataset.costAutoSuggested === "true"
+    const empty = unitCost.value === ""
+    const contextChanged = line.dataset.costSuggestionContext !== context
+
+    if (!auto && !empty) return
 
     const suggestion = this.suggestionFor(line)
-    if (!suggestion) return
+    if (!suggestion) {
+      if (auto || empty) {
+        unitCost.value = ""
+        const quality = line.querySelector("[data-receipt-form-target='costQuality']")
+        const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
+        if (quality) quality.value = ""
+        if (provenance) provenance.value = ""
+        line.dataset.costAutoSuggested = "false"
+        line.dataset.costSuggestionContext = context
+      }
+      return
+    }
+
+    if (!auto && !empty && !contextChanged) return
 
     unitCost.value = suggestion.unit_cost_cents
-
     const quality = line.querySelector("[data-receipt-form-target='costQuality']")
-    if (quality && (force || quality.value === "")) {
-      quality.value = suggestion.cost_quality || ""
-    }
-
+    if (quality) quality.value = suggestion.cost_quality || "estimated"
     const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")
-    if (provenance && (force || provenance.value === "")) {
-      provenance.value = suggestion.cost_provenance || ""
-    }
+    if (provenance) provenance.value = suggestion.cost_provenance || ""
+    line.dataset.costAutoSuggested = "true"
+    line.dataset.costSuggestionContext = context
   }
 
   suggestionFor(line) {
@@ -135,6 +179,34 @@ export default class extends Controller {
     if (!vendorId || !variantId) return null
 
     return this.vendorCostSuggestionsValue?.[`${variantId}:${vendorId}`] || null
+  }
+
+  contextKey(line) {
+    const vendorId = this.hasVendorTarget ? this.vendorTarget.value : ""
+    const variantId = line.querySelector("[data-receipt-form-target='variantSelect']")?.value || ""
+    const poId = line.querySelector("[data-receipt-form-target='purchaseOrderLineSelect']")?.value || ""
+    return `${vendorId}:${variantId}:${poId}`
+  }
+
+  ensureCostMeta(line) {
+    if (line.dataset.costAutoSuggested == null) {
+      const unitCost = line.querySelector("[data-receipt-form-target='unitCost']")
+      const provenance = line.querySelector("[data-receipt-form-target='costProvenance']")?.value || ""
+      const auto = unitCost && unitCost.value !== "" && this.isAutoProvenance(provenance)
+      line.dataset.costAutoSuggested = auto ? "true" : "false"
+    }
+    if (line.dataset.costSuggestionContext == null) {
+      line.dataset.costSuggestionContext = this.contextKey(line)
+    }
+  }
+
+  isAutoProvenance(value) {
+    return [
+      "purchase_order_expected",
+      "purchase_order_list_discount",
+      "vendor_source_expected",
+      "vendor_list_discount"
+    ].includes(value)
   }
 
   updateLineControls() {

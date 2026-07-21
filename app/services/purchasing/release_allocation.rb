@@ -44,6 +44,11 @@ module Purchasing
       end
 
       ActiveRecord::Base.transaction do
+        # Lock order: Purchase Order → Purchase Order Line → Product Request → Allocation.
+        line = @purchase_order_allocation.purchase_order_line
+        PurchaseOrder.lock.find(line.purchase_order_id)
+        PurchaseOrderLine.lock.find(line.id)
+        ProductRequest.lock.find(@purchase_order_allocation.product_request_id)
         allocation = PurchaseOrderAllocation.lock.find(@purchase_order_allocation.id)
         store_id = allocation.purchase_order_line.purchase_order.store_id
         raise Error, "purchase order allocation store mismatch" unless store_id == @store.id

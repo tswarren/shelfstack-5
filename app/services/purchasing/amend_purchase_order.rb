@@ -103,6 +103,7 @@ module Purchasing
       request_ids = allocations.map(&:product_request_id).uniq.sort
       allocation_ids = allocations.map(&:id).sort
 
+      # PO already locked by caller; re-affirm order: Line → Request → Allocation.
       line_ids.each { |id| PurchaseOrderLine.lock.find(id) }
       request_ids.each { |id| ProductRequest.lock.find(id) }
       locked = allocation_ids.index_with { |id| PurchaseOrderAllocation.lock.find(id) }

@@ -1,4 +1,5 @@
-<%# locals: f:, variants:, purchase_order_lines: %>
+<%# locals: f:, variants:, purchase_order_lines:, can_edit_cost: %>
+<% can_edit_cost = local_assigns.fetch(:can_edit_cost, false) %>
 <fieldset class="adjustment-line" data-receipt-form-target="line">
   <div class="adjustment-line-header">
     <span class="adjustment-line-title">Line</span>
@@ -24,7 +25,6 @@
       <%= f.label :purchase_order_line_id, "Purchase order line", class: "field-label" %>
       <%= f.select :purchase_order_line_id,
             purchase_order_lines.map { |l|
-              suggestion = Inventory::SuggestReceiptLineCost.call(purchase_order_line: l)
               label = [
                 l.purchase_order.purchase_order_number,
                 l.product_variant.product.name,
@@ -35,10 +35,13 @@
                 vendor_id: l.purchase_order.vendor_id,
                 product_variant_id: l.product_variant_id
               }
-              if suggestion
-                option_data[:suggested_unit_cost_cents] = suggestion.unit_cost_cents
-                option_data[:suggested_cost_quality] = suggestion.cost_quality
-                option_data[:suggested_cost_provenance] = suggestion.cost_provenance
+              if can_edit_cost
+                suggestion = Inventory::SuggestReceiptLineCost.call(purchase_order_line: l)
+                if suggestion
+                  option_data[:suggested_unit_cost_cents] = suggestion.unit_cost_cents
+                  option_data[:suggested_cost_quality] = suggestion.cost_quality
+                  option_data[:suggested_cost_provenance] = suggestion.cost_provenance
+                end
               end
               [ label, l.id, { data: option_data } ]
             },
@@ -71,27 +74,39 @@
       <%= f.number_field :accepted_unavailable_quantity, min: 0, class: "input" %>
     </div>
 
-    <% if local_assigns.fetch(:can_edit_cost, true) %>
+    <% if can_edit_cost %>
       <div class="field">
-        <%= f.label :actual_unit_cost_cents, "Actual unit cost (cents)", class: "field-label" %>
+        <%= f.label :actual_unit_cost_cents, "Unit cost (cents)", class: "field-label" %>
         <%= f.number_field :actual_unit_cost_cents, min: 0, class: "input",
-              data: { receipt_form_target: "unitCost" } %>
+              data: {
+                receipt_form_target: "unitCost",
+                action: "input->receipt-form#costEdited"
+              } %>
       </div>
 
       <div class="field">
         <%= f.label :cost_quality, "Cost quality", class: "field-label" %>
         <%= f.select :cost_quality,
               ReceiptLine::COST_QUALITIES.map { |q| [ q.titleize, q ] },
-              { include_blank: "Unknown (default)" },
+              { include_blank: "Suggest from PO / vendor" },
               class: "input",
-              data: { receipt_form_target: "costQuality" } %>
-        <p class="field-hint">Defaults to vendor expected cost, or list price minus vendor discount, or the linked PO expected cost. Override when the invoice differs.</p>
+              data: {
+                receipt_form_target: "costQuality",
+                action: "change->receipt-form#costEdited"
+              } %>
+        <p class="field-hint">Defaults to PO expected cost, or list − discount, or vendor estimate. Choose Unknown to decline a suggestion.</p>
       </div>
 
       <div class="field">
         <%= f.label :cost_provenance, "Cost provenance", class: "field-label" %>
-        <%= f.text_field :cost_provenance, class: "input",
-              data: { receipt_form_target: "costProvenance" } %>
+        <%= f.select :cost_provenance,
+              Inventory::ResolveReceiptLineCost::CONTROLLED_PROVENANCES.map { |p| [ p.humanize, p ] },
+              { include_blank: true },
+              class: "input",
+              data: {
+                receipt_form_target: "costProvenance",
+                action: "change->receipt-form#costEdited"
+              } %>
       </div>
     <% end %>
 

@@ -262,10 +262,29 @@ module Inventory
       assert_equal "estimated", balance.cost_quality
     end
 
-    test "blank receipt cost falls back to vendor-source list discount as configured_estimate" do
+    test "blank unlinked receipt cost falls back to vendor-source list discount as configured_estimate" do
       source = product_variant_vendors(:sample_book_ingram)
       source.update!(list_cost_cents: 1000, discount_bps: 2000, expected_unit_cost_cents: nil)
-      po_line = build_ordered_po_line(variant: @quantity_variant, ordered_quantity: 3, expected_unit_cost_cents: 999)
+      grant(@admin, "inventory.receipt.receive_unlinked")
+
+      receipt = build_receipt(lines_attributes: [
+        { product_variant_id: @quantity_variant.id,
+          delivered_quantity: 1, accepted_quantity: 1 }
+      ])
+
+      result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
+
+      assert result.success?, result.error
+      entry = InventoryLedgerEntry.find_by!(movement_type: "receipt", source: receipt.receipt_lines.first)
+      assert_equal 800, entry.unit_cost_cents # 1000 * (1 - 0.20)
+      assert_equal "configured_estimate", entry.cost_method
+      assert_equal "estimated", entry.cost_quality
+    end
+
+    test "linked blank cost prefers PO expected over current vendor source" do
+      source = product_variant_vendors(:sample_book_ingram)
+      source.update!(list_cost_cents: 1000, discount_bps: 2000, expected_unit_cost_cents: 800)
+      po_line = build_ordered_po_line(variant: @quantity_variant, ordered_quantity: 3, expected_unit_cost_cents: 640)
       po_line.update_columns(product_variant_vendor_id: source.id)
 
       receipt = build_receipt(lines_attributes: [
@@ -277,9 +296,32 @@ module Inventory
 
       assert result.success?, result.error
       entry = InventoryLedgerEntry.find_by!(movement_type: "receipt", source: receipt.receipt_lines.first)
-      assert_equal 800, entry.unit_cost_cents # 1000 * (1 - 0.20)
+      assert_equal 640, entry.unit_cost_cents
       assert_equal "configured_estimate", entry.cost_method
       assert_equal "estimated", entry.cost_quality
+    end
+
+    test "aggregate accepted quantity across lines on one PO line requires over_receive" do
+      po_line = build_ordered_po_line(variant: @quantity_variant, ordered_quantity: 5, expected_unit_cost_cents: 700)
+      receipt = build_receipt(lines_attributes: [
+        { product_variant_id: @quantity_variant.id, purchase_order_line_id: po_line.id, position: 0,
+          delivered_quantity: 3, accepted_quantity: 3, actual_unit_cost_cents: 700, cost_quality: "actual",
+          cost_provenance: "manual_receipt" },
+        { product_variant_id: @quantity_variant.id, purchase_order_line_id: po_line.id, position: 1,
+          delivered_quantity: 3, accepted_quantity: 3, actual_unit_cost_cents: 700, cost_quality: "actual",
+          cost_provenance: "manual_receipt" }
+      ])
+
+      grant(@clerk, "inventory.receipt.post")
+      denied = PostReceipt.call(receipt: receipt, actor: @clerk, store: @store)
+      assert_not denied.success?
+      assert_match(/over-receive/i, denied.error)
+      assert_equal 0, po_line.reload.received_quantity
+
+      grant(@clerk, "inventory.receipt.over_receive")
+      allowed = PostReceipt.call(receipt: receipt, actor: @clerk, store: @store)
+      assert allowed.success?, allowed.error
+      assert_equal 6, po_line.reload.received_quantity
     end
 
     private

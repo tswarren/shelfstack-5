@@ -57,7 +57,8 @@ module Requests
         when "quantity"
           raise Error, "inventory unit must not be given for quantity-tracked variants" if @inventory_unit.present?
 
-          existing = InventoryReservation.active.lock.find_by(
+          # Do not pre-lock the Reservation: Reserve owns Balance → Reservation.
+          existing = InventoryReservation.active.find_by(
             store_id: @store.id, product_variant_id: variant.id,
             source_type: "product_request", source_id: product_request.id
           )

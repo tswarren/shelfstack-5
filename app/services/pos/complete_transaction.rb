@@ -75,16 +75,24 @@ module Pos
         # Lock linked Product Requests before inventory conversion so completion
         # and POS edits share: Transaction → Lines → Product Request → Balance → Reservation.
         linked_request_ids = lines.filter_map { |line|
-          line.product_request_id if line.sale? && line.line_kind == "product" && line.product_request_id.present?
+          if line.sale? && line.line_kind == "product" && line.product_request_id.present?
+            line.product_request_id
+          elsif line.direction == "return" && line.line_kind == "product"
+            original = line.original_pos_line_item
+            next if original.blank?
+
+            fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: original.id, kind: "fulfill")
+            fulfillment&.product_request_id || original.product_request_id
+          end
         }.uniq.sort
-        linked_request_ids.each { |id| ProductRequest.lock.find(id) }
+        locked_requests = linked_request_ids.index_with { |id| ProductRequest.lock.find(id) }
 
         lines.each do |line|
           if line.direction == "return" && line.line_kind == "product"
             posted = Inventory::PostCustomerReturn.call(pos_line_item: line, posted_by_user: @actor)
             raise Error, posted.error unless posted.success?
             warnings.concat(posted.warnings)
-            reverse_fulfilment_for_return!(line, posted_at: now)
+            reverse_fulfilment_for_return!(line, posted_at: now, locked_requests: locked_requests)
           elsif line.sale? && line.line_kind == "product"
             conversion = nil
             if inventory_tracked_product_line?(line)
@@ -153,12 +161,20 @@ module Pos
     # A linked return of a completed sale line that fulfilled a Customer
     # Request appends a `reverse` fulfilment fact rather than mutating the
     # original (ADR-0008); a no-op when the original line was never linked.
-    def reverse_fulfilment_for_return!(line, posted_at:)
+    def reverse_fulfilment_for_return!(line, posted_at:, locked_requests: {})
       original = line.original_pos_line_item
       return if original.blank?
 
+      fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: original.id, kind: "fulfill")
+      request_id = fulfillment&.product_request_id || original.product_request_id
+      product_request = locked_requests[request_id] if request_id
+
       result = Requests::ReverseFulfillment.call(
-        original_pos_line_item: original, return_pos_line_item: line, actor: @actor, reversed_at: posted_at
+        original_pos_line_item: original,
+        return_pos_line_item: line,
+        actor: @actor,
+        reversed_at: posted_at,
+        product_request: product_request
       )
       raise Error, result.error unless result.success?
     end

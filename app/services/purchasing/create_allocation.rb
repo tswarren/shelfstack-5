@@ -34,6 +34,8 @@ module Purchasing
       raise Error, "quantity must be a positive integer" unless @quantity.positive?
 
       ActiveRecord::Base.transaction do
+        # Lock order: Purchase Order → Purchase Order Line → Product Request → Allocation.
+        PurchaseOrder.lock.find(@purchase_order_line.purchase_order_id)
         line = PurchaseOrderLine.lock.find(@purchase_order_line.id)
         product_request = ProductRequest.lock.find(@product_request.id)
         purchase_order = line.purchase_order

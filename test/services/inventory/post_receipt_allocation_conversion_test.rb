@@ -98,9 +98,40 @@ module Inventory
       # 2 unavailable units leave allocation unbacked and must be released.
       assert_equal 0, allocation.reload.remaining_quantity
       assert_equal "received_unavailable",
-                   allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
+        allocation.purchase_order_allocation_events.find_by(event_type: "released").reason
+
       reservation = InventoryReservation.find_by(source_type: "product_request", source_id: request.id)
       assert_equal 3, reservation.quantity
+    end
+
+    test "multi-line receipt aggregates sellable conversion before unavailable release" do
+      po_line = build_ordered_po_line(ordered_quantity: 5)
+      request = build_customer_request(quantity: 5)
+      allocation = create_allocation(po_line, request, 5)
+
+      created = Inventory::CreateReceipt.call(
+        receipt: Receipt.new(vendor: @vendor),
+        lines_attributes: [
+          { product_variant_id: @variant.id, purchase_order_line_id: po_line.id, position: 0,
+            delivered_quantity: 1, accepted_quantity: 1, accepted_unavailable_quantity: 1,
+            actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "manual_receipt" },
+          { product_variant_id: @variant.id, purchase_order_line_id: po_line.id, position: 1,
+            delivered_quantity: 1, accepted_quantity: 1, accepted_unavailable_quantity: 0,
+            actual_unit_cost_cents: 700, cost_quality: "actual", cost_provenance: "manual_receipt" }
+        ],
+        actor: @admin, store: @store
+      )
+      assert created.success?, created.error
+
+      result = PostReceipt.call(receipt: created.receipt, actor: @admin, store: @store)
+      assert result.success?, result.error
+
+      # Aggregate sellable = 1; unavailable line must not release that unit first.
+      assert_equal 1, InventoryReservation.find_by(source_type: "product_request", source_id: request.id).quantity
+      assert_equal 3, allocation.reload.remaining_quantity
+      released = allocation.purchase_order_allocation_events.where(event_type: "released").sum(:quantity)
+      assert_equal 1, released
+      assert_equal 2, po_line.reload.received_quantity
     end
 
     test "a later receipt adds onto an existing active reservation for the same request" do

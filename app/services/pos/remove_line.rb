@@ -38,8 +38,15 @@ module Pos
           source_id: line.id
         )
         if reservation
-          returned = return_reservation_to_product_request!(line, reservation, product_request)
-          unless returned
+          returned = Pos::ReturnReservationToProductRequest.call(
+            reservation: reservation,
+            product_request: product_request,
+            product_variant: line.product_variant,
+            actor: @actor
+          )
+          raise Error, returned.error unless returned.success?
+
+          unless returned.returned?
             released = Inventory::ReleaseReservation.call(
               reservation: reservation, actor: @actor, release_reason: @reason || "line removed"
             )
@@ -61,52 +68,6 @@ module Pos
       end
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_line_item: nil, success?: false, error: e.message, warnings: [])
-    end
-
-    private
-
-    def return_reservation_to_product_request!(line, reservation, product_request)
-      return false if product_request.blank?
-      return false unless product_request.open?
-      return false unless product_request.compatible_with_variant?(line.product_variant)
-
-      if reservation.inventory_unit_id.present?
-        InventoryUnit.lock.find(reservation.inventory_unit_id)
-        locked = InventoryReservation.lock.find(reservation.id)
-        return false unless locked.status == "active"
-
-        locked.update!(source_type: "product_request", source_id: product_request.id)
-        return true
-      end
-
-      # Quantity-tracked: lock balance before reservations; merge coverage in place
-      # so we never call Reserve/ReleaseReservation while holding a reservation.
-      Inventory::FindOrCreateStockBalance.call(
-        store: reservation.store, product_variant: reservation.product_variant
-      )
-      locked = InventoryReservation.lock.find(reservation.id)
-      return false unless locked.status == "active"
-
-      existing = InventoryReservation.active.lock.find_by(
-        store_id: locked.store_id,
-        product_variant_id: locked.product_variant_id,
-        source_type: "product_request",
-        source_id: product_request.id
-      )
-      if existing
-        existing.update!(quantity: existing.quantity + locked.quantity)
-        locked.update!(
-          status: "released",
-          released_at: Time.current,
-          released_by_user: @actor,
-          release_reason: "returned_to_product_request"
-        )
-        # StockBalance.reserved unchanged — coverage moved between sources.
-      else
-        locked.update!(source_type: "product_request", source_id: product_request.id)
-      end
-
-      true
     end
   end
 end

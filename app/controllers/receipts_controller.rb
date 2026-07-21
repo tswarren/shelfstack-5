@@ -129,8 +129,8 @@ class ReceiptsController < ApplicationController
 
         memo[key] = {
           unit_cost_cents: unit_cost,
-          cost_quality: expected.present? ? "actual" : "estimated",
-          cost_provenance: expected.present? ? "vendor_source" : "vendor_list_discount"
+          cost_quality: "estimated",
+          cost_provenance: expected.present? ? "vendor_source_expected" : "vendor_list_discount"
         }
       end
   end
