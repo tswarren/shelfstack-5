@@ -110,6 +110,21 @@ module Requests
         .where.not(product_variant_id: new_variant.id)
         .exists?
       raise Error, "existing reservations are not compatible with the selected variant" if incompatible_reservation
+
+      incompatible_pos_reservation = InventoryReservation.active
+        .where(source_type: "pos_line_item")
+        .joins("INNER JOIN pos_line_items ON pos_line_items.id = inventory_reservations.source_id")
+        .where(pos_line_items: { product_request_id: @product_request.id, status: "pending" })
+        .where.not(inventory_reservations: { product_variant_id: new_variant.id })
+        .exists?
+      raise Error, "existing POS reservations are not compatible with the selected variant" if incompatible_pos_reservation
+
+      incompatible_fulfillment = @product_request.product_request_fulfillments
+        .where(kind: "fulfill")
+        .joins(:pos_line_item)
+        .where.not(pos_line_items: { product_variant_id: new_variant.id })
+        .exists?
+      raise Error, "existing fulfilments are not compatible with the selected variant" if incompatible_fulfillment
     end
 
     def release_excess_commitments!(previous_quantity)

@@ -4,6 +4,7 @@ module Purchasing
   class UpdateProductVariantVendor < ApplicationService
     TRACKED_ATTRIBUTES = CreateProductVariantVendor::TRACKED_ATTRIBUTES
     IMMUTABLE_ATTRIBUTES = %w[product_variant_id vendor_id].freeze
+    COST_ATTRIBUTES = %w[list_cost_cents discount_bps expected_unit_cost_cents].freeze
 
     def initialize(product_variant_vendor:, attributes:, actor:, organization:, store: nil)
       @product_variant_vendor = product_variant_vendor
@@ -21,6 +22,10 @@ module Purchasing
       if Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor_source.manage") != :allow
         @product_variant_vendor.errors.add(:base, "not permitted to manage vendor sources")
         return false
+      end
+
+      unless cost_edit_authorized?
+        COST_ATTRIBUTES.each { |key| @attributes.delete(key) }
       end
 
       ActiveRecord::Base.transaction do
@@ -50,6 +55,14 @@ module Purchasing
       true
     rescue ActiveRecord::RecordInvalid
       false
+    end
+
+    private
+
+    def cost_edit_authorized?
+      Authorization::EvaluatePermission.call(
+        user: @actor, store: @store, permission_key: "purchasing.cost.view"
+      ) == :allow
     end
   end
 end

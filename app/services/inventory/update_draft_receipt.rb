@@ -13,13 +13,13 @@ module Inventory
     HEADER_ATTRIBUTES = %w[vendor_id received_at received_by_user_id notes].freeze
     COST_ATTRIBUTES = %i[actual_unit_cost_cents cost_quality cost_provenance].freeze
 
-    def initialize(receipt:, attributes:, lines_attributes:, actor:, store:, can_edit_cost: true)
+    def initialize(receipt:, attributes:, lines_attributes:, actor:, store:, can_edit_cost: nil)
       @receipt = receipt
       @attributes = attributes.to_h.stringify_keys
       @lines_attributes = Array(lines_attributes)
       @actor = actor
       @store = store
-      @can_edit_cost = can_edit_cost
+      @can_edit_cost_override = can_edit_cost
     end
 
     def call
@@ -29,6 +29,8 @@ module Inventory
         @receipt.reload.lock!
         return failure("only draft receipts can be edited") unless @receipt.draft?
         return failure("receipt store mismatch") unless @receipt.store_id == @store.id
+
+        @can_edit_cost = cost_edit_authorized?
 
         @receipt.assign_attributes(@attributes.slice(*HEADER_ATTRIBUTES))
         @receipt.save!
@@ -58,6 +60,18 @@ module Inventory
 
     def authorized?
       Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "inventory.receipt.create") == :allow
+    end
+
+    def cost_edit_authorized?
+      permitted = Authorization::EvaluatePermission.call(
+        user: @actor, store: @store, permission_key: "inventory.cost.view"
+      ) == :allow || Authorization::EvaluatePermission.call(
+        user: @actor, store: @store, permission_key: "purchasing.cost.view"
+      ) == :allow
+      return false unless permitted
+      return true if @can_edit_cost_override.nil?
+
+      @can_edit_cost_override
     end
 
     def sync_lines!

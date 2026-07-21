@@ -104,5 +104,39 @@ module Requests
       assert_match(/cannot change variant/i, result.error)
       assert_equal variant.id, request.reload.product_variant_id
     end
+
+    test "rejects nil-to-variant when an existing fulfilment used a different variant" do
+      hardcover = product_variants(:sample_book_standard)
+      other_variant = product_variants(:upc_product_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: nil, requested_quantity: 2)
+
+      day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = Pos::OpenSession.call(
+        business_day: day, store: @store, pos_device: pos_devices(:register_1), cashier: @admin, actor: @admin
+      ).pos_session
+      txn = Pos::OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
+      line = PosLineItem.create!(
+        pos_transaction: txn, line_kind: "product", status: "completed", direction: "sale",
+        product_variant: hardcover, department: departments(:books_new), quantity: 1,
+        unit_price_cents: 1000, created_by_user: @admin, product_request: request
+      )
+      ProductRequestFulfillment.create!(
+        product_request: request, pos_line_item: line, quantity: 1, kind: "fulfill",
+        fulfilled_at: Time.current, fulfilled_by_user: @admin, posting_key: "variant-fulfill-guard"
+      )
+      # Historical fulfilment line identity is authoritative even if later catalog
+      # edits would no longer allow creating that combination through POS.
+      line.update_columns(product_variant_id: other_variant.id)
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { product_variant_id: hardcover.id }
+      )
+
+      assert_not result.success?
+      assert_match(/fulfilments are not compatible/i, result.error)
+      assert_nil request.reload.product_variant_id
+    end
   end
 end

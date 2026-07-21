@@ -41,7 +41,9 @@ module Pos
       assert_equal @request, fulfillment.product_request
 
       reserved.reservation.reload
-      assert_equal "released", reserved.reservation.status
+      assert_equal "converted", reserved.reservation.status
+      assert_equal "pos_line_item", reserved.reservation.source_type
+      assert_equal line.id, reserved.reservation.source_id
 
       @request.reload
       assert @request.fulfilled?
@@ -69,7 +71,11 @@ module Pos
 
       fulfillment = ProductRequestFulfillment.find_by(pos_line_item_id: line.id)
       assert fulfillment
-      assert_nil fulfillment.inventory_reservation_id
+      # AddLine still creates a POS-line reservation for the sale; completion
+      # converts it and links that converted reservation to the fulfilment.
+      assert_equal "converted", fulfillment.inventory_reservation.status
+      assert_equal "pos_line_item", fulfillment.inventory_reservation.source_type
+      assert_equal line.id, fulfillment.inventory_reservation.source_id
       assert txn.completed?
     end
 

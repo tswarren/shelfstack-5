@@ -142,6 +142,18 @@ class ProductRequestTest < ActiveSupport::TestCase
     )
     assert_equal 3, request.reload.active_reserved_quantity
 
+    pending_line = PosLineItem.create!(
+      pos_transaction: txn, line_kind: "product", status: "pending", direction: "sale",
+      product_variant: variant, department: departments(:books_new), quantity: 1,
+      unit_price_cents: 1000, created_by_user: @user, product_request: request
+    )
+    InventoryReservation.create!(
+      store: @store, product_variant: variant, quantity: 1, status: "active",
+      source_type: "pos_line_item", source_id: pending_line.id, reserved_at: Time.current
+    )
+    assert_equal 4, request.reload.active_reserved_quantity
+    assert_equal 1, request.pos_held_reserved_quantity
+
     allocation = PurchaseOrderAllocation.create!(
       purchase_order_line: purchase_order_lines(:ordered_po_line1), product_request: request,
       quantity: 5, created_by_user: @user
@@ -149,6 +161,6 @@ class ProductRequestTest < ActiveSupport::TestCase
     allocation.release!(quantity: 1, reason: "manual_release", actor: @user)
     assert_equal 4, request.reload.remaining_allocated_quantity
 
-    assert_equal 10 - 2 - 3 - 4, request.uncovered_quantity
+    assert_equal 10 - 2 - 4 - 4, request.uncovered_quantity
   end
 end

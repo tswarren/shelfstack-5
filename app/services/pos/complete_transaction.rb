@@ -81,7 +81,9 @@ module Pos
             conversion = Inventory::ConvertReservation.call(pos_line_item: line, posted_by_user: @actor)
             raise Error, conversion.error unless conversion.success?
             warnings.concat(conversion.warnings)
-            record_fulfilment_for_sale!(line, posted_at: now)
+            record_fulfilment_for_sale!(
+              line, posted_at: now, converted_reservation: conversion.reservation
+            )
           end
         end
 
@@ -126,12 +128,13 @@ module Pos
     # `Pos::AddLine` time creates the Product Request Fulfilment fact
     # atomically with its sale inventory movement, closing the request when
     # fully fulfilled.
-    def record_fulfilment_for_sale!(line, posted_at:)
+    def record_fulfilment_for_sale!(line, posted_at:, converted_reservation: nil)
       return if line.product_request_id.blank?
 
       result = Requests::RecordFulfillment.call(
         product_request: line.product_request, pos_line_item: line, actor: @actor,
-        quantity: line.quantity, fulfilled_at: posted_at
+        quantity: line.quantity, fulfilled_at: posted_at,
+        converted_reservation: converted_reservation
       )
       raise Error, result.error unless result.success?
     end

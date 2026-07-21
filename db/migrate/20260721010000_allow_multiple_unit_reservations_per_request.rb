@@ -16,12 +16,8 @@ class AllowMultipleUnitReservationsPerRequest < ActiveRecord::Migration[8.1]
   end
 
   def down
-    remove_index :inventory_reservations, name: "index_inv_reservations_active_qty_source_unique"
-
-    add_index :inventory_reservations,
-              [ :store_id, :product_variant_id, :source_type, :source_id ],
-              unique: true,
-              where: "((status)::text = 'active'::text)",
-              name: "index_inv_reservations_active_source_unique"
+    raise ActiveRecord::IrreversibleMigration,
+          "cannot recreate the active-source unique index while multiple active " \
+          "unit reservations may exist for the same product request"
   end
 end

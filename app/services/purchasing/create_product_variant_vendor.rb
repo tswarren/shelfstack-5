@@ -7,6 +7,7 @@ module Purchasing
       list_cost_cents discount_bps expected_unit_cost_cents
       minimum_order_quantity order_multiple returnable preferred active notes
     ].freeze
+    COST_ATTRIBUTES = %w[list_cost_cents discount_bps expected_unit_cost_cents].freeze
 
     def initialize(product_variant_vendor:, actor:, organization:, store: nil)
       @product_variant_vendor = product_variant_vendor
@@ -23,6 +24,10 @@ module Purchasing
       if Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor_source.manage") != :allow
         @product_variant_vendor.errors.add(:base, "not permitted to manage vendor sources")
         return false
+      end
+
+      unless cost_edit_authorized?
+        COST_ATTRIBUTES.each { |attr| @product_variant_vendor.write_attribute(attr, nil) }
       end
 
       ActiveRecord::Base.transaction do
@@ -43,6 +48,14 @@ module Purchasing
       true
     rescue ActiveRecord::RecordInvalid
       false
+    end
+
+    private
+
+    def cost_edit_authorized?
+      Authorization::EvaluatePermission.call(
+        user: @actor, store: @store, permission_key: "purchasing.cost.view"
+      ) == :allow
     end
   end
 end

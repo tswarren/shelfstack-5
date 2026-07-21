@@ -269,6 +269,8 @@ module Inventory
       po_line = line.purchase_order_line
       return if po_line.blank?
 
+      # Canonical order: Purchase Order → Purchase Order Line → …
+      PurchaseOrder.lock.find(po_line.purchase_order_id)
       locked = PurchaseOrderLine.lock.find(po_line.id)
       locked.update!(received_quantity: locked.received_quantity + line.accepted_quantity)
     end
@@ -342,6 +344,8 @@ module Inventory
       po_line = line.purchase_order_line
       return if po_line.blank?
 
+      # Canonical order: Purchase Order → Line → Product Request → Allocation.
+      PurchaseOrder.lock.find(po_line.purchase_order_id)
       locked_line = PurchaseOrderLine.lock.find(po_line.id)
       open_qty = locked_line.open_quantity
 
@@ -352,12 +356,15 @@ module Inventory
         overhang = total_remaining - open_qty
         break unless overhang.positive?
 
+        # Inverse of conversion ranking: sacrifice lower-priority / later demand first
+        # (largest conversion sort key is released before smaller ones).
         candidate = PurchaseOrderAllocation.where(purchase_order_line_id: locked_line.id)
-          .includes(:purchase_order_allocation_events)
-          .order(id: :desc)
-          .find { |allocation| allocation.remaining_quantity.positive? }
+          .includes(:product_request, :purchase_order_allocation_events)
+          .select { |allocation| allocation.remaining_quantity.positive? }
+          .max_by { |allocation| allocation_sort_key(allocation) }
         break if candidate.blank?
 
+        ProductRequest.lock.find(candidate.product_request_id)
         locked = PurchaseOrderAllocation.lock.find(candidate.id)
         release_qty = [ locked.remaining_quantity, overhang ].min
         break unless release_qty.positive?
@@ -379,12 +386,19 @@ module Inventory
         .select { |allocation| allocation.remaining_quantity.positive? }
         .sort_by { |allocation| allocation_sort_key(allocation) }
 
+      # Lock Product Requests then Allocations in ascending ID order after ranking
+      # selects the conversion order, so concurrent amend/receipt share one order.
+      request_ids = candidates.map(&:product_request_id).uniq.sort
+      allocation_ids = candidates.map(&:id).sort
+      request_ids.each { |id| ProductRequest.lock.find(id) }
+      locked_allocations = allocation_ids.index_with { |id| PurchaseOrderAllocation.lock.find(id) }
+
       candidates.each do |allocation|
-        product_request = ProductRequest.lock.find(allocation.product_request_id)
+        product_request = ProductRequest.find(allocation.product_request_id)
         next unless product_request.open?
         next unless product_request.compatible_with_variant?(po_line.product_variant)
 
-        locked_allocation = PurchaseOrderAllocation.lock.find(allocation.id)
+        locked_allocation = locked_allocations.fetch(allocation.id)
         next unless locked_allocation.remaining_quantity.positive?
 
         yield product_request, locked_allocation

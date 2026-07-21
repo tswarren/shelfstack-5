@@ -85,58 +85,93 @@ module Pos
       if @quantity > outstanding
         raise Error, "quantity exceeds the product request's outstanding quantity (#{outstanding} outstanding)"
       end
+
+      transferable = InventoryReservation.active.where(
+        store_id: @pos_transaction.store_id,
+        product_variant_id: @product_variant.id,
+        source_type: "product_request",
+        source_id: @product_request.id
+      ).sum(:quantity)
+      additional = [ @quantity - transferable, 0 ].max
+      uncovered = @product_request.uncovered_quantity
+      if additional > uncovered
+        raise Error, "quantity exceeds the product request's uncovered quantity (#{uncovered} uncovered)"
+      end
     end
 
     # Prefer transferring an existing Product Request reservation to the POS
     # line so the same physical stock is not double-reserved.
+    # Lock order: stock balance → reservations (matches Reserve / ReleaseReservation).
     def reserve_quantity_for_line!(line)
       store = @pos_transaction.store
-      transfer_qty = 0
+      balance = Inventory::FindOrCreateStockBalance.call(store: store, product_variant: @product_variant)
 
-      if @product_request.present?
-        request_reservation = InventoryReservation.active.lock.find_by(
+      request_reservation = if @product_request.present?
+        InventoryReservation.active.lock.find_by(
           store_id: store.id, product_variant_id: @product_variant.id,
           source_type: "product_request", source_id: @product_request.id
         )
-        if request_reservation
-          transfer_qty = [ request_reservation.quantity, @quantity ].min
-          if transfer_qty == request_reservation.quantity && transfer_qty == @quantity
-            request_reservation.update!(source_type: "pos_line_item", source_id: line.id)
-            return []
-          end
-
-          remaining_request = request_reservation.quantity - transfer_qty
-          if remaining_request.zero?
-            released = Inventory::ReleaseReservation.call(
-              reservation: request_reservation, actor: @actor, release_reason: "transferred_to_pos"
-            )
-            raise Error, released.error unless released.success?
-          else
-            reduced = Inventory::Reserve.call(
-              store: store, product_variant: @product_variant, quantity: remaining_request,
-              source_type: "product_request", source_id: @product_request.id, actor: @actor
-            )
-            raise Error, reduced.error unless reduced.success?
-          end
-        end
       end
 
-      reservation = Inventory::Reserve.call(
-        store: store, product_variant: @product_variant, quantity: @quantity,
-        source_type: "pos_line_item", source_id: line.id, actor: @actor
-      )
-      raise Error, reservation.error unless reservation.success?
+      if request_reservation
+        transfer_qty = [ request_reservation.quantity, @quantity ].min
 
-      reservation.warnings
+        if transfer_qty == request_reservation.quantity && transfer_qty == @quantity
+          request_reservation.update!(source_type: "pos_line_item", source_id: line.id)
+          return available_warning(balance)
+        end
+
+        if transfer_qty < request_reservation.quantity
+          # Split without changing StockBalance.reserved — coverage moves rows only.
+          request_reservation.update!(quantity: request_reservation.quantity - transfer_qty)
+          InventoryReservation.create!(
+            store: store, product_variant: @product_variant,
+            source_type: "pos_line_item", source_id: line.id,
+            quantity: @quantity, status: "active", reserved_at: Time.current
+          )
+          return available_warning(balance)
+        end
+
+        # Entire request hold transfers; line needs additional free stock.
+        new_reserved = balance.reserved - request_reservation.quantity + @quantity
+        raise Error, "reserved quantity would go negative" if new_reserved.negative?
+
+        balance.update!(reserved: new_reserved)
+        request_reservation.update!(
+          status: "released",
+          released_at: Time.current,
+          released_by_user: @actor,
+          release_reason: "transferred_to_pos"
+        )
+        InventoryReservation.create!(
+          store: store, product_variant: @product_variant,
+          source_type: "pos_line_item", source_id: line.id,
+          quantity: @quantity, status: "active", reserved_at: Time.current
+        )
+        return available_warning(balance)
+      end
+
+      balance.update!(reserved: balance.reserved + @quantity)
+      InventoryReservation.create!(
+        store: store, product_variant: @product_variant,
+        source_type: "pos_line_item", source_id: line.id,
+        quantity: @quantity, status: "active", reserved_at: Time.current
+      )
+      available_warning(balance)
     end
 
+    # Lock order: inventory unit → reservation.
     def reserve_individual_for_line!(line)
       store = @pos_transaction.store
+      unit = InventoryUnit.lock.find(@inventory_unit.id)
+      raise Error, "unit belongs to a different store" unless unit.store_id == store.id
+      raise Error, "unit belongs to a different variant" unless unit.product_variant_id == @product_variant.id
+
       request_reservation = if @product_request.present?
         InventoryReservation.active.lock.find_by(
           store_id: store.id, product_variant_id: @product_variant.id,
           source_type: "product_request", source_id: @product_request.id,
-          inventory_unit_id: @inventory_unit.id
+          inventory_unit_id: unit.id
         )
       end
 
@@ -148,11 +183,15 @@ module Pos
       reservation = Inventory::Reserve.call(
         store: store, product_variant: @product_variant, quantity: 1,
         source_type: "pos_line_item", source_id: line.id,
-        inventory_unit: @inventory_unit, actor: @actor
+        inventory_unit: unit, actor: @actor
       )
       raise Error, reservation.error unless reservation.success?
 
       reservation.warnings
+    end
+
+    def available_warning(balance)
+      balance.available.negative? ? [ "available quantity is negative after reservation" ] : []
     end
 
     def next_position

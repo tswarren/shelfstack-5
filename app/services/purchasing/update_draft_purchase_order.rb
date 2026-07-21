@@ -16,13 +16,13 @@ module Purchasing
       cost_entry_method list_cost_cents discount_bps expected_unit_cost_cents cost_provenance
     ].freeze
 
-    def initialize(purchase_order:, attributes:, lines_attributes:, actor:, store:, can_edit_cost: true)
+    def initialize(purchase_order:, attributes:, lines_attributes:, actor:, store:, can_edit_cost: nil)
       @purchase_order = purchase_order
       @attributes = attributes.to_h.stringify_keys
       @lines_attributes = Array(lines_attributes)
       @actor = actor
       @store = store
-      @can_edit_cost = can_edit_cost
+      @can_edit_cost_override = can_edit_cost
     end
 
     def call
@@ -34,6 +34,8 @@ module Purchasing
         @purchase_order.reload.lock!
         return failure("only draft purchase orders can be edited") unless @purchase_order.draft?
         return failure("purchase order store mismatch") unless @purchase_order.store_id == @store.id
+
+        @can_edit_cost = cost_edit_authorized?
 
         @purchase_order.assign_attributes(@attributes.slice(*HEADER_ATTRIBUTES))
         @purchase_order.save!
@@ -92,6 +94,16 @@ module Purchasing
       LineSnapshot.apply!(line)
       line.save!
       line
+    end
+
+    def cost_edit_authorized?
+      permitted = Authorization::EvaluatePermission.call(
+        user: @actor, store: @store, permission_key: "purchasing.cost.view"
+      ) == :allow
+      return false unless permitted
+      return true if @can_edit_cost_override.nil?
+
+      @can_edit_cost_override
     end
 
     def failure(message)

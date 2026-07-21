@@ -151,6 +151,28 @@ module Inventory
       assert_equal 0, request.purchase_order_allocations.first.remaining_quantity
     end
 
+    test "releases lower-priority unbacked allocations before higher-priority ones" do
+      po_line = build_ordered_po_line(ordered_quantity: 4)
+      normal = build_customer_request(quantity: 2, priority: "normal")
+      urgent = build_customer_request(quantity: 2, priority: "urgent")
+      alloc_normal = create_allocation(po_line, normal, 2)
+      alloc_urgent = create_allocation(po_line, urgent, 2)
+
+      # One sellable unit converts to urgent; three unavailable leave overhang of 3.
+      # Release must exhaust normal before touching the urgent remainder.
+      receipt = build_receipt(po_line, accepted_quantity: 4, accepted_unavailable_quantity: 3)
+      result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
+      assert result.success?, result.error
+
+      assert_equal 0, alloc_normal.reload.remaining_quantity
+      assert_equal 0, alloc_urgent.reload.remaining_quantity
+      urgent_reservation = InventoryReservation.active.find_by(source_type: "product_request", source_id: urgent.id)
+      assert_equal 1, urgent_reservation.quantity
+      refute InventoryReservation.active.exists?(source_type: "product_request", source_id: normal.id)
+      assert_equal 2, alloc_normal.purchase_order_allocation_events.where(event_type: "released").sum(:quantity)
+      assert_equal 1, alloc_urgent.purchase_order_allocation_events.where(event_type: "released").sum(:quantity)
+    end
+
     test "releases allocations that only settled a negative on-hand deficit" do
       StockBalance.create!(
         store: @store, product_variant: @variant,

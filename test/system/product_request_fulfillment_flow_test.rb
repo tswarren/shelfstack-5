@@ -50,7 +50,7 @@ class ProductRequestFulfillmentFlowTest < ApplicationSystemTestCase
 
     option_text = "#{purchase_order.reload.purchase_order_number} — The Illustrated Man — Standard · SKU 2800000000011 (open 2)"
     select option_text, from: "Purchase order line"
-    fill_in "Quantity", with: "2"
+    fill_in "purchase_order_allocation_quantity", with: "2"
     click_button "Create allocation"
 
     assert_text "Allocation created."

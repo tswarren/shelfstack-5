@@ -84,7 +84,22 @@ class ProductRequest < ApplicationRecord
   end
 
   def active_reserved_quantity
+    request_held_reserved_quantity + pos_held_reserved_quantity
+  end
+
+  # Reservations still sourced to this request (in-house hold / receipt conversion).
+  def request_held_reserved_quantity
     InventoryReservation.active.where(source_type: "product_request", source_id: id).sum(:quantity)
+  end
+
+  # Reservations transferred onto open POS lines that still fulfil this request.
+  # Coverage must include these while the transaction remains open or suspended.
+  def pos_held_reserved_quantity
+    InventoryReservation.active
+      .where(source_type: "pos_line_item")
+      .joins("INNER JOIN pos_line_items ON pos_line_items.id = inventory_reservations.source_id")
+      .where(pos_line_items: { product_request_id: id, status: "pending" })
+      .sum("inventory_reservations.quantity")
   end
 
   def remaining_allocated_quantity

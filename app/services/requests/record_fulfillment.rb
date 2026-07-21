@@ -11,24 +11,24 @@ module Requests
   # line, and that the fulfilment quantity does not exceed current outstanding
   # quantity. AddLine checks are not authoritative at completion.
   #
-  # If the request carries an active in-house Inventory Reservation (from
-  # `Requests::ReserveInHouseInventory` or `Inventory::PostReceipt`'s
-  # allocation conversion), consumes up to `quantity` of it: fully releasing
-  # it when exhausted, otherwise reducing it in place. A request may also be
-  # fulfilled without a prior formal Reservation (`inventory_reservation_id`
-  # stays null) — fulfilment does not require a reservation to have existed.
+  # The Reservation for a tracked sale is converted by
+  # `Inventory::ConvertReservation` before this service runs. Pass that
+  # converted reservation so the fulfilment fact references it. Do not
+  # independently release or reduce a residual `product_request` reservation —
+  # POS handoff already moved coverage onto the POS line.
   #
   # Idempotent via unique `posting_key` (`pos_line_item:<id>:fulfillment`).
   class RecordFulfillment < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:product_request_fulfillment, :product_request, :success?, :error, :replayed)
 
-    def initialize(product_request:, pos_line_item:, actor:, quantity: nil, fulfilled_at: nil)
+    def initialize(product_request:, pos_line_item:, actor:, quantity: nil, fulfilled_at: nil, converted_reservation: nil)
       @product_request = product_request
       @pos_line_item = pos_line_item
       @actor = actor
       @quantity = (quantity || pos_line_item.quantity).to_i
       @fulfilled_at = fulfilled_at || Time.current
+      @converted_reservation = converted_reservation
     end
 
     def call
@@ -61,7 +61,7 @@ module Requests
           raise Error, "quantity exceeds the product request's outstanding quantity (#{outstanding} outstanding)"
         end
 
-        reservation = release_or_reduce_reservation!(store, variant, product_request)
+        reservation = resolved_converted_reservation!
 
         fulfillment = ProductRequestFulfillment.create!(
           product_request: product_request,
@@ -107,36 +107,15 @@ module Requests
                                               permission_key: "requests.customer_request.fulfill") == :allow
     end
 
-    def release_or_reduce_reservation!(store, variant, product_request)
-      # After AddLine handoff, the hold usually belongs to the POS line. Prefer
-      # releasing any residual product_request reservation (quantity aggregate or
-      # matching individual unit) that was not transferred.
-      reservation = if @pos_line_item.inventory_unit_id.present?
-        InventoryReservation.active.lock.find_by(
-          store_id: store.id, product_variant_id: variant.id,
-          source_type: "product_request", source_id: product_request.id,
-          inventory_unit_id: @pos_line_item.inventory_unit_id
-        )
-      else
-        InventoryReservation.active.lock.find_by(
-          store_id: store.id, product_variant_id: variant.id,
-          source_type: "product_request", source_id: product_request.id
-        )
+    def resolved_converted_reservation!
+      return nil if @converted_reservation.blank?
+
+      reservation = @converted_reservation
+      unless reservation.status == "converted"
+        raise Error, "fulfilment reservation must already be converted"
       end
-      return nil if reservation.blank?
-
-      consume = [ @quantity, reservation.quantity ].min
-      return reservation unless consume.positive?
-
-      if consume == reservation.quantity
-        result = Inventory::ReleaseReservation.call(reservation: reservation, actor: @actor, release_reason: "fulfilled")
-        raise Error, result.error unless result.success?
-      else
-        result = Inventory::Reserve.call(
-          store: store, product_variant: variant, quantity: reservation.quantity - consume,
-          source_type: "product_request", source_id: product_request.id, actor: @actor
-        )
-        raise Error, result.error unless result.success?
+      unless reservation.source_type == "pos_line_item" && reservation.source_id == @pos_line_item.id
+        raise Error, "fulfilment reservation does not belong to this POS line"
       end
 
       reservation

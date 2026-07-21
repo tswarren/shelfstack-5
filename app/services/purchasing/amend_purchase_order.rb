@@ -74,18 +74,46 @@ module Purchasing
 
     # Applied before cancellations so a caller can atomically release exactly
     # enough allocated quantity to permit a requested cancellation.
+    #
+    # Canonical lock order (shared with receipt posting):
+    # Purchase Order (already held) → Purchase Order Line → Product Request → Allocation.
     def apply_allocation_releases!
-      @release_allocations_attributes.filter_map do |attrs|
-        attrs = attrs.to_h.symbolize_keys
-        allocation = PurchaseOrderAllocation.lock.find(attrs[:allocation_id] || attrs[:id])
+      attrs_by_allocation_id = {}
+      @release_allocations_attributes.each do |raw|
+        attrs = raw.to_h.symbolize_keys
+        allocation_id = (attrs[:allocation_id] || attrs[:id]).to_i
+        next unless allocation_id.positive?
+
+        attrs_by_allocation_id[allocation_id] = attrs
+      end
+      return [] if attrs_by_allocation_id.empty?
+
+      allocations = PurchaseOrderAllocation.where(id: attrs_by_allocation_id.keys)
+        .includes(:purchase_order_line, :product_request)
+        .to_a
+      raise Error, "one or more allocations were not found" if allocations.size != attrs_by_allocation_id.size
+
+      allocations.each do |allocation|
         unless allocation.purchase_order_line.purchase_order_id == @purchase_order.id
           raise Error, "allocation ##{allocation.id} does not belong to this purchase order"
         end
+      end
 
+      line_ids = allocations.map(&:purchase_order_line_id).uniq.sort
+      request_ids = allocations.map(&:product_request_id).uniq.sort
+      allocation_ids = allocations.map(&:id).sort
+
+      line_ids.each { |id| PurchaseOrderLine.lock.find(id) }
+      request_ids.each { |id| ProductRequest.lock.find(id) }
+      locked = allocation_ids.index_with { |id| PurchaseOrderAllocation.lock.find(id) }
+
+      allocation_ids.filter_map do |allocation_id|
+        attrs = attrs_by_allocation_id.fetch(allocation_id)
         quantity = attrs[:quantity].to_i
         next nil unless quantity.positive?
 
         reason = attrs[:reason].presence || "line_quantity_cancelled"
+        allocation = locked.fetch(allocation_id)
         allocation.release!(quantity: quantity, reason: reason, actor: @actor, note: attrs[:note])
         { "allocation_id" => allocation.id, "quantity" => quantity, "reason" => reason }
       end
@@ -94,9 +122,13 @@ module Purchasing
     end
 
     def apply_cancellations!
-      @cancel_lines_attributes.filter_map do |attrs|
-        attrs = attrs.to_h.symbolize_keys
-        line = @purchase_order.purchase_order_lines.lock.find(attrs[:id] || attrs[:line_id])
+      cancel_attrs = @cancel_lines_attributes.map { |raw| raw.to_h.symbolize_keys }
+      line_ids = cancel_attrs.map { |attrs| (attrs[:id] || attrs[:line_id]).to_i }.select(&:positive?).uniq.sort
+      locked_lines = line_ids.index_with { |id| @purchase_order.purchase_order_lines.lock.find(id) }
+
+      cancel_attrs.filter_map do |attrs|
+        line_id = (attrs[:id] || attrs[:line_id]).to_i
+        line = locked_lines.fetch(line_id)
         new_cancelled = attrs[:cancelled_quantity].to_i
 
         next nil if new_cancelled == line.cancelled_quantity
