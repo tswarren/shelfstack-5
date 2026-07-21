@@ -1,30 +1,25 @@
 # Current Phase
 
-**Active delivery phase:** Phase 5 — Supply and Demand  
-**Status:** 5a–5g implemented; hardened on `phase/5g-hardening`; `bin/ci` and `test:system` green; ready for merge to `main` after review (still on `phase/5-supply-and-demand`, not `main`)  
+**Active delivery phase:** Phase 6 — Corrections and Stored Value (planning)  
+**Status:** Phase 5 merged to `main`; Phase 6 not started — plan from [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) without inventing unresolved correction or stored-value details  
+**Phase 5 merge:** `2e3e1196ec923b20a667f52b8ae79bd86c0b5c8b` (PR #34)  
 **Phase 4g merge:** `c51dcca823e4476b7f0f62441301d451e83307b2` (PR #31)  
 **Phase 4f merge:** `34f371f5590c6942f5291c5bd750a1d98756d13f` (PR #30)  
 **Design docs:** [../design/README.md](../design/README.md)  
-**Plan document:** [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)
+**Plan document:** [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md)
 
 ## Immediate next work
 
-1. Open a pull request merging `phase/5-supply-and-demand` to `main` (Phase 5 exit criteria are complete; see [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)).
-2. Continue residual 4g-5 backlog in parallel as needed.
-3. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md).
+1. Scaffold Phase 6 from ADR-0008 / ADR-0012 and the Phase 6 phase plan (post-void reversing records; stored-value accounts and append-only ledger).
+2. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+3. Continue pre-production Phase 5 hardening in [#33](https://github.com/tswarren/shelfstack-5/issues/33) as needed.
+4. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred).
 
 ## Completed recently
 
+- Phase 5 — Supply and Demand merged to `main` at `2e3e119` (PR #34): vendors and vendor sources; purchase orders with derived `on_order`; multi-PO receipts with OD-014 deficit settlement; product-backed Product Requests; Customer Request allocations (OD-007); receipt→reservation conversion; POS fulfilment; operational `/reports` views; schema docs under `docs/schema/`.
 - Phase 4a–4e (Point of Sale) and Phase 4f UX Baseline Gate merged to `main` (PR #30).
-- Phase 4g test hardening merged to `main` (PR #31) — Phase 5 integrity/security/browser gate satisfied.
-- Phase 5 governing decisions: ADR-0015, OD-007, OD-014 settlement; domains, schema exports, and permission catalog reconciled.
-- Phase 5 planning defaults locked (resolution columns, follow-up requests, allocation events, thin product path).
-- Phase 5a vendors/vendor sources and Phase 5b purchase orders merged into the Phase 5 integration branch.
-- Phase 5c (`phase/5c-receipts`, on the Phase 5 integration branch): Receipt/Receipt Line draft-post-cancel lifecycle, `Inventory::PostReceipt` (quantity and individual tracking, PO-line `received_quantity` update), and OD-014 negative-inventory settlement implemented generically in `Inventory::PostLedgerEntry` (deficit-pool creation/release + settlement variance apply to any quantity-tracked movement, not only receipts). PO-line allocation conversion is implemented in Phase 5f.
-- Phase 5d (`phase/5d-product-requests`): `product_requests` (four types, required Product, optional Variant, non-customer resolution columns, optional `supersedes_product_request_id`); `Requests::{Create,Update,Assign,Resolve,Cancel}ProductRequest`; Buyer-review queue projection (`Purchasing::ReplenishmentSnapshot`); thin product-from-demand path (`Catalog::ImportProductMetadata`); and the buyer → draft Purchase Order seam (`Purchasing::AddDemandToDraftPurchaseOrder`) that never creates a Purchase-Order Allocation. Customer Request allocation/reservation/fulfilment remain Phase 5e/5f.
-- Phase 5e (`phase/5e-allocations`): `purchase_order_allocations`/`purchase_order_allocation_events` (append-only, `remaining_quantity`/`state` always derived from events, no stored fulfilment status); `Purchasing::CreateAllocation` (Customer Requests only, capped by both the PO Line's open quantity and the request's uncovered quantity) and `Purchasing::ReleaseAllocation` (structured reason codes, `posting_key` idempotency); `AmendPurchaseOrder`/`CancelPurchaseOrder` updated to atomically release or reject rather than silently letting cancelled/reduced supply fall below what is already allocated; minimal allocate/release UI on the Purchase Order and Product Request show pages. Conversion to Inventory Reservation and fulfilment implemented in Phase 5f.
-- Phase 5f (`phase/5f-fulfilment`): `Inventory::PostReceipt` now converts remaining `purchase_order_allocations` to `product_request`-sourced `InventoryReservation`s in the same posting transaction as the accepted quantity, in deterministic order (priority urgent>high>normal, then `needed_by_on` earlier-first with nulls last, then `created_at`), recording an append-only `converted_to_reservation` event per allocation touched; `Requests::ReserveInHouseInventory` reserves physically-confirmed on-hand quantity-tracked stock against a Customer Request (`requests.customer_request.reserve`, explicit `physically_confirmed: true` required); `product_request_fulfillments` (append-only, `kind: fulfill|reverse`, unique `posting_key`) records the demand-closing fact; `Pos::AddLine` accepts an optional `product_request:` linkage (capped by the request's outstanding quantity) and `Pos::CompleteTransaction` posts the fulfilment fact (`Requests::RecordFulfillment`, consuming/releasing the linked reservation and closing the request once fulfilled quantity meets requested quantity) or a reversing fulfilment on a linked return (`Requests::ReverseFulfillment`, reopening the request if it drops below fully fulfilled) atomically with the sale/return posting. `ProductRequest#uncovered_quantity` is now `requested - fulfilled - active_reserved - remaining_allocated`. Post-void reversal of a fulfilled sale line is Phase 6 (post-void itself is not yet implemented) and is intentionally not wired.
-- Phase 5g (`phase/5g-hardening`, exit gate): `ReportsController` adds read-only operational views (`/reports`) projecting posted facts only — open POs + derived receiving state, on-order by store×variant (`Purchasing::OnOrder`), receipt history + partially received POs, Customer Request coverage (reserved/allocated/fulfilled/uncovered), and allocation-event history — permission-gated by `purchasing.purchase_order.view` / `inventory.receipt.view` / `requests.product_request.view`. Added system tests for the three critical end-to-end paths (vendor → PO → place → receive → verify stock; Customer Request → allocation → receipt-converted reservation → POS fulfilment; non-customer resolve → PO without allocation), which surfaced and fixed two pre-existing defects: `PurchaseOrder`/`Receipt` were missing `accepts_nested_attributes_for` (so their line `fields_for` never produced the `_attributes`-suffixed params the controllers expected — the create forms were non-functional), and the PO show page's "Add new line" `select_tag` passed an invalid extra argument. Added `docs/workflows/purchase-order.md` and `docs/workflows/product-request.md` stubs.
+- Phase 4g test hardening merged to `main` (PR #31).
 
 ## Do not start yet
 
@@ -34,6 +29,7 @@
 - Deferred capabilities in [deferred-capabilities.md](deferred-capabilities.md).
 - PWA / offline POS as adopted architecture.
 - External Inter font dependency (see deferred UX in the 4f phase plan).
+- Speculative Phase 6 tables or behaviors beyond ADR-0008 / ADR-0012 and the Phase 6 phase plan.
 
 ## Pointers
 
@@ -43,3 +39,4 @@
 - Index: [README.md](README.md)
 - Testing: [testing.md](testing.md), [testing/test-review-2026-07-19.md](testing/test-review-2026-07-19.md)
 - Services: [service-catalog.md](service-catalog.md)
+- Phase 5 plan (complete): [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md)
