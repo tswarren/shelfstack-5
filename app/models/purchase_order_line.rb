@@ -43,6 +43,7 @@ class PurchaseOrderLine < ApplicationRecord
   # conditions hold (mirrors ProductVariant's destroy-callback ordering).
   before_destroy :require_draft_parent
   has_many :receipt_lines, dependent: :restrict_with_exception
+  has_many :purchase_order_allocations, dependent: :restrict_with_exception
 
   # max(ordered − received − cancelled, 0) (vendors-and-purchasing.md#purchase-order-line).
   def open_quantity

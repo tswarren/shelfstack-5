@@ -108,3 +108,90 @@
     <% end %>
   </section>
 <% end %>
+
+<% if @product_request.customer_request? %>
+  <section class="record-section">
+    <h2>Purchase-order allocations</h2>
+    <p class="field-hint">
+      Expected supply committed from an ordered purchase-order line to this request (ADR-0015).
+      Allocating never reserves physical stock or changes On Hand.
+    </p>
+    <% if @allocations.any? %>
+      <div class="table-container">
+        <table class="data-table">
+          <caption class="sr-only">Purchase-order allocations for this request</caption>
+          <thead>
+            <tr>
+              <th scope="col">Purchase order</th>
+              <th scope="col">Line</th>
+              <th scope="col" class="num">Allocated</th>
+              <th scope="col" class="num">Remaining</th>
+              <th scope="col">State</th>
+              <% if @can_release_allocation %><th scope="col">Release</th><% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% @allocations.each do |allocation| %>
+              <% line = allocation.purchase_order_line %>
+              <tr>
+                <td><%= link_to line.purchase_order.purchase_order_number, line.purchase_order %></td>
+                <td><%= variant_option_label(line.product_variant) %></td>
+                <td class="num"><%= allocation.quantity %></td>
+                <td class="num"><%= allocation.remaining_quantity %></td>
+                <td><%= status_badge(allocation.state.titleize, variant: allocation_state_variant(allocation.state)) %></td>
+                <% if @can_release_allocation %>
+                  <td>
+                    <% if allocation.remaining_quantity.positive? %>
+                      <%= form_with url: release_purchase_order_allocation_path(allocation), method: :post do |form| %>
+                        <%= hidden_field_tag :redirect_target, "product_request" %>
+                        <%= number_field_tag "purchase_order_allocation[quantity]", allocation.remaining_quantity,
+                              min: 1, max: allocation.remaining_quantity, class: "input", "aria-label": "Release quantity" %>
+                        <%= select_tag "purchase_order_allocation[reason]",
+                              options_for_select(PurchaseOrderAllocationEvent::RELEASE_REASONS.map { |r| [ r.titleize, r ] }, "request_cancelled"),
+                              class: "input" %>
+                        <%= form.submit "Release", class: "button button-outline button-small" %>
+                      <% end %>
+                    <% else %>
+                      —
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="muted">No allocations yet.</p>
+    <% end %>
+
+    <% if @can_create_allocation %>
+      <h3 class="form-section-title">Create allocation</h3>
+      <% if @open_purchase_order_lines.any? %>
+        <%= form_with url: purchase_order_allocations_path, method: :post, class: "form" do |form| %>
+          <%= hidden_field_tag :redirect_target, "product_request" %>
+          <%= hidden_field_tag "purchase_order_allocation[product_request_id]", @product_request.id %>
+          <div class="form-grid">
+            <div class="field">
+              <%= label_tag "purchase_order_allocation_line", "Purchase order line" %>
+              <%= select_tag "purchase_order_allocation[purchase_order_line_id]",
+                    options_for_select(@open_purchase_order_lines.map { |l|
+                      [ "#{l.purchase_order.purchase_order_number} — #{variant_option_label(l.product_variant)} (open #{l.open_quantity})", l.id ]
+                    }),
+                    include_blank: true, id: "purchase_order_allocation_line", class: "input" %>
+            </div>
+            <div class="field">
+              <%= label_tag "purchase_order_allocation_quantity", "Quantity" %>
+              <%= number_field_tag "purchase_order_allocation[quantity]", 1, min: 1, id: "purchase_order_allocation_quantity", class: "input" %>
+            </div>
+          </div>
+          <div class="form-actions">
+            <%= form.submit "Create allocation", class: "button button-primary" %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="muted">No ordered purchase-order lines with open quantity are available to allocate.</p>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>

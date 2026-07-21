@@ -115,6 +115,17 @@ module ApplicationHelper
     end
   end
 
+  # Derived allocation label only (OD-007) — never a persisted status.
+  def allocation_state_variant(state)
+    case state.to_s
+    when "active" then :info
+    when "converted" then :success
+    when "released" then :neutral
+    when "resolved_mixed" then :warning
+    else :neutral
+    end
+  end
+
   def product_request_priority_variant(priority)
     case priority.to_s
     when "urgent" then :danger

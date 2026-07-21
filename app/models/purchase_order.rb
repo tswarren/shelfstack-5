@@ -12,6 +12,7 @@ class PurchaseOrder < ApplicationRecord
   belongs_to :cancelled_by_user, class_name: "User", optional: true
   belongs_to :closed_by_user, class_name: "User", optional: true
   has_many :purchase_order_lines, dependent: :restrict_with_exception
+  has_many :purchase_order_allocations, through: :purchase_order_lines
 
   attr_readonly :purchase_order_number
 
