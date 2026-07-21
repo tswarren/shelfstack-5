@@ -64,6 +64,17 @@ Rails.application.routes.draw do
   end
   resources :inventory_units, only: %i[index show new create]
 
+  resources :product_requests, except: %i[destroy] do
+    member do
+      post :assign
+      post :resolve
+      post :cancel
+    end
+  end
+  resources :product_imports, only: %i[new create]
+  get "buyer_review", to: "buyer_review#index", as: :buyer_review_index
+  post "buyer_review/:id/add_to_purchase_order", to: "buyer_review#add_to_purchase_order", as: :add_to_purchase_order
+
   get "register", to: "register#show", as: :register
 
   resources :business_days, only: %i[index new create] do

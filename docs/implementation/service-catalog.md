@@ -238,11 +238,32 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - An individually tracked line's `accepted_unavailable_quantity` creates units with status `inspection` rather than `available`; there is no dedicated "receiving unavailable" Unit status.
 - PO-line **allocation** conversion (committing on-order supply to Customer Request allocations) is explicitly deferred to Phase 5f and is not performed by `PostReceipt`.
 
+## Phase 5d — Product Requests, buyer review, and the PO seam
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Requests::CreateProductRequest` | Product Requests | 5d | Yes | No | None | Store, actor, optional requesting user, attributes (`request_type`, product, optional variant, quantity, priority, needed-by, customer reference, notes, optional `supersedes_product_request_id`) | Persisted open `ProductRequest`; audit; never changes On Hand or On Order |
+| `Requests::UpdateProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open Product Request, actor, mutable attrs (variant, quantity, priority, needed-by, customer reference, notes) | Updated request while still `open`; rejected once no longer open; audit |
+| `Requests::AssignProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open Product Request, buyer user, actor | Updated `assigned_buyer_user`; rejected once no longer open; audit |
+| `Requests::ResolveProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open non-customer Product Request, resolution code (`ordered`/`declined`/`deferred`/`duplicate`/`superseded`/`no_longer_needed`), optional resolved quantity/note, optional follow-up flag | `deferred` leaves status `open`; `declined` sets `declined`; all other codes `closed`; partial `ordered` quantity can create a linked follow-up `ProductRequest` (`supersedes_product_request_id` → original) via `Requests::CreateProductRequest`; refuses Customer Requests (fulfilment is a later phase); audit |
+| `Requests::CancelProductRequest` | Product Requests | 5d | Yes | Yes (replaying a cancelled request is a no-op) | Product Request (`reload.lock!`) | Open Product Request, actor, optional cancellation reason | `cancelled` status; distinct from buyer resolution (no resolution code recorded); audit |
+| `Catalog::ImportProductMetadata` | Catalog and Products | 5d | Yes (delegates to `Catalog::CreateProduct`) | No | Sequence + product uniqueness (via `Catalog::CreateProduct`) | Organization, actor, store, structured attributes hash, optional `accept_duplicate_review`/`accept_identifier_warning` | Thin product-from-demand path: local-catalog identifier/SKU lookup plus a name search surface likely duplicates as review candidates before creating; `accept_duplicate_review: true` creates anyway; not a live external-catalog integration |
+| `Purchasing::ReplenishmentSnapshot` | Vendors and Purchasing | 5d | No | Yes | None | Store, product variant | Buyer-review read model: On Hand/Reserved/Unavailable/Available (from `StockBalance`), derived On Order (`Purchasing::OnOrder`), current selling price, and expected (preferred active vendor source) or last-known unit cost; never persisted |
+| `Purchasing::AddDemandToDraftPurchaseOrder` | Vendors and Purchasing | 5d | Yes | No | Store (`lock`, number sequence when creating), Purchase Order (`lock`) | Store, vendor, quantity, actor, optional Product Request/variant/vendor source/explicit draft Purchase Order/cost fields | Resolves the exact Product Variant and a vendor source, then adds an ordered-quantity line to an existing or newly created draft Purchase Order for that vendor; for non-Customer Requests optionally resolves the Product Request as `ordered` via `Requests::ResolveProductRequest`; Customer Requests are never auto-resolved; never creates a Purchase-Order Allocation (deferred to Phase 5e/5f) |
+
+### Phase 5d notes
+
+- `product_requests` unifies `customer_request`, `staff_suggestion`, `stock_replenishment`, and `frontlist_selection` demand. Customer Requests remain open fulfilment obligations (allocation/reservation/fulfilment are later-phase work); the other three types are buyer-decision records resolved by `Requests::ResolveProductRequest`.
+- Non-customer resolution fields (`resolution`, `resolved_quantity`, `resolved_at`, `resolved_by_user_id`, `resolution_note`) live directly on `product_requests` (no separate resolution-event table), per the Phase 5 planning defaults.
+- The Buyer-review queue (`BuyerReviewController`) is a read-only projection over open `ProductRequest` rows plus `Purchasing::ReplenishmentSnapshot` — never a table, PO-line flag, or inventory quantity.
+- `Purchasing::AddDemandToDraftPurchaseOrder` reuses an existing draft Purchase Order for the same Store × Vendor when one exists and none is explicitly specified, otherwise creates one (mirroring `Purchasing::CreatePurchaseOrder`'s numbering); it never targets an already-`ordered` Purchase Order.
+- Purchase-Order Allocation (committing expected supply to a Customer Request) remains Phase 5e/5f and is not performed by any Phase 5d service.
+
 ## Later phases (add when implemented)
 
 Placeholder only — do not invent APIs now:
 
-- Phase 5f: PO-line allocation conversion
+- Phase 5e/5f: PO-line allocation conversion, Inventory Reservation, and Product Request Fulfilment for Customer Requests
 - Phase 6: stored-value posting, post-void
 
 ## Related

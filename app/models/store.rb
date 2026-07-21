@@ -23,6 +23,7 @@ class Store < ApplicationRecord
   has_many :store_tax_rules, dependent: :restrict_with_exception
   has_many :purchase_orders, dependent: :restrict_with_exception
   has_many :receipts, dependent: :restrict_with_exception
+  has_many :product_requests, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true

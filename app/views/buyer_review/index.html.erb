@@ -1,0 +1,85 @@
+<%= render "shared/page_header", title: "Buyer review",
+      subtitle: "Open Product Requests awaiting a buyer decision — not a purchase order or inventory quantity.",
+      actions: capture {
+        concat link_to("All product requests", product_requests_path, class: "button button-outline")
+      } %>
+
+<%= form_with url: buyer_review_index_path, method: :get, class: "form" do %>
+  <div class="form-grid">
+    <div class="field">
+      <label class="field-label" for="br_filter_type">Type</label>
+      <select id="br_filter_type" name="request_type" class="input" onchange="this.form.submit()">
+        <option value="">All</option>
+        <% ProductRequest::REQUEST_TYPES.each do |type| %>
+          <option value="<%= type %>" <%= "selected" if params[:request_type] == type %>><%= type.titleize %></option>
+        <% end %>
+      </select>
+    </div>
+  </div>
+<% end %>
+
+<% if @product_requests.empty? %>
+  <%= render "shared/empty_state", title: "Nothing to review",
+        body: "Open Product Requests will appear here for buyer decision." %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Buyer review</caption>
+      <thead>
+        <tr>
+          <th scope="col">Product</th>
+          <th scope="col">Type</th>
+          <th scope="col">Priority</th>
+          <th scope="col" class="num">Requested</th>
+          <th scope="col" class="num">On hand</th>
+          <th scope="col" class="num">Available</th>
+          <th scope="col" class="num">On order</th>
+          <th scope="col" class="num">Selling price</th>
+          <% if @can_view_cost %><th scope="col" class="num">Expected/last cost</th><% end %>
+          <th scope="col">Add to draft PO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @product_requests.each do |product_request| %>
+          <% snapshot = @snapshots[product_request.id] %>
+          <tr>
+            <td>
+              <%= link_to product_request.product.name, product_request %>
+              <div class="muted"><%= product_request.product_variant ? variant_option_label(product_request.product_variant) : "Variant not yet resolved" %></div>
+            </td>
+            <td><%= product_request.request_type.titleize %></td>
+            <td><%= status_badge(product_request.priority.titleize, variant: product_request_priority_variant(product_request.priority)) %></td>
+            <td class="num"><%= product_request.requested_quantity %></td>
+            <td class="num"><%= snapshot ? snapshot.on_hand : "—" %></td>
+            <td class="num"><%= snapshot ? snapshot.available : "—" %></td>
+            <td class="num"><%= snapshot ? snapshot.on_order : "—" %></td>
+            <td class="num"><%= snapshot ? format_money(snapshot.selling_price_cents) : "—" %></td>
+            <% if @can_view_cost %>
+              <td class="num">
+                <%= snapshot ? format_money(snapshot.expected_unit_cost_cents || snapshot.last_known_unit_cost_cents) : "—" %>
+              </td>
+            <% end %>
+            <td>
+              <% if product_request.product_variant.blank? %>
+                <span class="muted">Resolve a variant first</span>
+              <% else %>
+                <%= form_with url: add_to_purchase_order_path(product_request), method: :post, class: "inline-form" do %>
+                  <select name="vendor_id" class="input" required aria-label="Vendor">
+                    <option value="">Vendor…</option>
+                    <% @vendors.each do |vendor| %>
+                      <option value="<%= vendor.id %>"><%= vendor.name %></option>
+                    <% end %>
+                  </select>
+                  <%= number_field_tag :quantity, product_request.requested_quantity, min: 1, class: "input", style: "width: 5rem", "aria-label": "Quantity" %>
+                  <%= hidden_field_tag :product_variant_id, product_request.product_variant_id %>
+                  <%= submit_tag "Add to PO", class: "button button-outline button-small" %>
+                <% end %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "product request" %>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_032000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -718,6 +718,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_032000) do
     t.check_constraint "default_inventory_tracking_mode::text = ANY (ARRAY['quantity'::character varying::text, 'individual'::character varying::text, 'none'::character varying::text])", name: "product_formats_tracking_mode_check"
   end
 
+  create_table "product_requests", force: :cascade do |t|
+    t.bigint "assigned_buyer_user_id"
+    t.datetime "created_at", null: false
+    t.string "customer_reference"
+    t.date "needed_by_on"
+    t.text "notes"
+    t.string "priority", default: "normal", null: false
+    t.bigint "product_id", null: false
+    t.bigint "product_variant_id"
+    t.string "request_type", null: false
+    t.bigint "requested_by_user_id", null: false
+    t.integer "requested_quantity", null: false
+    t.string "resolution"
+    t.text "resolution_note"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_user_id"
+    t.integer "resolved_quantity"
+    t.string "status", default: "open", null: false
+    t.bigint "store_id", null: false
+    t.bigint "supersedes_product_request_id"
+    t.datetime "updated_at", null: false
+    t.index ["assigned_buyer_user_id"], name: "index_product_requests_on_assigned_buyer_user_id"
+    t.index ["product_id"], name: "index_product_requests_on_product_id"
+    t.index ["product_variant_id"], name: "index_product_requests_on_product_variant_id"
+    t.index ["requested_by_user_id"], name: "index_product_requests_on_requested_by_user_id"
+    t.index ["resolved_by_user_id"], name: "index_product_requests_on_resolved_by_user_id"
+    t.index ["store_id", "request_type", "status"], name: "index_product_requests_on_store_type_status"
+    t.index ["store_id", "request_type"], name: "index_product_requests_on_store_id_and_request_type"
+    t.index ["store_id", "status"], name: "index_product_requests_on_store_id_and_status"
+    t.index ["store_id"], name: "index_product_requests_on_store_id"
+    t.index ["supersedes_product_request_id"], name: "index_product_requests_on_supersedes_product_request_id"
+    t.check_constraint "priority::text = ANY (ARRAY['normal'::character varying, 'high'::character varying, 'urgent'::character varying]::text[])", name: "product_requests_priority_check"
+    t.check_constraint "request_type::text = ANY (ARRAY['customer_request'::character varying, 'staff_suggestion'::character varying, 'stock_replenishment'::character varying, 'frontlist_selection'::character varying]::text[])", name: "product_requests_request_type_check"
+    t.check_constraint "requested_quantity > 0", name: "product_requests_requested_quantity_positive"
+    t.check_constraint "resolution IS NULL OR (resolution::text = ANY (ARRAY['ordered'::character varying, 'declined'::character varying, 'deferred'::character varying, 'duplicate'::character varying, 'superseded'::character varying, 'no_longer_needed'::character varying]::text[]))", name: "product_requests_resolution_check"
+    t.check_constraint "resolved_quantity IS NULL OR resolved_quantity <= requested_quantity", name: "product_requests_resolved_quantity_within_requested"
+    t.check_constraint "resolved_quantity IS NULL OR resolved_quantity >= 0", name: "product_requests_resolved_quantity_nonneg"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'fulfilled'::character varying, 'declined'::character varying, 'cancelled'::character varying, 'closed'::character varying]::text[])", name: "product_requests_status_check"
+    t.check_constraint "supersedes_product_request_id IS NULL OR supersedes_product_request_id <> id", name: "product_requests_supersedes_not_self"
+  end
+
   create_table "product_variant_vendors", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -1305,6 +1346,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_032000) do
   add_foreign_key "pos_transactions", "users", column: "completed_by_user_id", on_delete: :restrict
   add_foreign_key "product_conditions", "organizations"
   add_foreign_key "product_formats", "organizations"
+  add_foreign_key "product_requests", "product_requests", column: "supersedes_product_request_id", on_delete: :restrict
+  add_foreign_key "product_requests", "product_variants", on_delete: :restrict
+  add_foreign_key "product_requests", "products", on_delete: :restrict
+  add_foreign_key "product_requests", "stores", on_delete: :restrict
+  add_foreign_key "product_requests", "users", column: "assigned_buyer_user_id", on_delete: :restrict
+  add_foreign_key "product_requests", "users", column: "requested_by_user_id", on_delete: :restrict
+  add_foreign_key "product_requests", "users", column: "resolved_by_user_id", on_delete: :restrict
   add_foreign_key "product_variant_vendors", "product_variants"
   add_foreign_key "product_variant_vendors", "vendors"
   add_foreign_key "product_variants", "departments"

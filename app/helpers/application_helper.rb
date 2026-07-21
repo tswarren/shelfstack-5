@@ -106,6 +106,23 @@ module ApplicationHelper
     end
   end
 
+  def product_request_status_variant(status)
+    case status.to_s
+    when "open" then :info
+    when "closed", "fulfilled" then :success
+    when "declined", "cancelled" then :danger
+    else :neutral
+    end
+  end
+
+  def product_request_priority_variant(priority)
+    case priority.to_s
+    when "urgent" then :danger
+    when "high" then :warning
+    else :neutral
+    end
+  end
+
   def cost_quality_variant(quality)
     case quality.to_s
     when "actual" then :success
@@ -311,8 +328,30 @@ module ApplicationHelper
     "#{rate_text} applies (#{tax_treatment_label(rule.treatment).downcase}) to #{category_text}. #{compound}"
   end
 
+  # Returns to the originating demand-entry form with a Product selected
+  # (ordering-and-acquisition-planning.md §3.1 return-to-workflow step).
+  def return_to_with_product(return_to, product)
+    if return_to.present?
+      uri = URI.parse(return_to)
+      query = Rack::Utils.parse_nested_query(uri.query)
+      query["product_id"] = product.id
+      "#{uri.path}?#{query.to_query}"
+    else
+      new_product_request_path(product_id: product.id)
+    end
+  end
+
   def configured_override_label(value)
     value.present? ? value.name : "Inherit"
+  end
+
+  # Guards a user-supplied `return_to` param before it is rendered as an
+  # href: only a same-app root-relative path is allowed, never an absolute
+  # URL, protocol-relative URL, or non-http(s) scheme (e.g. `javascript:`).
+  def safe_local_path(path, fallback)
+    return fallback if path.blank?
+
+    path.start_with?("/") && !path.start_with?("//") ? path : fallback
   end
 
   private

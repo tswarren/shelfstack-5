@@ -1,0 +1,6 @@
+<%= render "shared/page_header", title: "Edit product request",
+      breadcrumbs: [ { label: "Product requests", path: product_requests_path },
+                     { label: "##{@product_request.id}", path: product_request_path(@product_request) },
+                     { label: "Edit" } ] %>
+
+<%= render "form", product_request: @product_request, form_url: product_request_path(@product_request) %>
