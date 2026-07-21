@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -273,7 +273,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_000000) do
     t.index ["inventory_unit_id"], name: "index_inventory_reservations_on_inventory_unit_id"
     t.index ["product_variant_id"], name: "index_inventory_reservations_on_product_variant_id"
     t.index ["released_by_user_id"], name: "index_inventory_reservations_on_released_by_user_id"
-    t.index ["store_id", "product_variant_id", "source_type", "source_id"], name: "index_inv_reservations_active_source_unique", unique: true, where: "((status)::text = 'active'::text)"
+    t.index ["store_id", "product_variant_id", "source_type", "source_id"], name: "index_inv_reservations_active_qty_source_unique", unique: true, where: "(((status)::text = 'active'::text) AND (inventory_unit_id IS NULL))"
     t.index ["store_id", "product_variant_id", "status"], name: "idx_on_store_id_product_variant_id_status_6ca347337e"
     t.index ["store_id"], name: "index_inventory_reservations_on_store_id"
     t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "inv_reservations_unit_quantity_one"

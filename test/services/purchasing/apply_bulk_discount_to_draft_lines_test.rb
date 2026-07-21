@@ -48,5 +48,17 @@ module Purchasing
       assert_not result.success?
       assert_match(/no eligible/i, result.error)
     end
+
+    test "denies an actor without purchasing.cost.view" do
+      clerk = users(:clerk)
+
+      result = ApplyBulkDiscountToDraftLines.call(
+        purchase_order: @po, line_ids: [ @line.id ], discount_bps: 5000, actor: clerk, store: @store
+      )
+
+      assert_not result.success?
+      assert_match(/not permitted/i, result.error)
+      assert_equal 4000, @line.reload.discount_bps
+    end
   end
 end

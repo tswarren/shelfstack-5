@@ -31,7 +31,8 @@ class ProductVariantVendorsController < ApplicationController
     if Purchasing::CreateProductVariantVendor.call(
       product_variant_vendor: @product_variant_vendor,
       actor: Current.user,
-      organization: Current.organization
+      organization: Current.organization,
+      store: Current.store
     )
       redirect_to @product_variant_vendor, notice: "Vendor source created."
     else
@@ -47,7 +48,8 @@ class ProductVariantVendorsController < ApplicationController
       product_variant_vendor: @product_variant_vendor,
       attributes: product_variant_vendor_params.to_h,
       actor: Current.user,
-      organization: Current.organization
+      organization: Current.organization,
+      store: Current.store
     )
       redirect_to @product_variant_vendor, notice: "Vendor source updated."
     else

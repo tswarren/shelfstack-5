@@ -18,6 +18,13 @@ module Purchasing
     end
 
     def call
+      unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.purchase_order.edit") == :allow
+        return Result.new(purchase_order: @purchase_order, success?: false, error: "not permitted to edit purchase orders", updated_line_ids: [])
+      end
+      unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.cost.view") == :allow
+        return Result.new(purchase_order: @purchase_order, success?: false, error: "not permitted to view or change purchase-order cost", updated_line_ids: [])
+      end
+
       ActiveRecord::Base.transaction do
         @purchase_order.reload.lock!
 

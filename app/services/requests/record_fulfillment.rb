@@ -108,10 +108,21 @@ module Requests
     end
 
     def release_or_reduce_reservation!(store, variant, product_request)
-      reservation = InventoryReservation.active.lock.find_by(
-        store_id: store.id, product_variant_id: variant.id,
-        source_type: "product_request", source_id: product_request.id
-      )
+      # After AddLine handoff, the hold usually belongs to the POS line. Prefer
+      # releasing any residual product_request reservation (quantity aggregate or
+      # matching individual unit) that was not transferred.
+      reservation = if @pos_line_item.inventory_unit_id.present?
+        InventoryReservation.active.lock.find_by(
+          store_id: store.id, product_variant_id: variant.id,
+          source_type: "product_request", source_id: product_request.id,
+          inventory_unit_id: @pos_line_item.inventory_unit_id
+        )
+      else
+        InventoryReservation.active.lock.find_by(
+          store_id: store.id, product_variant_id: variant.id,
+          source_type: "product_request", source_id: product_request.id
+        )
+      end
       return nil if reservation.blank?
 
       consume = [ @quantity, reservation.quantity ].min

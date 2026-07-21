@@ -15,8 +15,11 @@ module Purchasing
     end
 
     def call
-      if @store.present? &&
-          Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor.manage") != :allow
+      if @store.blank?
+        @vendor.errors.add(:base, "store is required to authorize vendor management")
+        return false
+      end
+      if Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor.manage") != :allow
         @vendor.errors.add(:base, "not permitted to manage vendors")
         return false
       end

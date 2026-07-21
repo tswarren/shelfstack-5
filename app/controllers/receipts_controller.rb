@@ -53,7 +53,8 @@ class ReceiptsController < ApplicationController
       attributes: header_params.to_h,
       lines_attributes: lines_params,
       actor: Current.user,
-      store: Current.store
+      store: Current.store,
+      can_edit_cost: can_view_receipt_cost?
     )
     if result.success?
       redirect_to result.receipt, notice: "Receipt updated."

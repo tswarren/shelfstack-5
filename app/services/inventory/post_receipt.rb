@@ -133,6 +133,8 @@ module Inventory
       when "individual"
         convert_individual_allocations_for_line!(line, variant, posted_at: posted_at)
       end
+
+      release_unbacked_allocations!(line, posted_at: posted_at)
     end
 
     def post_quantity_line!(line, variant, posting_key:, posted_at:)
@@ -301,10 +303,9 @@ module Inventory
     end
 
     # Exact-copy Customer Requests: each newly accepted available Inventory Unit
-    # may convert one remaining allocation unit onto that request. The active
-    # reservation unique index allows one unit reservation per request/variant,
-    # so a request already holding a unit is skipped until that hold is sold or
-    # released. Inspection/unavailable units are never converted.
+    # may convert one remaining allocation unit onto an open request. Multiple
+    # unit reservations may exist for the same request (one row per unit).
+    # Inspection/unavailable units are never converted.
     def convert_individual_allocations_for_line!(line, variant, posted_at:)
       po_line = line.purchase_order_line
       return if po_line.blank?
@@ -314,27 +315,60 @@ module Inventory
 
       unit_index = 0
       each_convertible_allocation(po_line) do |product_request, locked_allocation|
-        break if unit_index >= units.size
+        while unit_index < units.size && locked_allocation.remaining_quantity.positive?
+          unit = units[unit_index]
+          unit_index += 1
 
-        existing = InventoryReservation.active.find_by(
-          store_id: @store.id, product_variant_id: variant.id,
-          source_type: "product_request", source_id: product_request.id
-        )
-        next if existing.present?
+          reservation_result = Reserve.call(
+            store: @store, product_variant: variant, quantity: 1,
+            source_type: "product_request", source_id: product_request.id,
+            actor: @actor, inventory_unit: unit
+          )
+          raise Error, reservation_result.error unless reservation_result.success?
 
-        unit = units[unit_index]
-        unit_index += 1
+          record_conversion_event!(
+            locked_allocation, line, reservation_result.reservation, 1, posted_at,
+            posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked_allocation.id}:unit:#{unit.id}:convert"
+          )
+          locked_allocation = PurchaseOrderAllocation.lock.find(locked_allocation.id)
+        end
+      end
+    end
 
-        reservation_result = Reserve.call(
-          store: @store, product_variant: variant, quantity: 1,
-          source_type: "product_request", source_id: product_request.id,
-          actor: @actor, inventory_unit: unit
-        )
-        raise Error, reservation_result.error unless reservation_result.success?
+    # OD-007: any reduction of PO open supply that leaves remaining allocation
+    # above open quantity must release the overhang. Accepts that became
+    # unavailable or only settled a deficit never create convertible stock.
+    def release_unbacked_allocations!(line, posted_at:)
+      po_line = line.purchase_order_line
+      return if po_line.blank?
 
-        record_conversion_event!(
-          locked_allocation, line, reservation_result.reservation, 1, posted_at,
-          posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked_allocation.id}:unit:#{unit.id}:convert"
+      locked_line = PurchaseOrderLine.lock.find(po_line.id)
+      open_qty = locked_line.open_quantity
+
+      loop do
+        total_remaining = PurchaseOrderAllocation.where(purchase_order_line_id: locked_line.id)
+          .includes(:purchase_order_allocation_events)
+          .sum(&:remaining_quantity)
+        overhang = total_remaining - open_qty
+        break unless overhang.positive?
+
+        candidate = PurchaseOrderAllocation.where(purchase_order_line_id: locked_line.id)
+          .includes(:purchase_order_allocation_events)
+          .order(id: :desc)
+          .find { |allocation| allocation.remaining_quantity.positive? }
+        break if candidate.blank?
+
+        locked = PurchaseOrderAllocation.lock.find(candidate.id)
+        release_qty = [ locked.remaining_quantity, overhang ].min
+        break unless release_qty.positive?
+
+        locked.release!(
+          quantity: release_qty,
+          reason: "received_unavailable",
+          actor: @actor,
+          note: "released after receipt #{@receipt.receipt_number}; open supply no longer backs allocation",
+          occurred_at: posted_at,
+          posting_key: "receipt:#{@receipt.id}:line:#{line.id}:allocation:#{locked.id}:received_unavailable:#{release_qty}"
         )
       end
     end

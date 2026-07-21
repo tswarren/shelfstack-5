@@ -17,7 +17,7 @@ module Requests
   #
   # Quantity-tracked variants aggregate onto one active Reservation row.
   # Individually tracked variants require an exact Inventory Unit and reserve
-  # quantity 1 (one active unit hold per request/variant).
+  # quantity 1 per unit; a request may hold several unit reservation rows.
   class ReserveInHouseInventory < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:product_request, :reservation, :success?, :error)

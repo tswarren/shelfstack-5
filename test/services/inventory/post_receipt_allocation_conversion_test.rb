@@ -85,8 +85,8 @@ module Inventory
       refute InventoryReservation.exists?(source_type: "product_request", source_id: high_no_need_date.id)
     end
 
-    test "accepted-but-unavailable quantity is not converted to a reservation" do
-      po_line = build_ordered_po_line(ordered_quantity: 10)
+    test "accepted-but-unavailable quantity releases unbacked allocation remainder" do
+      po_line = build_ordered_po_line(ordered_quantity: 5)
       request = build_customer_request(quantity: 5)
       allocation = create_allocation(po_line, request, 5)
 
@@ -94,9 +94,11 @@ module Inventory
       result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
       assert result.success?, result.error
 
-      # Only the 3 sellable units convert; 2 unavailable units remain
-      # un-promised expected supply.
-      assert_equal 2, allocation.reload.remaining_quantity
+      # Only the 3 sellable units convert; with open PO quantity now zero, the
+      # 2 unavailable units leave allocation unbacked and must be released.
+      assert_equal 0, allocation.reload.remaining_quantity
+      assert_equal "received_unavailable",
+                   allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
       reservation = InventoryReservation.find_by(source_type: "product_request", source_id: request.id)
       assert_equal 3, reservation.quantity
     end
@@ -124,7 +126,7 @@ module Inventory
       assert_equal 6, balance.reserved
     end
 
-    test "converts one individually tracked unit allocation onto a customer request reservation" do
+    test "converts each individually tracked unit onto a customer request reservation" do
       individual_variant = product_variants(:signed_book_standard)
       po_line = build_ordered_po_line(ordered_quantity: 3, variant: individual_variant)
       request = ProductRequest.create!(
@@ -143,20 +145,20 @@ module Inventory
       result = PostReceipt.call(receipt: receipt, actor: @admin, store: @store)
       assert result.success?, result.error
 
-      reservation = InventoryReservation.active.find_by!(source_type: "product_request", source_id: request.id)
-      assert_equal 1, reservation.quantity
-      assert_predicate reservation.inventory_unit, :present?
-      assert_equal 1, request.purchase_order_allocations.first.remaining_quantity
+      reservations = InventoryReservation.active.where(source_type: "product_request", source_id: request.id)
+      assert_equal 2, reservations.count
+      assert reservations.all? { |reservation| reservation.inventory_unit_id.present? }
+      assert_equal 0, request.purchase_order_allocations.first.remaining_quantity
     end
 
-    test "does not convert sellable quantity that only settled a negative on-hand deficit" do
+    test "releases allocations that only settled a negative on-hand deficit" do
       StockBalance.create!(
         store: @store, product_variant: @variant,
         on_hand: -5, reserved: 0, unavailable: 0,
         inventory_value_cents: 0, moving_average_cost_cents: nil, cost_quality: "unknown",
         open_provisional_deficit_cost_cents: 3500, deficit_cost_quality: "actual"
       )
-      po_line = build_ordered_po_line(ordered_quantity: 5)
+      po_line = build_ordered_po_line(ordered_quantity: 2)
       request = ProductRequest.create!(
         store: @store, request_type: "customer_request", product: @variant.product,
         product_variant: @variant, requested_quantity: 2, requested_by_user: @admin
@@ -170,7 +172,9 @@ module Inventory
       assert result.success?, result.error
 
       refute InventoryReservation.exists?(source_type: "product_request", source_id: request.id)
-      assert_equal 2, request.purchase_order_allocations.first.remaining_quantity
+      allocation = request.purchase_order_allocations.first
+      assert_equal 0, allocation.remaining_quantity
+      assert_equal "received_unavailable", allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
       balance = StockBalance.find_by!(store: @store, product_variant: @variant)
       assert_equal(-3, balance.on_hand)
       assert_equal 0, balance.reserved

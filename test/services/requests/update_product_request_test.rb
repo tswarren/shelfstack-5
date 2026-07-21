@@ -74,5 +74,35 @@ module Requests
       assert_equal "request_quantity_reduced",
                    allocation.purchase_order_allocation_events.where(event_type: "released").sole.reason
     end
+
+    test "rejects clearing a resolved variant while allocations remain" do
+      variant = product_variants(:sample_book_standard)
+      request = product_requests(:open_customer_request)
+      request.update!(product_variant: variant, requested_quantity: 2)
+
+      vendor = vendors(:acme_distributor)
+      po = Purchasing::CreatePurchaseOrder.call(
+        purchase_order: PurchaseOrder.new(vendor: vendor),
+        lines_attributes: [ {
+          product_variant_id: variant.id, ordered_quantity: 2,
+          cost_entry_method: "direct_net_cost", expected_unit_cost_cents: 700
+        } ],
+        actor: @admin, store: @store
+      ).purchase_order
+      Purchasing::PlacePurchaseOrder.call(purchase_order: po, actor: @admin, store: @store)
+      assert Purchasing::CreateAllocation.call(
+        purchase_order_line: po.purchase_order_lines.first,
+        product_request: request, quantity: 2, actor: @admin, store: @store
+      ).success?
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: @admin, store: @store,
+        attributes: { product_variant_id: nil }
+      )
+
+      assert_not result.success?
+      assert_match(/cannot change variant/i, result.error)
+      assert_equal variant.id, request.reload.product_variant_id
+    end
   end
 end

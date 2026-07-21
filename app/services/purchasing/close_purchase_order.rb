@@ -16,6 +16,10 @@ module Purchasing
     end
 
     def call
+      unless Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.purchase_order.close") == :allow
+        return Result.new(purchase_order: @purchase_order, success?: false, error: "not permitted to close purchase orders", replayed: false)
+      end
+
       ActiveRecord::Base.transaction do
         @purchase_order.reload.lock!
 
@@ -30,6 +34,13 @@ module Purchasing
         raise Error, "purchase order must have at least one line" if lines.empty?
         unless lines.all? { |line| line.open_quantity.zero? }
           raise Error, "all line quantity must be received or cancelled before closing"
+        end
+
+        remaining_allocations = PurchaseOrderAllocation.where(purchase_order_line_id: lines.map(&:id))
+          .includes(:purchase_order_allocation_events)
+          .sum(&:remaining_quantity)
+        if remaining_allocations.positive?
+          raise Error, "cannot close while #{remaining_allocations} allocated quantity remains; release or convert allocations first"
         end
 
         @purchase_order.update!(status: "closed", closed_at: Time.current, closed_by_user: @actor)

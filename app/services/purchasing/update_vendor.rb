@@ -5,14 +5,24 @@ module Purchasing
     TRACKED_ATTRIBUTES = CreateVendor::TRACKED_ATTRIBUTES
     IMMUTABLE_ATTRIBUTES = %w[code].freeze
 
-    def initialize(vendor:, attributes:, actor:, organization:)
+    def initialize(vendor:, attributes:, actor:, organization:, store: nil)
       @vendor = vendor
       @attributes = attributes.stringify_keys.except(*IMMUTABLE_ATTRIBUTES)
       @actor = actor
       @organization = organization
+      @store = store
     end
 
     def call
+      if @store.blank?
+        @vendor.errors.add(:base, "store is required to authorize vendor management")
+        return false
+      end
+      if Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor.manage") != :allow
+        @vendor.errors.add(:base, "not permitted to manage vendors")
+        return false
+      end
+
       ActiveRecord::Base.transaction do
         before = Administration::ChangeMetadata.snapshot(@vendor, TRACKED_ATTRIBUTES)
 

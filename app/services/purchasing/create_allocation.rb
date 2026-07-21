@@ -39,6 +39,7 @@ module Purchasing
         purchase_order = line.purchase_order
 
         raise Error, "purchase-order allocations apply only to customer requests" unless product_request.customer_request?
+        raise Error, "product request is not open" unless product_request.open?
         raise Error, "purchase order line store mismatch" unless purchase_order.store_id == @store.id
         raise Error, "product request store mismatch" unless product_request.store_id == @store.id
         raise Error, "only ordered purchase orders can allocate quantity" unless purchase_order.ordered?

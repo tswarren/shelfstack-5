@@ -8,13 +8,23 @@ module Purchasing
       minimum_order_quantity order_multiple returnable preferred active notes
     ].freeze
 
-    def initialize(product_variant_vendor:, actor:, organization:)
+    def initialize(product_variant_vendor:, actor:, organization:, store: nil)
       @product_variant_vendor = product_variant_vendor
       @actor = actor
       @organization = organization
+      @store = store
     end
 
     def call
+      if @store.blank?
+        @product_variant_vendor.errors.add(:base, "store is required to authorize vendor-source management")
+        return false
+      end
+      if Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "purchasing.vendor_source.manage") != :allow
+        @product_variant_vendor.errors.add(:base, "not permitted to manage vendor sources")
+        return false
+      end
+
       ActiveRecord::Base.transaction do
         @product_variant_vendor.save!
 

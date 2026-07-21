@@ -41,5 +41,32 @@ module Purchasing
       assert_not result.success?
       assert_match(/only draft/i, result.error)
     end
+
+    test "preserves protected cost fields when can_edit_cost is false" do
+      line = purchase_order_lines(:draft_po_line1)
+      original_cost = line.expected_unit_cost_cents
+      original_list = line.list_cost_cents
+      original_discount = line.discount_bps
+
+      result = UpdateDraftPurchaseOrder.call(
+        purchase_order: @po,
+        attributes: {},
+        lines_attributes: [ {
+          id: line.id, product_variant_id: line.product_variant_id, ordered_quantity: 8,
+          cost_entry_method: "direct_net_cost", expected_unit_cost_cents: 1
+        } ],
+        actor: @user,
+        store: @store,
+        can_edit_cost: false
+      )
+
+      assert result.success?, result.error
+      line.reload
+      assert_equal 8, line.ordered_quantity
+      assert_equal original_cost, line.expected_unit_cost_cents
+      assert_equal original_list, line.list_cost_cents
+      assert_equal original_discount, line.discount_bps
+      assert_equal "discount_from_list", line.cost_entry_method
+    end
   end
 end

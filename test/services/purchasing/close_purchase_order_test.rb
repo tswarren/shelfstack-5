@@ -28,6 +28,22 @@ module Purchasing
       assert_equal @user, @po.closed_by_user
     end
 
+    test "refuses to close while remaining allocations exist" do
+      request = product_requests(:open_customer_request)
+      assert CreateAllocation.call(
+        purchase_order_line: @line, product_request: request, quantity: 1, actor: @user, store: @store
+      ).success?
+      # Drive open quantity to zero without cancel-PO allocation release so the
+      # remaining allocation is the sole close blocker.
+      @line.update_columns(cancelled_quantity: @line.ordered_quantity, received_quantity: 0)
+
+      result = ClosePurchaseOrder.call(purchase_order: @po, actor: @user, store: @store)
+
+      assert_not result.success?
+      assert_match(/allocated quantity remains/i, result.error)
+      refute @po.reload.closed?
+    end
+
     test "only ordered purchase orders can be closed" do
       draft = purchase_orders(:draft_po)
 

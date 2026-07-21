@@ -172,6 +172,7 @@ class PosTransactionsController < ApplicationController
     {
       "query" => stored["query"].to_s,
       "quantity" => (stored["quantity"].presence || 1).to_i,
+      "product_request_id" => stored["product_request_id"],
       "candidates" => candidates
     }
   end

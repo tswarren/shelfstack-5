@@ -42,7 +42,8 @@ class VendorsController < ApplicationController
       vendor: @vendor,
       attributes: vendor_params.to_h,
       actor: Current.user,
-      organization: Current.organization
+      organization: Current.organization,
+      store: Current.store
     )
       redirect_to @vendor, notice: "Vendor updated."
     else

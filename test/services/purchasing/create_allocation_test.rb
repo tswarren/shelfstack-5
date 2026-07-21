@@ -115,6 +115,24 @@ module Purchasing
       assert_match(/not permitted/i, result.error)
     end
 
+    test "rejects allocations against a cancelled customer request" do
+      @request.update!(status: "cancelled")
+
+      result = CreateAllocation.call(purchase_order_line: @line, product_request: @request, quantity: 1, actor: @admin, store: @store)
+
+      assert_not result.success?
+      assert_match(/not open/i, result.error)
+    end
+
+    test "rejects allocations against a fulfilled customer request" do
+      @request.update!(status: "fulfilled")
+
+      result = CreateAllocation.call(purchase_order_line: @line, product_request: @request, quantity: 1, actor: @admin, store: @store)
+
+      assert_not result.success?
+      assert_match(/not open/i, result.error)
+    end
+
     test "records an audit event" do
       result = CreateAllocation.call(purchase_order_line: @line, product_request: @request, quantity: 1, actor: @admin, store: @store)
 

@@ -4,6 +4,7 @@ class PurchaseOrdersController < ApplicationController
   before_action -> { require_permission!("purchasing.purchase_order.view") }, only: %i[index show]
   before_action -> { require_permission!("purchasing.purchase_order.create") }, only: %i[new create]
   before_action -> { require_permission!("purchasing.purchase_order.edit") }, only: %i[edit update bulk_discount]
+  before_action -> { require_permission!("purchasing.cost.view") }, only: %i[bulk_discount]
   before_action -> { require_permission!("purchasing.purchase_order.place") }, only: %i[place]
   before_action -> { require_permission!("purchasing.purchase_order.amend") }, only: %i[amend]
   before_action -> { require_permission!("purchasing.purchase_order.cancel") }, only: %i[cancel]
@@ -80,7 +81,8 @@ class PurchaseOrdersController < ApplicationController
       attributes: header_params.to_h,
       lines_attributes: lines_params,
       actor: Current.user,
-      store: Current.store
+      store: Current.store,
+      can_edit_cost: Current.user.can?("purchasing.cost.view", store: Current.store)
     )
     if result.success?
       redirect_to result.purchase_order, notice: "Purchase order updated."

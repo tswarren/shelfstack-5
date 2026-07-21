@@ -191,7 +191,8 @@ class PosLineItemsController < ApplicationController
     session[:pos_scan_resolution] = {
       "transaction_id" => @pos_transaction.id,
       "query" => query.to_s,
-      "quantity" => (quantity.presence || 1).to_i
+      "quantity" => (quantity.presence || 1).to_i,
+      "product_request_id" => params[:product_request_id].presence
     }
   end
 

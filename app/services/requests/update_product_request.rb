@@ -33,7 +33,12 @@ module Requests
 
         before = Administration::ChangeMetadata.snapshot(@product_request, ATTRIBUTES)
         previous_quantity = @product_request.requested_quantity
+        previous_variant_id = @product_request.product_variant_id
         @product_request.assign_attributes(@attributes)
+
+        if @product_request.product_variant_id_changed?
+          enforce_variant_change!(previous_variant_id)
+        end
 
         if @product_request.requested_quantity_changed?
           enforce_quantity_floor!
@@ -73,6 +78,38 @@ module Requests
       if @product_request.requested_quantity < fulfilled
         raise Error, "requested quantity cannot be less than already fulfilled quantity (#{fulfilled})"
       end
+    end
+
+    # nil → Variant is allowed only when every existing commitment is compatible
+    # with that Variant. Changing an already-resolved Variant while commitments
+    # or fulfilments exist requires explicit release/reallocation first.
+    def enforce_variant_change!(previous_variant_id)
+      new_variant = @product_request.product_variant
+      raise Error, "product variant must belong to the requested product" if new_variant && new_variant.product_id != @product_request.product_id
+
+      has_commitments = @product_request.remaining_allocated_quantity.positive? ||
+        @product_request.active_reserved_quantity.positive? ||
+        @product_request.fulfilled_quantity.positive?
+
+      if previous_variant_id.present? && previous_variant_id != @product_request.product_variant_id && has_commitments
+        raise Error, "cannot change variant while allocations, reservations, or fulfilments exist; release them first"
+      end
+
+      return if new_variant.blank? || !has_commitments
+
+      incompatible_allocation = PurchaseOrderAllocation.where(product_request_id: @product_request.id)
+        .includes(:purchase_order_line, :purchase_order_allocation_events)
+        .any? { |allocation|
+          allocation.remaining_quantity.positive? &&
+            allocation.purchase_order_line.product_variant_id != new_variant.id
+        }
+      raise Error, "existing allocations are not compatible with the selected variant" if incompatible_allocation
+
+      incompatible_reservation = InventoryReservation.active
+        .where(source_type: "product_request", source_id: @product_request.id)
+        .where.not(product_variant_id: new_variant.id)
+        .exists?
+      raise Error, "existing reservations are not compatible with the selected variant" if incompatible_reservation
     end
 
     def release_excess_commitments!(previous_quantity)

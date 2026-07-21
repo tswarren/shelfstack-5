@@ -55,30 +55,9 @@ module Pos
         )
 
         if @product_variant.inventory_tracking_mode == "quantity"
-          reservation = Inventory::Reserve.call(
-            store: @pos_transaction.store,
-            product_variant: @product_variant,
-            quantity: @quantity,
-            source_type: "pos_line_item",
-            source_id: line.id,
-            actor: @actor
-          )
-          raise Error, reservation.error unless reservation.success?
-
-          warnings.concat(reservation.warnings)
+          warnings.concat(reserve_quantity_for_line!(line))
         elsif individual
-          reservation = Inventory::Reserve.call(
-            store: @pos_transaction.store,
-            product_variant: @product_variant,
-            quantity: 1,
-            source_type: "pos_line_item",
-            source_id: line.id,
-            inventory_unit: @inventory_unit,
-            actor: @actor
-          )
-          raise Error, reservation.error unless reservation.success?
-
-          warnings.concat(reservation.warnings)
+          warnings.concat(reserve_individual_for_line!(line))
         end
 
         recalculation = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
@@ -92,10 +71,6 @@ module Pos
 
     private
 
-    # Links the line to a Customer Request the sale is fulfilling (OD-007);
-    # `Pos::CompleteTransaction` creates the Product Request Fulfilment fact
-    # from this link at completion, so it must be validated up front rather
-    # than left for completion to discover.
     def validate_product_request!
       return if @product_request.blank?
 
@@ -112,19 +87,84 @@ module Pos
       end
     end
 
+    # Prefer transferring an existing Product Request reservation to the POS
+    # line so the same physical stock is not double-reserved.
+    def reserve_quantity_for_line!(line)
+      store = @pos_transaction.store
+      transfer_qty = 0
+
+      if @product_request.present?
+        request_reservation = InventoryReservation.active.lock.find_by(
+          store_id: store.id, product_variant_id: @product_variant.id,
+          source_type: "product_request", source_id: @product_request.id
+        )
+        if request_reservation
+          transfer_qty = [ request_reservation.quantity, @quantity ].min
+          if transfer_qty == request_reservation.quantity && transfer_qty == @quantity
+            request_reservation.update!(source_type: "pos_line_item", source_id: line.id)
+            return []
+          end
+
+          remaining_request = request_reservation.quantity - transfer_qty
+          if remaining_request.zero?
+            released = Inventory::ReleaseReservation.call(
+              reservation: request_reservation, actor: @actor, release_reason: "transferred_to_pos"
+            )
+            raise Error, released.error unless released.success?
+          else
+            reduced = Inventory::Reserve.call(
+              store: store, product_variant: @product_variant, quantity: remaining_request,
+              source_type: "product_request", source_id: @product_request.id, actor: @actor
+            )
+            raise Error, reduced.error unless reduced.success?
+          end
+        end
+      end
+
+      reservation = Inventory::Reserve.call(
+        store: store, product_variant: @product_variant, quantity: @quantity,
+        source_type: "pos_line_item", source_id: line.id, actor: @actor
+      )
+      raise Error, reservation.error unless reservation.success?
+
+      reservation.warnings
+    end
+
+    def reserve_individual_for_line!(line)
+      store = @pos_transaction.store
+      request_reservation = if @product_request.present?
+        InventoryReservation.active.lock.find_by(
+          store_id: store.id, product_variant_id: @product_variant.id,
+          source_type: "product_request", source_id: @product_request.id,
+          inventory_unit_id: @inventory_unit.id
+        )
+      end
+
+      if request_reservation
+        request_reservation.update!(source_type: "pos_line_item", source_id: line.id)
+        return []
+      end
+
+      reservation = Inventory::Reserve.call(
+        store: store, product_variant: @product_variant, quantity: 1,
+        source_type: "pos_line_item", source_id: line.id,
+        inventory_unit: @inventory_unit, actor: @actor
+      )
+      raise Error, reservation.error unless reservation.success?
+
+      reservation.warnings
+    end
+
     def next_position
       (@pos_transaction.pos_line_items.maximum(:position) || -1) + 1
     end
 
-    # An individually tracked Unit may carry its own override price
-    # (glossary: "Unit price"); fall back to the variant's regular price.
     def resolved_unit_price_cents(individual)
       return @product_variant.regular_price_cents unless individual
 
       @inventory_unit.unit_price_cents || @product_variant.regular_price_cents
     end
 
-    # Classification resolves via Catalog::ResolveClassification (variant → product → MC → department).
     def classification
       @classification ||= Catalog::ResolveClassification.call(
         product: @product_variant.product,
