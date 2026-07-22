@@ -31,6 +31,27 @@ Detail lives in the three Phase 6 decision notes linked above—not in this phas
 - Post-void is a full administrative reversal: new completed transaction, own receipt number, current business day/session, exact historical snapshots, no current-config recalculation.
 - Stored value is independent liability: issuance/reload add liability; redemption is tender; types remain separately reportable.
 - Atomicity and idempotency continue to govern when stored value and corrections participate.
+- Standalone card boundary ([ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md)): ShelfStack records operator-confirmed terminal activity. After configured references validate, card activity that cannot be attached is retained only long enough to require and record an external void (`void_required` → `voided`). ShelfStack does not otherwise manage the processor lifecycle or reconcile processor activity.
+
+### Standalone card — in scope
+
+- Direct standalone-card payment recording and partial card tenders
+- Direct card-refund recording with original-tender reference display (new refs not copied from original)
+- Attached card-tender void confirmation (`VoidCardTender`)
+- Durable `void_required` retention after validated-reference attachment failure
+- Lifecycle blocking (edit / complete / suspend / cancel) until external void confirmation
+- Shared request-UUID idempotency for `authorized` and `void_required` outcomes
+- Post-void approval and per-tender reversal confirmation (Policy A)
+- Terminal references and audit identity; no sensitive card data
+
+### Standalone card — out of scope
+
+- Card authorization/capture APIs; settlement confirmation; processor batch reconciliation
+- Chargebacks, disputes, automated duplicate-terminal detection
+- Matching processor reports to tenders; accepting or writing off unexplained discrepancies
+- Recovering external operations never successfully submitted to ShelfStack
+- Retrying or adopting a `void_required` operation as a valid tender
+- Preparation tables, orphan queues, replacement workflows, recon outcome types
 
 ## Delivery gates
 
@@ -46,7 +67,7 @@ Detail lives in the three Phase 6 decision notes linked above—not in this phas
 
 **POS correction links:** `pos_transactions.reverses_pos_transaction_id` (unique when present), post-void reason/approval/idempotency; `pos_line_items.reverses_pos_line_item_id`; `pos_tenders.reverses_pos_tender_id`, `original_pos_tender_id`, `stored_value_account_id`.
 
-**Standalone card recording ([ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md)):** no prep/orphan/recon tables. Operators confirm terminal activity; ShelfStack stores tender references (`authorization_code` / `terminal_reference` from TenderType reference slots). Partial card payments/refunds are allowed within remaining balances. After references validate, attach failures immediately persist a durable `void_required` `PosTender` (idempotent); complete/suspend/cancel stay blocked until `RecordVoidedCardTender` confirms the external void and transitions the row to `voided` (`pos.tender.card_void`). Post-void Policy A: approve (`ApprovePostVoid`) → reverse cards on terminal → confirmation audits → `PostVoidTransaction`. The originally anticipated operational `requires_reconciliation` queue was not adopted; the released column remains reserved and unused.
+**Standalone card recording ([ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md)):** no prep/orphan/recon tables. Operators confirm terminal activity; ShelfStack stores tender references (`authorization_code` / `terminal_reference` from TenderType reference slots). Partial card payments/refunds are allowed within remaining balances. After references validate, attach failures immediately persist a durable `void_required` `PosTender` using the same client-supplied `recording_idempotency_key` as a successful `authorized` outcome; complete/suspend/cancel stay blocked until `RecordVoidedCardTender` confirms the external void and transitions the row to `voided` (`pos.tender.card_void`). Post-void Policy A: approve (`ApprovePostVoid`) → reverse cards on terminal → confirmation audits → `PostVoidTransaction`. The originally anticipated operational `requires_reconciliation` queue was not adopted; the released column remains reserved and unused.
 
 **Inventory:** ledger `unavailable_delta`, `resulting_unavailable` (optional disposition snapshot); migrate return/receipt unavailable mutations onto ledger-owned posting.
 
@@ -90,19 +111,35 @@ Proven by tests in this branch unless noted:
 
 **Retained interim blocks:** OD-014 post-settlement algorithm (any later deficit-quantity change after a deficit-affecting original that increased *or reduced* deficit, or reverse that would settle current deficit when the original did not change deficit); return-containing / mixed-txn post-void (needs fulfilment restoration).
 
+### Standalone card completion criteria (ADR-0016)
+
+Distinct from still-open #36 / OD-014 interim exits:
+
+- [x] Preparation / orphan / reconciliation machinery removed
+- [x] ADR-0016 governs the implemented `void_required` boundary
+- [x] Card recording uses TenderType reference rules
+- [x] Authorized and `void_required` card recording share request-UUID idempotency
+- [x] `void_required` has exactly one resolution path: confirmed external void → `voided`
+- [x] Complete / suspend / cancel (and commercial edit) enforce the block
+- [x] Card refunds and post-voids use direct operator-confirmed workflows
+- [x] Focused card recovery / idempotency tests; stale recon-queue docs annotated as unused
+- After these pass with `bin/ci`, stop refining standalone-card lifecycle behavior in Phase 6; processor reconciliation begins only as explicit Phase 7 work
+
 ## Test categories
 
-Post-void (including mixed txn, dispositions, fulfilment, OD-014 blockers, in-flight refund blockers, idempotency, rollback); stored value (identifiers, issue/reload/redeem/refund, split tender, concurrency, manual adjustment, immutable ledger). Suspend/unsuspend operational workflow is deferred (permission seeded; no service/UI in Gate 6d). Full matrices in the decision notes.
+Post-void (including mixed txn, dispositions, fulfilment, OD-014 blockers, in-flight refund blockers, idempotency, rollback); stored value (identifiers, issue/reload/redeem/refund, split tender, concurrency, manual adjustment, immutable ledger); standalone card (`void_required`, request-UUID idempotency, lifecycle blocks, Policy A). Suspend/unsuspend operational workflow is deferred (permission seeded; no service/UI in Gate 6d). Full matrices in the decision notes.
 
 ## Out of scope
 
 - Partial post-void; editing/deleting completed activity
 - Reconciliation adjustments (Phase 7 interfaces only)
+- Processor settlement matching, chargebacks, disputes, and external discrepancy write-off (Phase 7 / integrated payments)
 - Stored-value replacement, multi-credential, transfer, expiration, escheatment, cash-out, customer portals
 - Buyback and ordinary trade-credit issuance
 - Integrated payment processing; offline stored-value authorization
 - Closing OD-010 status-bucket unavailable model
 - Permanent OD-014 post-settlement block (interim only until algorithm ships)
+- Adopting or retry-attaching `void_required` as a settling tender
 
 ## Related
 

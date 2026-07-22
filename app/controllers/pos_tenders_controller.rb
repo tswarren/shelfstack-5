@@ -34,6 +34,7 @@ class PosTendersController < ApplicationController
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
           actor: Current.user,
+          recording_idempotency_key: params[:recording_idempotency_key],
           authorization_code: params[:authorization_code],
           terminal_reference: params[:terminal_reference].presence,
           original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
@@ -44,11 +45,13 @@ class PosTendersController < ApplicationController
         Pos::AddCardTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+          recording_idempotency_key: params[:recording_idempotency_key],
           authorization_code: params[:authorization_code],
           terminal_reference: params[:terminal_reference].presence,
           actor: Current.user
         )
       end
+
     when "stored_value"
       account = resolve_stored_value_account
       if params[:refund].present?

@@ -150,18 +150,74 @@ module Pos
       assert_match(/void_required/, cancel.error)
     end
 
-    test "void_required retries are idempotent" do
+    test "same request UUID replays authorized card tender" do
+      key = SecureRandom.uuid
+      net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      first = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-OK", actor: @admin, recording_idempotency_key: key
+      )
+      assert first.success?, first.error
+      second = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-OK", actor: @admin, recording_idempotency_key: key
+      )
+      assert second.success?, second.error
+      assert_equal first.pos_tender.id, second.pos_tender.id
+      assert_equal key, first.pos_tender.recording_idempotency_key
+    end
+
+    test "same request UUID replays void_required tender" do
+      key = SecureRandom.uuid
       first = AddCardTender.call(
         pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
-        authorization_code: "AUTH-IDEM", actor: @admin
+        authorization_code: "AUTH-IDEM", actor: @admin, recording_idempotency_key: key
       )
       second = AddCardTender.call(
         pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
-        authorization_code: "AUTH-IDEM", actor: @admin
+        authorization_code: "AUTH-IDEM", actor: @admin, recording_idempotency_key: key
       )
       assert first.pos_tender.void_required?
+      assert second.requires_void_confirmation?
       assert_equal first.pos_tender.id, second.pos_tender.id
       assert_equal 1, @transaction.pos_tenders.void_required.count
+    end
+
+    test "distinct request UUIDs with identical refs create distinct void_required rows" do
+      first = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-SAME", actor: @admin, recording_idempotency_key: SecureRandom.uuid
+      )
+      second = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-SAME", actor: @admin, recording_idempotency_key: SecureRandom.uuid
+      )
+      assert first.pos_tender.void_required?
+      assert second.pos_tender.void_required?
+      refute_equal first.pos_tender.id, second.pos_tender.id
+      assert_equal 2, @transaction.pos_tenders.void_required.count
+    end
+
+    test "replay after void confirmation does not reattach" do
+      key = SecureRandom.uuid
+      mismatch = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-VOIDED-REPLAY", actor: @admin, recording_idempotency_key: key
+      )
+      assert mismatch.pos_tender.void_required?
+      assert RecordVoidedCardTender.call(
+        pos_tender: mismatch.pos_tender, actor: @admin, external_void_confirmed: true
+      ).success?
+
+      replay = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-VOIDED-REPLAY", actor: @admin, recording_idempotency_key: key
+      )
+      refute replay.success?
+      refute replay.requires_void_confirmation?
+      assert replay.pos_tender.voided?
+      assert_match(/already voided/, replay.error)
+      assert_equal 0, @transaction.pos_tenders.where(status: %w[authorized void_required]).count
     end
 
     test "void resolution succeeds when tender type is later deactivated" do

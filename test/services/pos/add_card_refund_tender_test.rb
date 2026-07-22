@@ -128,7 +128,8 @@ module Pos
 
       mismatch = AddCardRefundTender.call(
         pos_transaction: ret, tender_type: @card, amount_cents: due + 50, actor: @admin,
-        authorization_code: "RFND-VOID", original_pos_tender: sale_card
+        authorization_code: "RFND-VOID", original_pos_tender: sale_card,
+        recording_idempotency_key: SecureRandom.uuid
       )
       assert mismatch.pos_tender.void_required?
 
@@ -143,6 +144,26 @@ module Pos
       assert_equal "EXT-V1", tender.external_void_reference
       assert_equal due + 50, tender.amount_cents
     end
+
+    test "same request UUID replays void_required card refund" do
+      sale, sale_card = complete_card_sale(key: "sale-rfnd-idem")
+      ret, due = open_linked_return(sale, quantity: 1)
+      key = SecureRandom.uuid
+
+      first = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due + 100, actor: @admin,
+        authorization_code: "RFND-IDEM", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      )
+      second = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due + 100, actor: @admin,
+        authorization_code: "RFND-IDEM", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      )
+      assert first.pos_tender.void_required?
+      assert_equal first.pos_tender.id, second.pos_tender.id
+    end
+
 
 
     private

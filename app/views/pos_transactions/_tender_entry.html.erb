@@ -26,6 +26,7 @@
       <p class="muted">Confirm approval on the external terminal first; record the result here. Partial card tenders are allowed.</p>
       <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
         <%= hidden_field_tag :tender_type_id, card_type.id %>
+        <%= hidden_field_tag :recording_idempotency_key, SecureRandom.uuid %>
         <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
               id: "card_amount_cents_#{card_type.id}", value_cents: [ @balance_due_cents, 0 ].max %>
         <div class="field">
@@ -160,6 +161,7 @@
         <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
           <%= hidden_field_tag :refund, "1" %>
           <%= hidden_field_tag :tender_type_id, card_type.id %>
+          <%= hidden_field_tag :recording_idempotency_key, SecureRandom.uuid %>
           <% if refundable_card.any? %>
             <div class="field">
               <%= form.label :original_pos_tender_id, "Original card tender", class: "field-label" %>
