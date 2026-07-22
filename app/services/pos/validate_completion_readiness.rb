@@ -20,6 +20,10 @@ module Pos
       lines = @pos_transaction.pos_line_items.lock.pending.order(:position, :id).to_a
       raise Error, "transaction has no lines to complete" if lines.empty?
 
+      if @pos_transaction.pos_tenders.void_required.lock.exists?
+        raise Error, "cannot complete while void_required card tenders remain; confirm external voids first"
+      end
+
       tenders = @pos_transaction.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
       locked_originals = CompletionLockOrder.lock_related_originals!(lines, tenders)
 

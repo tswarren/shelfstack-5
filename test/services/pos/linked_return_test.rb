@@ -624,9 +624,9 @@ module Pos
       )
       refute card_tender.success?
       assert card_tender.requires_void_confirmation?
+      assert card_tender.pos_tender.void_required?
       assert RecordVoidedCardTender.call(
-        pos_transaction: mixed_card, tender_type: card, amount_cents: current_due + 50,
-        authorization_code: "MIXED-STALE", actor: @admin, external_void_confirmed: true
+        pos_tender: card_tender.pos_tender, actor: @admin, external_void_confirmed: true
       ).success?
       assert AddCardTender.call(
         pos_transaction: mixed_card, tender_type: card, amount_cents: current_due,

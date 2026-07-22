@@ -58,7 +58,7 @@ module Pos
       assert second.success?, second.error
     end
 
-    test "amount over remaining refund balance requires void confirmation" do
+    test "amount over remaining refund balance persists void_required tender" do
       sale, sale_card = complete_card_sale(key: "sale-mismatch-rfnd")
       ret, due = open_linked_return(sale, quantity: 1)
 
@@ -68,7 +68,10 @@ module Pos
       )
       refute result.success?
       assert result.requires_void_confirmation?
+      assert result.pos_tender.void_required?
+      assert_equal "RFND-BIG", result.pos_tender.authorization_code
     end
+
 
     test "required tender references are enforced" do
       sale, sale_card = complete_card_sale(key: "sale-refs")
@@ -94,10 +97,10 @@ module Pos
       )
       refute result.success?
       assert result.requires_void_confirmation?
+      assert result.pos_tender.void_required?
       assert_match(/restore remaining original|exception/i, result.error)
       assert RecordVoidedCardTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
-        direction: "refunded", authorization_code: "RFND-EXC", external_void_confirmed: true
+        pos_tender: result.pos_tender, actor: @admin, external_void_confirmed: true
       ).success?
     end
 
@@ -112,20 +115,25 @@ module Pos
       )
       refute result.success?
       assert result.requires_void_confirmation?
+      assert result.pos_tender.void_required?
       assert_match(/not linked/, result.error)
       assert RecordVoidedCardTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
-        direction: "refunded", authorization_code: "RFND-UNLINKED", external_void_confirmed: true
+        pos_tender: result.pos_tender, actor: @admin, external_void_confirmed: true
       ).success?
     end
 
-    test "record voided card refund retains refs after mismatch" do
-      sale, = complete_card_sale(key: "sale-voided-rfnd")
+    test "confirming void_required card refund retains refs after mismatch" do
+      sale, sale_card = complete_card_sale(key: "sale-voided-rfnd")
       ret, due = open_linked_return(sale, quantity: 1)
 
-      voided = RecordVoidedCardTender.call(
+      mismatch = AddCardRefundTender.call(
         pos_transaction: ret, tender_type: @card, amount_cents: due + 50, actor: @admin,
-        direction: "refunded", authorization_code: "RFND-VOID",
+        authorization_code: "RFND-VOID", original_pos_tender: sale_card
+      )
+      assert mismatch.pos_tender.void_required?
+
+      voided = RecordVoidedCardTender.call(
+        pos_tender: mismatch.pos_tender, actor: @admin,
         external_void_confirmed: true, external_void_reference: "EXT-V1"
       )
       assert voided.success?, voided.error
@@ -135,6 +143,7 @@ module Pos
       assert_equal "EXT-V1", tender.external_void_reference
       assert_equal due + 50, tender.amount_cents
     end
+
 
     private
 

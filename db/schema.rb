@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_260000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -646,6 +646,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_260000) do
     t.bigint "original_pos_tender_id"
     t.bigint "pos_approval_id"
     t.bigint "pos_transaction_id", null: false
+    t.string "recording_idempotency_key"
     t.text "remove_reason"
     t.datetime "removed_at"
     t.bigint "removed_by_user_id"
@@ -666,6 +667,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_260000) do
     t.index ["pos_approval_id"], name: "index_pos_tenders_on_pos_approval_id"
     t.index ["pos_transaction_id", "status"], name: "index_pos_tenders_on_pos_transaction_id_and_status"
     t.index ["pos_transaction_id"], name: "index_pos_tenders_on_pos_transaction_id"
+    t.index ["recording_idempotency_key"], name: "index_pos_tenders_on_recording_idempotency_key_unique", unique: true, where: "(recording_idempotency_key IS NOT NULL)"
     t.index ["removed_by_user_id"], name: "index_pos_tenders_on_removed_by_user_id"
     t.index ["reverses_pos_tender_id"], name: "index_pos_tenders_on_reverses_pos_tender_id"
     t.index ["reverses_pos_tender_id"], name: "index_pos_tenders_reverses_unique", unique: true, where: "(reverses_pos_tender_id IS NOT NULL)"
@@ -677,7 +679,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_260000) do
     t.check_constraint "amount_tendered_cents IS NULL OR amount_tendered_cents >= 0", name: "pos_tenders_amount_tendered_non_negative"
     t.check_constraint "change_due_cents IS NULL OR change_due_cents >= 0", name: "pos_tenders_change_due_non_negative"
     t.check_constraint "direction::text = ANY (ARRAY['received'::character varying::text, 'refunded'::character varying::text])", name: "pos_tenders_direction_check"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'authorized'::character varying::text, 'completed'::character varying::text, 'voided'::character varying::text, 'removed'::character varying::text])", name: "pos_tenders_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'authorized'::character varying::text, 'completed'::character varying::text, 'voided'::character varying::text, 'removed'::character varying::text, 'void_required'::character varying::text])", name: "pos_tenders_status_check"
   end
 
   create_table "pos_transactions", force: :cascade do |t|

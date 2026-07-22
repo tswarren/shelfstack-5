@@ -6,9 +6,8 @@ module Pos
   #
   # Amount must satisfy 0 < amount <= remaining received balance (unless the
   # tender type allows over-tender). Once tender-type references validate, any
-  # later business failure that prevents attachment returns
-  # `requires_void_confirmation?` so the UI can retain the refs via
-  # RecordVoidedCardTender.
+  # later business failure that prevents attachment persists a `void_required`
+  # tender so terminal activity is never discarded.
   class AddCardTender < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_tender, :success?, :error, :warnings, :requires_void_confirmation?)
@@ -29,23 +28,20 @@ module Pos
     def call
       refs = begin
         validate_structure_and_references!
-      rescue Error, ValidateTenderReferences::Error, TenderGuards::Error => e
+      rescue Error, ValidateTenderReferences::Error => e
         return failure(e.message, requires_void_confirmation: false)
       end
 
       attach_authorized!(refs)
     rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
-      failure(e.message, requires_void_confirmation: true)
+      retain_void_required_after_failure!(refs, e.message)
     end
 
     private
 
     def validate_structure_and_references!
-      raise Error, "transaction is not open" unless @pos_transaction.open?
       raise Error, "tender type must be card" unless @tender_type.tender_category == "card"
       raise Error, "amount must be positive" unless @amount_cents.positive?
-      TenderGuards.assert_active!(@tender_type)
-      TenderGuards.assert_payment_enabled!(@tender_type)
 
       ValidateTenderReferences.call(
         tender_type: @tender_type,
@@ -59,7 +55,13 @@ module Pos
     def attach_authorized!(refs)
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
-        raise Error, "transaction is not open" unless transaction.open?
+
+        unless transaction.open?
+          return retain_void_required!(transaction, refs, "transaction is not open")
+        end
+
+        TenderGuards.assert_active!(@tender_type)
+        TenderGuards.assert_payment_enabled!(@tender_type)
 
         recalculation = recalculate_for_tender!(transaction)
         TenderGuards.assert_no_calculation_blockers!(recalculation)
@@ -84,6 +86,29 @@ module Pos
           requires_void_confirmation?: false
         )
       end
+    end
+
+    def retain_void_required_after_failure!(refs, reason)
+      ActiveRecord::Base.transaction do
+        transaction = PosTransaction.lock.find(@pos_transaction.id)
+        retain_void_required!(transaction, refs, reason)
+      end
+    end
+
+    def retain_void_required!(transaction, refs, reason)
+      tender = RetainVoidRequiredCardTender.call(
+        pos_transaction: transaction,
+        tender_type: @tender_type,
+        amount_cents: @amount_cents,
+        direction: "received",
+        refs: refs,
+        actor: @actor,
+        reason: reason
+      )
+      Result.new(
+        pos_tender: tender, success?: false, error: reason, warnings: [],
+        requires_void_confirmation?: true
+      )
     end
 
     def recalculate_for_tender!(transaction)

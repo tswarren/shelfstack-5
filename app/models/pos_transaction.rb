@@ -50,14 +50,20 @@ class PosTransaction < ApplicationRecord
   end
 
   # Commercial editing (lines, prices, discounts, tax category, exemptions) is
-  # locked while a pending or authorized Tender exists (domain "Tender-state lock").
+  # locked while a pending or authorized Tender exists (domain "Tender-state lock"),
+  # or while terminal activity awaits void confirmation.
   def editable?
-    open? && !unresolved_tenders?
+    open? && !unresolved_tenders? && !void_required_tenders?
   end
 
   def unresolved_tenders?
     pos_tenders.where(status: %w[pending authorized]).exists?
   end
+
+  def void_required_tenders?
+    pos_tenders.void_required.exists?
+  end
+
 
   def tax_exempt?
     pos_tax_exemptions.exists?

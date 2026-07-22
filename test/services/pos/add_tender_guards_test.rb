@@ -22,17 +22,20 @@ module Pos
       )
     end
 
-    test "card tender exceeding balance requires void confirmation when over-tender is disallowed" do
+    test "card tender exceeding balance persists void_required tender" do
       result = AddCardTender.call(
         pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
         authorization_code: "AUTH1", actor: @admin
       )
       refute result.success?
       assert result.requires_void_confirmation?
+      assert result.pos_tender.void_required?
+      assert_equal "AUTH1", result.pos_tender.authorization_code
+      assert_equal 1500, result.pos_tender.amount_cents
       assert_match(/exceeds remaining balance/, result.error)
     end
 
-    test "zero remaining balance after valid refs requires void confirmation" do
+    test "zero remaining balance after valid refs persists void_required" do
       net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
       assert AddCashTender.call(
         pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
@@ -44,11 +47,12 @@ module Pos
       )
       refute result.success?
       assert result.requires_void_confirmation?
+      assert result.pos_tender.void_required?
       assert_match(/no balance due/, result.error)
       assert RecordVoidedCardTender.call(
-        pos_transaction: @transaction, tender_type: @card, amount_cents: 500, actor: @admin,
-        authorization_code: "AUTH-ZERO", external_void_confirmed: true
+        pos_tender: result.pos_tender, actor: @admin, external_void_confirmed: true
       ).success?
+      assert result.pos_tender.reload.voided?
     end
 
     test "partial card tender is accepted within remaining balance" do
@@ -66,15 +70,21 @@ module Pos
       assert remainder.success?, remainder.error
     end
 
-    test "record voided card tender retains refs after mismatch" do
+    test "confirming void_required tender records voided status" do
+      mismatch = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-VOID", actor: @admin
+      )
+      assert mismatch.pos_tender.void_required?
+
       voided = RecordVoidedCardTender.call(
-        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500, actor: @admin,
-        authorization_code: "AUTH-VOID", external_void_confirmed: true,
-        external_void_reference: "EXT-1"
+        pos_tender: mismatch.pos_tender, actor: @admin,
+        external_void_confirmed: true, external_void_reference: "EXT-1"
       )
       assert voided.success?, voided.error
       assert_equal "voided", voided.pos_tender.status
       assert_equal "AUTH-VOID", voided.pos_tender.authorization_code
+      assert_equal "EXT-1", voided.pos_tender.external_void_reference
       assert_equal 1500, voided.pos_tender.amount_cents
     end
 
@@ -85,6 +95,7 @@ module Pos
       )
       refute result.success?
       refute result.requires_void_confirmation?
+      assert_nil result.pos_tender
       assert_match(/required/i, result.error)
     end
 
@@ -95,6 +106,76 @@ module Pos
         authorization_code: "AUTH1", actor: @admin
       )
       assert result.success?, result.error
+    end
+
+    test "non-open transaction after valid refs persists void_required" do
+      SuspendTransaction.call(pos_transaction: @transaction, actor: @admin)
+      @transaction.reload
+
+      result = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 500,
+        authorization_code: "AUTH-SUSP", actor: @admin
+      )
+      refute result.success?
+      assert result.requires_void_confirmation?
+      assert result.pos_tender.void_required?
+      assert_equal "AUTH-SUSP", result.pos_tender.authorization_code
+      assert_match(/not open/, result.error)
+
+      assert RecordVoidedCardTender.call(
+        pos_tender: result.pos_tender, actor: @admin, external_void_confirmed: true
+      ).success?
+    end
+
+    test "void_required blocks complete suspend and cancel" do
+      mismatch = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-BLOCK", actor: @admin
+      )
+      assert mismatch.pos_tender.void_required?
+
+      complete = CompleteTransaction.call(
+        pos_transaction: @transaction, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "block-complete"
+      )
+      refute complete.success?
+      assert_match(/void_required/, complete.error)
+
+      suspend = SuspendTransaction.call(pos_transaction: @transaction, actor: @admin)
+      refute suspend.success?
+      assert_match(/void_required/, suspend.error)
+
+      cancel = CancelTransaction.call(pos_transaction: @transaction, actor: @admin)
+      refute cancel.success?
+      assert_match(/void_required/, cancel.error)
+    end
+
+    test "void_required retries are idempotent" do
+      first = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-IDEM", actor: @admin
+      )
+      second = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-IDEM", actor: @admin
+      )
+      assert first.pos_tender.void_required?
+      assert_equal first.pos_tender.id, second.pos_tender.id
+      assert_equal 1, @transaction.pos_tenders.void_required.count
+    end
+
+    test "void resolution succeeds when tender type is later deactivated" do
+      mismatch = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
+        authorization_code: "AUTH-INACTIVE", actor: @admin
+      )
+      @card.update!(active: false, payment_enabled: false)
+
+      result = RecordVoidedCardTender.call(
+        pos_tender: mismatch.pos_tender, actor: @admin, external_void_confirmed: true
+      )
+      assert result.success?, result.error
+      assert result.pos_tender.voided?
     end
 
     test "inactive tender type is rejected" do

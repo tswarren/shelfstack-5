@@ -1,54 +1,9 @@
-<% if @pos_transaction.open? %>
+<% if @pos_transaction.open? && !@pos_transaction.void_required_tenders? %>
   <% refundable = @refundable_original_tenders || [] %>
   <% refundable_sv = refundable.select { |t| t.tender_type.tender_category == "stored_value" } %>
   <% refundable_cash = refundable.select { |t| t.tender_type.tender_category == "cash" } %>
   <% refundable_card = refundable.select { |t| t.tender_type.tender_category == "card" } %>
   <% card_types = @tender_types.select { |t| t.tender_category == "card" } %>
-  <% void_confirm = @card_void_confirmation %>
-
-  <% if void_confirm.present? %>
-    <% void_type = @tender_types.find { |t| t.id == void_confirm["tender_type_id"] } %>
-    <details class="pos-panel" open>
-      <summary>Confirm external void (authorization not attachable)</summary>
-      <p class="muted">
-        <%= void_confirm["error"] %>
-        Void the authorization on the terminal, then record it as voided so the reference is retained.
-      </p>
-      <%= form_with url: record_voided_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :tender_type_id, void_confirm["tender_type_id"] %>
-        <%= hidden_field_tag :amount_cents, format("%.2f", void_confirm["amount_cents"].to_i / 100.0) %>
-        <%= hidden_field_tag :authorization_code, void_confirm["authorization_code"] %>
-        <%= hidden_field_tag :terminal_reference, void_confirm["terminal_reference"] %>
-        <% if void_confirm["refund"] %>
-          <%= hidden_field_tag :refund, "1" %>
-        <% end %>
-        <p>
-          <%= void_type&.name || "Card" %> ·
-          <%= number_to_currency(void_confirm["amount_cents"].to_i / 100.0) %>
-          <% if void_confirm["authorization_code"].present? %>
-            · <%= void_confirm["authorization_code"] %>
-          <% end %>
-          <% if void_confirm["terminal_reference"].present? %>
-            · <%= void_confirm["terminal_reference"] %>
-          <% end %>
-        </p>
-        <div class="field">
-          <%= form.label :external_void_reference, "External void reference (optional)", class: "field-label" %>
-          <%= form.text_field :external_void_reference, class: "input" %>
-        </div>
-        <div class="checkbox-group">
-          <label>
-            <%= check_box_tag :external_void_confirmed, "true", false %>
-            External void confirmed
-          </label>
-        </div>
-        <div class="form-actions">
-          <%= form.submit "Record voided card tender", class: "button button-danger",
-                data: { turbo_confirm: "Confirm the card was voided on the external terminal." } %>
-        </div>
-      <% end %>
-    </details>
-  <% end %>
 
   <details class="pos-panel" open>
     <summary>Cash tender</summary>

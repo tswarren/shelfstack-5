@@ -2,8 +2,9 @@
 
 class PosTendersController < ApplicationController
   before_action :set_transaction
-  before_action :set_tender, only: %i[destroy]
-  before_action -> { require_permission!(create_permission) }, only: %i[create record_voided]
+  before_action :set_tender, only: %i[destroy confirm_void]
+  before_action -> { require_permission!(create_permission) }, only: %i[create]
+  before_action -> { require_permission!("pos.tender.card_void") }, only: %i[confirm_void]
   before_action -> { require_permission!(destroy_permission) }, only: %i[destroy]
 
   def create
@@ -80,22 +81,15 @@ class PosTendersController < ApplicationController
       unsupported_tender_result("tender category '#{tender_type.tender_category}' is not supported")
     end
 
-    redirect_after_tender_result(result, tender_type: tender_type)
+    redirect_after_tender_result(result)
   rescue ArgumentError => e
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
-  def record_voided
-    tender_type = Current.organization.tender_types.find(params[:tender_type_id])
-    direction = params[:refund].present? ? "refunded" : "received"
+  def confirm_void
     result = Pos::RecordVoidedCardTender.call(
-      pos_transaction: @pos_transaction,
-      tender_type: tender_type,
-      amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+      pos_tender: @tender,
       actor: Current.user,
-      direction: direction,
-      authorization_code: params[:authorization_code],
-      terminal_reference: params[:terminal_reference].presence,
       external_void_confirmed: params[:external_void_confirmed],
       external_void_reference: params[:external_void_reference],
       void_reason: params[:void_reason]
@@ -127,25 +121,16 @@ class PosTendersController < ApplicationController
 
   private
 
-  def redirect_after_tender_result(result, tender_type:)
+  def redirect_after_tender_result(result)
     if result.success?
       notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
       redirect_to pos_transaction_path(@pos_transaction), notice: notice
     elsif result.respond_to?(:requires_void_confirmation?) && result.requires_void_confirmation?
-      flash[:card_void_confirmation] = {
-        "tender_type_id" => tender_type.id,
-        "amount_cents" => money_param_to_cents(params[:amount_cents], label: "Amount"),
-        "authorization_code" => params[:authorization_code].to_s,
-        "terminal_reference" => params[:terminal_reference].to_s,
-        "refund" => params[:refund].present?,
-        "error" => result.error
-      }
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction),
+                  alert: "#{result.error} Confirm the external void to clear the void-required tender."
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
-  rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def set_transaction
