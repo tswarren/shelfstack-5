@@ -8,6 +8,9 @@ module StoredValue
   # Permission (`stored_value.account.create`) is the caller's responsibility
   # (e.g. StoredValueAccountsController's `require_permission!`), matching how
   # PostLedgerEntry does not evaluate permission itself.
+  #
+  # Canonical account numbers and organization-scoped alternate identifiers share
+  # one occupation space so resolver lookups cannot become permanently ambiguous.
   class CreateAccount < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:account, :success?, :error)
@@ -23,18 +26,31 @@ module StoredValue
     def call
       raise Error, "unknown account_type: #{@account_type}" unless StoredValueAccount::ACCOUNT_TYPES.include?(@account_type)
 
+      normalized_alternate = StoredValueAccount.normalize_alternate_identifier(@alternate_identifier)
+
       account = nil
       ActiveRecord::Base.transaction do
+        if normalized_alternate.present? &&
+           StoredValueAccount.credential_occupied?(
+             organization_id: @organization.id, value: normalized_alternate
+           )
+          raise Error, "alternate identifier is already used as an account number or alternate identifier"
+        end
+
         identifier = Identifiers::Generate.call(
           namespace: "21",
-          occupied: ->(candidate) { StoredValueAccount.exists?(account_number: candidate) }
+          occupied: ->(candidate) {
+            StoredValueAccount.credential_occupied?(
+              organization_id: @organization.id, value: candidate
+            )
+          }
         )
 
         account = StoredValueAccount.create!(
           organization: @organization,
           account_type: @account_type,
           account_number: identifier,
-          alternate_identifier: @alternate_identifier,
+          alternate_identifier: normalized_alternate,
           status: "active",
           current_balance_cents: 0,
           created_by_user: @actor

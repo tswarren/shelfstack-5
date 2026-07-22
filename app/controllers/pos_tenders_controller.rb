@@ -3,8 +3,40 @@
 class PosTendersController < ApplicationController
   before_action :set_transaction
   before_action :set_tender, only: %i[destroy]
-  before_action -> { require_permission!(create_permission) }, only: %i[create]
+  before_action -> { require_permission!(create_permission) }, only: %i[create prepare_card_refund]
   before_action -> { require_permission!(destroy_permission) }, only: %i[destroy]
+
+  def prepare_card_refund
+    tender_type = Current.organization.tender_types.find(params[:tender_type_id])
+    amount_cents = money_param_to_cents(params[:amount_cents], label: "Refund amount")
+    result = Pos::PrepareCardRefund.call(
+      pos_transaction: @pos_transaction,
+      tender_type: tender_type,
+      amount_cents: amount_cents,
+      actor: Current.user,
+      original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
+      exception_approver: exception_approver_from_params,
+      exception_approver_pin: params[:exception_approver_pin]
+    )
+
+    if result.ready?
+      session[:card_refund_prepared] = {
+        "transaction_id" => @pos_transaction.id,
+        "tender_type_id" => tender_type.id,
+        "amount_cents" => amount_cents,
+        "original_pos_tender_id" => result.original_pos_tender&.id,
+        "exception_approver_username" => params[:exception_approver_username].presence,
+        "prepared_at" => Time.current.iso8601
+      }
+      redirect_to pos_transaction_path(@pos_transaction),
+                  notice: "Card refund plan ready — process the terminal refund, then record the authorization below."
+    else
+      session.delete(:card_refund_prepared)
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+  end
 
   def create
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
@@ -29,7 +61,7 @@ class PosTendersController < ApplicationController
       end
     when "card"
       if params[:refund].present?
-        Pos::AddCardRefundTender.call(
+        result = Pos::AddCardRefundTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
           authorization_code: params[:authorization_code],
@@ -39,6 +71,8 @@ class PosTendersController < ApplicationController
           exception_approver: exception_approver_from_params,
           exception_approver_pin: params[:exception_approver_pin]
         )
+        session.delete(:card_refund_prepared) if result.success?
+        result
       else
         Pos::AddCardTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
@@ -80,8 +114,14 @@ class PosTendersController < ApplicationController
     end
 
     if result.success?
-      notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      if result.respond_to?(:requires_reconciliation) && result.requires_reconciliation
+        redirect_to pos_transaction_path(@pos_transaction),
+                    alert: "Card refund recorded for reconciliation: #{Array(result.warnings).join('; ')}. " \
+                           "Complete is blocked until the tender is voided or cleared."
+      else
+        notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
+        redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      end
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end

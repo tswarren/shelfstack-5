@@ -25,6 +25,8 @@ class StoredValueAccount < ApplicationRecord
   validates :current_balance_cents, presence: true,
             numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :account_number_is_generated_21
+  validate :alternate_identifier_not_canonical_collision
+  validate :account_number_not_alternate_collision
 
   scope :active, -> { where(status: "active") }
   scope :suspended, -> { where(status: "suspended") }
@@ -54,6 +56,18 @@ class StoredValueAccount < ApplicationRecord
     raw.to_s.strip.gsub(/[\s\-]/, "").downcase.presence
   end
 
+  # True when any account in the organization already uses this value as a
+  # canonical account number or alternate identifier (optionally excluding one id).
+  def self.credential_occupied?(organization_id:, value:, excluding_id: nil)
+    normalized = normalize_alternate_identifier(value) || value.to_s
+    return false if normalized.blank?
+
+    scope = where(organization_id: organization_id)
+      .where("account_number = :value OR alternate_identifier = :value", value: normalized)
+    scope = scope.where.not(id: excluding_id) if excluding_id
+    scope.exists?
+  end
+
   def account_number_is_generated_21
     return if account_number.blank?
 
@@ -61,5 +75,25 @@ class StoredValueAccount < ApplicationRecord
     return if normalized.type == :generated_21 && normalized.validation_status == :valid
 
     errors.add(:account_number, "must be a valid generated namespace 21 EAN-13")
+  end
+
+  def alternate_identifier_not_canonical_collision
+    return if alternate_identifier.blank?
+
+    collision = organization.stored_value_accounts
+      .where(account_number: alternate_identifier)
+      .where.not(id: id)
+      .exists?
+    errors.add(:alternate_identifier, "matches an existing account number") if collision
+  end
+
+  def account_number_not_alternate_collision
+    return if account_number.blank?
+
+    collision = organization.stored_value_accounts
+      .where(alternate_identifier: account_number)
+      .where.not(id: id)
+      .exists?
+    errors.add(:account_number, "matches an existing alternate identifier") if collision
   end
 end

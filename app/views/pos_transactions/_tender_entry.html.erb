@@ -125,7 +125,7 @@
                   refundable_cash.map { |t|
                     [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
                   },
-                  { include_blank: refundable_sv.any? || refundable_cash.many? ? "Select original… (or exception below)" : false },
+                  { include_blank: "Select original… (or exception below)" },
                   class: "input" %>
           </div>
         <% end %>
@@ -140,14 +140,19 @@
   <% end %>
 
   <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.card_standalone", store: Current.store) && @tender_types.where(tender_category: "card").exists? %>
-    <details class="pos-panel">
+    <details class="pos-panel" <%= "open" if @card_refund_prepared.present? %>>
       <summary>Card refund</summary>
-      <p class="muted">Process the refund on the external terminal first, then record it here linked to the original card tender.</p>
-      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :refund, "1" %>
+      <p class="muted">
+        Prepare the refund plan here first. Only after the plan is ready should you process the
+        refund on the external terminal, then record the authorization.
+      </p>
+
+      <% prepared = @card_refund_prepared %>
+      <%= form_with url: prepare_card_refund_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
         <div class="field">
           <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
-          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name, {}, class: "input" %>
+          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name,
+                { selected: prepared&.dig("tender_type_id") }, class: "input" %>
         </div>
         <% if refundable_card.any? %>
           <div class="field">
@@ -156,24 +161,48 @@
                   refundable_card.map { |t|
                     [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
                   },
-                  { include_blank: "Select original… (or exception below)" },
+                  { include_blank: "Select original… (or exception below)", selected: prepared&.dig("original_pos_tender_id") },
                   class: "input" %>
           </div>
         <% end %>
         <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
-              id: "card_refund_amount_cents", value_cents: -@balance_due_cents %>
-        <div class="field">
-          <%= form.label :authorization_code, "Refund authorization code", class: "field-label" %>
-          <%= form.text_field :authorization_code, class: "input", required: true %>
-        </div>
-        <div class="field">
-          <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
-          <%= form.text_field :terminal_reference, class: "input" %>
-        </div>
-        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "card" %>
+              id: "card_refund_prepare_amount_cents",
+              value_cents: prepared&.dig("amount_cents") || -@balance_due_cents %>
+        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "card_prepare" %>
         <div class="form-actions">
-          <%= form.submit "Add card refund", class: "button button-outline" %>
+          <%= form.submit "Prepare card refund plan", class: "button button-outline" %>
         </div>
+      <% end %>
+
+      <% if prepared.present? %>
+        <p class="flash flash-notice" role="status">
+          Plan ready for <%= number_to_currency(prepared["amount_cents"] / 100.0) %>.
+          Process the terminal refund now, then record the authorization.
+        </p>
+        <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+          <%= hidden_field_tag :refund, "1" %>
+          <%= hidden_field_tag :tender_type_id, prepared["tender_type_id"] %>
+          <%= hidden_field_tag :original_pos_tender_id, prepared["original_pos_tender_id"] if prepared["original_pos_tender_id"].present? %>
+          <%= hidden_field_tag :amount_cents, format("%.2f", prepared["amount_cents"] / 100.0) %>
+          <% if prepared["exception_approver_username"].present? %>
+            <%= hidden_field_tag :exception_approver_username, prepared["exception_approver_username"] %>
+          <% end %>
+          <div class="field">
+            <%= form.label :exception_approver_pin, "Approver PIN (if exception was prepared)", class: "field-label" %>
+            <%= password_field_tag :exception_approver_pin, nil, class: "input", autocomplete: "off" %>
+          </div>
+          <div class="field">
+            <%= form.label :authorization_code, "Refund authorization code", class: "field-label" %>
+            <%= form.text_field :authorization_code, class: "input", required: true %>
+          </div>
+          <div class="field">
+            <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
+            <%= form.text_field :terminal_reference, class: "input" %>
+          </div>
+          <div class="form-actions">
+            <%= form.submit "Record authorized card refund", class: "button button-primary" %>
+          </div>
+        <% end %>
       <% end %>
     </details>
   <% end %>

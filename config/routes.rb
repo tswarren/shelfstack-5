@@ -129,7 +129,11 @@ Rails.application.routes.draw do
     end
     resources :pos_discounts, only: %i[create destroy]
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
-    resources :pos_tenders, only: %i[create destroy]
+    resources :pos_tenders, only: %i[create destroy] do
+      collection do
+        post :prepare_card_refund
+      end
+    end
   end
 
   root "homes#show"
