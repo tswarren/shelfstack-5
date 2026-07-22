@@ -159,6 +159,148 @@ module Pos
       assert completed.success?, completed.error
     end
 
+    test "recalculation blocker prevents validated_and_accepted" do
+      tender, prep, ret = prepare_recon_refund!
+      # Unresolved recon tenders lock commercial edits; plant a sale line that
+      # cannot tax-calculate so readiness sees recalculation blockers.
+      open_ring = PosLineItem.create!(
+        pos_transaction: ret,
+        line_kind: "open_ring",
+        direction: "sale",
+        status: "pending",
+        quantity: 1,
+        unit_price_cents: 500,
+        department: departments(:unconfigured_tax_department),
+        tax_category: tax_categories(:unconfigured_category),
+        description_snapshot: "unconfigured open ring",
+        position: ret.pos_line_items.maximum(:position).to_i + 1,
+        created_by_user: @admin
+      )
+      assert open_ring.persisted?
+      recalc = RecalculateTransaction.call(pos_transaction: ret.reload)
+      assert recalc.blockers.any?, "expected recalculation blockers from unconfigured tax"
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :validated_and_accepted,
+        reason: "confirm",
+        exception_approver: @admin,
+        exception_approver_pin: "1234"
+      )
+      refute denied.success?
+      assert_match(/tax|effective store tax/i, denied.error)
+      assert tender.reload.requires_reconciliation?
+      assert_nil prep.reload.resolved_at
+    end
+
+    test "post-voided original prevents validated_and_accepted" do
+      tender, prep, = prepare_recon_refund!
+      assert tender.original_pos_tender_id.present?
+      sale = tender.original_pos_tender.pos_transaction
+      store = Store.lock.find(@store.id)
+      seq = store.next_receipt_sequence
+      store.update!(next_receipt_sequence: seq + 1)
+      PosTransaction.create!(
+        store: @store,
+        origin_pos_session: @session,
+        cashier_user: @admin,
+        public_id: "PV-#{SecureRandom.hex(4)}",
+        opened_at: Time.current,
+        status: "completed",
+        completed_at: Time.current,
+        completed_by_user: @admin,
+        completed_pos_session: @session,
+        receipt_number: "#{@store.code}-PV#{seq}",
+        receipt_sequence: seq,
+        reverses_pos_transaction: sale,
+        net_total_cents: 0,
+        subtotal_cents: 0,
+        tax_total_cents: 0,
+        discount_total_cents: 0
+      )
+      assert sale.reload.post_voided?
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :validated_and_accepted,
+        reason: "confirm",
+        exception_approver: @admin,
+        exception_approver_pin: "1234"
+      )
+      refute denied.success?
+      assert_match(/post-voided/, denied.error)
+      assert tender.reload.requires_reconciliation?
+    end
+
+    test "inflated return quantity with matched settlement fails returnable check" do
+      tender, prep, ret = prepare_recon_refund!
+      line = ret.pos_line_items.pending.first
+      line.update_columns(quantity: line.quantity + 1)
+      recalc = RecalculateTransaction.call(pos_transaction: ret.reload)
+      tender.update_columns(amount_cents: -recalc.net_total_cents)
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :validated_and_accepted,
+        reason: "confirm",
+        exception_approver: @admin,
+        exception_approver_pin: "1234"
+      )
+      refute denied.success?
+      assert_match(/return quantity exceeds/, denied.error)
+      assert tender.reload.requires_reconciliation?
+    end
+
+    test "replaced without recorded replacement is denied" do
+      _, prep, = prepare_recon_refund!
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :replaced,
+        reason: "redo terminal"
+      )
+      refute denied.success?
+      assert_match(/replacement card refund/, denied.error)
+    end
+
+    test "replaced voids recon tender only after later replacement is recorded" do
+      tender, prep, ret = prepare_recon_refund!
+      replacement = plant_replacement_tender!(
+        ret,
+        amount_cents: tender.amount_cents,
+        after: tender.authorized_at
+      )
+
+      resolved = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :replaced,
+        reason: "terminal re-run completed",
+        replacement_pos_tender: replacement
+      )
+      assert resolved.success?, resolved.error
+      assert_equal "voided", tender.reload.status
+      assert_equal "replaced", prep.reload.resolution_kind
+      assert_equal "authorized", replacement.reload.status
+    end
+
+    test "externally_voided requires external void reference" do
+      _, prep, = prepare_recon_refund!
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :externally_voided,
+        reason: "voided on terminal"
+      )
+      refute denied.success?
+      assert_match(/external void reference/, denied.error)
+    end
+
     test "over-capacity acceptance stores resolution_pos_approval_id" do
       sale_line, card_tender = complete_card_sale(quantity: 1, key: "res-appr")
       ret = open_return(sale_line, quantity: 1)
@@ -236,6 +378,40 @@ module Pos
         return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
       ).success?
       ret
+    end
+
+    def plant_replacement_tender!(ret, amount_cents:, after:)
+      consumed_at = after + 1.second
+      replacement = PosTender.create!(
+        pos_transaction: ret,
+        store: @store,
+        tender_type: @card,
+        direction: "refunded",
+        status: "authorized",
+        amount_cents: amount_cents,
+        authorization_code: "REPL-#{SecureRandom.hex(2)}",
+        authorized_at: consumed_at,
+        requires_reconciliation: false,
+        created_by_user: @admin
+      )
+      PosCardRefundPreparation.create!(
+        pos_transaction: ret,
+        tender_type: @card,
+        amount_cents: amount_cents,
+        plan_snapshot: { "planted" => true },
+        plan_fingerprint: "planted-#{SecureRandom.hex(4)}",
+        fingerprint_version: 1,
+        status: "recorded_tender",
+        expires_at: consumed_at + 30.minutes,
+        prepared_by_user: @admin,
+        recorded_by_user: @admin,
+        pos_tender: replacement,
+        authorization_code: replacement.authorization_code,
+        authorized_at: consumed_at,
+        consumed_at: consumed_at,
+        requires_reconciliation: false
+      )
+      replacement
     end
   end
 end

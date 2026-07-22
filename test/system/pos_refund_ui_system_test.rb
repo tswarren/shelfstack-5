@@ -159,11 +159,9 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
       fill_in "card_refund_prepare_amount_cents", with: format("%.2f", due / 100.0)
       click_button "Prepare card refund plan"
     end
-    assert_text(/outstanding|Abandon/i)
-
-    within_panel("Card refund") do
-      accept_confirm(/Abandon only if/) { click_button "Abandon preparation" }
-    end
+    assert_button "Abandon preparation"
+    # Turbo replaces the Card refund panel after prepare; click outside a stale within().
+    accept_confirm(/Abandon only if/) { click_button "Abandon preparation" }
     assert_text(/abandoned/i)
     refute ret.reload.card_refund_preparation_outstanding?
   end
@@ -180,6 +178,117 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
       click_button "Redeem stored value"
     end
     assert_text(/required|not found|account/i)
+  end
+
+  test "resolve reconciliation tender via validated_and_accepted" do
+    sign_in_and_open_session!
+    sale = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+    Pos::AddCardTender.call(
+      pos_transaction: sale, tender_type: @card, amount_cents: net,
+      authorization_code: "SALE-RECON-UI", actor: @admin
+    )
+    assert Pos::CompleteTransaction.call(
+      pos_transaction: sale, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ui-recon-sale"
+    ).success?
+    sale_line = sale.pos_line_items.where(status: "completed").first
+    card_tender = sale.pos_tenders.where(status: "completed").first
+
+    ret = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    assert Pos::AddLinkedReturnLine.call(
+      pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+      return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+    ).success?
+    due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+    prep = Pos::PrepareCardRefund.call(
+      pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+      original_pos_tender: card_tender
+    ).preparation
+    prep.update_columns(expires_at: 1.hour.ago)
+    recorded = Pos::AddCardRefundTender.call(
+      preparation: prep, authorization_code: "RFND-RECON-UI", actor: @admin
+    )
+    assert recorded.requires_reconciliation
+
+    visit pos_transaction_path(ret)
+    within_panel("Resolve card refund reconciliation") do
+      select "Validated and accepted", from: "Outcome"
+      fill_in "Reason", with: "terminal confirmed"
+      fill_in "Exception approver (for accepted outcomes)", with: "admin"
+      fill_in "Approver PIN", with: "1234"
+      click_button "Resolve reconciliation"
+    end
+    assert_text(/reconciliation resolved/i)
+    refute recorded.pos_tender.reload.requires_reconciliation?
+  end
+
+  test "resolve orphan via external void on queue page" do
+    sign_in_and_open_session!
+    sale = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+    Pos::AddCardTender.call(
+      pos_transaction: sale, tender_type: @card, amount_cents: net,
+      authorization_code: "SALE-ORPH-UI", actor: @admin
+    )
+    assert Pos::CompleteTransaction.call(
+      pos_transaction: sale, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ui-orph-sale"
+    ).success?
+    sale_line = sale.pos_line_items.where(status: "completed").first
+    card_tender = sale.pos_tenders.where(status: "completed").first
+
+    ret = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    assert Pos::AddLinkedReturnLine.call(
+      pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+      return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+    ).success?
+    due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+    prep = Pos::PrepareCardRefund.call(
+      pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+      original_pos_tender: card_tender
+    ).preparation
+    assert Pos::AbandonCardRefundPreparation.call(preparation: prep, actor: @admin).success?
+    assert Pos::AddCardRefundTender.call(
+      preparation: prep.reload, authorization_code: "ORPH-UI-1", actor: @admin
+    ).success?
+
+    visit pos_card_refund_orphans_path
+    assert_text "ORPH-UI-1"
+    within("tr", text: "ORPH-UI-1") do
+      select "External void confirmed", from: "resolution_kind"
+      fill_in "reason", with: "voided at terminal"
+      fill_in "external_void_reference", with: "VOID-UI-1"
+      click_button "Resolve"
+    end
+    assert_text(/resolved/i)
+    refute PosCardRefundPreparation.unresolved_orphans.exists?(id: prep.id)
+  end
+
+  test "stored value redeem resolves canonical and alternate identifiers" do
+    sign_in_and_open_session!
+    txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
+    visit pos_transaction_path(txn)
+
+    within_panel("Stored-value tender") do
+      fill_in "Account number", with: @account.account_number
+      fill_in "sv_tender_amount_cents", with: "1.00"
+      click_button "Redeem stored value"
+    end
+    assert_selector ".flash, [role='status'], .notice", text: /Tender recorded|recorded/i
+
+    txn2 = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: txn2, product_variant: @variant, quantity: 1, actor: @admin)
+    visit pos_transaction_path(txn2)
+    within_panel("Stored-value tender") do
+      fill_in "Account number", with: @account.alternate_identifier
+      fill_in "sv_tender_amount_cents", with: "1.00"
+      click_button "Redeem stored value"
+    end
+    assert_selector ".flash, [role='status'], .notice", text: /Tender recorded|recorded/i
   end
 
   test "store recovery form records late authorization as orphan" do
@@ -226,9 +335,18 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
   private
 
   def within_panel(summary_text, &block)
-    details = find("details", text: /#{Regexp.escape(summary_text)}/i, match: :first)
-    page.execute_script("arguments[0].open = true", details.native)
-    within(details, &block)
+    # Turbo stream updates can replace the details node between find and use.
+    attempts = 0
+    begin
+      attempts += 1
+      details = find("details", text: /#{Regexp.escape(summary_text)}/i, match: :first)
+      page.execute_script("arguments[0].open = true", details.native)
+      within(details, &block)
+    rescue Selenium::WebDriver::Error::StaleElementReferenceError
+      raise if attempts >= 3
+
+      retry
+    end
   end
 
   def select_option_value(name, value)

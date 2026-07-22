@@ -19,7 +19,8 @@ module Pos
       reason:,
       external_void_reference: nil,
       exception_approver: nil,
-      exception_approver_pin: nil
+      exception_approver_pin: nil,
+      replacement_pos_tender: nil
     )
       @preparation = preparation
       @pos_tender = pos_tender
@@ -29,6 +30,7 @@ module Pos
       @external_void_reference = external_void_reference.presence
       @exception_approver = exception_approver
       @exception_approver_pin = exception_approver_pin
+      @replacement_pos_tender = replacement_pos_tender
     end
 
     def call
@@ -51,12 +53,26 @@ module Pos
 
         assert_permission!(transaction.store, RECONCILE_PERMISSION)
 
+        replacement = nil
         case @outcome
-        when :externally_voided, :replaced
+        when :externally_voided
           assert_permission!(transaction.store, "pos.tender.card_void")
-          void_tender!(tender)
+          raise Error, "external void reference is required" if @external_void_reference.blank?
+          void_tender!(tender, resolve_preparation: false)
           preparation.update!(
-            resolution_kind: @outcome.to_s,
+            resolution_kind: "externally_voided",
+            resolved_at: Time.current,
+            resolved_by_user: @actor,
+            resolution_reason: @reason,
+            external_void_reference: @external_void_reference,
+            requires_reconciliation: false
+          )
+        when :replaced
+          assert_permission!(transaction.store, "pos.tender.card_void")
+          replacement = resolve_replacement_tender!(transaction, tender)
+          void_tender!(tender, resolve_preparation: false)
+          preparation.update!(
+            resolution_kind: "replaced",
             resolved_at: Time.current,
             resolved_by_user: @actor,
             resolution_reason: @reason,
@@ -79,6 +95,7 @@ module Pos
             "outcome" => @outcome.to_s,
             "reason" => @reason,
             "external_void_reference" => @external_void_reference,
+            "replacement_pos_tender_id" => replacement&.id,
             "original_pos_tender_id" => tender.reload.original_pos_tender_id,
             "pos_approval_id" => tender.pos_approval_id,
             "resolution_pos_approval_id" => preparation.resolution_pos_approval_id
@@ -173,16 +190,54 @@ module Pos
       raise Error, auth.error || "card refund acceptance requires exception approval"
     end
 
-    def void_tender!(tender)
+    def void_tender!(tender, resolve_preparation:)
       removed = RemoveTender.call(
         pos_tender: tender,
         actor: @actor,
         reason: @reason,
         external_void_confirmed: true,
         external_void_reference: @external_void_reference,
-        resolve_card_refund_preparation: true
+        resolve_card_refund_preparation: resolve_preparation
       )
       raise Error, removed.error unless removed.success?
+    end
+
+    # Replaced is not a silent clear: a distinct authorized card-refund tender from
+    # a later preparation must already exist on the transaction.
+    def resolve_replacement_tender!(transaction, tender)
+      scope = PosCardRefundPreparation
+        .joins(:pos_tender)
+        .where(
+          pos_transaction_id: transaction.id,
+          status: "recorded_tender",
+          pos_tenders: {
+            direction: "refunded",
+            status: "authorized",
+            requires_reconciliation: false
+          }
+        )
+        .where.not(pos_tender_id: tender.id)
+        .where("pos_card_refund_preparations.consumed_at > ?", tender.authorized_at || tender.created_at)
+
+      prep =
+        if @replacement_pos_tender
+          scope.find_by(pos_tender_id: @replacement_pos_tender.id)
+        else
+          scope.order("pos_card_refund_preparations.consumed_at ASC").first
+        end
+
+      if prep.blank?
+        raise Error,
+              "replaced requires a recorded replacement card refund " \
+              "(new preparation + authorization) on this transaction"
+      end
+
+      replacement = prep.pos_tender
+      if replacement.amount_cents != tender.amount_cents
+        raise Error, "replacement tender amount must match the tender being replaced"
+      end
+
+      replacement
     end
 
     def assert_permission!(store, key)

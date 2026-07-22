@@ -92,6 +92,15 @@ module StoredValue
       assert_equal "immutablealt1", account.reload.alternate_identifier
     end
 
+    test "alternate uniqueness index is organization scoped" do
+      index = ActiveRecord::Base.connection.indexes(:stored_value_accounts).find { |i|
+        i.columns == %w[organization_id alternate_identifier]
+      }
+      assert index, "expected unique index on organization_id + alternate_identifier"
+      assert index.unique
+      assert_match(/alternate_identifier IS NOT NULL/, index.where.to_s)
+    end
+
     private
 
     def compose_ean13(namespace, payload)

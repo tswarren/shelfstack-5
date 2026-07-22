@@ -134,6 +134,9 @@ class PosTendersController < ApplicationController
 
   def resolve_reconciliation
     preparation = @pos_transaction.pos_card_refund_preparations.find_by!(pos_tender_id: @tender.id)
+    replacement = if params[:replacement_pos_tender_id].present?
+      @pos_transaction.pos_tenders.find_by(id: params[:replacement_pos_tender_id])
+    end
     result = Pos::ResolveCardRefundTenderReconciliation.call(
       preparation: preparation,
       actor: Current.user,
@@ -141,7 +144,8 @@ class PosTendersController < ApplicationController
       reason: params.require(:reason),
       external_void_reference: params[:external_void_reference],
       exception_approver: exception_approver_from_params,
-      exception_approver_pin: params[:exception_approver_pin]
+      exception_approver_pin: params[:exception_approver_pin],
+      replacement_pos_tender: replacement
     )
     if result.success?
       redirect_to pos_transaction_path(@pos_transaction), notice: "Card refund reconciliation resolved."

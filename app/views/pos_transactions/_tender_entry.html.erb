@@ -229,17 +229,25 @@
                 options_for_select([
                   [ "Externally voided", "externally_voided" ],
                   [ "Validated and accepted", "validated_and_accepted" ],
-                  [ "Replaced (void then re-prepare)", "replaced" ]
+                  [ "Replaced (requires recorded replacement tender)", "replaced" ]
                 ]),
                 class: "input" %>
         </div>
+        <p class="muted">
+          Replaced voids this tender only after a newer preparation has already been
+          authorized as a non-reconciliation replacement on this return.
+        </p>
         <div class="field">
           <%= form.label :reason, "Reason", class: "field-label" %>
           <%= text_field_tag :reason, nil, class: "input", required: true %>
         </div>
         <div class="field">
-          <%= form.label :external_void_reference, "External void reference", class: "field-label" %>
+          <%= form.label :external_void_reference, "External void reference (required for external void)", class: "field-label" %>
           <%= text_field_tag :external_void_reference, nil, class: "input" %>
+        </div>
+        <div class="field">
+          <%= form.label :replacement_pos_tender_id, "Replacement tender id (optional if only one candidate)", class: "field-label" %>
+          <%= text_field_tag :replacement_pos_tender_id, nil, class: "input", autocomplete: "off" %>
         </div>
         <div class="field">
           <%= form.label :exception_approver_username, "Exception approver (for accepted outcomes)", class: "field-label" %>

@@ -49,6 +49,26 @@ class PosCardRefundOrphansControllerTest < ActionDispatch::IntegrationTest
     assert PosCardRefundPreparation.unresolved_orphans.exists?(id: prep.id)
   end
 
+  test "record authorization ignores client amount and original tender params" do
+    post session_path, params: { username: "admin", password: "password123" }
+    prep = abandoned_preparation!
+    original_amount = prep.amount_cents
+
+    post record_authorization_pos_card_refund_orphans_path, params: {
+      preparation_id: prep.id,
+      authorization_code: "LATE-TAMPER-1",
+      amount_cents: "999.99",
+      original_pos_tender_id: 0,
+      plan_fingerprint: "client-forged"
+    }
+    assert_redirected_to pos_card_refund_orphans_path
+    prep.reload
+    assert prep.recorded_orphan?
+    assert_equal original_amount, prep.amount_cents
+    assert_equal "LATE-TAMPER-1", prep.authorization_code
+    refute_equal "client-forged", prep.plan_fingerprint
+  end
+
   test "resolve orphan as financial exception links resolution approval" do
     post session_path, params: { username: "admin", password: "password123" }
     prep = abandoned_preparation!
