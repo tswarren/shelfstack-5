@@ -1,8 +1,8 @@
 # Workflow: Suspend and Recall Transaction
 
-**Status:** Delivered in Phase 4a  
+**Status:** Delivered in Phase 4a; card recovery under ADR-0016  
 **Type:** Record-level workflow  
-**Governing:** ADR-0010; [point-of-sale](../domains/point-of-sale.md)
+**Governing:** ADR-0010, ADR-0016; [point-of-sale](../domains/point-of-sale.md)
 
 ## Purpose
 
@@ -10,7 +10,7 @@ Park an open Transaction with Reservations held, clear active session control, a
 
 ## Sequence
 
-1. `Pos::SuspendTransaction` — status `suspended`; reservations remain; blocked if unresolved tenders exist (4c).
+1. `Pos::SuspendTransaction` — status `suspended`; reservations remain; blocked if unresolved tenders exist (4c) or if any `void_required` card tenders remain (ADR-0016).
 2. Session may close while suspended Transactions remain (open Transactions block close).
 3. `Pos::RecallTransaction` on a new open Session — sets `active_pos_session_id`; only one register may control a Transaction at a time.
 4. Later completion reports to the completing Session / its Business Day.
@@ -18,3 +18,4 @@ Park an open Transaction with Reservations held, clear active session control, a
 ## Related
 
 - [pos-completion.md](pos-completion.md)
+- [cancel-transaction.md](cancel-transaction.md)

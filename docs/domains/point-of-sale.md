@@ -11,6 +11,7 @@
 - [ADR-0010: Distinguish Business Days, Sessions, Devices, Drawers, and Z Reports](../adr/0010-business-days-sessions-and-z-reports.md)
 - [ADR-0011: Separate Permissions, Numeric Authority, and Approval Events](../adr/0011-permissions-authority-and-approvals.md)
 - [ADR-0012: Govern Stored Value Through Independent Accounts and an Append-Only Ledger](../adr/0012-stored-value-ledger.md)
+- [ADR-0016: Treat Standalone Card Activity as Operator-Confirmed External Records](../adr/0016-treat-standalone-credit-card-activity.md)
 
 ## Purpose
 
@@ -272,6 +273,22 @@ received
 refunded
 ```
 
+Tender statuses:
+
+```text
+pending
+authorized
+completed
+void_required
+voided
+removed
+```
+
+* `pending` and `authorized` are unresolved and participate in provisional settlement calculations;
+* `completed` settles history;
+* `void_required` is non-settling but operationally blocking (complete, suspend, and cancel stay blocked until resolved);
+* `voided` and `removed` are historical, non-settling states.
+
 Only completed Tenders settle a Transaction.
 
 ```text
@@ -282,13 +299,13 @@ completed received Tenders
 
 ### Tender-state lock
 
-Once a pending or authorized Tender exists:
+Once a pending, authorized, or `void_required` Tender exists:
 
 * line additions, removals, quantities, prices, Discounts, Tax Categories, exemptions, and other tax-affecting fields are locked;
-* the cashier must remove the Tender or confirm the required external void before commercial editing may resume;
+* the cashier must remove the Tender, resolve `void_required` via external-void confirmation, or confirm the required external void before commercial editing may resume;
 * changing an authorized standalone-card amount requires voiding or reprocessing it externally.
 
-`CompleteTransaction` revalidates the current calculation under Transaction lock and requires completed Tender net to equal the final Transaction net.
+`CompleteTransaction` revalidates the current calculation under Transaction lock and requires completed Tender net to equal the final Transaction net. No `void_required` tenders may remain.
 
 ### Cash
 
@@ -401,7 +418,8 @@ Audit Transaction lifecycle, line removal, Price Override, Discount, tax exempti
 - Tender net equals Transaction net.
 - Discount Allocations reconcile.
 - Tax components reconcile.
-- Pending or authorized Tenders lock commercial editing until cleared.
+- Pending, authorized, or `void_required` Tenders lock commercial editing until cleared.
+- Validated unattachable card activity is retained as `void_required` until external-void confirmation (ADR-0016).
 - Linked Returns do not exceed remaining quantity.
 - Customer Return does not alter original Line.
 - Post-Void is a new full reversing Transaction.

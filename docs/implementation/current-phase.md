@@ -19,7 +19,7 @@
 
 ## Completed recently
 
-- Phase 6 card terminal simplification: thin `AddCardTender` / `AddCardRefundTender` / durable `void_required` → `RecordVoidedCardTender` / `VoidCardTender` / Policy A `ApprovePostVoid` + confirmation audits before `PostVoidTransaction`; prep tables removed.
+- Phase 6 card terminal recording under [ADR-0016](../adr/0016-treat-standalone-credit-card-activity.md): thin `AddCardTender` / `AddCardRefundTender` / durable `void_required` → `RecordVoidedCardTender` / `VoidCardTender` / Policy A `ApprovePostVoid` + confirmation audits before `PostVoidTransaction`; prep tables removed.
 - Phase 6 #36 hardening: shared `ValidateCompletionReadiness`, corrective/hardening migration fold into create migrations.
 - Phase 6 implementation: 6a post-void + unavailable ledger + `Inventory::ReverseLedgerEntry`; 6b SV accounts/ledger/adjustments; 6c gift-card issue/reload lines; 6d redeem/refund tenders; 6e SV-aware post-void with later-redemption block; OD-014 interim and return-txn post-void blocks retained.
 - Phase 6 planning: thin phase plan promoted; three accepted decision notes; domain and permission catalog synchronized.

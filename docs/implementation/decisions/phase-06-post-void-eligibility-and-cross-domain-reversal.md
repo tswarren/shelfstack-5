@@ -3,7 +3,7 @@
 **Status:** accepted  
 **Needed by:** Phase 6a / 6e  
 **Governing area:** Point of Sale / Receiving and Inventory / Product Requests / Stored Value  
-**Related:** [ADR-0008](../../adr/0008-immutable-pos-transactions.md); [ADR-0009](../../adr/0009-atomic-idempotent-pos-completion.md); [ADR-0011](../../adr/0011-permissions-authority-and-approvals.md); [point-of-sale](../../domains/point-of-sale.md); [product-requests](../../domains/product-requests.md); [OD-007](od-007-allocation-receipt-and-fulfilment.md); [inventory correction / OD-014](phase-06-inventory-correction-and-od-014.md); [stored-value v1 policy](phase-06-stored-value-v1-operating-policy.md); [Phase 6](../phases/phase-06-corrections-and-stored-value.md)
+**Related:** [ADR-0008](../../adr/0008-immutable-pos-transactions.md); [ADR-0009](../../adr/0009-atomic-idempotent-pos-completion.md); [ADR-0011](../../adr/0011-permissions-authority-and-approvals.md); [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md); [point-of-sale](../../domains/point-of-sale.md); [product-requests](../../domains/product-requests.md); [OD-007](od-007-allocation-receipt-and-fulfilment.md); [inventory correction / OD-014](phase-06-inventory-correction-and-od-014.md); [stored-value v1 policy](phase-06-stored-value-v1-operating-policy.md); [Phase 6](../phases/phase-06-corrections-and-stored-value.md); [post-void workflow](../../workflows/post-void.md)
 
 ### Decision
 
@@ -35,7 +35,7 @@ Before any reversing record is created:
 7. No original tender has been partially or fully refunded via ordinary refund tenders.
 8. Exact inventory units remain in the reversible state expected for each original line.
 9. Stored-value entries remain reversible under [stored-value v1 policy](phase-06-stored-value-v1-operating-policy.md).
-10. Required standalone card refund or reversal activity has been confirmed externally when the original used card tender.
+10. Required standalone card refund or reversal activity has been confirmed externally when the original used card tender (Policy A under [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md): approve → reverse on terminal → durable confirmation audits → reversing transaction).
 11. Deficit / settlement state permits reversal under [inventory correction / OD-014](phase-06-inventory-correction-and-od-014.md).
 12. For mixed sale-and-return originals: every sale-side and return-side effect is reversible (all-or-nothing).
 

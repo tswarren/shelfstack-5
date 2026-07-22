@@ -159,6 +159,7 @@ Accepted delivery choices for Phase 6 (detail in decision notes):
 - Post-void after OD-014 deficit settlement uses an interim eligibility block until the full correction algorithm lands — same decision note.
 - Stored-value v1: `active`/`suspended`; entry types including generic `reversal`; gift-card reload only; always-approve manual adjustments; nullable department on `stored_value` POS lines — [phase-06-stored-value-v1-operating-policy.md](decisions/phase-06-stored-value-v1-operating-policy.md).
 - Permissions: `pos.post_void.create` / `pos.post_void.approve` and canonical `stored_value.*` rows in [authorization-permissions.md](../domains/authorization-permissions.md).
+- Standalone card recording per [ADR-0016](../adr/0016-treat-standalone-credit-card-activity.md): operator-confirmed external activity; after configured references validate, unattachable activity is retained as non-settling `void_required` (blocks complete/suspend/cancel until external-void confirmation); Policy A post-void (approve → reverse on terminal → durable confirmation audits → reversing transaction). No preparation tables, orphan queues, or processor-reconciliation product in Phase 6.
 
 ## Reporting sources
 

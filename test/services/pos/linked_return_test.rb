@@ -617,7 +617,7 @@ module Pos
         FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(mixed_card.id))
           .recalculation.net_total_cents
       }
-      # External auth amount no longer matches finalized balance — amount_mismatch for record-and-void.
+      # External auth amount no longer matches finalized balance — retain as void_required.
       card_tender = AddCardTender.call(
         pos_transaction: mixed_card, tender_type: card, amount_cents: current_due + 50,
         authorization_code: "MIXED-STALE", actor: @admin

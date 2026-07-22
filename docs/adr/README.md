@@ -56,6 +56,7 @@ A conflict between implementation and an accepted ADR must be resolved explicitl
 | [ADR-0013](0013-govern-quantity-tracked-inventory-cost.md)       | Govern Quantity-Tracked Inventory Cost Through Moving Weighted Average and Explicit Cost Provenance | Accepted with open details |
 | [ADR-0014](0014-hybrid-transaction-component-tax-calculation.md) | Use Hybrid Transaction-Component Tax Calculation with Largest-Remainder Allocation | Accepted                   |
 | [ADR-0015](0015-product-backed-demand-and-customer-supply-commitments.md) | Require Product-Backed Demand and Reserve Supply Allocations for Customer Commitments | Accepted                   |
+| [ADR-0016](0016-treat-standalone-credit-card-activity.md) | Treat Standalone Card Activity as Operator-Confirmed External Records | Accepted                   |
 
 ---
 
@@ -198,6 +199,7 @@ For example:
 * ADR-0015 governs Product Requests, Purchasing allocations, and related Inventory/POS fulfilment coordination (supersedes ADR-0005).
 * ADR-0008 governs POS, Inventory, Stored Value, and Reporting.
 * ADR-0011 governs authorization throughout the system.
+* ADR-0016 governs standalone-card recording and the narrow `void_required` recovery state in POS.
 
 Domain Specifications should include a **Governing ADRs** section near the beginning.
 
@@ -244,6 +246,7 @@ Examples include:
 | Stored value uses an append-only ledger           | Separate account and ledger-entry tables                               |
 | Permission and authority are separate             | Permissions, store memberships, authority limits, and approval records |
 | Receipts may fulfil several POs                   | Purchase-order linkage at the receipt-line level                       |
+| Standalone card activity is operator-confirmed; validated unattachable activity is retained | `pos_tenders` statuses include `void_required`; no prep/orphan/recon tables (ADR-0016) |
 
 Schema documentation should link to the ADR when a structure exists primarily because of an architectural decision.
 

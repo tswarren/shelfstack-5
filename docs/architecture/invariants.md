@@ -957,7 +957,7 @@ The Completion Session governs financial reporting.
 
 ## INV-POS-016 — Suspended tender-free Transaction may outlive Session
 
-A Suspended Transaction without unresolved Tender activity may remain after its originating POS Session closes.
+A Suspended Transaction without unresolved Tender activity and without `void_required` tenders may remain after its originating POS Session closes.
 
 ## INV-POS-017 — Suspended Transaction remains Store-bound
 
@@ -1090,11 +1090,11 @@ refunded
 
 ## INV-TND-003 — Only completed Tenders settle a Transaction
 
-Pending, declined, failed, removed, or otherwise incomplete Tenders must not count toward settlement.
+Only `completed` tenders participate in settlement. Tenders in `pending`, `authorized`, `void_required`, `voided`, or `removed` status do not settle the transaction.
 
-## INV-TND-003a — Pending or authorized Tender locks commercial editing
+## INV-TND-003a — Unresolved or void-required Tender locks commercial editing
 
-While a pending or authorized Tender exists on a Transaction, commercial fields are locked: line add/remove/quantity, prices, Discounts, Tax Categories, exemptions, and other tax-affecting values. Editing may resume only after those Tenders are removed or externally voided as required.
+While a pending, authorized, or `void_required` Tender exists on a Transaction, commercial fields are locked: line add/remove/quantity, prices, Discounts, Tax Categories, exemptions, and other tax-affecting values. Editing may resume only after those Tenders are cleared, completed, or externally voided as required.
 
 ## INV-TND-004 — Completed Tender net equals Transaction net
 
@@ -1123,7 +1123,17 @@ Stored card metadata may include only approved non-sensitive references such as:
 
 ## INV-TND-007 — Standalone card confirmation remains auditable
 
-Where standalone terminals are used, the cashier’s approval confirmation and reference information must remain auditable.
+Standalone-card activity is an operator-confirmed record of an external terminal operation. The references and confirming user must remain auditable.
+
+## INV-TND-008 — Validated unattachable card activity is retained as void_required
+
+Once configured references validate, card activity that cannot be attached must be retained as `void_required`. It remains non-settling and blocks completion, suspension, and cancellation until external void confirmation changes it to `voided`.
+
+Enforcement note: resolution must remain possible after later tender-type deactivation or payment-/refund-disable, and after the owning transaction’s status changes.
+
+## INV-TND-009 — Standalone terminals are outside processor control
+
+ShelfStack does not authorize, settle, void, refund, or reconcile processor activity for standalone terminals. Processor settlement and discrepancy reconciliation remain outside Phase 6.
 
 ## INV-CASH-001 — Expected cash is reproducible
 

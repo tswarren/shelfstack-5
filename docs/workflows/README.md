@@ -30,10 +30,11 @@ Keep workflows record-level. Screen layout belongs elsewhere.
 | [pos-completion.md](pos-completion.md) | Delivered | Phase 4c+ |
 | [individually-tracked-sale.md](individually-tracked-sale.md) | Delivered | Phase 4d |
 | [suspended-transaction.md](suspended-transaction.md) | Delivered | Phase 4a |
+| [cancel-transaction.md](cancel-transaction.md) | Delivered | Phase 4a |
 | [customer-return.md](customer-return.md) | Delivered | Phase 4e |
 | [purchase-order.md](purchase-order.md) | Minimal stub, points to service catalog | Phase 5a/5b/5c/5e |
 | [product-request.md](product-request.md) | Minimal stub, points to service catalog | Phase 5d/5e/5f |
-| [post-void.md](post-void.md) | Stub (not yet written) | Phase 6 |
+| [post-void.md](post-void.md) | Delivered (Policy A card path) | Phase 6 |
 | [business-day-close.md](business-day-close.md) | Stub (not yet written) | Phase 4 / 7 |
 | [stored-value.md](stored-value.md) | Stub (not yet written) | Phase 6 |
 

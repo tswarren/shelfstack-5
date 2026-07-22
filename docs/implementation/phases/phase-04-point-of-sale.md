@@ -154,9 +154,10 @@ Store tax rates and store tax rules with `treatment`, denormalized `store_id`, e
 
 ### Behavior
 
-- Cash tender and standalone card stub; split tender.
+- Cash tender and standalone card recording; split tender.
 - **Tender-state lock:** pending or authorized Tender locks commercial editing until tenders are removed or externally voided.
-- Externally approved card stored as `authorized` with `authorization_code`, `terminal_reference`, `authorized_at` (optional `requires_reconciliation`); no separate exception table.
+- Externally approved card stored as `authorized` with `authorization_code`, `terminal_reference`, `authorized_at`; no separate exception table.
+- The originally anticipated operational `requires_reconciliation` queue was not adopted for standalone-card handling. [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md) instead uses the narrower `void_required` recovery state (Phase 6). The released column remains reserved and unused.
 - Cash counts toward session close (full Z/reconciliation can mature in Phase 7).
 - **Atomic idempotent completion** coordinates: final lines, discounts, tax, tenders, reservation conversion, inventory movements, cost snapshots, receipt-number assignment, transaction completion.
 - Completion revalidates calculation under Transaction lock; completed Tender net equals final Transaction net.

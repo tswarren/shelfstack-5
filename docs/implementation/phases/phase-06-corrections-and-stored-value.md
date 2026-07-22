@@ -4,7 +4,7 @@
 **Depends on:** Phase 4c, Phase 4d, Phase 4e; Phase 5 fulfilment integration (post-void must reverse Product Request fulfilment facts)  
 **Chronologically follows:** Phase 5 — purchasing and receiving are not conceptual prerequisites for stored value  
 **Unlocks:** correction, tender-refund, stored-value liability, and exception reporting in Phase 7  
-**Governing docs:** ADR-0002, ADR-0008, ADR-0009, ADR-0011, ADR-0012; [stored-value](../../domains/stored-value.md); [point-of-sale](../../domains/point-of-sale.md); [post-void eligibility](../decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md); [inventory correction / OD-014](../decisions/phase-06-inventory-correction-and-od-014.md); [stored-value v1 policy](../decisions/phase-06-stored-value-v1-operating-policy.md)
+**Governing docs:** ADR-0002, ADR-0008, ADR-0009, ADR-0011, ADR-0012, [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md); [stored-value](../../domains/stored-value.md); [point-of-sale](../../domains/point-of-sale.md); [post-void eligibility](../decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md); [inventory correction / OD-014](../decisions/phase-06-inventory-correction-and-od-014.md); [stored-value v1 policy](../decisions/phase-06-stored-value-v1-operating-policy.md)
 
 ### Pre-production data note (unavailable ledger)
 
@@ -46,7 +46,7 @@ Detail lives in the three Phase 6 decision notes linked above—not in this phas
 
 **POS correction links:** `pos_transactions.reverses_pos_transaction_id` (unique when present), post-void reason/approval/idempotency; `pos_line_items.reverses_pos_line_item_id`; `pos_tenders.reverses_pos_tender_id`, `original_pos_tender_id`, `stored_value_account_id`.
 
-**Standalone card recording (simplified):** no prep/orphan/recon tables. Operators confirm terminal activity; ShelfStack stores tender references (`authorization_code` / `terminal_reference` from TenderType reference slots). Partial card payments/refunds are allowed within remaining balances. After references validate, attach failures immediately persist a durable `void_required` `PosTender` (idempotent); complete/suspend/cancel stay blocked until `RecordVoidedCardTender` confirms the external void and transitions the row to `voided` (`pos.tender.card_void`). Post-void Policy A: approve (`ApprovePostVoid`) → reverse cards on terminal → confirmation audits → `PostVoidTransaction`. Column `requires_reconciliation` may remain unused.
+**Standalone card recording ([ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md)):** no prep/orphan/recon tables. Operators confirm terminal activity; ShelfStack stores tender references (`authorization_code` / `terminal_reference` from TenderType reference slots). Partial card payments/refunds are allowed within remaining balances. After references validate, attach failures immediately persist a durable `void_required` `PosTender` (idempotent); complete/suspend/cancel stay blocked until `RecordVoidedCardTender` confirms the external void and transitions the row to `voided` (`pos.tender.card_void`). Post-void Policy A: approve (`ApprovePostVoid`) → reverse cards on terminal → confirmation audits → `PostVoidTransaction`. The originally anticipated operational `requires_reconciliation` queue was not adopted; the released column remains reserved and unused.
 
 **Inventory:** ledger `unavailable_delta`, `resulting_unavailable` (optional disposition snapshot); migrate return/receipt unavailable mutations onto ledger-owned posting.
 
