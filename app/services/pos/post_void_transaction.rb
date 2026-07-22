@@ -45,6 +45,11 @@ module Pos
           raise Error, "transaction has already been post-voided"
         end
 
+        if PosPostVoidCardPreparation.unresolved_orphans.exists?(original_pos_transaction_id: original.id)
+          raise Error,
+                "unresolved post-void card orphan exists — resolve it before completing post-void"
+        end
+
         parent = PosPostVoidPreparation.lock.find_by(
           original_pos_transaction_id: original.id,
           status: "approved"

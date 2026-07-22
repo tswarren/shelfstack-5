@@ -56,6 +56,32 @@ class PosCardRefundOrphansController < ApplicationController
     end
   end
 
+  def resolve_post_void
+    preparation = PosPostVoidCardPreparation.unresolved_orphans
+      .where(store_id: Current.store.id)
+      .find(params.require(:preparation_id))
+    result = Pos::ResolvePostVoidCardOrphan.call(
+      preparation: preparation,
+      actor: Current.user,
+      resolution_kind: params.require(:resolution_kind),
+      reason: params.require(:reason),
+      external_void_reference: params[:external_void_reference],
+      exception_approver: exception_approver_from_params,
+      exception_approver_pin: params[:exception_approver_pin]
+    )
+    if result.success?
+      notice =
+        if result.preparation.recorded?
+          "Post-void card orphan adopted as the consumable confirmation."
+        else
+          "Post-void card orphan resolved."
+        end
+      redirect_to pos_card_refund_orphans_path, notice: notice
+    else
+      redirect_to pos_card_refund_orphans_path, alert: result.error
+    end
+  end
+
   private
 
   def set_preparation

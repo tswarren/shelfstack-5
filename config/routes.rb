@@ -148,6 +148,7 @@ Rails.application.routes.draw do
   resources :pos_card_refund_orphans, only: %i[index] do
     collection do
       post :record_authorization
+      post :resolve_post_void
     end
     member do
       post :resolve

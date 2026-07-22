@@ -37,6 +37,10 @@ module Pos
         if PosPostVoidPreparation.approved.exists?(original_pos_transaction_id: original.id)
           raise Error, "an approved post-void preparation already exists for this transaction"
         end
+        if PosPostVoidCardPreparation.unresolved_orphans.exists?(original_pos_transaction_id: original.id)
+          raise Error,
+                "unresolved post-void card orphan exists — resolve it before preparing a new plan"
+        end
 
         eligibility = EvaluatePostVoidEligibility.call(
           original_transaction: original, store: original.store

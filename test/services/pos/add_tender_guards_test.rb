@@ -22,13 +22,15 @@ module Pos
       )
     end
 
-    test "card tender cannot exceed remaining balance when over-tender is disallowed" do
+    test "card tender exceeding balance is retained with reconciliation when over-tender is disallowed" do
+      # External authorization already exists — do not discard; soft-recon instead.
       result = AddCardTender.call(
         pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
         authorization_code: "AUTH1", actor: @admin
       )
-      refute result.success?
-      assert_match(/exceeds remaining balance/, result.error)
+      assert result.success?, result.error
+      assert result.pos_tender.requires_reconciliation?
+      assert_equal 1500, result.pos_tender.amount_cents
     end
 
     test "card tender accepts exact remaining balance" do

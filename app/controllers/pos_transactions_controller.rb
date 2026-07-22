@@ -233,8 +233,10 @@ class PosTransactionsController < ApplicationController
   end
 
   def record_post_void_card
+    # Load without status filter so identical retries reach service replay for
+    # recorded / recorded_orphan rows.
     preparation = PosPostVoidCardPreparation
-      .where(original_pos_transaction_id: @pos_transaction.id, status: %w[prepared abandoned])
+      .where(original_pos_transaction_id: @pos_transaction.id)
       .find(params[:preparation_id])
     result = Pos::RecordPostVoidCardConfirmation.call(
       preparation: preparation,

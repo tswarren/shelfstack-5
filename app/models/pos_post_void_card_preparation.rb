@@ -3,9 +3,12 @@
 # Durable external card confirmation for post-void. Operators prepare, run the
 # terminal, then record authorization before PostVoidTransaction consumes the
 # preparation. A recorded-but-unconsumed prep survives post-void failure.
-# Late auth after abandon becomes recorded_orphan (not consumable).
+# Late auth after abandon becomes recorded_orphan until explicitly resolved.
 class PosPostVoidCardPreparation < ApplicationRecord
   STATUSES = %w[prepared recorded consumed abandoned recorded_orphan].freeze
+  ORPHAN_RESOLUTION_KINDS = %w[
+    external_void_confirmed adopt_as_confirmation accepted_financial_exception
+  ].freeze
   TTL = 30.minutes
 
   belongs_to :pos_post_void_preparation
@@ -16,6 +19,8 @@ class PosPostVoidCardPreparation < ApplicationRecord
   belongs_to :recorded_by_user, class_name: "User", optional: true
   belongs_to :abandoned_by_user, class_name: "User", optional: true
   belongs_to :consumed_by_user, class_name: "User", optional: true
+  belongs_to :resolved_by_user, class_name: "User", optional: true
+  belongs_to :resolution_pos_approval, class_name: "PosApproval", optional: true
   belongs_to :correcting_pos_transaction, class_name: "PosTransaction", optional: true
 
   validates :status, presence: true, inclusion: { in: STATUSES }
@@ -24,9 +29,12 @@ class PosPostVoidCardPreparation < ApplicationRecord
 
   scope :prepared, -> { where(status: "prepared") }
   scope :recorded_unresolved, -> { where(status: "recorded", consumed_at: nil) }
-  scope :unresolved_orphans, -> { where(status: "recorded_orphan") }
+  scope :unresolved_orphans, -> { where(status: "recorded_orphan", resolved_at: nil) }
   scope :active, -> { where(status: %w[prepared recorded]) }
-  scope :queue_visible, -> { where(status: %w[recorded recorded_orphan], consumed_at: nil) }
+  scope :queue_visible, -> {
+    where(status: "recorded", consumed_at: nil)
+      .or(where(status: "recorded_orphan", resolved_at: nil))
+  }
 
   def prepared?
     status == "prepared"
@@ -54,5 +62,13 @@ class PosPostVoidCardPreparation < ApplicationRecord
 
   def consumable?
     recorded? && consumed_at.nil?
+  end
+
+  def resolved?
+    resolved_at.present?
+  end
+
+  def unresolved_orphan?
+    recorded_orphan? && !resolved?
   end
 end

@@ -15,12 +15,16 @@ module Pos
 
     def call
       ActiveRecord::Base.transaction do
+        original_id = PosPostVoidPreparation.where(id: @preparation.id)
+          .pick(:original_pos_transaction_id)
+        raise Error, "preparation not found" if original_id.blank?
+
+        # Lock order: original transaction → parent → children (matches record/post-void).
+        PosTransaction.lock.find(original_id)
         preparation = PosPostVoidPreparation.lock.find(@preparation.id)
         raise Error, "only approved post-void preparations can be abandoned" unless preparation.approved?
 
-        PosTransaction.lock.find(preparation.original_pos_transaction_id)
-
-        children = preparation.pos_post_void_card_preparations.lock.to_a
+        children = preparation.pos_post_void_card_preparations.lock.order(:id).to_a
         if children.any? { |c| c.recorded? || c.consumed? || c.recorded_orphan? }
           raise Error, "cannot abandon — card confirmation already recorded; reconcile orphans instead"
         end

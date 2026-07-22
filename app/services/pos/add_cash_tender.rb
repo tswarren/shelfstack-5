@@ -30,7 +30,7 @@ module Pos
         raise Error, "transaction is not open" unless transaction.open?
         TenderGuards.assert_no_outstanding_card_refund_preparation!(transaction)
 
-        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
+        recalculation = recalculate_for_tender!(transaction)
         TenderGuards.assert_no_calculation_blockers!(recalculation)
 
         balance_due = TenderGuards.remaining_received_balance_cents(transaction, recalculation.net_total_cents)
@@ -57,6 +57,16 @@ module Pos
       end
     rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [])
+    end
+
+    private
+
+    def recalculate_for_tender!(transaction)
+      if transaction.pos_line_items.pending.returns.where.not(original_pos_line_item_id: nil).exists?
+        FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
+      else
+        RecalculateTransaction.call(pos_transaction: transaction)
+      end
     end
   end
 end

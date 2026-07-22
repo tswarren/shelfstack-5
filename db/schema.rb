@@ -639,6 +639,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_150000) do
     t.uuid "pos_post_void_preparation_id", null: false
     t.bigint "prepared_by_user_id", null: false
     t.bigint "recorded_by_user_id"
+    t.string "resolution_kind"
+    t.bigint "resolution_pos_approval_id"
+    t.text "resolution_reason"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_user_id"
     t.string "status", default: "prepared", null: false
     t.bigint "store_id", null: false
     t.string "terminal_reference"
@@ -647,16 +652,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_150000) do
     t.index ["consumed_by_user_id"], name: "index_pos_post_void_card_preparations_on_consumed_by_user_id"
     t.index ["correcting_pos_transaction_id"], name: "idx_on_correcting_pos_transaction_id_ceb2f76fbe"
     t.index ["original_pos_tender_id"], name: "idx_on_original_pos_tender_id_f1c305ae5b"
+    t.index ["original_pos_tender_id"], name: "index_pos_post_void_card_preps_one_unresolved_orphan", unique: true, where: "(((status)::text = 'recorded_orphan'::text) AND (resolved_at IS NULL))"
     t.index ["original_pos_transaction_id", "original_pos_tender_id"], name: "index_pos_post_void_card_preps_one_active_per_tender", unique: true, where: "((status)::text = ANY ((ARRAY['prepared'::character varying, 'recorded'::character varying])::text[]))"
     t.index ["original_pos_transaction_id"], name: "idx_on_original_pos_transaction_id_2c420933fe"
     t.index ["pos_post_void_preparation_id"], name: "idx_on_pos_post_void_preparation_id_2949be212c"
     t.index ["prepared_by_user_id"], name: "index_pos_post_void_card_preparations_on_prepared_by_user_id"
     t.index ["recorded_by_user_id"], name: "index_pos_post_void_card_preparations_on_recorded_by_user_id"
-    t.index ["status"], name: "index_pos_post_void_card_preps_orphans", where: "((status)::text = 'recorded_orphan'::text)"
+    t.index ["resolution_pos_approval_id"], name: "index_pos_post_void_card_preps_resolution_approval_unique", unique: true, where: "(resolution_pos_approval_id IS NOT NULL)"
+    t.index ["resolved_by_user_id"], name: "index_pos_post_void_card_preparations_on_resolved_by_user_id"
+    t.index ["status"], name: "index_pos_post_void_card_preps_orphans", where: "(((status)::text = 'recorded_orphan'::text) AND (resolved_at IS NULL))"
     t.index ["status"], name: "index_pos_post_void_card_preps_unresolved_recorded", where: "(((status)::text = 'recorded'::text) AND (consumed_at IS NULL))"
     t.index ["store_id"], name: "index_pos_post_void_card_preparations_on_store_id"
     t.check_constraint "amount_cents > 0", name: "pos_post_void_card_preps_amount_positive"
-    t.check_constraint "status::text = 'prepared'::text AND authorization_code IS NULL AND authorized_at IS NULL AND abandoned_at IS NULL AND consumed_at IS NULL OR status::text = 'recorded'::text AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL AND abandoned_at IS NULL AND consumed_at IS NULL OR status::text = 'consumed'::text AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL AND consumed_at IS NOT NULL AND abandoned_at IS NULL OR status::text = 'abandoned'::text AND abandoned_at IS NOT NULL AND authorization_code IS NULL AND consumed_at IS NULL OR status::text = 'recorded_orphan'::text AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL AND consumed_at IS NULL", name: "pos_post_void_card_preps_state_shape"
+    t.check_constraint "resolution_kind IS NULL OR (resolution_kind::text = ANY (ARRAY['external_void_confirmed'::character varying, 'adopt_as_confirmation'::character varying, 'accepted_financial_exception'::character varying]::text[]))", name: "pos_post_void_card_preps_resolution_kind_check"
+    t.check_constraint "status::text = 'prepared'::text AND authorization_code IS NULL AND authorized_at IS NULL AND abandoned_at IS NULL AND consumed_at IS NULL AND resolved_at IS NULL OR status::text = 'recorded'::text AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL AND abandoned_at IS NULL AND consumed_at IS NULL AND resolved_at IS NULL OR status::text = 'consumed'::text AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL AND consumed_at IS NOT NULL AND abandoned_at IS NULL OR status::text = 'abandoned'::text AND abandoned_at IS NOT NULL AND authorization_code IS NULL AND consumed_at IS NULL AND resolved_at IS NULL OR status::text = 'recorded_orphan'::text AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL AND consumed_at IS NULL", name: "pos_post_void_card_preps_state_shape"
     t.check_constraint "status::text = ANY (ARRAY['prepared'::character varying, 'recorded'::character varying, 'consumed'::character varying, 'abandoned'::character varying, 'recorded_orphan'::character varying]::text[])", name: "pos_post_void_card_preps_status_check"
   end
 
@@ -1616,6 +1625,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_150000) do
   add_foreign_key "pos_line_items", "users", column: "price_overridden_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "removed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "tax_category_overridden_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_post_void_card_preparations", "pos_approvals", column: "resolution_pos_approval_id"
   add_foreign_key "pos_post_void_card_preparations", "pos_post_void_preparations"
   add_foreign_key "pos_post_void_card_preparations", "pos_tenders", column: "original_pos_tender_id"
   add_foreign_key "pos_post_void_card_preparations", "pos_transactions", column: "correcting_pos_transaction_id"
@@ -1625,6 +1635,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_150000) do
   add_foreign_key "pos_post_void_card_preparations", "users", column: "consumed_by_user_id"
   add_foreign_key "pos_post_void_card_preparations", "users", column: "prepared_by_user_id"
   add_foreign_key "pos_post_void_card_preparations", "users", column: "recorded_by_user_id"
+  add_foreign_key "pos_post_void_card_preparations", "users", column: "resolved_by_user_id"
   add_foreign_key "pos_post_void_preparations", "pos_approvals"
   add_foreign_key "pos_post_void_preparations", "pos_transactions", column: "original_pos_transaction_id"
   add_foreign_key "pos_post_void_preparations", "stores"

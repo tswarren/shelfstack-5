@@ -341,7 +341,10 @@ module Pos
       assert_equal original_tax, refunded
     end
 
-    test "multiple same-transaction return lines exactly reverse uneven extended cost" do
+    test "return-line cost_extended residuals reassign uneven extended cost on the POS lines" do
+      # Residual ownership is tracked on pos_line_items.cost_extended_cents.
+      # Inventory ledger posting still uses unit cost × quantity; this test does
+      # not claim uneven extended cost is reflected in inventory valuation.
       open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
       sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
@@ -352,7 +355,6 @@ module Pos
         completion_idempotency_key: "sale-cost-residual"
       )
       line.reload
-      # Force a non-divisible extended cost so residual ownership matters.
       line.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
       assert_equal 100, line.cost_extended_cents
       assert_equal 3, line.quantity
@@ -435,7 +437,7 @@ module Pos
       assert_equal 100, costs_zyx.sum
     end
 
-    test "concurrent completion of separate return transactions preserves cost residual total" do
+    test "concurrent completion across separate POS sessions preserves cost residual total" do
       open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
       sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
@@ -448,18 +450,34 @@ module Pos
       line.reload
       line.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
 
-      txns = 3.times.map {
-        txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      # Separate devices/drawers so CompleteTransaction session locks do not serialize
+      # the threads before they reach original-line residual locks.
+      sessions = [ @session ]
+      2.times do |i|
+        device = PosDevice.create!(
+          store: @store, code: "REG-X#{i}", name: "Register X#{i}", device_type: "register", active: true
+        )
+        drawer = CashDrawer.create!(
+          store: @store, code: "DRW-X#{i}", name: "Drawer X#{i}", active: true
+        )
+        sessions << OpenSession.call(
+          business_day: @day, store: @store, pos_device: device, cash_drawer: drawer,
+          opening_cash_cents: 0, cashier: @admin, actor: @admin
+        ).pos_session
+      end
+
+      pairs = sessions.map { |session|
+        txn = OpenTransaction.call(pos_session: session, actor: @admin).pos_transaction
         assert AddLinkedReturnLine.call(
           pos_transaction: txn, original_pos_line_item: line, quantity: 1,
           return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
         ).success?
-        txn
+        [ txn, session ]
       }
 
       barriers = Queue.new
       results = Queue.new
-      threads = txns.each_with_index.map do |txn, idx|
+      threads = pairs.each_with_index.map do |(txn, session), idx|
         Thread.new do
           ActiveRecord::Base.connection_pool.with_connection do
             barriers << true
@@ -467,7 +485,7 @@ module Pos
             net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
             pos_add_cash_refund(pos_transaction: txn, amount_cents: -net, actor: @admin)
             completed = CompleteTransaction.call(
-              pos_transaction: txn, pos_session: @session, actor: @admin,
+              pos_transaction: txn, pos_session: session, actor: @admin,
               completion_idempotency_key: "concurrent-cost-#{idx}"
             )
             results << [ completed.success?, txn.id, completed.error ]
@@ -540,6 +558,96 @@ module Pos
         original_pos_tender: sale_card
       )
       assert prepared.ready?, prepared.error
+    end
+
+    test "net-positive mixed txn received tenders finalize after sibling return" do
+      open_inventory(@variant, quantity: 12, unit_cost_cents: 400)
+      card = tender_types(:card_standalone)
+      sv_tender = tender_types(:stored_value)
+      IdentifierSequence.ensure_defaults!
+      account = StoredValue::CreateAccount.call(
+        organization: @store.organization, account_type: "gift_card", actor: @admin
+      ).account
+      StoredValue::PostEntry.call(
+        account: account, store: @store, entry_type: "issued", amount_cents: 50_000,
+        posting_key: "mixed-sv-seed", actor: @admin
+      )
+
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 5, actor: @admin).pos_line_item
+      assert ApplyDiscount.call(
+        pos_transaction: sale, scope: "line", pos_line_item: line, method: "fixed_amount",
+        amount_cents: 100, actor: @admin
+      ).success?
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-mixed-finalize"
+      ).success?
+      line.reload
+
+      build_mixed = lambda {
+        txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+        assert AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 2, actor: @admin).success?
+        assert AddLinkedReturnLine.call(
+          pos_transaction: txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        ).success?
+        due = ActiveRecord::Base.transaction {
+          FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(txn.id))
+            .recalculation.net_total_cents
+        }
+        assert due.positive?, "expected net-positive mixed txn"
+        [ txn, due ]
+      }
+
+      mixed_card, = build_mixed.call
+      sibling = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      assert AddLinkedReturnLine.call(
+        pos_transaction: sibling, original_pos_line_item: line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      ).success?
+      sib_due = -ActiveRecord::Base.transaction {
+        FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(sibling.id))
+          .recalculation.net_total_cents
+      }
+      pos_add_cash_refund(pos_transaction: sibling, amount_cents: sib_due, actor: @admin)
+      assert CompleteTransaction.call(
+        pos_transaction: sibling, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sibling-mixed"
+      ).success?
+
+      current_due = ActiveRecord::Base.transaction {
+        FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(mixed_card.id))
+          .recalculation.net_total_cents
+      }
+      # External auth amount no longer matches finalized balance — retain with recon.
+      card_tender = AddCardTender.call(
+        pos_transaction: mixed_card, tender_type: card, amount_cents: current_due + 50,
+        authorization_code: "MIXED-STALE", actor: @admin
+      )
+      assert card_tender.success?, card_tender.error
+      assert card_tender.pos_tender.requires_reconciliation?
+
+      mixed_cash, = build_mixed.call
+      cash_due = ActiveRecord::Base.transaction {
+        FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(mixed_cash.id))
+          .recalculation.net_total_cents
+      }
+      assert AddCashTender.call(
+        pos_transaction: mixed_cash, tender_type: @cash, amount_tendered_cents: cash_due, actor: @admin
+      ).success?
+
+      mixed_sv, = build_mixed.call
+      sv_due = ActiveRecord::Base.transaction {
+        FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(mixed_sv.id))
+          .recalculation.net_total_cents
+      }
+      assert AddStoredValueTender.call(
+        pos_transaction: mixed_sv, tender_type: sv_tender, account: account,
+        amount_cents: sv_due, actor: @admin
+      ).success?
     end
 
     test "stored-value sale lines are not linked-returnable" do

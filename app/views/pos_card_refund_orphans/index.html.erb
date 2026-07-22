@@ -94,10 +94,10 @@
 <section class="panel" aria-labelledby="post-void-card-heading">
   <h2 id="post-void-card-heading">Post-void card confirmations</h2>
   <p class="muted">
-    External card confirmations for post-void that are not yet consumed, including late
-    authorizations after abandon (orphans). Retry post-void from the original receipt only
-    for temporary failures when status is recorded. Orphans are not consumable and need
-    reconciliation (stranded post-void resolution is Phase 7).
+    Recorded confirmations may be retried via post-void when the failure was temporary.
+    Unresolved orphans block another terminal operation for that tender until resolved:
+    adopt as the confirmation, confirm an external void, or accept a financial exception.
+    Broader stranded-post-void reporting remains Phase 7.
   </p>
   <% if @post_void_card_preparations.blank? %>
     <p class="muted">No unresolved post-void card confirmations.</p>
@@ -111,6 +111,7 @@
           <th>Amount</th>
           <th>Auth / void ref</th>
           <th>Abandoned?</th>
+          <th>Resolve orphan</th>
         </tr>
       </thead>
       <tbody>
@@ -130,6 +131,39 @@
               <% end %>
             </td>
             <td><%= prep.abandoned_at.present? ? "Yes" : "—" %></td>
+            <td>
+              <% if prep.unresolved_orphan? %>
+                <%= form_with url: resolve_post_void_pos_card_refund_orphans_path, method: :post, class: "form" do %>
+                  <%= hidden_field_tag :preparation_id, prep.id %>
+                  <div class="field">
+                    <%= select_tag :resolution_kind,
+                          options_for_select([
+                            [ "Adopt as confirmation", "adopt_as_confirmation" ],
+                            [ "External void confirmed", "external_void_confirmed" ],
+                            [ "Accepted financial exception", "accepted_financial_exception" ]
+                          ]),
+                          class: "input" %>
+                  </div>
+                  <div class="field">
+                    <%= text_field_tag :reason, nil, class: "input", required: true, placeholder: "Reason" %>
+                  </div>
+                  <div class="field">
+                    <%= text_field_tag :external_void_reference, nil, class: "input", placeholder: "Void reference" %>
+                  </div>
+                  <div class="field">
+                    <%= text_field_tag :exception_approver_username, nil, class: "input",
+                          placeholder: "Approver username (exception)" %>
+                  </div>
+                  <div class="field">
+                    <%= password_field_tag :exception_approver_pin, nil, class: "input",
+                          placeholder: "Approver PIN", autocomplete: "off" %>
+                  </div>
+                  <%= submit_tag "Resolve", class: "button button-outline button-small" %>
+                <% end %>
+              <% else %>
+                <span class="muted">Retry post-void</span>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>

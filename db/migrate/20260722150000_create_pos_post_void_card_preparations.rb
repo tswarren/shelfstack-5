@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 # Transaction-level post-void plan (approved before terminal use) plus per-card
-# durable confirmations. recorded_orphan retains late auth after abandon.
+# durable confirmations. recorded_orphan retains late auth after abandon until
+# an explicit resolution allows another terminal operation.
 class CreatePosPostVoidCardPreparations < ActiveRecord::Migration[8.1]
   def change
     create_table :pos_post_void_preparations, id: :uuid do |t|
@@ -53,6 +54,8 @@ class CreatePosPostVoidCardPreparations < ActiveRecord::Migration[8.1]
       t.references :recorded_by_user, foreign_key: { to_table: :users }
       t.references :abandoned_by_user, foreign_key: { to_table: :users }
       t.references :consumed_by_user, foreign_key: { to_table: :users }
+      t.references :resolved_by_user, foreign_key: { to_table: :users }
+      t.references :resolution_pos_approval, foreign_key: { to_table: :pos_approvals }, index: false
       t.references :correcting_pos_transaction, foreign_key: { to_table: :pos_transactions }
 
       t.integer :amount_cents, null: false
@@ -61,11 +64,15 @@ class CreatePosPostVoidCardPreparations < ActiveRecord::Migration[8.1]
       t.datetime :expires_at, null: false
       t.datetime :abandoned_at
       t.datetime :consumed_at
+      t.datetime :resolved_at
 
       t.string :authorization_code
       t.string :terminal_reference
       t.string :external_void_reference
       t.datetime :authorized_at
+
+      t.string :resolution_kind
+      t.text :resolution_reason
 
       t.timestamps
     end
@@ -75,12 +82,21 @@ class CreatePosPostVoidCardPreparations < ActiveRecord::Migration[8.1]
               unique: true,
               where: "status IN ('prepared', 'recorded')",
               name: "index_pos_post_void_card_preps_one_active_per_tender"
+    add_index :pos_post_void_card_preparations,
+              :original_pos_tender_id,
+              unique: true,
+              where: "status = 'recorded_orphan' AND resolved_at IS NULL",
+              name: "index_pos_post_void_card_preps_one_unresolved_orphan"
     add_index :pos_post_void_card_preparations, :status,
               where: "status = 'recorded' AND consumed_at IS NULL",
               name: "index_pos_post_void_card_preps_unresolved_recorded"
     add_index :pos_post_void_card_preparations, :status,
-              where: "status = 'recorded_orphan'",
+              where: "status = 'recorded_orphan' AND resolved_at IS NULL",
               name: "index_pos_post_void_card_preps_orphans"
+    add_index :pos_post_void_card_preparations, :resolution_pos_approval_id,
+              unique: true,
+              where: "resolution_pos_approval_id IS NOT NULL",
+              name: "index_pos_post_void_card_preps_resolution_approval_unique"
 
     add_check_constraint :pos_post_void_card_preparations, "amount_cents > 0",
                          name: "pos_post_void_card_preps_amount_positive"
@@ -88,14 +104,20 @@ class CreatePosPostVoidCardPreparations < ActiveRecord::Migration[8.1]
                          "status IN ('prepared', 'recorded', 'consumed', 'abandoned', 'recorded_orphan')",
                          name: "pos_post_void_card_preps_status_check"
     add_check_constraint :pos_post_void_card_preparations, <<~SQL.squish,
+      resolution_kind IS NULL OR resolution_kind IN (
+        'external_void_confirmed', 'adopt_as_confirmation', 'accepted_financial_exception'
+      )
+    SQL
+                         name: "pos_post_void_card_preps_resolution_kind_check"
+    add_check_constraint :pos_post_void_card_preparations, <<~SQL.squish,
       (status = 'prepared' AND authorization_code IS NULL AND authorized_at IS NULL
-        AND abandoned_at IS NULL AND consumed_at IS NULL)
+        AND abandoned_at IS NULL AND consumed_at IS NULL AND resolved_at IS NULL)
       OR (status = 'recorded' AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL
-        AND abandoned_at IS NULL AND consumed_at IS NULL)
+        AND abandoned_at IS NULL AND consumed_at IS NULL AND resolved_at IS NULL)
       OR (status = 'consumed' AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL
         AND consumed_at IS NOT NULL AND abandoned_at IS NULL)
       OR (status = 'abandoned' AND abandoned_at IS NOT NULL AND authorization_code IS NULL
-        AND consumed_at IS NULL)
+        AND consumed_at IS NULL AND resolved_at IS NULL)
       OR (status = 'recorded_orphan' AND authorization_code IS NOT NULL AND authorized_at IS NOT NULL
         AND consumed_at IS NULL)
     SQL

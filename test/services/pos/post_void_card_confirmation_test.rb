@@ -106,7 +106,7 @@ module Pos
       assert_equal "KEEP-1", card_prep.authorization_code
     end
 
-    test "late auth after abandon becomes unresolved orphan not consumable" do
+    test "late auth after abandon becomes unresolved orphan and blocks further terminal use" do
       parent = PreparePostVoid.call(
         original_transaction: @sale, actor: @admin, reason: "late auth",
         approver: @admin, approver_pin: "1234", pos_session: @session
@@ -123,28 +123,71 @@ module Pos
       )
       assert recorded.success?, recorded.error
       orphan = recorded.preparation
-      assert orphan.recorded_orphan?
+      assert orphan.unresolved_orphan?
       assert orphan.abandoned_at.present?
       assert_equal "LATE-1", orphan.authorization_code
       refute orphan.consumable?
 
-      # Recreate prepared child and record for successful post-void path
+      denied_prepare = PreparePostVoidCardConfirmation.call(
+        original_pos_tender: @card_tender, actor: @admin
+      )
+      refute denied_prepare.success?
+      assert_match(/unresolved post-void card orphan/, denied_prepare.error)
+
+      denied_void = PostVoidTransaction.call(
+        original_transaction: @sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "pv-blocked-orphan"
+      )
+      refute denied_void.success?
+      assert_match(/unresolved post-void card orphan/, denied_void.error)
+
+      # Parent still approved while orphan is unresolved — cannot abandon the plan.
+      denied_abandon = AbandonPostVoid.call(preparation: parent.preparation.reload, actor: @admin)
+      refute denied_abandon.success?
+      assert_match(/reconcile orphans|already recorded/, denied_abandon.error)
+
+      adopted = ResolvePostVoidCardOrphan.call(
+        preparation: orphan, actor: @admin,
+        resolution_kind: :adopt_as_confirmation, reason: "use late auth"
+      )
+      assert adopted.success?, adopted.error
+      assert adopted.preparation.recorded?
+      refute adopted.preparation.unresolved_orphan?
+
+      result = PostVoidTransaction.call(
+        original_transaction: @sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "pv-after-adopt"
+      )
+      assert result.success?, result.error
+      assert orphan.reload.consumed?
+    end
+
+    test "external void of orphan allows a replacement card preparation" do
+      parent = PreparePostVoid.call(
+        original_transaction: @sale, actor: @admin, reason: "void orphan",
+        approver: @admin, approver_pin: "1234", pos_session: @session
+      )
+      assert parent.success?, parent.error
+      card_prep = parent.preparation.pos_post_void_card_preparations.prepared.first
+      assert AbandonPostVoidCardConfirmation.call(preparation: card_prep, actor: @admin).success?
+      orphan = RecordPostVoidCardConfirmation.call(
+        preparation: card_prep.reload, actor: @admin, authorization_code: "ORPH-2"
+      ).preparation
+
+      resolved = ResolvePostVoidCardOrphan.call(
+        preparation: orphan, actor: @admin,
+        resolution_kind: :external_void_confirmed,
+        reason: "terminal voided the late refund",
+        external_void_reference: "EXT-VOID-9"
+      )
+      assert resolved.success?, resolved.error
+      assert orphan.reload.resolved?
+      assert orphan.recorded_orphan?
+
       recreated = PreparePostVoidCardConfirmation.call(
         original_pos_tender: @card_tender, actor: @admin
       )
       assert recreated.success?, recreated.error
-      assert RecordPostVoidCardConfirmation.call(
-        preparation: recreated.preparation, actor: @admin, authorization_code: "OK-1"
-      ).success?
-
-      result = PostVoidTransaction.call(
-        original_transaction: @sale, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-after-orphan"
-      )
-      assert result.success?, result.error
-      assert orphan.reload.recorded_orphan?
-      assert_nil orphan.consumed_at
-      assert PosPostVoidCardPreparation.unresolved_orphans.exists?(id: orphan.id)
     end
 
     private

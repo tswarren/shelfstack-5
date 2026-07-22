@@ -41,6 +41,10 @@ module Pos
         if PosPostVoidCardPreparation.active.exists?(original_pos_tender_id: locked_tender.id)
           raise Error, "an active post-void card preparation already exists for this tender"
         end
+        if PosPostVoidCardPreparation.unresolved_orphans.exists?(original_pos_tender_id: locked_tender.id)
+          raise Error,
+                "unresolved post-void card orphan exists for this tender — resolve it before another terminal operation"
+        end
 
         preparation = PosPostVoidCardPreparation.create!(
           pos_post_void_preparation: parent,
