@@ -88,9 +88,15 @@ module Pos
       ret = open_return(sale_line)
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
 
+      prepared = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: refund_due, actor: @admin,
+        original_pos_tender: sale_tender
+      )
+      assert prepared.ready?, prepared.error
       refund = AddCardRefundTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: refund_due,
-        authorization_code: "REF-1", actor: @admin, original_pos_tender: sale_tender
+        preparation: prepared.preparation,
+        authorization_code: "REF-1",
+        actor: @admin
       )
       assert refund.success?, refund.error
       assert_equal sale_tender.id, refund.pos_tender.original_pos_tender_id

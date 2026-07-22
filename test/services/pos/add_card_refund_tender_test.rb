@@ -12,7 +12,7 @@ module Pos
       @variant = product_variants(:sample_book_standard)
       @card = tender_types(:card_standalone)
       IdentifierSequence.ensure_defaults!
-      pos_open_inventory(store: @store, variant: @variant, quantity: 10, unit_cost_cents: 500, actor: @admin)
+      pos_open_inventory(store: @store, variant: @variant, quantity: 20, unit_cost_cents: 500, actor: @admin)
 
       @day = OpenBusinessDay.call(store: @store, actor: @admin).business_day
       @session = OpenSession.call(
@@ -33,98 +33,232 @@ module Pos
       assert prepared.ready?, prepared.error
 
       recorded = AddCardRefundTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: due,
-        authorization_code: "RFND-1", actor: @admin, original_pos_tender: card_tender
+        preparation: prepared.preparation,
+        authorization_code: "RFND-1",
+        actor: @admin
       )
       assert recorded.success?, recorded.error
       refute recorded.requires_reconciliation
       assert_equal card_tender.id, recorded.pos_tender.original_pos_tender_id
+      assert_equal card_tender.id, recorded.preparation.intended_original_pos_tender_id
+      assert recorded.preparation.recorded_tender?
     end
 
-    test "external auth is retained with requires_reconciliation when plan validation fails" do
+    test "same preparation and auth is idempotent replay" do
       sale_line, card_tender = complete_card_sale(quantity: 1)
       ret = open_return(sale_line, quantity: 1)
       due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+
+      first = AddCardRefundTender.call(preparation: prep, authorization_code: "RFND-1", actor: @admin)
+      second = AddCardRefundTender.call(preparation: prep, authorization_code: "RFND-1", actor: @admin)
+      assert first.success?
+      assert second.success?
+      assert_equal first.pos_tender.id, second.pos_tender.id
+      assert_equal 1, ret.pos_tenders.where(direction: "refunded").count
+    end
+
+    test "same preparation with different authorization raises conflict" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+
+      assert AddCardRefundTender.call(preparation: prep, authorization_code: "RFND-1", actor: @admin).success?
+      conflict = AddCardRefundTender.call(preparation: prep, authorization_code: "RFND-2", actor: @admin)
+      refute conflict.success?
+      assert_match(/different authorization/, conflict.error)
+      assert_equal 1, ret.pos_tenders.where(direction: "refunded").count
+    end
+
+    test "record without preparation is rejected at controller contract" do
+      # Service requires a preparation object; blank raises.
+      result = AddCardRefundTender.call(
+        preparation: nil, authorization_code: "X", actor: @admin
+      )
+      refute result.success?
+      assert_match(/preparation is required/, result.error)
+    end
+
+    test "prepared blocks complete cancel suspend and commercial edits" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      assert PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).ready?
+
+      refute ret.reload.editable?
+      assert ret.card_refund_preparation_outstanding?
+
+      denied_complete = CompleteTransaction.call(
+        pos_transaction: ret, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "prep-block-complete"
+      )
+      refute denied_complete.success?
+      assert_match(/preparation is outstanding/, denied_complete.error)
+
+      denied_cancel = CancelTransaction.call(pos_transaction: ret, actor: @admin)
+      refute denied_cancel.success?
+      assert_match(/preparation is outstanding/, denied_cancel.error)
+
+      denied_suspend = SuspendTransaction.call(pos_transaction: ret, actor: @admin)
+      refute denied_suspend.success?
+      assert_match(/preparation is outstanding/, denied_suspend.error)
+
+      denied_cash = AddCashRefundTender.call(
+        pos_transaction: ret, tender_type: tender_types(:cash), amount_cents: due, actor: @admin,
+        original_pos_tender: nil
+      )
+      refute denied_cash.success?
+      assert_match(/preparation is outstanding/, denied_cash.error)
+    end
+
+    test "expired preparation still blocks until abandoned" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      prep.update_columns(expires_at: 1.hour.ago)
+
+      assert ret.reload.card_refund_preparation_outstanding?
+      denied = CancelTransaction.call(pos_transaction: ret, actor: @admin)
+      refute denied.success?
+
+      assert AbandonCardRefundPreparation.call(preparation: prep, actor: @admin).success?
+      refute ret.reload.card_refund_preparation_outstanding?
+      assert CancelTransaction.call(pos_transaction: ret, actor: @admin).success?
+    end
+
+    test "fingerprint drift records tender requiring reconciliation" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      prep.update_columns(plan_fingerprint: "stale-fingerprint")
 
       recorded = AddCardRefundTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: due + 500,
-        authorization_code: "RFND-OVER", actor: @admin, original_pos_tender: card_tender
+        preparation: prep, authorization_code: "RFND-DRIFT", actor: @admin
       )
       assert recorded.success?, recorded.error
       assert recorded.requires_reconciliation
-      assert recorded.pos_tender.requires_reconciliation?
-      assert_equal "RFND-OVER", recorded.pos_tender.authorization_code
-
-      denied = CompleteTransaction.call(
-        pos_transaction: ret, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "card-recon-block"
-      )
-      refute denied.success?
-      assert_match(/requires reconciliation/, denied.error)
+      assert_match(/fingerprint/, recorded.warnings.join(" "))
     end
 
-    test "multi-sale return: capacity change after prepare retains authorized refund for reconciliation" do
-      line_a, tender_a = complete_card_sale(quantity: 1, key: "card-a")
-      line_b, = complete_card_sale(quantity: 1, key: "card-b")
+    test "tender type deactivated after prepare still records with reconciliation" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      @card.update!(active: false)
 
-      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
-      assert AddLinkedReturnLine.call(
-        pos_transaction: ret, original_pos_line_item: line_a, quantity: 1,
-        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
-      ).success?
-      assert AddLinkedReturnLine.call(
-        pos_transaction: ret, original_pos_line_item: line_b, quantity: 1,
-        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
-      ).success?
-
-      # Prepare a refund against sale A only (amount = A's tender).
-      amount_a = tender_a.amount_cents
-      assert PrepareCardRefund.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: amount_a, actor: @admin,
-        original_pos_tender: tender_a
-      ).ready?
-
-      # Between prepare and confirm, another return exhausts tender_a's refundable capacity.
-      # Use a separate sale with qty 2 so two returns can both target the same tender.
-      line2, tender2 = complete_card_sale(quantity: 2, key: "card-shared")
-      ret_hold = open_return(line2, quantity: 1)
-      due_hold = -RecalculateTransaction.call(pos_transaction: ret_hold).net_total_cents
-      assert PrepareCardRefund.call(
-        pos_transaction: ret_hold, tender_type: @card, amount_cents: due_hold, actor: @admin,
-        original_pos_tender: tender2
-      ).ready?
-
-      ret_race = open_return(line2, quantity: 1)
-      due_race = -RecalculateTransaction.call(pos_transaction: ret_race).net_total_cents
-      assert AddCardRefundTender.call(
-        pos_transaction: ret_race, tender_type: @card, amount_cents: due_race,
-        authorization_code: "RACE-1", actor: @admin, original_pos_tender: tender2
-      ).success?
-      # Complete race return so tender2 remaining drops via completed refund.
-      # Need to settle remaining refund balance on ret_race — due_race should equal
-      # half of sale; tender2 remaining after this authorized (not completed) still
-      # counts against remaining_refundable. Confirm hold against depleted remaining.
-      assert AddCardRefundTender.call(
-        pos_transaction: ret_hold, tender_type: @card, amount_cents: due_hold,
-        authorization_code: "HOLD-1", actor: @admin, original_pos_tender: tender2
-      ).success?
-
-      # Second confirmation against same original after first pending should reconcile.
-      second = AddCardRefundTender.call(
-        pos_transaction: ret_hold, tender_type: @card, amount_cents: due_hold,
-        authorization_code: "HOLD-2", actor: @admin, original_pos_tender: tender2
+      recorded = AddCardRefundTender.call(
+        preparation: prep, authorization_code: "RFND-INACTIVE", actor: @admin
       )
-      assert second.success?, second.error
-      assert second.requires_reconciliation
-      assert second.pos_tender.requires_reconciliation?
+      assert recorded.success?, recorded.error
+      assert recorded.requires_reconciliation
+      assert recorded.pos_tender.present?
+    ensure
+      @card.update!(active: true)
+    end
 
-      # Multi-sale return still locks both originals during recording.
-      multi = AddCardRefundTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: amount_a,
-        authorization_code: "MULTI-1", actor: @admin, original_pos_tender: tender_a
+    test "force-closed transaction records orphan without tender" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+
+      # Simulate a closed transaction despite outstanding prep (guard bypass / force).
+      ret.update_columns(status: "cancelled", cancelled_at: Time.current)
+
+      recorded = AddCardRefundTender.call(
+        preparation: prep, authorization_code: "RFND-ORPHAN", actor: @admin
       )
-      assert multi.success?, multi.error
-      refute multi.requires_reconciliation
+      assert recorded.success?, recorded.error
+      assert recorded.preparation.recorded_orphan?
+      assert_nil recorded.pos_tender
+      assert_equal 0, ret.pos_tenders.where(direction: "refunded").count
+      assert PosCardRefundPreparation.unresolved_orphans.exists?(id: prep.id)
+
+      resolved = ResolveCardRefundOrphan.call(
+        preparation: prep.reload,
+        actor: @admin,
+        resolution_kind: :external_void_confirmed,
+        reason: "terminal void confirmed",
+        external_void_reference: "VOID-1"
+      )
+      assert resolved.success?, resolved.error
+      refute PosCardRefundPreparation.unresolved_orphans.exists?(id: prep.id)
+    end
+
+    test "recon tender can be externally voided" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      prep.update_columns(plan_fingerprint: "stale")
+
+      recorded = AddCardRefundTender.call(
+        preparation: prep, authorization_code: "RFND-RECON", actor: @admin
+      )
+      assert recorded.requires_reconciliation
+
+      resolved = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep.reload,
+        actor: @admin,
+        outcome: :externally_voided,
+        reason: "wrong amount on terminal",
+        external_void_reference: "VOID-RECON"
+      )
+      assert resolved.success?, resolved.error
+      assert_equal "voided", recorded.pos_tender.reload.status
+    end
+
+    test "recon tender can be validated and accepted" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      prep.update_columns(expires_at: 1.hour.ago)
+
+      recorded = AddCardRefundTender.call(
+        preparation: prep, authorization_code: "RFND-OK", actor: @admin
+      )
+      assert recorded.requires_reconciliation
+
+      resolved = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep.reload,
+        actor: @admin,
+        outcome: :validated_and_accepted,
+        reason: "confirmed terminal match"
+      )
+      assert resolved.success?, resolved.error
+      refute recorded.pos_tender.reload.requires_reconciliation?
     end
 
     private

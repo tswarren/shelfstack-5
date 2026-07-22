@@ -22,6 +22,11 @@ module Pos
           raise Error, "only open or suspended transactions may be cancelled"
         end
 
+        if transaction.card_refund_preparation_outstanding?
+          raise Error,
+                "card refund preparation is outstanding; record the authorization or abandon the preparation first"
+        end
+
         if transaction.pos_tenders.unresolved.joins(:tender_type)
                       .where(status: "authorized", tender_types: { tender_category: "card" }).exists?
           raise Error,

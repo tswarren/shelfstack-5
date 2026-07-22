@@ -21,6 +21,7 @@ class PosTender < ApplicationRecord
           inverse_of: :reverses_pos_tender, dependent: :restrict_with_exception
   has_many :refund_tenders, class_name: "PosTender", foreign_key: :original_pos_tender_id,
            inverse_of: :original_pos_tender, dependent: :restrict_with_exception
+  has_one :pos_card_refund_preparation, dependent: :restrict_with_exception
   has_many :stored_value_entries, dependent: :restrict_with_exception
 
   validates :direction, presence: true, inclusion: { in: DIRECTIONS }

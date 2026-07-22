@@ -14,9 +14,11 @@ class StoredValueAccount < ApplicationRecord
   belongs_to :created_by_user, class_name: "User"
   has_many :stored_value_entries, dependent: :restrict_with_exception
 
-  attr_readonly :account_type, :account_number
+  # Phase 6: alternate is set only at create (under namespace-21 sequence lock).
+  # Updates would need the same lock; immutability avoids cross-column races.
+  attr_readonly :account_type, :account_number, :alternate_identifier
 
-  before_validation :normalize_alternate_identifier
+  before_validation :normalize_alternate_identifier, on: :create
 
   validates :account_type, presence: true, inclusion: { in: ACCOUNT_TYPES }
   validates :account_number, presence: true, uniqueness: true
@@ -26,6 +28,7 @@ class StoredValueAccount < ApplicationRecord
             numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :account_number_is_generated_21
   validate :alternate_identifier_not_canonical_collision
+  validate :alternate_identifier_not_self_alias
   validate :account_number_not_alternate_collision
 
   scope :active, -> { where(status: "active") }
@@ -85,6 +88,13 @@ class StoredValueAccount < ApplicationRecord
       .where.not(id: id)
       .exists?
     errors.add(:alternate_identifier, "matches an existing account number") if collision
+  end
+
+  def alternate_identifier_not_self_alias
+    return if alternate_identifier.blank? || account_number.blank?
+    return if alternate_identifier != account_number
+
+    errors.add(:alternate_identifier, "cannot equal this account's account number")
   end
 
   def account_number_not_alternate_collision

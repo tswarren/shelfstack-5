@@ -28,6 +28,7 @@ module Pos
         unless %w[open suspended].include?(transaction.status)
           raise Error, "transaction is not open"
         end
+        TenderGuards.assert_no_outstanding_card_refund_preparation!(transaction)
 
         tender = PosTender.lock.find(@pos_tender.id)
         lock_original_refund_target!(tender)
@@ -43,7 +44,7 @@ module Pos
 
         Result.new(pos_tender: tender, success?: true, error: nil)
       end
-    rescue Error, ActiveRecord::RecordInvalid => e
+    rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_tender: nil, success?: false, error: e.message)
     end
 

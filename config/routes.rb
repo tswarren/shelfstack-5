@@ -132,7 +132,17 @@ Rails.application.routes.draw do
     resources :pos_tenders, only: %i[create destroy] do
       collection do
         post :prepare_card_refund
+        post :abandon_card_refund
       end
+      member do
+        post :resolve_reconciliation
+      end
+    end
+  end
+
+  resources :pos_card_refund_orphans, only: %i[index] do
+    member do
+      post :resolve
     end
   end
 

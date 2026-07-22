@@ -1,0 +1,62 @@
+<% content_for :title, "Unresolved card refund orphans" %>
+
+<section class="page-header">
+  <h1>Unresolved card refund orphans</h1>
+  <p class="muted">
+    External card refunds recorded after the return transaction could no longer accept a tender.
+    Resolve each with an explicit outcome.
+  </p>
+</section>
+
+<% if @preparations.empty? %>
+  <p class="muted">No unresolved orphan card refunds for this store.</p>
+<% else %>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Recorded</th>
+        <th>Transaction</th>
+        <th>Amount</th>
+        <th>Auth</th>
+        <th>Intended original</th>
+        <th>Reasons</th>
+        <th>Resolve</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @preparations.each do |prep| %>
+        <tr>
+          <td><%= formatted_datetime(prep.consumed_at, format: :short) %></td>
+          <td><%= link_to prep.pos_transaction.public_id, pos_transaction_path(prep.pos_transaction) %></td>
+          <td><%= number_to_currency(prep.amount_cents / 100.0) %></td>
+          <td><%= prep.authorization_code %></td>
+          <td><%= prep.intended_original_pos_tender_id || "—" %></td>
+          <td><%= Array(prep.reconciliation_reasons).join("; ") %></td>
+          <td>
+            <%= form_with url: resolve_pos_card_refund_orphan_path(prep), method: :post, class: "form" do |form| %>
+              <div class="field">
+                <%= select_tag :resolution_kind,
+                      options_for_select([
+                        [ "External void confirmed", "external_void_confirmed" ],
+                        [ "Linked to correcting transaction", "linked_to_correcting_transaction" ],
+                        [ "Accepted financial exception", "accepted_financial_exception" ]
+                      ]),
+                      class: "input" %>
+              </div>
+              <div class="field">
+                <%= text_field_tag :reason, nil, class: "input", required: true, placeholder: "Reason" %>
+              </div>
+              <div class="field">
+                <%= text_field_tag :external_void_reference, nil, class: "input", placeholder: "Void reference" %>
+              </div>
+              <div class="field">
+                <%= text_field_tag :correcting_pos_transaction_id, nil, class: "input", placeholder: "Correcting txn id" %>
+              </div>
+              <%= form.submit "Resolve", class: "button button-outline button-small" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>

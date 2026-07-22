@@ -17,6 +17,7 @@ class PosApproval < ApplicationRecord
   belongs_to :pos_line_item, optional: true
   belongs_to :requested_by_user, class_name: "User"
   belongs_to :approved_by_user, class_name: "User"
+  has_one :pos_card_refund_preparation, dependent: :restrict_with_exception
 
   validates :action_type, presence: true, inclusion: { in: ACTION_TYPES }
   validates :reason, presence: true

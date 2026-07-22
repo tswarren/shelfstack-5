@@ -2,9 +2,10 @@
 
 class PosTendersController < ApplicationController
   before_action :set_transaction
-  before_action :set_tender, only: %i[destroy]
-  before_action -> { require_permission!(create_permission) }, only: %i[create prepare_card_refund]
+  before_action :set_tender, only: %i[destroy resolve_reconciliation]
+  before_action -> { require_permission!(create_permission) }, only: %i[create prepare_card_refund abandon_card_refund]
   before_action -> { require_permission!(destroy_permission) }, only: %i[destroy]
+  before_action -> { require_permission!("pos.tender.card_standalone") }, only: %i[resolve_reconciliation]
 
   def prepare_card_refund
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
@@ -20,25 +21,34 @@ class PosTendersController < ApplicationController
     )
 
     if result.ready?
-      session[:card_refund_prepared] = {
-        "transaction_id" => @pos_transaction.id,
-        "tender_type_id" => tender_type.id,
-        "amount_cents" => amount_cents,
-        "original_pos_tender_id" => result.original_pos_tender&.id,
-        "exception_approver_username" => params[:exception_approver_username].presence,
-        "prepared_at" => Time.current.iso8601
-      }
       redirect_to pos_transaction_path(@pos_transaction),
                   notice: "Card refund plan ready — process the terminal refund, then record the authorization below."
     else
-      session.delete(:card_refund_prepared)
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
   rescue ArgumentError => e
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
+  def abandon_card_refund
+    preparation = @pos_transaction.pos_card_refund_preparations.prepared.find(params[:preparation_id])
+    result = Pos::AbandonCardRefundPreparation.call(
+      preparation: preparation,
+      actor: Current.user,
+      reason: params[:reason]
+    )
+    if result.success?
+      redirect_to pos_transaction_path(@pos_transaction), notice: "Card refund preparation abandoned."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
   def create
+    if params[:preparation_id].present? && params[:refund].present?
+      return create_card_refund_from_preparation
+    end
+
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
 
     result = case tender_type.tender_category
@@ -61,18 +71,7 @@ class PosTendersController < ApplicationController
       end
     when "card"
       if params[:refund].present?
-        result = Pos::AddCardRefundTender.call(
-          pos_transaction: @pos_transaction, tender_type: tender_type,
-          amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
-          authorization_code: params[:authorization_code],
-          terminal_reference: params[:terminal_reference].presence,
-          actor: Current.user,
-          original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
-          exception_approver: exception_approver_from_params,
-          exception_approver_pin: params[:exception_approver_pin]
-        )
-        session.delete(:card_refund_prepared) if result.success?
-        result
+        unsupported_tender_result("card refund requires a preparation_id; prepare the plan first")
       else
         Pos::AddCardTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
@@ -113,18 +112,7 @@ class PosTendersController < ApplicationController
       unsupported_tender_result("tender category '#{tender_type.tender_category}' is not supported")
     end
 
-    if result.success?
-      if result.respond_to?(:requires_reconciliation) && result.requires_reconciliation
-        redirect_to pos_transaction_path(@pos_transaction),
-                    alert: "Card refund recorded for reconciliation: #{Array(result.warnings).join('; ')}. " \
-                           "Complete is blocked until the tender is voided or cleared."
-      else
-        notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
-        redirect_to pos_transaction_path(@pos_transaction), notice: notice
-      end
-    else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
-    end
+    redirect_after_tender_result(result)
   rescue ArgumentError => e
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
@@ -144,7 +132,59 @@ class PosTendersController < ApplicationController
     end
   end
 
+  def resolve_reconciliation
+    preparation = @pos_transaction.pos_card_refund_preparations.find_by!(pos_tender_id: @tender.id)
+    result = Pos::ResolveCardRefundTenderReconciliation.call(
+      preparation: preparation,
+      actor: Current.user,
+      outcome: params.require(:outcome),
+      reason: params.require(:reason),
+      external_void_reference: params[:external_void_reference]
+    )
+    if result.success?
+      redirect_to pos_transaction_path(@pos_transaction), notice: "Card refund reconciliation resolved."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
   private
+
+  def create_card_refund_from_preparation
+    preparation = Current.store.pos_transactions
+      .find(@pos_transaction.id)
+      .pos_card_refund_preparations
+      .find(params[:preparation_id])
+
+    result = Pos::AddCardRefundTender.call(
+      preparation: preparation,
+      authorization_code: params[:authorization_code],
+      terminal_reference: params[:terminal_reference].presence,
+      actor: Current.user
+    )
+    redirect_after_tender_result(result)
+  rescue ActiveRecord::RecordNotFound
+    redirect_to pos_transaction_path(@pos_transaction), alert: "card refund preparation not found"
+  end
+
+  def redirect_after_tender_result(result)
+    if result.success?
+      if result.respond_to?(:preparation) && result.preparation&.recorded_orphan?
+        redirect_to pos_transaction_path(@pos_transaction),
+                    alert: "External card refund recorded as an orphan for reconciliation. " \
+                           "#{Array(result.warnings).join('; ')}"
+      elsif result.respond_to?(:requires_reconciliation) && result.requires_reconciliation
+        redirect_to pos_transaction_path(@pos_transaction),
+                    alert: "Card refund recorded for reconciliation: #{Array(result.warnings).join('; ')}. " \
+                           "Complete is blocked until the tender is resolved or voided."
+      else
+        notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
+        redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      end
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
 
   def set_transaction
     @pos_transaction = Current.store.pos_transactions.find(params[:pos_transaction_id])
@@ -155,6 +195,10 @@ class PosTendersController < ApplicationController
   end
 
   def create_permission
+    if params[:preparation_id].present? || action_name.in?(%w[prepare_card_refund abandon_card_refund])
+      return "pos.tender.card_standalone"
+    end
+
     tender_type = params[:tender_type_id].presence && Current.organization.tender_types.find_by(id: params[:tender_type_id])
     case tender_type&.tender_category
     when "card" then "pos.tender.card_standalone"
@@ -177,8 +221,6 @@ class PosTendersController < ApplicationController
     Data.define(:success?, :error, :warnings).new(success?: false, error: message, warnings: [])
   end
 
-  # Original SV tenders must belong to this store and to a sale linked by a
-  # return line on the current transaction.
   def scoped_original_refund_tender(id)
     return nil if id.blank?
 

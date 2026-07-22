@@ -103,10 +103,15 @@ module Pos
         return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
       ).success?
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
-      assert AddCardRefundTender.call(
-        pos_transaction: ret, tender_type: @card, amount_cents: refund_due,
-        authorization_code: "AUTH-REFUND", actor: @admin,
+      prepared = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: refund_due, actor: @admin,
         original_pos_tender: original_tender
+      )
+      assert prepared.ready?, prepared.error
+      assert AddCardRefundTender.call(
+        preparation: prepared.preparation,
+        authorization_code: "AUTH-REFUND",
+        actor: @admin
       ).success?
 
       eligibility = EvaluatePostVoidEligibility.call(original_transaction: sale)

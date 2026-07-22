@@ -30,6 +30,7 @@ module Pos
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
+        TenderGuards.assert_no_outstanding_card_refund_preparation!(transaction)
         account = StoredValueAccount.lock.find(@account.id)
         raise Error, "account organization mismatch" unless account.organization_id == transaction.store.organization_id
         raise Error, "account is suspended" if account.suspended?

@@ -30,7 +30,13 @@ module StoredValue
 
       sequence = IdentifierSequence.find("21")
       upcoming = compose_ean13("21", sequence.next_value)
-      occupant.update!(alternate_identifier: upcoming)
+      # Phase 6: alternate_identifier is immutable via Active Record; plant an
+      # occupied credential with SQL for generation-skip coverage.
+      ActiveRecord::Base.connection.execute(<<~SQL.squish)
+        UPDATE stored_value_accounts
+        SET alternate_identifier = #{ActiveRecord::Base.connection.quote(upcoming)}
+        WHERE id = #{occupant.id}
+      SQL
       assert_equal upcoming, occupant.reload.alternate_identifier
 
       created = CreateAccount.call(
@@ -57,6 +63,33 @@ module StoredValue
       )
       refute colliding.valid?
       assert_match(/alternate identifier/, colliding.errors[:account_number].join)
+    end
+
+    test "rejects alternate identifier equal to own account number" do
+      number = compose_ean13("21", 9_876_543_210)
+      twin = StoredValueAccount.new(
+        organization: @org,
+        account_type: "gift_card",
+        account_number: number,
+        alternate_identifier: number,
+        status: "active",
+        current_balance_cents: 0,
+        created_by_user: @admin
+      )
+      refute twin.valid?
+      assert_match(/cannot equal|account number/, twin.errors[:alternate_identifier].join)
+    end
+
+    test "alternate_identifier is immutable after create" do
+      account = CreateAccount.call(
+        organization: @org, account_type: "gift_card", actor: @admin,
+        alternate_identifier: "immutable-alt-1"
+      ).account
+      assert_equal "immutablealt1", account.alternate_identifier
+      assert_raises(ActiveRecord::ReadonlyAttributeError) do
+        account.update(alternate_identifier: "changed-alt")
+      end
+      assert_equal "immutablealt1", account.reload.alternate_identifier
     end
 
     private

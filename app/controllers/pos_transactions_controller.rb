@@ -64,11 +64,9 @@ class PosTransactionsController < ApplicationController
     @balance_due_cents = @net_total_cents - @tendered_total_cents
     @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
     @refundable_original_tenders = Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction)
-    prepared = session[:card_refund_prepared]
-    @card_refund_prepared =
-      if prepared.is_a?(Hash) && prepared["transaction_id"] == @pos_transaction.id
-        prepared
-      end
+    @card_refund_preparation = @pos_transaction.pos_card_refund_preparations.prepared.order(:created_at).last
+    @unresolved_card_refund_orphans = @pos_transaction.pos_card_refund_preparations.unresolved_orphans.to_a
+    @recon_card_refund_tenders = @pos_transaction.pos_tenders.unresolved.where(requires_reconciliation: true).to_a
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid

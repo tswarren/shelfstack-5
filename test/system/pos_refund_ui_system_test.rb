@@ -119,6 +119,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     assert_text(/Plan ready|process the terminal/i)
 
     within_panel("Card refund") do
+      assert_no_selector "input[name='amount_cents']"
       fill_in "Refund authorization code", with: "RFND-UI-1"
       click_button "Record authorized card refund"
     end
@@ -126,6 +127,45 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     refund = ret.pos_tenders.where(direction: "refunded").last
     assert_equal card_tender.id, refund.original_pos_tender_id
     refute refund.requires_reconciliation?
+    assert PosCardRefundPreparation.find_by(pos_tender_id: refund.id).recorded_tender?
+  end
+
+  test "abandon stale card refund preparation unlocks transaction" do
+    sign_in_and_open_session!
+    sale = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+    Pos::AddCardTender.call(
+      pos_transaction: sale, tender_type: @card, amount_cents: net,
+      authorization_code: "SALE-UI-2", actor: @admin
+    )
+    assert Pos::CompleteTransaction.call(
+      pos_transaction: sale, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ui-card-sale-2"
+    ).success?
+    sale_line = sale.pos_line_items.where(status: "completed").first
+    card_tender = sale.pos_tenders.where(status: "completed").first
+
+    ret = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    assert Pos::AddLinkedReturnLine.call(
+      pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+      return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+    ).success?
+
+    visit pos_transaction_path(ret)
+    due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+    within_panel("Card refund") do
+      select_option_value("original_pos_tender_id", card_tender.id)
+      fill_in "card_refund_prepare_amount_cents", with: format("%.2f", due / 100.0)
+      click_button "Prepare card refund plan"
+    end
+    assert_text(/outstanding|Abandon/i)
+
+    within_panel("Card refund") do
+      accept_confirm(/Abandon only if/) { click_button "Abandon preparation" }
+    end
+    assert_text(/abandoned/i)
+    refute ret.reload.card_refund_preparation_outstanding?
   end
 
   test "invalid stored-value account input is rejected on redeem" do

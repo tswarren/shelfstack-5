@@ -46,9 +46,11 @@ Detail lives in the three Phase 6 decision notes linked above—not in this phas
 
 **POS correction links:** `pos_transactions.reverses_pos_transaction_id` (unique when present), post-void reason/approval/idempotency; `pos_line_items.reverses_pos_line_item_id`; `pos_tenders.reverses_pos_tender_id`, `original_pos_tender_id`, `stored_value_account_id`.
 
+**Card refund preparations:** `pos_card_refund_preparations` (UUID) — durable terminal-bound plan with snapshot/fingerprint; statuses `prepared` / `recorded_tender` / `recorded_orphan` / `abandoned`. While `prepared`, commercial edit/complete/cancel/suspend are blocked regardless of TTL. Orphans are external-payment facts, not tenders on closed history.
+
 **Inventory:** ledger `unavailable_delta`, `resulting_unavailable` (optional disposition snapshot); migrate return/receipt unavailable mutations onto ledger-owned posting.
 
-**Stored value:** `stored_value_accounts`, `stored_value_entries`, `stored_value_adjustment_reasons`.
+**Stored value:** `stored_value_accounts`, `stored_value_entries`, `stored_value_adjustment_reasons`. Alternate identifiers are immutable after create; normalized (strip/hyphen/case) uniqueness is organization-scoped and shares occupation space with canonical account numbers.
 
 **POS lines:** `line_kind` includes `stored_value`; `department_id` nullable for those lines; account + operation snapshots; no merchandise tax/inventory/revenue.
 

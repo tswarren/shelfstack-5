@@ -1,14 +1,11 @@
 # frozen_string_literal: true
 
 module Pos
-  # Server-side preflight before the cashier processes a standalone card refund
-  # on the external terminal. Locks the return transaction and every linked
-  # original sale/tender so the plan cannot silently drift under concurrent
-  # activity. Does not create a tender — AddCardRefundTender records the
-  # external authorization afterward (always retaining a durable fact).
+  # Persists a durable card-refund preparation before the cashier uses the
+  # external terminal. While prepared, the transaction is commercially locked.
   class PrepareCardRefund < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:ready?, :refund_due_cents, :original_pos_tender, :error, :warnings)
+    Result = Data.define(:ready?, :preparation, :error, :warnings)
 
     def initialize(
       pos_transaction:,
@@ -38,6 +35,10 @@ module Pos
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
+        if transaction.card_refund_preparation_outstanding?
+          raise Error, "a card refund preparation is already outstanding; record or abandon it first"
+        end
+
         RefundLockOrder.lock_linked_originals!(transaction)
 
         recalculation = RecalculateTransaction.call(pos_transaction: transaction)
@@ -54,7 +55,7 @@ module Pos
         )
         CardRefundSupport.assert_no_post_voided_linked_originals!(transaction)
 
-        RefundAllocationPolicy.call(
+        approval = RefundAllocationPolicy.call(
           pos_transaction: transaction,
           actor: @actor,
           destination: :card,
@@ -64,20 +65,36 @@ module Pos
           exception_approver_pin: @exception_approver_pin
         )
 
-        Result.new(
-          ready?: true,
-          refund_due_cents: refund_due,
-          original_pos_tender: original,
-          error: nil,
-          warnings: recalculation.warnings
+        snapshot = RefundPlanSnapshot.build(
+          pos_transaction: transaction,
+          tender_type: @tender_type,
+          amount_cents: @amount_cents,
+          actor: @actor,
+          intended_original_pos_tender: original,
+          pos_approval: approval,
+          net_total_cents: recalculation.net_total_cents,
+          refund_due_cents: refund_due
         )
+
+        preparation = PosCardRefundPreparation.create!(
+          pos_transaction: transaction,
+          tender_type: @tender_type,
+          intended_original_pos_tender: original,
+          pos_approval: approval,
+          prepared_by_user: @actor,
+          amount_cents: @amount_cents,
+          plan_snapshot: snapshot,
+          plan_fingerprint: RefundPlanSnapshot.fingerprint(snapshot),
+          fingerprint_version: RefundPlanSnapshot::VERSION,
+          status: "prepared",
+          expires_at: Time.current + PosCardRefundPreparation::TTL
+        )
+
+        Result.new(ready?: true, preparation: preparation, error: nil, warnings: recalculation.warnings)
       end
     rescue Error, CardRefundSupport::Error, RefundAllocationPolicy::Error, TenderGuards::Error,
            ActiveRecord::RecordInvalid => e
-      Result.new(
-        ready?: false, refund_due_cents: nil, original_pos_tender: nil,
-        error: e.message, warnings: []
-      )
+      Result.new(ready?: false, preparation: nil, error: e.message, warnings: [])
     end
   end
 end

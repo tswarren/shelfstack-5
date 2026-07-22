@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_22_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -397,6 +397,56 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_010000) do
     t.index ["requested_by_user_id"], name: "index_pos_approvals_on_requested_by_user_id"
     t.index ["store_id"], name: "index_pos_approvals_on_store_id"
     t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying::text, 'discount_apply'::character varying::text, 'tax_exemption'::character varying::text, 'tax_category_override'::character varying::text, 'cash_movement'::character varying::text, 'post_void'::character varying::text, 'stored_value_adjustment'::character varying::text, 'stored_value_refund_exception'::character varying::text])", name: "pos_approvals_action_type_check"
+  end
+
+  create_table "pos_card_refund_preparations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "abandoned_at"
+    t.bigint "abandoned_by_user_id"
+    t.integer "amount_cents", null: false
+    t.string "authorization_code"
+    t.datetime "authorized_at"
+    t.datetime "consumed_at"
+    t.bigint "correcting_pos_transaction_id"
+    t.datetime "created_at", null: false
+    t.datetime "expires_at", null: false
+    t.string "external_void_reference"
+    t.integer "fingerprint_version", default: 1, null: false
+    t.bigint "intended_original_pos_tender_id"
+    t.string "plan_fingerprint", null: false
+    t.jsonb "plan_snapshot", default: {}, null: false
+    t.bigint "pos_approval_id"
+    t.bigint "pos_tender_id"
+    t.bigint "pos_transaction_id", null: false
+    t.bigint "prepared_by_user_id", null: false
+    t.jsonb "reconciliation_reasons", default: [], null: false
+    t.bigint "recorded_by_user_id"
+    t.boolean "requires_reconciliation", default: false, null: false
+    t.string "resolution_kind"
+    t.text "resolution_reason"
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_user_id"
+    t.string "status", default: "prepared", null: false
+    t.bigint "tender_type_id", null: false
+    t.string "terminal_reference"
+    t.datetime "updated_at", null: false
+    t.index ["abandoned_by_user_id"], name: "index_pos_card_refund_preparations_on_abandoned_by_user_id"
+    t.index ["correcting_pos_transaction_id"], name: "idx_on_correcting_pos_transaction_id_dd3d8bd9f5"
+    t.index ["intended_original_pos_tender_id"], name: "idx_on_intended_original_pos_tender_id_c052c9dbd0"
+    t.index ["pos_approval_id"], name: "index_pos_card_refund_preparations_on_pos_approval_id"
+    t.index ["pos_approval_id"], name: "index_pos_card_refund_preps_on_pos_approval_unique", unique: true, where: "(pos_approval_id IS NOT NULL)"
+    t.index ["pos_tender_id"], name: "index_pos_card_refund_preparations_on_pos_tender_id"
+    t.index ["pos_tender_id"], name: "index_pos_card_refund_preps_on_pos_tender_unique", unique: true, where: "(pos_tender_id IS NOT NULL)"
+    t.index ["pos_transaction_id", "status"], name: "index_pos_card_refund_preps_on_txn_and_status"
+    t.index ["pos_transaction_id"], name: "index_pos_card_refund_preparations_on_pos_transaction_id"
+    t.index ["prepared_by_user_id"], name: "index_pos_card_refund_preparations_on_prepared_by_user_id"
+    t.index ["recorded_by_user_id"], name: "index_pos_card_refund_preparations_on_recorded_by_user_id"
+    t.index ["resolved_by_user_id"], name: "index_pos_card_refund_preparations_on_resolved_by_user_id"
+    t.index ["status"], name: "index_pos_card_refund_preps_unresolved_orphans", where: "(((status)::text = 'recorded_orphan'::text) AND (resolved_at IS NULL))"
+    t.index ["tender_type_id"], name: "index_pos_card_refund_preparations_on_tender_type_id"
+    t.check_constraint "amount_cents > 0", name: "pos_card_refund_preps_amount_positive"
+    t.check_constraint "resolution_kind IS NULL OR (resolution_kind::text = ANY (ARRAY['externally_voided'::character varying, 'validated_and_accepted'::character varying, 'replaced'::character varying, 'external_void_confirmed'::character varying, 'linked_to_correcting_transaction'::character varying, 'accepted_financial_exception'::character varying]::text[]))", name: "pos_card_refund_preps_resolution_kind_check"
+    t.check_constraint "status::text = 'prepared'::text AND authorization_code IS NULL AND consumed_at IS NULL AND pos_tender_id IS NULL AND abandoned_at IS NULL OR status::text = 'recorded_tender'::text AND authorization_code IS NOT NULL AND consumed_at IS NOT NULL AND pos_tender_id IS NOT NULL AND abandoned_at IS NULL OR status::text = 'recorded_orphan'::text AND authorization_code IS NOT NULL AND consumed_at IS NOT NULL AND pos_tender_id IS NULL AND abandoned_at IS NULL OR status::text = 'abandoned'::text AND abandoned_at IS NOT NULL AND authorization_code IS NULL AND pos_tender_id IS NULL AND consumed_at IS NULL", name: "pos_card_refund_preps_state_shape"
+    t.check_constraint "status::text = ANY (ARRAY['prepared'::character varying, 'recorded_tender'::character varying, 'recorded_orphan'::character varying, 'abandoned'::character varying]::text[])", name: "pos_card_refund_preps_status_check"
   end
 
   create_table "pos_cash_movements", force: :cascade do |t|
@@ -1454,6 +1504,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_010000) do
   add_foreign_key "pos_approvals", "stores", on_delete: :restrict
   add_foreign_key "pos_approvals", "users", column: "approved_by_user_id", on_delete: :restrict
   add_foreign_key "pos_approvals", "users", column: "requested_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_card_refund_preparations", "pos_approvals"
+  add_foreign_key "pos_card_refund_preparations", "pos_tenders"
+  add_foreign_key "pos_card_refund_preparations", "pos_tenders", column: "intended_original_pos_tender_id"
+  add_foreign_key "pos_card_refund_preparations", "pos_transactions"
+  add_foreign_key "pos_card_refund_preparations", "pos_transactions", column: "correcting_pos_transaction_id"
+  add_foreign_key "pos_card_refund_preparations", "tender_types"
+  add_foreign_key "pos_card_refund_preparations", "users", column: "abandoned_by_user_id"
+  add_foreign_key "pos_card_refund_preparations", "users", column: "prepared_by_user_id"
+  add_foreign_key "pos_card_refund_preparations", "users", column: "recorded_by_user_id"
+  add_foreign_key "pos_card_refund_preparations", "users", column: "resolved_by_user_id"
   add_foreign_key "pos_cash_movements", "cash_movement_types", on_delete: :restrict
   add_foreign_key "pos_cash_movements", "pos_approvals", on_delete: :restrict
   add_foreign_key "pos_cash_movements", "pos_sessions", on_delete: :restrict
