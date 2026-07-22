@@ -17,10 +17,6 @@ module Pos
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "only open transactions may be suspended" unless transaction.open?
         raise Error, "cannot suspend while unresolved tenders exist" if transaction.unresolved_tenders?
-        if transaction.card_refund_preparation_outstanding?
-          raise Error,
-                "card refund preparation is outstanding; record the authorization or abandon the preparation first"
-        end
 
         transaction.update!(
           status: "suspended",

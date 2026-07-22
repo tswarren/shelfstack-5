@@ -12,6 +12,7 @@ module Pos
       @drawer = cash_drawers(:drawer_1)
       @variant = product_variants(:sample_book_standard)
       @cash = tender_types(:cash)
+      @card = tender_types(:card_standalone)
 
       open_inventory(@variant, quantity: 5, unit_cost_cents: 500)
 
@@ -32,12 +33,9 @@ module Pos
     end
 
     test "post-void reverses inventory and creates a new receipt without mutating the original" do
-      pos_ready_post_void!(original: @transaction, actor: @admin, reason: "wrong tender", pos_session: @session)
-      result = PostVoidTransaction.call(
-        original_transaction: @transaction,
-        pos_session: @session,
-        actor: @admin,
-        completion_idempotency_key: "pv-1"
+      result = pos_post_void!(
+        original: @transaction, actor: @admin, reason: "wrong tender",
+        pos_session: @session, key: "pv-1"
       )
 
       assert result.success?, result.error
@@ -62,24 +60,15 @@ module Pos
     end
 
     test "same idempotency key replays; different key is blocked" do
-      pos_ready_post_void!(original: @transaction, actor: @admin, reason: "void", pos_session: @session)
-      first = PostVoidTransaction.call(
-        original_transaction: @transaction, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-same"
-      )
+      plan = pos_ready_post_void!(original: @transaction, actor: @admin, reason: "void", pos_session: @session)
+      first = call_post_void(@transaction, "pv-same", plan)
       assert first.success?
 
-      second = PostVoidTransaction.call(
-        original_transaction: @transaction, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-same"
-      )
+      second = call_post_void(@transaction, "pv-same", plan)
       assert second.success?
       assert second.replayed
 
-      third = PostVoidTransaction.call(
-        original_transaction: @transaction, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-other"
-      )
+      third = call_post_void(@transaction, "pv-other", plan)
       refute third.success?
       assert_match(/already been post-voided/, third.error)
     end
@@ -90,12 +79,75 @@ module Pos
         permission: permissions(:pos_post_void_approve_self)
       ).delete_all
 
-      result = PreparePostVoid.call(
+      result = ApprovePostVoid.call(
         original_transaction: @transaction, actor: @admin,
         reason: "void", approver: @admin, approver_pin: "1234", pos_session: @session
       )
       refute result.success?
       assert_match(/approve_self/, result.error)
+    end
+
+    test "card sale post-void audits confirmations before reverse and stamps reversing tenders" do
+      txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
+      net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+      assert AddCardTender.call(
+        pos_transaction: txn, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-CARD-1", actor: @admin
+      ).success?
+      assert CompleteTransaction.call(
+        pos_transaction: txn, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "card-sale-pv"
+      ).success?
+      txn.reload
+      original_card = txn.pos_tenders.settled.find { |t| t.tender_type.tender_category == "card" }
+
+      result = pos_post_void!(
+        original: txn, actor: @admin, reason: "card void",
+        pos_session: @session, key: "pv-card", auth_prefix: "EXT-VOID"
+      )
+      assert result.success?, result.error
+      assert result.confirmation_audit_event_ids.present?
+
+      audit = AdministrativeAuditEvent.find(result.confirmation_audit_event_ids.first)
+      assert_equal "pos_post_void.card_reversal_confirmed", audit.action
+      assert_equal original_card.id, audit.subject_id
+
+      reversing_tender = result.pos_transaction.pos_tenders.find_by!(reverses_pos_tender_id: original_card.id)
+      assert_equal "EXT-VOID-1", reversing_tender.external_void_reference
+      assert reversing_tender.external_void_confirmed_at.present?
+    end
+
+    test "failed reverse retains confirmation audit events" do
+      txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
+      net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+      assert AddCardTender.call(
+        pos_transaction: txn, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-FAIL-1", actor: @admin
+      ).success?
+      assert CompleteTransaction.call(
+        pos_transaction: txn, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "card-sale-fail"
+      ).success?
+      txn.reload
+
+      plan = pos_ready_post_void!(original: txn, actor: @admin, reason: "fail reverse", pos_session: @session)
+      before = AdministrativeAuditEvent.where(action: "pos_post_void.card_reversal_confirmed").count
+
+      with_stubbed_singleton_call(EvaluatePostVoidEligibility, ->(**) {
+        Data.define(:eligible?, :blockers, :warnings).new(
+          eligible?: false, blockers: [ "forced blocker" ], warnings: []
+        )
+      }) do
+        result = call_post_void(txn, "pv-fail", plan)
+        refute result.success?
+        assert result.confirmation_audit_event_ids.present?
+      end
+
+      after = AdministrativeAuditEvent.where(action: "pos_post_void.card_reversal_confirmed").count
+      assert_operator after, :>, before
+      refute PosTransaction.exists?(reverses_pos_transaction_id: txn.id)
     end
 
     test "post-void clones discounts onto the reversing transaction" do
@@ -120,10 +172,9 @@ module Pos
       original_discount_ids = open_sale.pos_discounts.pluck(:id)
       original_alloc_sum = PosDiscountAllocation.where(pos_discount_id: original_discount_ids).sum(:allocated_amount_cents)
 
-      pos_ready_post_void!(original: open_sale, actor: @admin, reason: "discounted void", pos_session: @session)
-      result = PostVoidTransaction.call(
-        original_transaction: open_sale, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-disc"
+      result = pos_post_void!(
+        original: open_sale, actor: @admin, reason: "discounted void",
+        pos_session: @session, key: "pv-disc"
       )
       assert result.success?, result.error
       reversing = result.pos_transaction
@@ -151,10 +202,9 @@ module Pos
       txn.reload
       assert_equal "sold", unit.reload.status
 
-      pos_ready_post_void!(original: txn, actor: @admin, reason: "unit void", pos_session: @session)
-      result = PostVoidTransaction.call(
-        original_transaction: txn, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-unit"
+      result = pos_post_void!(
+        original: txn, actor: @admin, reason: "unit void",
+        pos_session: @session, key: "pv-unit"
       )
       assert result.success?, result.error
       assert_equal "available", unit.reload.status
@@ -162,22 +212,16 @@ module Pos
     end
 
     test "concurrent post-void allows only one success" do
-      pos_ready_post_void!(original: @transaction, actor: @admin, reason: "race", pos_session: @session)
+      plan = pos_ready_post_void!(original: @transaction, actor: @admin, reason: "race", pos_session: @session)
       results = {}
       barrier = Concurrent::CyclicBarrier.new(2)
       t1 = Thread.new do
         barrier.wait
-        results[:a] = PostVoidTransaction.call(
-          original_transaction: @transaction, pos_session: @session, actor: @admin,
-          completion_idempotency_key: "pv-race-a"
-        )
+        results[:a] = call_post_void(@transaction, "pv-race-a", plan)
       end
       t2 = Thread.new do
         barrier.wait
-        results[:b] = PostVoidTransaction.call(
-          original_transaction: @transaction, pos_session: @session, actor: @admin,
-          completion_idempotency_key: "pv-race-b"
-        )
+        results[:b] = call_post_void(@transaction, "pv-race-b", plan)
       end
       [ t1, t2 ].each(&:join)
       successes = results.values.count(&:success?)
@@ -186,6 +230,18 @@ module Pos
     end
 
     private
+
+    def call_post_void(original, key, plan)
+      PostVoidTransaction.call(
+        original_transaction: original,
+        pos_session: @session,
+        actor: @admin,
+        completion_idempotency_key: key,
+        pos_approval: plan[:pos_approval],
+        reason: plan[:reason],
+        card_confirmations: plan[:card_confirmations]
+      )
+    end
 
     def open_inventory(variant, quantity:, unit_cost_cents:)
       reason = inventory_adjustment_reasons(:opening_initial)

@@ -107,10 +107,6 @@ module Pos
     end
 
     def validate_tenders_settle!(tenders, net_total_cents)
-      if tenders.any?(&:requires_reconciliation?)
-        raise Error, "tender requires reconciliation before completion"
-      end
-
       total = tenders.sum { |tender| tender.direction == "received" ? tender.amount_cents : -tender.amount_cents }
       return if total == net_total_cents
 

@@ -44,8 +44,6 @@ module Pos
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
-        TenderGuards.assert_no_outstanding_card_refund_preparation!(transaction)
-
         recalculation = FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
         TenderGuards.assert_no_calculation_blockers!(recalculation)
 

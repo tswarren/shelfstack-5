@@ -88,8 +88,8 @@ module PosSetupHelper
     klass.singleton_class.remove_method :__original_call
   end
 
-  # Approve a post-void plan and record any eager card children so
-  # PostVoidTransaction can consume the preparation without mid-flight auth.
+  # Policy A: approve post-void and build card confirmation params for
+  # PostVoidTransaction (no preparation tables).
   def pos_ready_post_void!(
     original:,
     actor:,
@@ -99,7 +99,7 @@ module PosSetupHelper
     pos_session: nil,
     auth_prefix: "VOID"
   )
-    prepared = Pos::PreparePostVoid.call(
+    approved = Pos::ApprovePostVoid.call(
       original_transaction: original,
       actor: actor,
       reason: reason,
@@ -107,17 +107,37 @@ module PosSetupHelper
       approver_pin: approver_pin,
       pos_session: pos_session
     )
-    raise "prepare post-void failed: #{prepared.error}" unless prepared.success?
+    raise "approve post-void failed: #{approved.error}" unless approved.success?
 
-    prepared.preparation.pos_post_void_card_preparations.prepared.order(:id).each_with_index do |card, index|
-      recorded = Pos::RecordPostVoidCardConfirmation.call(
-        preparation: card,
-        actor: actor,
-        authorization_code: "#{auth_prefix}-#{index + 1}"
-      )
-      raise "record post-void card failed: #{recorded.error}" unless recorded.success?
+    confirmations = {}
+    original.pos_tenders.where(status: "completed").includes(:tender_type).order(:id).each_with_index do |tender, index|
+      next unless tender.tender_type.tender_category == "card"
+
+      confirmations[tender.id.to_s] = {
+        "external_void_reference" => "#{auth_prefix}-#{index + 1}",
+        "confirmation_note" => "confirmed"
+      }
     end
 
-    prepared.preparation
+    {
+      pos_approval: approved.pos_approval,
+      reason: approved.reason,
+      card_confirmations: confirmations
+    }
+  end
+
+  def pos_post_void!(original:, actor:, pos_session:, reason: "test post-void", key: nil, **ready_opts)
+    plan = pos_ready_post_void!(
+      original: original, actor: actor, reason: reason, pos_session: pos_session, **ready_opts
+    )
+    Pos::PostVoidTransaction.call(
+      original_transaction: original,
+      pos_session: pos_session,
+      actor: actor,
+      completion_idempotency_key: key || SecureRandom.uuid,
+      pos_approval: plan[:pos_approval],
+      reason: plan[:reason],
+      card_confirmations: plan[:card_confirmations]
+    )
   end
 end

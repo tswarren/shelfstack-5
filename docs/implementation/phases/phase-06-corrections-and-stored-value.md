@@ -46,7 +46,7 @@ Detail lives in the three Phase 6 decision notes linked above—not in this phas
 
 **POS correction links:** `pos_transactions.reverses_pos_transaction_id` (unique when present), post-void reason/approval/idempotency; `pos_line_items.reverses_pos_line_item_id`; `pos_tenders.reverses_pos_tender_id`, `original_pos_tender_id`, `stored_value_account_id`.
 
-**Card refund preparations:** `pos_card_refund_preparations` (UUID) — durable terminal-bound plan with snapshot/fingerprint; statuses `prepared` / `recorded_tender` / `recorded_orphan` / `abandoned`. While `prepared`, commercial edit/complete/cancel/suspend are blocked regardless of TTL. Orphans are external-payment facts, not tenders on closed history.
+**Standalone card recording (simplified):** no prep/orphan/recon tables. Operators confirm terminal activity; ShelfStack stores tender references (`authorization_code` / `terminal_reference` from TenderType reference slots). Partial card payments/refunds are allowed within remaining balances. Attach failures require confirm-external-void then `RecordVoidedCardTender`. Post-void Policy A: approve (`ApprovePostVoid`) → reverse cards on terminal → confirmation audits → `PostVoidTransaction`. Column `requires_reconciliation` may remain unused.
 
 **Inventory:** ledger `unavailable_delta`, `resulting_unavailable` (optional disposition snapshot); migrate return/receipt unavailable mutations onto ledger-owned posting.
 

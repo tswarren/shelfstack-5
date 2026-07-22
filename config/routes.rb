@@ -114,12 +114,9 @@ Rails.application.routes.draw do
       post :cancel
       post :complete
       get :post_void_form
-      post :prepare_post_void
-      post :abandon_post_void
+      post :approve_post_void
+      post :clear_post_void_approval
       post :post_void
-      post :prepare_post_void_card
-      post :record_post_void_card
-      post :abandon_post_void_card
     end
     resources :pos_line_items, only: %i[create update destroy] do
       member do
@@ -136,22 +133,8 @@ Rails.application.routes.draw do
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
     resources :pos_tenders, only: %i[create destroy] do
       collection do
-        post :prepare_card_refund
-        post :abandon_card_refund
+        post :record_voided
       end
-      member do
-        post :resolve_reconciliation
-      end
-    end
-  end
-
-  resources :pos_card_refund_orphans, only: %i[index] do
-    collection do
-      post :record_authorization
-      post :resolve_post_void
-    end
-    member do
-      post :resolve
     end
   end
 

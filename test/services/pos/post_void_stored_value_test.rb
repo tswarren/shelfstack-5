@@ -39,12 +39,9 @@ module Pos
       ).success?
       assert_equal 2000, @account.reload.current_balance_cents
 
-      pos_ready_post_void!(
-        original: transaction.reload, actor: @admin, reason: "customer changed mind", pos_session: @session
-      )
-      result = PostVoidTransaction.call(
-        original_transaction: transaction, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "pv-sv-1"
+      result = pos_post_void!(
+        original: transaction.reload, actor: @admin, reason: "customer changed mind",
+        pos_session: @session, key: "pv-sv-1"
       )
       assert result.success?, result.error
       assert_equal 0, @account.reload.current_balance_cents

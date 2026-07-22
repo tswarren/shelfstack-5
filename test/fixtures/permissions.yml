@@ -430,12 +430,6 @@ pos_return_refund_exception_approve:
   permission_group: pos
   active: true
 
-pos_card_refund_reconcile:
-  code: pos.card_refund.reconcile
-  name: Resolve card refund reconciliation
-  permission_group: pos
-  active: true
-
 stored_value_adjustment_create:
   code: stored_value.adjustment.create
   name: Create stored-value adjustments

@@ -26,13 +26,6 @@ module Pos
       raise Error, "cannot tender while calculation has blockers: #{recalculation.blockers.join(', ')}"
     end
 
-    def assert_no_outstanding_card_refund_preparation!(transaction)
-      return unless transaction.card_refund_preparation_outstanding?
-
-      raise Error,
-            "card refund preparation is outstanding; record the authorization or abandon the preparation first"
-    end
-
     def remaining_received_balance_cents(transaction, net_total_cents)
       [ net_total_cents - transaction.pos_tenders.unresolved.where(direction: "received").sum(:amount_cents), 0 ].max
     end

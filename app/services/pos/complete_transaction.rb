@@ -55,10 +55,6 @@ module Pos
         end
 
         raise Error, "transaction is not open" unless transaction.open?
-        if transaction.card_refund_preparation_outstanding?
-          raise Error,
-                "card refund preparation is outstanding; record the authorization or abandon the preparation first"
-        end
         unless transaction.active_pos_session_id == session.id
           raise Error, "completion session does not control this transaction"
         end

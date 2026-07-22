@@ -165,7 +165,6 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.return.create` | Create return lines | store | 4e | — | no | yes |
 | `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_cents` | yes | yes |
 | `pos.return.refund_exception.approve` | Approve refund destination exceptions (bypass remaining original tender restoration) | store | 6 | — | — | yes |
-| `pos.card_refund.reconcile` | Resolve card refund reconciliation (recon tenders and orphan external refunds) | store | 6 | — | yes (acceptance outcomes) | yes |
 | `pos.tender.cash` | Accept cash tenders | store | 4c | — | no | no |
 | `pos.tender.card_standalone` | Record standalone card tenders | store | 4c | — | no | yes |
 | `pos.tender.card_void` | Confirm external card tender voids | store | 4c | — | no | yes |

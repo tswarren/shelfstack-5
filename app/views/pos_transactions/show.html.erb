@@ -1,11 +1,4 @@
 <% if @pos_transaction.completed? %>
-  <% if @unresolved_card_refund_orphans.present? %>
-    <div class="flash flash-alert" role="alert">
-      <%= pluralize(@unresolved_card_refund_orphans.size, "orphan card refund") %>
-      need reconciliation.
-      <%= link_to "Open orphan queue", pos_card_refund_orphans_path %>.
-    </div>
-  <% end %>
   <div class="pos-workspace pos-completed-workspace" data-controller="pos-register"
        data-pos-register-completed-value="true">
     <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
@@ -63,20 +56,6 @@
   <%= render "session_context" %>
   <%= render "transaction_status" %>
   <%= render "recall_summary" %>
-
-  <% if @unresolved_card_refund_orphans.present? %>
-    <div class="flash flash-alert" role="alert">
-      <%= pluralize(@unresolved_card_refund_orphans.size, "orphan card refund") %>
-      need reconciliation.
-      <%= link_to "Open orphan queue", pos_card_refund_orphans_path %>.
-    </div>
-  <% end %>
-  <% if @recon_card_refund_tenders.present? %>
-    <div class="flash flash-alert" role="alert">
-      <%= pluralize(@recon_card_refund_tenders.size, "card refund tender") %>
-      require reconciliation before completion.
-    </div>
-  <% end %>
 
   <div class="pos-workspace" data-controller="pos-register"
        data-pos-register-scan-outcome-value="<%= @scan_outcome %>">

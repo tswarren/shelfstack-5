@@ -296,7 +296,7 @@ Records amount presented, amount applied, and change.
 
 ### Card
 
-MVP uses standalone terminals. ShelfStack stores no full card number. An externally approved card Tender is stored as `status: authorized` with fields such as `authorization_code`, `terminal_reference`, and `authorized_at` before internal Completion. If Completion fails, that authorized Tender remains visible and unsettled for operational follow-up. A separate exception table is not required for Phase 4c.
+MVP uses standalone terminals. ShelfStack stores no full card number and does not manage the card transaction lifecycle, settlement, or processor reconciliation. An operator-confirmed card Tender is stored as `status: authorized` with TenderType-configured references (`authorization_code` ← reference 1, `terminal_reference` ← reference 2) and `authorized_at` before internal Completion. Partial card tenders are allowed within the remaining received or refund balance. If the entered amount cannot be attached, the operator must confirm an external void and ShelfStack records an already-`voided` tender retaining the references (`RecordVoidedCardTender`). Authorized card tenders cannot be cleared without external-void confirmation (`VoidCardTender`). Post-void follows Policy A: approve the complete operation, reverse cards on the terminal, record durable confirmation audits, then create the reversing transaction. If Completion fails after an authorized card tender was recorded, that tender remains visible and unsettled for operational follow-up. Processor chargebacks and settlement exceptions are outside Phase 6.
 
 ### Stored Value
 

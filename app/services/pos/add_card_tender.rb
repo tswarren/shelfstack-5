@@ -1,29 +1,28 @@
 # frozen_string_literal: true
 
 module Pos
-  # Standalone-terminal card Tender (domain "Card"): ShelfStack cannot make the
-  # external terminal authorization part of its own database transaction (MVP
-  # limitation, ADR-0009), so external approval is confirmed by the cashier before
-  # this call and stored as `authorized` with `authorization_code`,
-  # `terminal_reference`, and `authorized_at`. If internal completion later fails,
-  # this authorized Tender remains visible/unsettled for operational follow-up
-  # rather than being reverted.
+  # Records an operator-confirmed standalone-terminal card payment.
+  # ShelfStack does not drive the terminal; ADR-0009 confirm-before-complete.
   #
-  # Amounts that exceed remaining balance when the Tender Type disallows over-tender
-  # are rejected unless an authorization already exists — then the tender is retained
-  # with `requires_reconciliation: true` (external fact must not be discarded).
+  # Amount must satisfy 0 < amount <= remaining received balance (unless the
+  # tender type allows over-tender). When refs are valid but the amount is no
+  # longer attachable, returns amount_mismatch? so the UI can require
+  # record-and-void via RecordVoidedCardTender.
   class AddCardTender < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_tender, :success?, :error, :warnings)
+    AmountMismatch = Class.new(Error)
+    Result = Data.define(:pos_tender, :success?, :error, :warnings, :amount_mismatch?)
 
-    def initialize(pos_transaction:, tender_type:, amount_cents:, authorization_code:, actor:,
-                    terminal_reference: nil, requires_reconciliation: false)
+    def initialize(pos_transaction:, tender_type:, amount_cents:, actor:,
+                   authorization_code: nil, terminal_reference: nil,
+                   reference_1: nil, reference_2: nil)
       @pos_transaction = pos_transaction
       @tender_type = tender_type
       @amount_cents = amount_cents.to_i
       @authorization_code = authorization_code
       @terminal_reference = terminal_reference
-      @requires_reconciliation = requires_reconciliation
+      @reference_1 = reference_1
+      @reference_2 = reference_2
       @actor = actor
     end
 
@@ -31,14 +30,20 @@ module Pos
       raise Error, "transaction is not open" unless @pos_transaction.open?
       raise Error, "tender type must be card" unless @tender_type.tender_category == "card"
       raise Error, "amount must be positive" unless @amount_cents.positive?
-      raise Error, "authorization code is required" if @authorization_code.blank?
       TenderGuards.assert_active!(@tender_type)
       TenderGuards.assert_payment_enabled!(@tender_type)
+
+      refs = ValidateTenderReferences.call(
+        tender_type: @tender_type,
+        reference_1: @reference_1,
+        reference_2: @reference_2,
+        authorization_code: @authorization_code,
+        terminal_reference: @terminal_reference
+      )
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
-        TenderGuards.assert_no_outstanding_card_refund_preparation!(transaction)
 
         recalculation = recalculate_for_tender!(transaction)
         TenderGuards.assert_no_calculation_blockers!(recalculation)
@@ -46,24 +51,25 @@ module Pos
         balance_due = TenderGuards.remaining_received_balance_cents(transaction, recalculation.net_total_cents)
         raise Error, "no balance due" if balance_due.zero?
 
-        requires_reconciliation = @requires_reconciliation
         if !@tender_type.allows_over_tender? && @amount_cents > balance_due
-          # Authorization already exists externally — retain with recon rather than discard.
-          requires_reconciliation = true
+          raise AmountMismatch,
+                "amount exceeds remaining balance (#{balance_due}); confirm external void and record as voided"
         end
 
         tender = PosTender.create!(
           pos_transaction: transaction, store: transaction.store, tender_type: @tender_type,
           direction: "received", status: "authorized", amount_cents: @amount_cents,
-          authorization_code: @authorization_code, terminal_reference: @terminal_reference,
-          authorized_at: Time.current, requires_reconciliation: requires_reconciliation,
-          created_by_user: @actor
+          authorization_code: refs.authorization_code, terminal_reference: refs.terminal_reference,
+          authorized_at: Time.current, created_by_user: @actor
         )
 
-        Result.new(pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings)
+        Result.new(pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings,
+                   amount_mismatch?: false)
       end
-    rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
-      Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [])
+    rescue AmountMismatch => e
+      Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [], amount_mismatch?: true)
+    rescue Error, ValidateTenderReferences::Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
+      Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [], amount_mismatch?: false)
     end
 
     private

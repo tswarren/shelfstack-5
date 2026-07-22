@@ -1,311 +1,230 @@
 <% if @pos_transaction.open? %>
-  <% prepared = @card_refund_preparation %>
   <% refundable = @refundable_original_tenders || [] %>
   <% refundable_sv = refundable.select { |t| t.tender_type.tender_category == "stored_value" } %>
   <% refundable_cash = refundable.select { |t| t.tender_type.tender_category == "cash" } %>
   <% refundable_card = refundable.select { |t| t.tender_type.tender_category == "card" } %>
+  <% mismatch = @card_amount_mismatch %>
 
-  <% if prepared.present? %>
-    <div class="flash flash-alert" role="alert">
-      Card refund preparation is outstanding
-      (<%= number_to_currency(prepared.amount_cents / 100.0) %><% if prepared.stale? %>, stale<% end %>).
-      Record the terminal authorization or abandon the preparation before editing this transaction.
-    </div>
-
+  <% if mismatch.present? %>
+    <% mismatch_type = @tender_types.find { |t| t.id == mismatch["tender_type_id"] } %>
     <details class="pos-panel" open>
-      <summary>Card refund</summary>
+      <summary>Confirm external void (amount not attachable)</summary>
       <p class="muted">
-        Process the refund on the external terminal now, then record the authorization.
-        Do not abandon if the terminal refund has already succeeded.
+        <%= mismatch["error"] %>
+        Void the authorization on the terminal, then record it as voided so the reference is retained.
       </p>
-      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :refund, "1" %>
-        <%= hidden_field_tag :preparation_id, prepared.id %>
+      <%= form_with url: record_voided_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :tender_type_id, mismatch["tender_type_id"] %>
+        <%= hidden_field_tag :amount_cents, format("%.2f", mismatch["amount_cents"].to_i / 100.0) %>
+        <%= hidden_field_tag :authorization_code, mismatch["authorization_code"] %>
+        <%= hidden_field_tag :terminal_reference, mismatch["terminal_reference"] %>
+        <% if mismatch["refund"] %>
+          <%= hidden_field_tag :refund, "1" %>
+        <% end %>
+        <p>
+          <%= mismatch_type&.name || "Card" %> ·
+          <%= number_to_currency(mismatch["amount_cents"].to_i / 100.0) %>
+          <% if mismatch["authorization_code"].present? %>
+            · <%= mismatch["authorization_code"] %>
+          <% end %>
+        </p>
         <div class="field">
-          <%= form.label :authorization_code, "Refund authorization code", class: "field-label" %>
-          <%= form.text_field :authorization_code, class: "input", required: true %>
+          <%= form.label :external_void_reference, "External void reference (optional)", class: "field-label" %>
+          <%= form.text_field :external_void_reference, class: "input" %>
         </div>
-        <div class="field">
-          <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
-          <%= form.text_field :terminal_reference, class: "input" %>
+        <div class="checkbox-group">
+          <label>
+            <%= check_box_tag :external_void_confirmed, "true", false %>
+            External void confirmed
+          </label>
         </div>
         <div class="form-actions">
-          <%= form.submit "Record authorized card refund", class: "button button-primary" %>
-        </div>
-      <% end %>
-
-      <%= form_with url: abandon_card_refund_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :preparation_id, prepared.id %>
-        <div class="field">
-          <%= form.label :reason, "Abandon reason (optional)", class: "field-label" %>
-          <%= form.text_field :reason, class: "input" %>
-        </div>
-        <div class="form-actions">
-          <%= form.submit prepared.stale? ? "Abandon stale preparation" : "Abandon preparation",
-                class: "button button-outline",
-                data: { turbo_confirm: "Abandon only if the terminal refund was NOT processed." } %>
+          <%= form.submit "Record voided card tender", class: "button button-danger",
+                data: { turbo_confirm: "Confirm the card was voided on the external terminal." } %>
         </div>
       <% end %>
     </details>
-  <% else %>
-    <details class="pos-panel" open>
-      <summary>Cash tender</summary>
+  <% end %>
+
+  <details class="pos-panel" open>
+    <summary>Cash tender</summary>
+    <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+        <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_tendered_cents", label: "Amount tendered",
+            id: "cash_amount_tendered_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+      <div class="form-actions">
+        <%= form.submit "Add cash tender", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </details>
+
+  <details class="pos-panel">
+    <summary>Standalone card tender</summary>
+    <p class="muted">Confirm approval on the external terminal first; record the result here. Partial card tenders are allowed.</p>
+    <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <div class="field">
+        <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+        <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
+            id: "card_amount_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+      <% card_type = @tender_types.find { |t| t.tender_category == "card" } %>
+      <div class="field">
+        <%= form.label :authorization_code, card_type&.reference_1_label.presence || "Reference 1", class: "field-label" %>
+        <%= form.text_field :authorization_code, class: "input",
+              required: card_type&.reference_1_requirement == "required" %>
+      </div>
+      <div class="field">
+        <%= form.label :terminal_reference, card_type&.reference_2_label.presence || "Reference 2", class: "field-label" %>
+        <%= form.text_field :terminal_reference, class: "input",
+              required: card_type&.reference_2_requirement == "required" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Add card tender", class: "button button-outline" %>
+      </div>
+    <% end %>
+  </details>
+
+  <% if @tender_types.where(tender_category: "stored_value").exists? && Current.user.can?("stored_value.tender.redeem", store: Current.store) && @balance_due_cents.positive? %>
+    <details class="pos-panel">
+      <summary>Stored-value tender</summary>
       <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <div class="field">
+          <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "stored_value"), :id, :name, {}, class: "input" %>
+        </div>
+        <div class="field">
+          <%= form.label :account_number, "Account number", class: "field-label" %>
+          <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
+        </div>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
+              id: "sv_tender_amount_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+        <div class="form-actions">
+          <%= form.submit "Redeem stored value", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
+  <% if @balance_due_cents.negative? && Current.user.can?("stored_value.tender.refund", store: Current.store) && @tender_types.where(tender_category: "stored_value").exists? %>
+    <details class="pos-panel" open>
+      <summary>Stored-value refund</summary>
+      <p class="muted">
+        Restore an original stored-value tender when one remains, or issue new store credit.
+        Exception approval is required to skip a remaining original tender.
+      </p>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
+        <div class="field">
+          <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+          <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "stored_value"), :id, :name, {}, class: "input" %>
+        </div>
+        <% if refundable_sv.any? %>
+          <div class="field">
+            <%= form.label :original_pos_tender_id, "Original stored-value tender", class: "field-label" %>
+            <%= form.select :original_pos_tender_id,
+                  refundable_sv.map { |t|
+                    label = "#{t.stored_value_account&.account_number || t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining"
+                    [ label, t.id ]
+                  },
+                  { include_blank: "Issue new store credit instead…" },
+                  class: "input" %>
+          </div>
+        <% end %>
+        <div class="field">
+          <%= check_box_tag :create_store_credit, "1", refundable_sv.empty?, id: "create_store_credit" %>
+          <%= label_tag :create_store_credit, "Create new store-credit account (when not restoring an original)" %>
+        </div>
+        <div class="field">
+          <%= form.label :account_number, "Existing store-credit account (optional)", class: "field-label" %>
+          <%= form.text_field :account_number, class: "input", autocomplete: "off",
+                placeholder: "Leave blank to create new store credit" %>
+        </div>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+              id: "sv_refund_amount_cents", value_cents: -@balance_due_cents %>
+        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "sv" %>
+        <div class="form-actions">
+          <%= form.submit "Record stored-value refund", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
+  <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.cash", store: Current.store) %>
+    <details class="pos-panel" <%= "open" unless refundable_sv.any? %>>
+      <summary>Cash refund</summary>
+      <p class="muted">Link the original cash tender when restoring it. Exception approval is required for a non-original destination.</p>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
         <div class="field">
           <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
           <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name, {}, class: "input" %>
         </div>
-        <%= render "shared/currency_field", name: "amount_tendered_cents", label: "Amount tendered",
-              id: "cash_amount_tendered_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+        <% if refundable_cash.any? %>
+          <div class="field">
+            <%= form.label :original_pos_tender_id, "Original cash tender", class: "field-label" %>
+            <%= form.select :original_pos_tender_id,
+                  refundable_cash.map { |t|
+                    [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
+                  },
+                  { include_blank: "Select original… (or exception below)" },
+                  class: "input" %>
+          </div>
+        <% end %>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+              id: "refund_amount_cents", value_cents: -@balance_due_cents %>
+        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "cash" %>
         <div class="form-actions">
-          <%= form.submit "Add cash tender", class: "button button-primary" %>
+          <%= form.submit "Add cash refund", class: "button button-outline" %>
         </div>
       <% end %>
     </details>
+  <% end %>
 
+  <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.card_standalone", store: Current.store) && @tender_types.where(tender_category: "card").exists? %>
     <details class="pos-panel">
-      <summary>Standalone card tender</summary>
-      <p class="muted">Confirm approval on the external terminal first; record the result here.</p>
+      <summary>Card refund</summary>
+      <p class="muted">
+        Process the refund on the external terminal, then record the new authorization references here.
+        Partial refunds are allowed within the remaining refund balance.
+      </p>
       <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
         <div class="field">
           <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
           <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name, {}, class: "input" %>
         </div>
-        <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
-              id: "card_amount_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+        <% if refundable_card.any? %>
+          <div class="field">
+            <%= form.label :original_pos_tender_id, "Original card tender", class: "field-label" %>
+            <%= form.select :original_pos_tender_id,
+                  refundable_card.map { |t|
+                    [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
+                  },
+                  { include_blank: "Select original… (or exception below)" },
+                  class: "input" %>
+          </div>
+        <% end %>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+              id: "card_refund_amount_cents",
+              value_cents: -@balance_due_cents %>
+        <% card_type = @tender_types.find { |t| t.tender_category == "card" } %>
         <div class="field">
-          <%= form.label :authorization_code, "Authorization code", class: "field-label" %>
-          <%= form.text_field :authorization_code, class: "input" %>
+          <%= form.label :authorization_code, card_type&.reference_1_label.presence || "Reference 1", class: "field-label" %>
+          <%= form.text_field :authorization_code, class: "input",
+                required: card_type&.reference_1_requirement == "required" %>
         </div>
         <div class="field">
-          <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
-          <%= form.text_field :terminal_reference, class: "input" %>
+          <%= form.label :terminal_reference, card_type&.reference_2_label.presence || "Reference 2", class: "field-label" %>
+          <%= form.text_field :terminal_reference, class: "input",
+                required: card_type&.reference_2_requirement == "required" %>
         </div>
+        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "card_refund" %>
         <div class="form-actions">
-          <%= form.submit "Add card tender", class: "button button-outline" %>
-        </div>
-      <% end %>
-    </details>
-
-    <% if @tender_types.where(tender_category: "stored_value").exists? && Current.user.can?("stored_value.tender.redeem", store: Current.store) && @balance_due_cents.positive? %>
-      <details class="pos-panel">
-        <summary>Stored-value tender</summary>
-        <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-          <div class="field">
-            <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
-            <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "stored_value"), :id, :name, {}, class: "input" %>
-          </div>
-          <div class="field">
-            <%= form.label :account_number, "Account number", class: "field-label" %>
-            <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
-          </div>
-          <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
-                id: "sv_tender_amount_cents", value_cents: [ @balance_due_cents, 0 ].max %>
-          <div class="form-actions">
-            <%= form.submit "Redeem stored value", class: "button button-outline" %>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
-
-    <% if @balance_due_cents.negative? && Current.user.can?("stored_value.tender.refund", store: Current.store) && @tender_types.where(tender_category: "stored_value").exists? %>
-      <details class="pos-panel" open>
-        <summary>Stored-value refund</summary>
-        <p class="muted">
-          Restore an original stored-value tender when one remains, or issue new store credit.
-          Exception approval is required to skip a remaining original tender.
-        </p>
-        <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-          <%= hidden_field_tag :refund, "1" %>
-          <div class="field">
-            <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
-            <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "stored_value"), :id, :name, {}, class: "input" %>
-          </div>
-          <% if refundable_sv.any? %>
-            <div class="field">
-              <%= form.label :original_pos_tender_id, "Original stored-value tender", class: "field-label" %>
-              <%= form.select :original_pos_tender_id,
-                    refundable_sv.map { |t|
-                      label = "#{t.stored_value_account&.account_number || t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining"
-                      [ label, t.id ]
-                    },
-                    { include_blank: "Issue new store credit instead…" },
-                    class: "input" %>
-            </div>
-          <% end %>
-          <div class="field">
-            <%= check_box_tag :create_store_credit, "1", refundable_sv.empty?, id: "create_store_credit" %>
-            <%= label_tag :create_store_credit, "Create new store-credit account (when not restoring an original)" %>
-          </div>
-          <div class="field">
-            <%= form.label :account_number, "Existing store-credit account (optional)", class: "field-label" %>
-            <%= form.text_field :account_number, class: "input", autocomplete: "off",
-                  placeholder: "Leave blank to create new store credit" %>
-          </div>
-          <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
-                id: "sv_refund_amount_cents", value_cents: -@balance_due_cents %>
-          <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "sv" %>
-          <div class="form-actions">
-            <%= form.submit "Record stored-value refund", class: "button button-outline" %>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
-
-    <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.cash", store: Current.store) %>
-      <details class="pos-panel" <%= "open" unless refundable_sv.any? %>>
-        <summary>Cash refund</summary>
-        <p class="muted">Link the original cash tender when restoring it. Exception approval is required for a non-original destination.</p>
-        <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-          <%= hidden_field_tag :refund, "1" %>
-          <div class="field">
-            <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
-            <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "cash"), :id, :name, {}, class: "input" %>
-          </div>
-          <% if refundable_cash.any? %>
-            <div class="field">
-              <%= form.label :original_pos_tender_id, "Original cash tender", class: "field-label" %>
-              <%= form.select :original_pos_tender_id,
-                    refundable_cash.map { |t|
-                      [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
-                    },
-                    { include_blank: "Select original… (or exception below)" },
-                    class: "input" %>
-            </div>
-          <% end %>
-          <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
-                id: "refund_amount_cents", value_cents: -@balance_due_cents %>
-          <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "cash" %>
-          <div class="form-actions">
-            <%= form.submit "Add cash refund", class: "button button-outline" %>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
-
-    <% if @balance_due_cents.negative? && Current.user.can?("pos.tender.card_standalone", store: Current.store) && @tender_types.where(tender_category: "card").exists? %>
-      <details class="pos-panel">
-        <summary>Card refund</summary>
-        <p class="muted">
-          Prepare the refund plan here first. Only after the plan is ready should you process the
-          refund on the external terminal, then record the authorization.
-        </p>
-        <%= form_with url: prepare_card_refund_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-          <div class="field">
-            <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
-            <%= form.collection_select :tender_type_id, @tender_types.where(tender_category: "card"), :id, :name, {}, class: "input" %>
-          </div>
-          <% if refundable_card.any? %>
-            <div class="field">
-              <%= form.label :original_pos_tender_id, "Original card tender", class: "field-label" %>
-              <%= form.select :original_pos_tender_id,
-                    refundable_card.map { |t|
-                      [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
-                    },
-                    { include_blank: "Select original… (or exception below)" },
-                    class: "input" %>
-            </div>
-          <% end %>
-          <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
-                id: "card_refund_prepare_amount_cents",
-                value_cents: -@balance_due_cents %>
-          <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "card_prepare" %>
-          <div class="form-actions">
-            <%= form.submit "Prepare card refund plan", class: "button button-outline" %>
-          </div>
-        <% end %>
-      </details>
-    <% end %>
-  <% end %>
-
-  <% @recon_card_refund_tenders.to_a.each do |tender| %>
-    <% replacement_prep = @pos_transaction.pos_card_refund_preparations.active_replacements_for(tender).first %>
-    <details class="pos-panel" open>
-      <summary>Resolve card refund reconciliation — tender #<%= tender.id %></summary>
-      <p class="muted"><%= Array(tender.pos_card_refund_preparation&.reconciliation_reasons).join("; ") %></p>
-
-      <%= form_with url: resolve_reconciliation_pos_transaction_pos_tender_path(@pos_transaction, tender), method: :post, class: "form", id: "resolve-recon-#{tender.id}" do |form| %>
-        <div class="field">
-          <%= form.label :outcome, "Outcome", class: "field-label" %>
-          <%= select_tag :outcome,
-                options_for_select([
-                  [ "Externally voided", "externally_voided" ],
-                  [ "Validated and accepted", "validated_and_accepted" ],
-                  [ "Replaced (void old after recorded replacement)", "replaced" ]
-                ]),
-                class: "input" %>
-        </div>
-        <div class="field">
-          <%= form.label :reason, "Reason", class: "field-label" %>
-          <%= text_field_tag :reason, nil, class: "input", required: true %>
-        </div>
-        <div class="field">
-          <%= form.label :external_void_reference, "External void reference (required for void / replaced)", class: "field-label" %>
-          <%= text_field_tag :external_void_reference, nil, class: "input" %>
-        </div>
-        <div class="field">
-          <%= form.label :exception_approver_username, "Exception approver (for accepted outcomes)", class: "field-label" %>
-          <%= text_field_tag :exception_approver_username, nil, class: "input", autocomplete: "username",
-                id: "resolve_exception_approver_username_#{tender.id}" %>
-        </div>
-        <div class="field">
-          <%= form.label :exception_approver_pin, "Approver PIN", class: "field-label" %>
-          <%= password_field_tag :exception_approver_pin, nil, class: "input", autocomplete: "off",
-                id: "resolve_exception_approver_pin_#{tender.id}" %>
-        </div>
-        <div class="form-actions">
-          <%= form.submit "Resolve reconciliation", class: "button button-outline" %>
-        </div>
-      <% end %>
-
-      <% if replacement_prep.blank? %>
-        <p class="muted">
-          To replace: prepare a same-amount replacement against this tender, authorize it on the
-          terminal, record the authorization, then resolve as Replaced with the old void reference.
-        </p>
-        <%= form_with url: prepare_card_refund_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do %>
-          <%= hidden_field_tag :replaces_pos_tender_id, tender.id %>
-          <div class="form-actions">
-            <%= submit_tag "Prepare replacement card refund", class: "button button-outline" %>
-          </div>
-        <% end %>
-      <% elsif replacement_prep.prepared? %>
-        <p class="muted">
-          Replacement preparation <%= replacement_prep.id %> is ready
-          (<%= number_to_currency(replacement_prep.amount_cents / 100.0) %>).
-          Process the new terminal refund, then record authorization.
-        </p>
-      <% else %>
-        <p class="muted">
-          Replacement tender #<%= replacement_prep.pos_tender_id %> is recorded.
-          Confirm the old external refund was voided, then resolve as Replaced.
-        </p>
-      <% end %>
-    </details>
-  <% end %>
-
-  <% Array(@abandoned_card_refund_preparations).each do |abandoned| %>
-    <details class="pos-panel" open>
-      <summary>Record auth for abandoned card refund preparation</summary>
-      <p class="muted">
-        Preparation <%= abandoned.id %> was abandoned
-        (<%= number_to_currency(abandoned.amount_cents / 100.0) %>).
-        If the terminal refund already succeeded, record the authorization here —
-        it will be retained as a reconciliation orphan.
-      </p>
-      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :refund, "1" %>
-        <%= hidden_field_tag :preparation_id, abandoned.id %>
-        <div class="field">
-          <%= form.label :authorization_code, "Refund authorization code", class: "field-label" %>
-          <%= form.text_field :authorization_code, class: "input", required: true %>
-        </div>
-        <div class="field">
-          <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
-          <%= form.text_field :terminal_reference, class: "input" %>
-        </div>
-        <div class="form-actions">
-          <%= form.submit "Record authorized card refund", class: "button button-primary" %>
+          <%= form.submit "Record card refund", class: "button button-outline" %>
         </div>
       <% end %>
     </details>

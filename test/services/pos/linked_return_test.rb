@@ -502,7 +502,7 @@ module Pos
       assert_equal 100, total
     end
 
-    test "card refund prepare after sibling completion uses finalized residual net" do
+    test "card refund after sibling completion uses finalized residual net" do
       open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
       card = tender_types(:card_standalone)
       sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
@@ -536,13 +536,9 @@ module Pos
         -FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(a.id))
           .recalculation.net_total_cents
       }
-      prep_a = PrepareCardRefund.call(
-        pos_transaction: a, tender_type: card, amount_cents: due_a, actor: @admin,
-        original_pos_tender: sale_card
-      )
-      assert prep_a.ready?, prep_a.error
       assert AddCardRefundTender.call(
-        preparation: prep_a.preparation, authorization_code: "RFND-A", actor: @admin
+        pos_transaction: a, tender_type: card, amount_cents: due_a, actor: @admin,
+        authorization_code: "RFND-A", original_pos_tender: sale_card
       ).success?
       assert CompleteTransaction.call(
         pos_transaction: a, pos_session: @session, actor: @admin,
@@ -553,11 +549,10 @@ module Pos
         -FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(b.id))
           .recalculation.net_total_cents
       }
-      prepared = PrepareCardRefund.call(
+      assert AddCardRefundTender.call(
         pos_transaction: b, tender_type: card, amount_cents: due_b, actor: @admin,
-        original_pos_tender: sale_card
-      )
-      assert prepared.ready?, prepared.error
+        authorization_code: "RFND-B", original_pos_tender: sale_card
+      ).success?
     end
 
     test "net-positive mixed txn received tenders finalize after sibling return" do
@@ -622,13 +617,21 @@ module Pos
         FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(mixed_card.id))
           .recalculation.net_total_cents
       }
-      # External auth amount no longer matches finalized balance — retain with recon.
+      # External auth amount no longer matches finalized balance — amount_mismatch for record-and-void.
       card_tender = AddCardTender.call(
         pos_transaction: mixed_card, tender_type: card, amount_cents: current_due + 50,
         authorization_code: "MIXED-STALE", actor: @admin
       )
-      assert card_tender.success?, card_tender.error
-      assert card_tender.pos_tender.requires_reconciliation?
+      refute card_tender.success?
+      assert card_tender.amount_mismatch?
+      assert RecordVoidedCardTender.call(
+        pos_transaction: mixed_card, tender_type: card, amount_cents: current_due + 50,
+        authorization_code: "MIXED-STALE", actor: @admin, external_void_confirmed: true
+      ).success?
+      assert AddCardTender.call(
+        pos_transaction: mixed_card, tender_type: card, amount_cents: current_due,
+        authorization_code: "MIXED-OK", actor: @admin
+      ).success?
 
       mixed_cash, = build_mixed.call
       cash_due = ActiveRecord::Base.transaction {
