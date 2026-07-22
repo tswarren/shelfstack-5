@@ -213,11 +213,11 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     assert recorded.requires_reconciliation
 
     visit pos_transaction_path(ret)
-    within_panel("Resolve card refund reconciliation") do
+    within("#resolve-recon-#{recorded.pos_tender.id}") do
       select "Validated and accepted", from: "Outcome"
       fill_in "Reason", with: "terminal confirmed"
-      fill_in "Exception approver (for accepted outcomes)", with: "admin"
-      fill_in "Approver PIN", with: "1234"
+      fill_in "resolve_exception_approver_username_#{recorded.pos_tender.id}", with: "admin"
+      fill_in "resolve_exception_approver_pin_#{recorded.pos_tender.id}", with: "1234"
       click_button "Resolve reconciliation"
     end
     assert_text(/reconciliation resolved/i)

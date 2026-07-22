@@ -9,8 +9,11 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
   before_action -> { require_permission!("pos.transaction.cancel") }, only: %i[cancel]
   before_action -> { require_permission!("pos.transaction.complete") }, only: %i[complete]
-  before_action -> { require_permission!("pos.post_void.create") }, only: %i[post_void_form post_void]
-  before_action :set_transaction, only: %i[show suspend recall cancel complete post_void_form post_void]
+  before_action -> { require_permission!("pos.post_void.create") },
+                only: %i[post_void_form post_void prepare_post_void_card record_post_void_card abandon_post_void_card]
+  before_action :set_transaction,
+                only: %i[show suspend recall cancel complete post_void_form post_void
+                         prepare_post_void_card record_post_void_card abandon_post_void_card]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
@@ -160,6 +163,54 @@ class PosTransactionsController < ApplicationController
     @card_tenders = @pos_transaction.pos_tenders.where(status: "completed").select { |t|
       t.tender_type.tender_category == "card"
     }
+    @card_preparations = PosPostVoidCardPreparation.active
+      .where(original_pos_transaction_id: @pos_transaction.id)
+      .index_by(&:original_pos_tender_id)
+  end
+
+  def prepare_post_void_card
+    tender = @pos_transaction.pos_tenders.where(status: "completed").find(params[:original_pos_tender_id])
+    result = Pos::PreparePostVoidCardConfirmation.call(original_pos_tender: tender, actor: Current.user)
+    if result.success?
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction),
+                  notice: "Card confirmation prepared — process the terminal, then record the reference."
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
+  def record_post_void_card
+    preparation = PosPostVoidCardPreparation.active
+      .where(original_pos_transaction_id: @pos_transaction.id)
+      .find(params[:preparation_id])
+    result = Pos::RecordPostVoidCardConfirmation.call(
+      preparation: preparation,
+      actor: Current.user,
+      authorization_code: params[:authorization_code],
+      terminal_reference: params[:terminal_reference],
+      external_void_reference: params[:external_void_reference]
+    )
+    if result.success?
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction),
+                  notice: "External card confirmation recorded."
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
+  def abandon_post_void_card
+    preparation = PosPostVoidCardPreparation.prepared
+      .where(original_pos_transaction_id: @pos_transaction.id)
+      .find(params[:preparation_id])
+    result = Pos::AbandonPostVoidCardConfirmation.call(
+      preparation: preparation, actor: Current.user, reason: params[:reason]
+    )
+    if result.success?
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction),
+                  notice: "Post-void card preparation abandoned."
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
   end
 
   def post_void
@@ -176,13 +227,6 @@ class PosTransactionsController < ApplicationController
       Current.user
     end
 
-    card_confirmations = {}
-    if params[:card_confirmations].present?
-      params[:card_confirmations].each do |tender_id, attrs|
-        card_confirmations[tender_id.to_i] = attrs.permit(:authorization_code, :terminal_reference, :external_void_reference).to_h.symbolize_keys
-      end
-    end
-
     result = Pos::PostVoidTransaction.call(
       original_transaction: @pos_transaction,
       pos_session: session,
@@ -190,8 +234,7 @@ class PosTransactionsController < ApplicationController
       reason: params[:post_void_reason],
       completion_idempotency_key: params[:completion_idempotency_key].presence || SecureRandom.uuid,
       approver: approver,
-      approver_pin: params[:approver_pin],
-      card_confirmations: card_confirmations
+      approver_pin: params[:approver_pin]
     )
 
     if result.success?
@@ -249,6 +292,7 @@ class PosTransactionsController < ApplicationController
     @return_lookup_transaction = original_txn
     @return_lookup_lines = original_txn.pos_line_items
       .where(status: "completed", direction: "sale")
+      .where.not(line_kind: "stored_value")
       .includes(:inventory_unit, product_variant: :product)
       .order(:position)
       .select { |line| line.remaining_returnable_quantity.positive? }

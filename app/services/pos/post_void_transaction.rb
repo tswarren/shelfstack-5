@@ -16,7 +16,7 @@ module Pos
       completion_idempotency_key:,
       approver:,
       approver_pin:,
-      card_confirmations: {}
+      card_confirmations: {} # ignored; card facts come from PosPostVoidCardPreparation
     )
       @original = original_transaction
       @pos_session = pos_session
@@ -25,7 +25,7 @@ module Pos
       @completion_idempotency_key = completion_idempotency_key.to_s
       @approver = approver
       @approver_pin = approver_pin
-      @card_confirmations = card_confirmations || {}
+      @card_preparations_by_tender_id = {}
     end
 
     def call
@@ -67,7 +67,7 @@ module Pos
         # product requests → inventory → SV, then re-check eligibility under locks.
         lines = original.pos_line_items.lock.where(status: "completed").order(:position, :id).to_a
         tenders = original.pos_tenders.lock.where(status: "completed").order(:id).to_a
-        validate_card_confirmations!(tenders)
+        @card_preparations_by_tender_id = lock_recorded_card_preparations!(original, tenders)
 
         request_ids = lines.filter_map { |line|
           next unless line.sale? && line.line_kind == "product"
@@ -138,13 +138,16 @@ module Pos
           net_total_cents: -original.net_total_cents.to_i
         )
 
+        consume_card_preparations!(reversing)
+
         Administration::RecordAuditEvent.call(
           actor: @actor, organization: store.organization, store: store,
           action: "pos_transaction.post_voided", subject: reversing,
           metadata: {
             "original_pos_transaction_id" => original.id,
             "receipt_number" => reversing.receipt_number,
-            "pos_approval_id" => auth.pos_approval.id
+            "pos_approval_id" => auth.pos_approval.id,
+            "post_void_card_preparation_ids" => @card_preparations_by_tender_id.values.map(&:id)
           }
         )
 
@@ -160,6 +163,9 @@ module Pos
     private
 
     def audit_blocked_attempt!(message)
+      recorded_ids = PosPostVoidCardPreparation.recorded_unresolved
+        .where(original_pos_transaction_id: @original.id)
+        .pluck(:id)
       Administration::RecordAuditEvent.call(
         actor: @actor,
         organization: @original.store.organization,
@@ -168,24 +174,44 @@ module Pos
         subject: @original,
         metadata: {
           "reason" => message.to_s.truncate(500),
-          "completion_idempotency_key" => @completion_idempotency_key
+          "completion_idempotency_key" => @completion_idempotency_key,
+          "recorded_post_void_card_preparation_ids" => recorded_ids
         }
       )
     rescue StandardError
       nil
     end
 
-    def validate_card_confirmations!(tenders)
-      tenders.each do |tender|
-        next unless tender.tender_type.tender_category == "card"
+    def lock_recorded_card_preparations!(original, tenders)
+      card_tenders = tenders.select { |t| card_tender?(t) }
+      return {} if card_tenders.empty?
 
-        confirmation = @card_confirmations[tender.id] || @card_confirmations[tender.id.to_s]
-        raise Error, "card tender #{tender.id} requires external void/refund confirmation" if confirmation.blank?
+      preparations = {}
+      card_tenders.each do |tender|
+        prep = PosPostVoidCardPreparation.lock.find_by(
+          original_pos_transaction_id: original.id,
+          original_pos_tender_id: tender.id,
+          status: "recorded"
+        )
+        if prep.blank?
+          raise Error,
+                "card tender #{tender.id} requires a recorded post-void card confirmation " \
+                "before post-void can complete"
+        end
+        preparations[tender.id] = prep
+      end
+      preparations
+    end
 
-        ref = confirmation[:authorization_code].presence || confirmation["authorization_code"].presence ||
-              confirmation[:terminal_reference].presence || confirmation["terminal_reference"].presence ||
-              confirmation[:external_void_reference].presence || confirmation["external_void_reference"].presence
-        raise Error, "card tender #{tender.id} confirmation reference is required" if ref.blank?
+    def consume_card_preparations!(reversing)
+      now = Time.current
+      @card_preparations_by_tender_id.each_value do |preparation|
+        preparation.update!(
+          status: "consumed",
+          consumed_at: now,
+          consumed_by_user: @actor,
+          correcting_pos_transaction: reversing
+        )
       end
     end
 
@@ -359,7 +385,7 @@ module Pos
 
     def build_reversing_tender!(reversing, original_tender, now)
       opposite = original_tender.direction == "received" ? "refunded" : "received"
-      confirmation = @card_confirmations[original_tender.id] || @card_confirmations[original_tender.id.to_s] || {}
+      prep = @card_preparations_by_tender_id[original_tender.id]
 
       PosTender.create!(
         pos_transaction: reversing,
@@ -370,11 +396,9 @@ module Pos
         amount_cents: original_tender.amount_cents,
         amount_tendered_cents: original_tender.amount_tendered_cents,
         change_due_cents: original_tender.change_due_cents,
-        authorization_code: confirmation[:authorization_code] || confirmation["authorization_code"] ||
-                            original_tender.authorization_code,
-        terminal_reference: confirmation[:terminal_reference] || confirmation["terminal_reference"] ||
-                            original_tender.terminal_reference,
-        external_void_reference: confirmation[:external_void_reference] || confirmation["external_void_reference"],
+        authorization_code: prep&.authorization_code || original_tender.authorization_code,
+        terminal_reference: prep&.terminal_reference || original_tender.terminal_reference,
+        external_void_reference: prep&.external_void_reference,
         stored_value_account_id: original_tender.stored_value_account_id,
         reverses_pos_tender: original_tender,
         created_by_user: @actor,

@@ -35,12 +35,14 @@ module Pos
       destination: nil,
       amount_cents: nil,
       original_pos_tender: nil,
-      existing_exception_approval: nil
+      existing_exception_approval: nil,
+      excluding_tender_ids: []
     )
       @pos_transaction = pos_transaction
       @actor = actor
       @exception_approver = exception_approver
       @exception_approver_pin = exception_approver_pin
+      @excluding_tender_ids = Array(excluding_tender_ids).compact
       @proposed = coerce_proposed(
         proposed,
         destination: destination,
@@ -114,9 +116,9 @@ module Pos
     end
 
     def existing_plan_items(transaction)
-      transaction.pos_tenders.unresolved.where(direction: "refunded").order(:id).map { |t|
-        plan_item_from_tender(t)
-      }
+      scope = transaction.pos_tenders.unresolved.where(direction: "refunded").order(:id)
+      scope = scope.where.not(id: @excluding_tender_ids) if @excluding_tender_ids.present?
+      scope.map { |t| plan_item_from_tender(t) }
     end
 
     def plan_item_from_tender(tender)
@@ -294,9 +296,10 @@ module Pos
     end
 
     def allocatable_cents(original, transaction)
-      plan_toward = transaction.pos_tenders.unresolved
+      plan_scope = transaction.pos_tenders.unresolved
         .where(direction: "refunded", original_pos_tender_id: original.id)
-        .sum(:amount_cents)
+      plan_scope = plan_scope.where.not(id: @excluding_tender_ids) if @excluding_tender_ids.present?
+      plan_toward = plan_scope.sum(:amount_cents)
       original.amount_cents -
         completed_refunded_cents(original) -
         other_inflight_cents(original, transaction) -

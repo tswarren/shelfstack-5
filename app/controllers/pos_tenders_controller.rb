@@ -8,8 +8,19 @@ class PosTendersController < ApplicationController
   before_action -> { require_permission!("pos.card_refund.reconcile") }, only: %i[resolve_reconciliation]
 
   def prepare_card_refund
-    tender_type = Current.organization.tender_types.find(params[:tender_type_id])
-    amount_cents = money_param_to_cents(params[:amount_cents], label: "Refund amount")
+    replaces = if params[:replaces_pos_tender_id].present?
+      @pos_transaction.pos_tenders.find(params[:replaces_pos_tender_id])
+    end
+    tender_type = if replaces
+      replaces.tender_type
+    else
+      Current.organization.tender_types.find(params[:tender_type_id])
+    end
+    amount_cents = if replaces
+      replaces.amount_cents
+    else
+      money_param_to_cents(params[:amount_cents], label: "Refund amount")
+    end
     result = Pos::PrepareCardRefund.call(
       pos_transaction: @pos_transaction,
       tender_type: tender_type,
@@ -17,16 +28,21 @@ class PosTendersController < ApplicationController
       actor: Current.user,
       original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
       exception_approver: exception_approver_from_params,
-      exception_approver_pin: params[:exception_approver_pin]
+      exception_approver_pin: params[:exception_approver_pin],
+      replaces_pos_tender: replaces
     )
 
     if result.ready?
-      redirect_to pos_transaction_path(@pos_transaction),
-                  notice: "Card refund plan ready — process the terminal refund, then record the authorization below."
+      notice = if replaces
+        "Replacement card refund plan ready — process the new terminal refund, then record authorization."
+      else
+        "Card refund plan ready — process the terminal refund, then record the authorization below."
+      end
+      redirect_to pos_transaction_path(@pos_transaction), notice: notice
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
-  rescue ArgumentError => e
+  rescue ArgumentError, ActiveRecord::RecordNotFound => e
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
@@ -134,9 +150,6 @@ class PosTendersController < ApplicationController
 
   def resolve_reconciliation
     preparation = @pos_transaction.pos_card_refund_preparations.find_by!(pos_tender_id: @tender.id)
-    replacement = if params[:replacement_pos_tender_id].present?
-      @pos_transaction.pos_tenders.find_by(id: params[:replacement_pos_tender_id])
-    end
     result = Pos::ResolveCardRefundTenderReconciliation.call(
       preparation: preparation,
       actor: Current.user,
@@ -144,8 +157,7 @@ class PosTendersController < ApplicationController
       reason: params.require(:reason),
       external_void_reference: params[:external_void_reference],
       exception_approver: exception_approver_from_params,
-      exception_approver_pin: params[:exception_approver_pin],
-      replacement_pos_tender: replacement
+      exception_approver_pin: params[:exception_approver_pin]
     )
     if result.success?
       redirect_to pos_transaction_path(@pos_transaction), notice: "Card refund reconciliation resolved."

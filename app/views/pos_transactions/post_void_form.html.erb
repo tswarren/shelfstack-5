@@ -13,6 +13,62 @@
     </div>
     <p><%= link_to "Back", pos_transaction_path(@pos_transaction), class: "button button-ghost" %></p>
   <% else %>
+    <% if @card_tenders.any? %>
+      <fieldset class="form-stack">
+        <legend>External card void / refund confirmation</legend>
+        <p class="muted">
+          Prepare each card tender, process the terminal, then record the confirmation
+          <strong>before</strong> submitting the post-void. Recorded confirmations are kept
+          even if post-void later fails.
+        </p>
+        <% @card_tenders.each do |tender| %>
+          <% prep = @card_preparations[tender.id] %>
+          <div class="form-grid">
+            <p><%= tender.tender_type.name %> · <%= pos_money(tender.amount_cents) %></p>
+            <% if prep.blank? %>
+              <%= button_to "Prepare card confirmation",
+                    prepare_post_void_card_pos_transaction_path(@pos_transaction),
+                    method: :post,
+                    params: { original_pos_tender_id: tender.id },
+                    class: "button button-outline" %>
+            <% elsif prep.prepared? %>
+              <p class="muted">Preparation ready — use the terminal, then record:</p>
+              <%= form_with url: record_post_void_card_pos_transaction_path(@pos_transaction), method: :post, class: "form" do %>
+                <%= hidden_field_tag :preparation_id, prep.id %>
+                <div class="field">
+                  <label class="field-label" for="card_auth_<%= tender.id %>">Authorization code</label>
+                  <input type="text" class="input" name="authorization_code" id="card_auth_<%= tender.id %>">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="card_term_<%= tender.id %>">Terminal reference</label>
+                  <input type="text" class="input" name="terminal_reference" id="card_term_<%= tender.id %>">
+                </div>
+                <div class="field">
+                  <label class="field-label" for="card_void_<%= tender.id %>">External void reference</label>
+                  <input type="text" class="input" name="external_void_reference" id="card_void_<%= tender.id %>">
+                </div>
+                <div class="form-actions">
+                  <%= submit_tag "Record confirmation", class: "button button-outline" %>
+                </div>
+              <% end %>
+              <%= button_to "Abandon preparation",
+                    abandon_post_void_card_pos_transaction_path(@pos_transaction),
+                    method: :post,
+                    params: { preparation_id: prep.id },
+                    class: "button button-ghost",
+                    form: { data: { turbo_confirm: "Abandon only if the terminal was not used." } } %>
+            <% else %>
+              <p class="muted">
+                Recorded
+                <% if prep.authorization_code.present? %>· auth <%= prep.authorization_code %><% end %>
+                <% if prep.external_void_reference.present? %>· void <%= prep.external_void_reference %><% end %>
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+      </fieldset>
+    <% end %>
+
     <%= form_with url: post_void_pos_transaction_path(@pos_transaction), method: :post, class: "form-stack" do %>
       <div class="field">
         <label class="field-label" for="post_void_reason">Reason</label>
@@ -21,29 +77,6 @@
 
       <%= render "shared/approval_fields", prefix: "post_void" %>
       <p class="field-hint">Leave approver username blank to self-approve (requires pos.post_void.approve_self).</p>
-
-      <% if @card_tenders.any? %>
-        <fieldset>
-          <legend>External card void / refund confirmation</legend>
-          <% @card_tenders.each do |tender| %>
-            <div class="form-grid">
-              <p><%= tender.tender_type.name %> · <%= pos_money(tender.amount_cents) %></p>
-              <div class="field">
-                <label class="field-label" for="card_auth_<%= tender.id %>">Authorization / void reference</label>
-                <input type="text" class="input"
-                       name="card_confirmations[<%= tender.id %>][authorization_code]"
-                       id="card_auth_<%= tender.id %>" required>
-              </div>
-              <div class="field">
-                <label class="field-label" for="card_term_<%= tender.id %>">Terminal reference</label>
-                <input type="text" class="input"
-                       name="card_confirmations[<%= tender.id %>][terminal_reference]"
-                       id="card_term_<%= tender.id %>">
-              </div>
-            </div>
-          <% end %>
-        </fieldset>
-      <% end %>
 
       <input type="hidden" name="completion_idempotency_key" value="<%= SecureRandom.uuid %>">
 

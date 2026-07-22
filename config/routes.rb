@@ -115,6 +115,9 @@ Rails.application.routes.draw do
       post :complete
       get :post_void_form
       post :post_void
+      post :prepare_post_void_card
+      post :record_post_void_card
+      post :abandon_post_void_card
     end
     resources :pos_line_items, only: %i[create update destroy] do
       member do

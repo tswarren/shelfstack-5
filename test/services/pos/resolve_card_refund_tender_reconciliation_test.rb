@@ -261,31 +261,43 @@ module Pos
         preparation: prep,
         actor: @admin,
         outcome: :replaced,
-        reason: "redo terminal"
+        reason: "redo terminal",
+        external_void_reference: "VOID-1"
       )
       refute denied.success?
-      assert_match(/replacement card refund/, denied.error)
+      assert_match(/replacement preparation/, denied.error)
     end
 
-    test "replaced voids recon tender only after later replacement is recorded" do
+    test "replaced requires external void reference" do
       tender, prep, ret = prepare_recon_refund!
-      replacement = plant_replacement_tender!(
-        ret,
-        amount_cents: tender.amount_cents,
-        after: tender.authorized_at
+      record_replacement_via_services!(ret, tender)
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :replaced,
+        reason: "terminal re-run completed"
       )
+      refute denied.success?
+      assert_match(/external void reference/, denied.error)
+    end
+
+    test "replaced voids recon tender after public prepare and record path" do
+      tender, prep, ret = prepare_recon_refund!
+      replacement = record_replacement_via_services!(ret, tender)
 
       resolved = ResolveCardRefundTenderReconciliation.call(
         preparation: prep,
         actor: @admin,
         outcome: :replaced,
         reason: "terminal re-run completed",
-        replacement_pos_tender: replacement
+        external_void_reference: "VOID-OLD-1"
       )
       assert resolved.success?, resolved.error
       assert_equal "voided", tender.reload.status
       assert_equal "replaced", prep.reload.resolution_kind
       assert_equal "authorized", replacement.reload.status
+      refute replacement.requires_reconciliation?
     end
 
     test "externally_voided requires external void reference" do
@@ -380,38 +392,26 @@ module Pos
       ret
     end
 
-    def plant_replacement_tender!(ret, amount_cents:, after:)
-      consumed_at = after + 1.second
-      replacement = PosTender.create!(
+    def record_replacement_via_services!(ret, recon_tender)
+      prepared = PrepareCardRefund.call(
         pos_transaction: ret,
-        store: @store,
         tender_type: @card,
-        direction: "refunded",
-        status: "authorized",
-        amount_cents: amount_cents,
+        amount_cents: recon_tender.amount_cents,
+        actor: @admin,
+        original_pos_tender: recon_tender.original_pos_tender,
+        replaces_pos_tender: recon_tender
+      )
+      assert prepared.ready?, prepared.error
+      assert prepared.preparation.replacement?
+
+      recorded = AddCardRefundTender.call(
+        preparation: prepared.preparation,
         authorization_code: "REPL-#{SecureRandom.hex(2)}",
-        authorized_at: consumed_at,
-        requires_reconciliation: false,
-        created_by_user: @admin
+        actor: @admin
       )
-      PosCardRefundPreparation.create!(
-        pos_transaction: ret,
-        tender_type: @card,
-        amount_cents: amount_cents,
-        plan_snapshot: { "planted" => true },
-        plan_fingerprint: "planted-#{SecureRandom.hex(4)}",
-        fingerprint_version: 1,
-        status: "recorded_tender",
-        expires_at: consumed_at + 30.minutes,
-        prepared_by_user: @admin,
-        recorded_by_user: @admin,
-        pos_tender: replacement,
-        authorization_code: replacement.authorization_code,
-        authorized_at: consumed_at,
-        consumed_at: consumed_at,
-        requires_reconciliation: false
-      )
-      replacement
+      assert recorded.success?, recorded.error
+      refute recorded.requires_reconciliation, recorded.warnings.inspect
+      recorded.pos_tender
     end
   end
 end

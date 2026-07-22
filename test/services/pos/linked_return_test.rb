@@ -371,6 +371,147 @@ module Pos
       assert_equal [ 33, 34, 33 ], ret_txn.pos_line_items.returns.pending.order(:position, :id).pluck(:cost_extended_cents)
     end
 
+    test "two separate pending return transactions reassign cost residuals when completed in either order" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-cross-txn-cost"
+      )
+      line.reload
+      line.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
+
+      a = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      b = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      c = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      [ a, b, c ].each do |txn|
+        assert AddLinkedReturnLine.call(
+          pos_transaction: txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        ).success?
+      end
+
+      # Provisional snapshots may each show 33; finalize residuals under original
+      # locks before tendering so settlement matches the refreshed net.
+      complete_return = ->(txn, key) {
+        net = finalize_return_residuals_net!(txn)
+        pos_add_cash_refund(pos_transaction: txn, amount_cents: -net, actor: @admin)
+        assert CompleteTransaction.call(
+          pos_transaction: txn, pos_session: @session, actor: @admin,
+          completion_idempotency_key: key
+        ).success?
+        txn.pos_line_items.returns.where(status: "completed").sum(:cost_extended_cents)
+      }
+
+      costs_ab = [ complete_return.call(a, "cross-a"), complete_return.call(b, "cross-b"), complete_return.call(c, "cross-c") ]
+      assert_equal 100, costs_ab.sum
+
+      # Reverse order on a fresh sale
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale2 = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line2 = AddLine.call(pos_transaction: sale2, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale2_net = RecalculateTransaction.call(pos_transaction: sale2).net_total_cents
+      AddCashTender.call(pos_transaction: sale2, tender_type: @cash, amount_tendered_cents: sale2_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale2, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-cross-txn-cost-2"
+      )
+      line2.reload
+      line2.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
+
+      x = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      y = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      z = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      [ x, y, z ].each do |txn|
+        assert AddLinkedReturnLine.call(
+          pos_transaction: txn, original_pos_line_item: line2, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        ).success?
+      end
+
+      costs_zyx = [ complete_return.call(z, "cross-z"), complete_return.call(y, "cross-y"), complete_return.call(x, "cross-x") ]
+      assert_equal 100, costs_zyx.sum
+    end
+
+    test "concurrent completion of separate return transactions preserves cost residual total" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-concurrent-cost"
+      )
+      line.reload
+      line.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
+
+      txns = 3.times.map {
+        txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+        assert AddLinkedReturnLine.call(
+          pos_transaction: txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        ).success?
+        txn
+      }
+
+      barriers = Queue.new
+      results = Queue.new
+      threads = txns.each_with_index.map do |txn, idx|
+        Thread.new do
+          ActiveRecord::Base.connection_pool.with_connection do
+            barriers << true
+            sleep 0.05 until barriers.size >= 3
+            net = finalize_return_residuals_net!(txn)
+            pos_add_cash_refund(pos_transaction: txn, amount_cents: -net, actor: @admin)
+            completed = CompleteTransaction.call(
+              pos_transaction: txn, pos_session: @session, actor: @admin,
+              completion_idempotency_key: "concurrent-cost-#{idx}"
+            )
+            results << [ completed.success?, txn.id, completed.error ]
+          end
+        end
+      end
+      threads.each(&:join)
+
+      outcomes = 3.times.map { results.pop }
+      assert outcomes.all?(&:first), outcomes.inspect
+      total = PosLineItem.where(
+        original_pos_line_item_id: line.id, status: "completed", direction: "return"
+      ).sum(:cost_extended_cents)
+      assert_equal 100, total
+    end
+
+    test "stored-value sale lines are not linked-returnable" do
+      account = StoredValue::CreateAccount.call(
+        organization: @store.organization, account_type: "gift_card", actor: @admin
+      ).account
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      assert AddStoredValueLine.call(
+        pos_transaction: sale, account: account, operation: "issue",
+        amount_cents: 500, actor: @admin
+      ).success?
+      net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: net, actor: @admin)
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sv-no-return"
+      ).success?
+      sv_line = sale.pos_line_items.where(line_kind: "stored_value").first
+      assert_equal 0, sv_line.remaining_returnable_quantity
+
+      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      denied = AddLinkedReturnLine.call(
+        pos_transaction: ret, original_pos_line_item: sv_line, quantity: 1,
+        return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+      )
+      refute denied.success?
+      assert_match(/stored-value lines cannot be returned/, denied.error)
+    end
+
     test "discard disposition leaves pre-existing inventory valuation unchanged" do
       # Sale setup left on_hand at 0 with historical sale cost 500. Restock at a
       # different cost so discard must not blend the returned unit into survivors.
@@ -406,6 +547,17 @@ module Pos
     end
 
     private
+
+    def finalize_return_residuals_net!(txn)
+      ActiveRecord::Base.transaction do
+        locked = PosTransaction.lock.find(txn.id)
+        lines = locked.pos_line_items.lock.pending.order(:position, :id).to_a
+        tenders = locked.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
+        CompletionLockOrder.lock_related_originals!(lines, tenders)
+        ReassignReturnResiduals.call(pos_transaction: locked, return_lines: lines)
+        RecalculateTransaction.call(pos_transaction: locked).net_total_cents
+      end
+    end
 
     def open_inventory(variant, quantity:, unit_cost_cents:)
       opening = InventoryAdjustment.create!(

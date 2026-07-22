@@ -117,6 +117,9 @@ class PosLineItem < ApplicationRecord
   def remaining_returnable_quantity
     return 0 unless sale?
     return 0 if post_voided?
+    # Stored-value issue/reload lines are corrected via stored-value or post-void,
+    # not ordinary linked returns.
+    return 0 if line_kind == "stored_value"
 
     already_returned = PosLineItem
       .joins(:pos_transaction)

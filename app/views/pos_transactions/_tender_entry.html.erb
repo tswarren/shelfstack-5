@@ -219,47 +219,67 @@
   <% end %>
 
   <% @recon_card_refund_tenders.to_a.each do |tender| %>
+    <% replacement_prep = @pos_transaction.pos_card_refund_preparations.active_replacements_for(tender).first %>
     <details class="pos-panel" open>
       <summary>Resolve card refund reconciliation — tender #<%= tender.id %></summary>
       <p class="muted"><%= Array(tender.pos_card_refund_preparation&.reconciliation_reasons).join("; ") %></p>
-      <%= form_with url: resolve_reconciliation_pos_transaction_pos_tender_path(@pos_transaction, tender), method: :post, class: "form" do |form| %>
+
+      <%= form_with url: resolve_reconciliation_pos_transaction_pos_tender_path(@pos_transaction, tender), method: :post, class: "form", id: "resolve-recon-#{tender.id}" do |form| %>
         <div class="field">
           <%= form.label :outcome, "Outcome", class: "field-label" %>
           <%= select_tag :outcome,
                 options_for_select([
                   [ "Externally voided", "externally_voided" ],
                   [ "Validated and accepted", "validated_and_accepted" ],
-                  [ "Replaced (requires recorded replacement tender)", "replaced" ]
+                  [ "Replaced (void old after recorded replacement)", "replaced" ]
                 ]),
                 class: "input" %>
         </div>
-        <p class="muted">
-          Replaced voids this tender only after a newer preparation has already been
-          authorized as a non-reconciliation replacement on this return.
-        </p>
         <div class="field">
           <%= form.label :reason, "Reason", class: "field-label" %>
           <%= text_field_tag :reason, nil, class: "input", required: true %>
         </div>
         <div class="field">
-          <%= form.label :external_void_reference, "External void reference (required for external void)", class: "field-label" %>
+          <%= form.label :external_void_reference, "External void reference (required for void / replaced)", class: "field-label" %>
           <%= text_field_tag :external_void_reference, nil, class: "input" %>
         </div>
         <div class="field">
-          <%= form.label :replacement_pos_tender_id, "Replacement tender id (optional if only one candidate)", class: "field-label" %>
-          <%= text_field_tag :replacement_pos_tender_id, nil, class: "input", autocomplete: "off" %>
-        </div>
-        <div class="field">
           <%= form.label :exception_approver_username, "Exception approver (for accepted outcomes)", class: "field-label" %>
-          <%= text_field_tag :exception_approver_username, nil, class: "input", autocomplete: "username" %>
+          <%= text_field_tag :exception_approver_username, nil, class: "input", autocomplete: "username",
+                id: "resolve_exception_approver_username_#{tender.id}" %>
         </div>
         <div class="field">
           <%= form.label :exception_approver_pin, "Approver PIN", class: "field-label" %>
-          <%= password_field_tag :exception_approver_pin, nil, class: "input", autocomplete: "off" %>
+          <%= password_field_tag :exception_approver_pin, nil, class: "input", autocomplete: "off",
+                id: "resolve_exception_approver_pin_#{tender.id}" %>
         </div>
         <div class="form-actions">
           <%= form.submit "Resolve reconciliation", class: "button button-outline" %>
         </div>
+      <% end %>
+
+      <% if replacement_prep.blank? %>
+        <p class="muted">
+          To replace: prepare a same-amount replacement against this tender, authorize it on the
+          terminal, record the authorization, then resolve as Replaced with the old void reference.
+        </p>
+        <%= form_with url: prepare_card_refund_pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do %>
+          <%= hidden_field_tag :replaces_pos_tender_id, tender.id %>
+          <div class="form-actions">
+            <%= submit_tag "Prepare replacement card refund", class: "button button-outline" %>
+          </div>
+        <% end %>
+      <% elsif replacement_prep.prepared? %>
+        <p class="muted">
+          Replacement preparation <%= replacement_prep.id %> is ready
+          (<%= number_to_currency(replacement_prep.amount_cents / 100.0) %>).
+          Process the new terminal refund, then record authorization.
+        </p>
+      <% else %>
+        <p class="muted">
+          Replacement tender #<%= replacement_prep.pos_tender_id %> is recorded.
+          Confirm the old external refund was voided, then resolve as Replaced.
+        </p>
       <% end %>
     </details>
   <% end %>

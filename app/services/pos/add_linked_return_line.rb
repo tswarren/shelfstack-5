@@ -25,6 +25,9 @@ module Pos
       raise Error, "return disposition is invalid" unless PosLineItem::RETURN_DISPOSITIONS.include?(@return_disposition)
       raise Error, "original line must be a completed sale" unless @original.completed?
       raise Error, "original line must be a sale line" unless @original.direction == "sale"
+      if @original.line_kind == "stored_value"
+        raise Error, "stored-value lines cannot be returned via linked return; use stored-value or post-void workflows"
+      end
       raise Error, "stores must match" unless @original.pos_transaction.store_id == @pos_transaction.store_id
       raise Error, "original transaction has been post-voided" if @original.pos_transaction.post_voided?
       raise Error, "original line has been post-voided" if @original.post_voided?

@@ -20,7 +20,7 @@ module Pos
       external_void_reference: nil,
       exception_approver: nil,
       exception_approver_pin: nil,
-      replacement_pos_tender: nil
+      replacement_pos_tender: nil # ignored; replacement is bound via preparation.replaces_pos_tender
     )
       @preparation = preparation
       @pos_tender = pos_tender
@@ -30,7 +30,6 @@ module Pos
       @external_void_reference = external_void_reference.presence
       @exception_approver = exception_approver
       @exception_approver_pin = exception_approver_pin
-      @replacement_pos_tender = replacement_pos_tender
     end
 
     def call
@@ -69,8 +68,10 @@ module Pos
           )
         when :replaced
           assert_permission!(transaction.store, "pos.tender.card_void")
-          replacement = resolve_replacement_tender!(transaction, tender)
+          raise Error, "external void reference is required" if @external_void_reference.blank?
+          replacement = activate_replacement!(transaction, tender)
           void_tender!(tender, resolve_preparation: false)
+          ValidateCompletionReadiness.call(pos_transaction: transaction, actor: @actor)
           preparation.update!(
             resolution_kind: "replaced",
             resolved_at: Time.current,
@@ -202,37 +203,31 @@ module Pos
       raise Error, removed.error unless removed.success?
     end
 
-    # Replaced is not a silent clear: a distinct authorized card-refund tender from
-    # a later preparation must already exist on the transaction.
-    def resolve_replacement_tender!(transaction, tender)
-      scope = PosCardRefundPreparation
-        .joins(:pos_tender)
+    # Replacement must be prepared specifically against this recon tender and
+    # already authorized. The old tender is voided after the replacement exists;
+    # readiness then validates settlement with the replacement alone.
+    def activate_replacement!(transaction, tender)
+      prep = PosCardRefundPreparation
+        .lock
         .where(
           pos_transaction_id: transaction.id,
-          status: "recorded_tender",
-          pos_tenders: {
-            direction: "refunded",
-            status: "authorized",
-            requires_reconciliation: false
-          }
+          replaces_pos_tender_id: tender.id,
+          status: "recorded_tender"
         )
-        .where.not(pos_tender_id: tender.id)
-        .where("pos_card_refund_preparations.consumed_at > ?", tender.authorized_at || tender.created_at)
-
-      prep =
-        if @replacement_pos_tender
-          scope.find_by(pos_tender_id: @replacement_pos_tender.id)
-        else
-          scope.order("pos_card_refund_preparations.consumed_at ASC").first
-        end
+        .where(resolved_at: nil)
+        .order(:consumed_at)
+        .first
 
       if prep.blank?
         raise Error,
-              "replaced requires a recorded replacement card refund " \
-              "(new preparation + authorization) on this transaction"
+              "replaced requires a recorded replacement preparation " \
+              "created against this reconciliation tender"
       end
 
-      replacement = prep.pos_tender
+      replacement = PosTender.lock.find(prep.pos_tender_id)
+      unless replacement.authorized? && !replacement.requires_reconciliation?
+        raise Error, "replacement tender must be authorized without reconciliation"
+      end
       if replacement.amount_cents != tender.amount_cents
         raise Error, "replacement tender amount must match the tender being replaced"
       end

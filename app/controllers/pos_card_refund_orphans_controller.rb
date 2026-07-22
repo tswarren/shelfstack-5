@@ -12,6 +12,10 @@ class PosCardRefundOrphansController < ApplicationController
       .where(pos_transactions: { store_id: Current.store.id })
       .includes(:pos_transaction, :intended_original_pos_tender, :prepared_by_user, :recorded_by_user)
       .order(consumed_at: :desc)
+    @post_void_card_preparations = PosPostVoidCardPreparation.recorded_unresolved
+      .where(store_id: Current.store.id)
+      .includes(:original_pos_transaction, :original_pos_tender)
+      .order(authorized_at: :desc)
   end
 
   def record_authorization

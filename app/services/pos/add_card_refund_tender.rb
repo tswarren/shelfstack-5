@@ -71,13 +71,18 @@ module Pos
           reasons << "preparation expired before recording"
         end
 
+        replacing = preparation.replaces_pos_tender
+        excluding_ids = replacing.present? ? [ replacing.id ] : []
+
         begin
           recalculation = RecalculateTransaction.call(pos_transaction: transaction)
           warnings.concat(Array(recalculation.warnings))
           if recalculation.blockers.present?
             reasons << "calculation blockers: #{recalculation.blockers.join(', ')}"
           else
-            refund_due = CardRefundSupport.refund_due_cents(transaction, recalculation.net_total_cents)
+            refund_due = CardRefundSupport.refund_due_cents(
+              transaction, recalculation.net_total_cents, excluding_tender_ids: excluding_ids
+            )
             reasons << "no refund balance due" if refund_due.zero?
             if refund_due.positive? && amount_cents > refund_due
               reasons << "refund exceeds balance due (#{refund_due})"
@@ -102,7 +107,8 @@ module Pos
           original = CardRefundSupport.validate_original!(
             transaction: transaction,
             original_pos_tender: intended_original,
-            amount_cents: amount_cents
+            amount_cents: amount_cents,
+            excluding_refund_tender: replacing
           )
 
           RefundAllocationPolicy.call(
@@ -111,7 +117,8 @@ module Pos
             destination: :card,
             amount_cents: amount_cents,
             original_pos_tender: original,
-            existing_exception_approval: approval
+            existing_exception_approval: approval,
+            excluding_tender_ids: excluding_ids
           )
         rescue CardRefundSupport::Error, RefundAllocationPolicy::Error, TenderGuards::Error => e
           reasons << e.message

@@ -7,9 +7,21 @@ module Pos
 
     module_function
 
-    def refund_due_cents(transaction, net_total_cents)
-      already = transaction.pos_tenders.unresolved.where(direction: "refunded").sum(:amount_cents)
+    def refund_due_cents(transaction, net_total_cents, excluding_tender_ids: [])
+      scope = transaction.pos_tenders.unresolved.where(direction: "refunded")
+      scope = scope.where.not(id: excluding_tender_ids) if excluding_tender_ids.present?
+      already = scope.sum(:amount_cents)
       [ -net_total_cents - already, 0 ].max
+    end
+
+    def assert_replaceable_recon_tender!(transaction, tender)
+      raise Error, "replacement target tender is required" if tender.blank?
+      raise Error, "replacement target must belong to this transaction" unless tender.pos_transaction_id == transaction.id
+      raise Error, "replacement target must be an authorized card refund" unless tender.direction == "refunded" && tender.authorized?
+      raise Error, "replacement target must require reconciliation" unless tender.requires_reconciliation?
+      raise Error, "replacement target tender type must be card" unless tender.tender_type.tender_category == "card"
+
+      tender
     end
 
     def assert_no_post_voided_linked_originals!(transaction)

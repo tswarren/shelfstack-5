@@ -17,10 +17,20 @@ class PosCardRefundPreparation < ApplicationRecord
   belongs_to :pos_transaction
   belongs_to :tender_type
   belongs_to :intended_original_pos_tender, class_name: "PosTender", optional: true
+  belongs_to :replaces_pos_tender, class_name: "PosTender", optional: true
   belongs_to :pos_approval, optional: true
   belongs_to :resolution_pos_approval, class_name: "PosApproval", optional: true
   belongs_to :pos_tender, optional: true
   belongs_to :prepared_by_user, class_name: "User"
+
+  scope :active_replacements_for, ->(tender) {
+    where(replaces_pos_tender_id: tender.id, status: %w[prepared recorded_tender])
+      .where(resolved_at: nil)
+  }
+
+  def replacement?
+    replaces_pos_tender_id.present?
+  end
   belongs_to :recorded_by_user, class_name: "User", optional: true
   belongs_to :abandoned_by_user, class_name: "User", optional: true
   belongs_to :resolved_by_user, class_name: "User", optional: true

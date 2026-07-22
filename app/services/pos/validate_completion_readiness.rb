@@ -17,19 +17,22 @@ module Pos
     end
 
     def call
-      recalculation = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
-      raise Error, recalculation.blockers.join(", ") if recalculation.blockers.any?
-
       lines = @pos_transaction.pos_line_items.lock.pending.order(:position, :id).to_a
       raise Error, "transaction has no lines to complete" if lines.empty?
 
+      tenders = @pos_transaction.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
+      locked_originals = CompletionLockOrder.lock_related_originals!(lines, tenders)
+
+      # Finalize historical residuals under original-line locks before tax/settlement.
+      ReassignReturnResiduals.call(pos_transaction: @pos_transaction, return_lines: lines)
+      lines.each(&:reload)
+
+      recalculation = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
+      raise Error, recalculation.blockers.join(", ") if recalculation.blockers.any?
+
       validate_departments!(lines)
       validate_sale_eligibility!(lines, @pos_transaction.store)
-
-      tenders = @pos_transaction.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
       validate_tenders_settle!(tenders, recalculation.net_total_cents)
-
-      locked_originals = CompletionLockOrder.lock_related_originals!(lines, tenders)
       validate_linked_returns_and_refunds!(@pos_transaction, lines, tenders, locked_originals)
 
       Result.new(
