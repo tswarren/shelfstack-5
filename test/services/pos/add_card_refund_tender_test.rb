@@ -187,7 +187,6 @@ module Pos
         original_pos_tender: card_tender
       ).preparation
 
-      # Simulate a closed transaction despite outstanding prep (guard bypass / force).
       ret.update_columns(status: "cancelled", cancelled_at: Time.current)
 
       recorded = AddCardRefundTender.call(
@@ -208,6 +207,77 @@ module Pos
       )
       assert resolved.success?, resolved.error
       refute PosCardRefundPreparation.unresolved_orphans.exists?(id: prep.id)
+    end
+
+    test "auth against abandoned preparation is retained as orphan" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      assert AbandonCardRefundPreparation.call(preparation: prep, actor: @admin).success?
+
+      recorded = AddCardRefundTender.call(
+        preparation: prep.reload, authorization_code: "RFND-AFTER-ABANDON", actor: @admin
+      )
+      assert recorded.success?, recorded.error
+      assert recorded.preparation.recorded_orphan?
+      assert recorded.preparation.abandoned_at.present?
+      assert_nil recorded.pos_tender
+      assert_includes recorded.preparation.reconciliation_reasons,
+                      "preparation was abandoned before authorization was recorded"
+    end
+
+    test "validated_and_accepted after capacity consumed completes with exception approval" do
+      sale_line, card_tender = complete_card_sale(quantity: 1, key: "cap-sale")
+      ret_a = open_return(sale_line, quantity: 1)
+      due_a = -RecalculateTransaction.call(pos_transaction: ret_a).net_total_cents
+      prep_a = PrepareCardRefund.call(
+        pos_transaction: ret_a, tender_type: @card, amount_cents: due_a, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+
+      # Plant a competing in-flight refund that consumes the original capacity
+      # before A records (simulates another return finishing between prepare and auth).
+      ret_b = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      PosTender.create!(
+        pos_transaction: ret_b, store: @store, tender_type: @card,
+        direction: "refunded", status: "authorized", amount_cents: card_tender.amount_cents,
+        authorization_code: "CAP-COMPETE", authorized_at: Time.current,
+        original_pos_tender: card_tender, created_by_user: @admin
+      )
+
+      recorded_a = AddCardRefundTender.call(
+        preparation: prep_a, authorization_code: "CAP-A", actor: @admin
+      )
+      assert recorded_a.success?, recorded_a.error
+      assert recorded_a.requires_reconciliation
+      assert_nil recorded_a.pos_tender.original_pos_tender_id
+
+      resolved = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep_a.reload,
+        actor: @admin,
+        outcome: :validated_and_accepted,
+        reason: "accept over-capacity card refund",
+        exception_approver: @admin,
+        exception_approver_pin: "1234"
+      )
+      assert resolved.success?, resolved.error
+      refute recorded_a.pos_tender.reload.requires_reconciliation?
+      assert_nil recorded_a.pos_tender.original_pos_tender_id
+      assert recorded_a.pos_tender.pos_approval_id.present?
+
+      # Clear competing in-flight so completion allocation is only about A.
+      competing = ret_b.pos_tenders.unresolved.first
+      competing.update!(status: "voided", voided_at: Time.current, voided_by_user: @admin)
+
+      completed = CompleteTransaction.call(
+        pos_transaction: ret_a, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "cap-a-complete"
+      )
+      assert completed.success?, completed.error
     end
 
     test "recon tender can be externally voided" do
@@ -234,6 +304,31 @@ module Pos
       )
       assert resolved.success?, resolved.error
       assert_equal "voided", recorded.pos_tender.reload.status
+      assert prep.reload.resolved_at.present?
+      assert_equal "externally_voided", prep.resolution_kind
+    end
+
+    test "generic void resolves linked preparation" do
+      sale_line, card_tender = complete_card_sale(quantity: 1)
+      ret = open_return(sale_line, quantity: 1)
+      due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      prep = PrepareCardRefund.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        original_pos_tender: card_tender
+      ).preparation
+      recorded = AddCardRefundTender.call(
+        preparation: prep, authorization_code: "RFND-VOID", actor: @admin
+      )
+      assert recorded.success?
+
+      removed = RemoveTender.call(
+        pos_tender: recorded.pos_tender, actor: @admin,
+        external_void_confirmed: true, external_void_reference: "VOID-GEN",
+        reason: "cashier void"
+      )
+      assert removed.success?, removed.error
+      assert prep.reload.resolved_at.present?
+      assert_equal "externally_voided", prep.resolution_kind
     end
 
     test "recon tender can be validated and accepted" do
@@ -255,10 +350,13 @@ module Pos
         preparation: prep.reload,
         actor: @admin,
         outcome: :validated_and_accepted,
-        reason: "confirmed terminal match"
+        reason: "confirmed terminal match",
+        exception_approver: @admin,
+        exception_approver_pin: "1234"
       )
       assert resolved.success?, resolved.error
       refute recorded.pos_tender.reload.requires_reconciliation?
+      assert_equal card_tender.id, recorded.pos_tender.original_pos_tender_id
     end
 
     private

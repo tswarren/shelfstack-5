@@ -2,7 +2,7 @@
 
 # Store-level operational queue for unresolved recorded_orphan card refunds.
 class PosCardRefundOrphansController < ApplicationController
-  before_action -> { require_permission!("pos.tender.card_standalone") }
+  before_action -> { require_permission!("pos.card_refund.reconcile") }
   before_action :set_preparation, only: %i[resolve]
 
   def index
@@ -14,17 +14,14 @@ class PosCardRefundOrphansController < ApplicationController
   end
 
   def resolve
-    correcting = if params[:correcting_pos_transaction_id].present?
-      Current.store.pos_transactions.find(params[:correcting_pos_transaction_id])
-    end
-
     result = Pos::ResolveCardRefundOrphan.call(
       preparation: @preparation,
       actor: Current.user,
       resolution_kind: params.require(:resolution_kind),
       reason: params.require(:reason),
       external_void_reference: params[:external_void_reference],
-      correcting_pos_transaction: correcting
+      exception_approver: exception_approver_from_params,
+      exception_approver_pin: params[:exception_approver_pin]
     )
     if result.success?
       redirect_to pos_card_refund_orphans_path, notice: "Orphan card refund resolved."
@@ -40,5 +37,11 @@ class PosCardRefundOrphansController < ApplicationController
       .joins(:pos_transaction)
       .where(pos_transactions: { store_id: Current.store.id })
       .find(params[:id])
+  end
+
+  def exception_approver_from_params
+    return nil if params[:exception_approver_username].blank?
+
+    User.find_by(username: params[:exception_approver_username].to_s.strip.downcase)
   end
 end

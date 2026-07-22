@@ -34,7 +34,7 @@
 
     <%= nav_section "Operations" do %>
       <%= nav_item "Business days", business_days_path, permission_key: "pos.access" %>
-      <%= nav_item "Card refund orphans", pos_card_refund_orphans_path, permission_key: "pos.tender.card_standalone" %>
+      <%= nav_item "Card refund orphans", pos_card_refund_orphans_path, permission_key: "pos.card_refund.reconcile" %>
     <% end %>
 
     <%= nav_section "Reports" do %>

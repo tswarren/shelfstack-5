@@ -5,7 +5,7 @@ class PosTendersController < ApplicationController
   before_action :set_tender, only: %i[destroy resolve_reconciliation]
   before_action -> { require_permission!(create_permission) }, only: %i[create prepare_card_refund abandon_card_refund]
   before_action -> { require_permission!(destroy_permission) }, only: %i[destroy]
-  before_action -> { require_permission!("pos.tender.card_standalone") }, only: %i[resolve_reconciliation]
+  before_action -> { require_permission!("pos.card_refund.reconcile") }, only: %i[resolve_reconciliation]
 
   def prepare_card_refund
     tender_type = Current.organization.tender_types.find(params[:tender_type_id])
@@ -139,7 +139,9 @@ class PosTendersController < ApplicationController
       actor: Current.user,
       outcome: params.require(:outcome),
       reason: params.require(:reason),
-      external_void_reference: params[:external_void_reference]
+      external_void_reference: params[:external_void_reference],
+      exception_approver: exception_approver_from_params,
+      exception_approver_pin: params[:exception_approver_pin]
     )
     if result.success?
       redirect_to pos_transaction_path(@pos_transaction), notice: "Card refund reconciliation resolved."

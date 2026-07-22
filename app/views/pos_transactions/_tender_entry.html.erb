@@ -241,8 +241,43 @@
           <%= form.label :external_void_reference, "External void reference", class: "field-label" %>
           <%= text_field_tag :external_void_reference, nil, class: "input" %>
         </div>
+        <div class="field">
+          <%= form.label :exception_approver_username, "Exception approver (for accepted outcomes)", class: "field-label" %>
+          <%= text_field_tag :exception_approver_username, nil, class: "input", autocomplete: "username" %>
+        </div>
+        <div class="field">
+          <%= form.label :exception_approver_pin, "Approver PIN", class: "field-label" %>
+          <%= password_field_tag :exception_approver_pin, nil, class: "input", autocomplete: "off" %>
+        </div>
         <div class="form-actions">
           <%= form.submit "Resolve reconciliation", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
+  <% Array(@abandoned_card_refund_preparations).each do |abandoned| %>
+    <details class="pos-panel" open>
+      <summary>Record auth for abandoned card refund preparation</summary>
+      <p class="muted">
+        Preparation <%= abandoned.id %> was abandoned
+        (<%= number_to_currency(abandoned.amount_cents / 100.0) %>).
+        If the terminal refund already succeeded, record the authorization here —
+        it will be retained as a reconciliation orphan.
+      </p>
+      <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :refund, "1" %>
+        <%= hidden_field_tag :preparation_id, abandoned.id %>
+        <div class="field">
+          <%= form.label :authorization_code, "Refund authorization code", class: "field-label" %>
+          <%= form.text_field :authorization_code, class: "input", required: true %>
+        </div>
+        <div class="field">
+          <%= form.label :terminal_reference, "Terminal reference (optional)", class: "field-label" %>
+          <%= form.text_field :terminal_reference, class: "input" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Record authorized card refund", class: "button button-primary" %>
         </div>
       <% end %>
     </details>

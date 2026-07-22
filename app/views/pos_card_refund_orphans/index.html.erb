@@ -3,8 +3,8 @@
 <section class="page-header">
   <h1>Unresolved card refund orphans</h1>
   <p class="muted">
-    External card refunds recorded after the return transaction could no longer accept a tender.
-    Resolve each with an explicit outcome.
+    External card refunds recorded when the return could not accept a tender (including
+    after an abandoned preparation). Resolve each with an explicit outcome.
   </p>
 </section>
 
@@ -18,7 +18,7 @@
         <th>Transaction</th>
         <th>Amount</th>
         <th>Auth</th>
-        <th>Intended original</th>
+        <th>Abandoned?</th>
         <th>Reasons</th>
         <th>Resolve</th>
       </tr>
@@ -30,7 +30,7 @@
           <td><%= link_to prep.pos_transaction.public_id, pos_transaction_path(prep.pos_transaction) %></td>
           <td><%= number_to_currency(prep.amount_cents / 100.0) %></td>
           <td><%= prep.authorization_code %></td>
-          <td><%= prep.intended_original_pos_tender_id || "—" %></td>
+          <td><%= prep.abandoned_at.present? ? "Yes" : "—" %></td>
           <td><%= Array(prep.reconciliation_reasons).join("; ") %></td>
           <td>
             <%= form_with url: resolve_pos_card_refund_orphan_path(prep), method: :post, class: "form" do |form| %>
@@ -38,7 +38,6 @@
                 <%= select_tag :resolution_kind,
                       options_for_select([
                         [ "External void confirmed", "external_void_confirmed" ],
-                        [ "Linked to correcting transaction", "linked_to_correcting_transaction" ],
                         [ "Accepted financial exception", "accepted_financial_exception" ]
                       ]),
                       class: "input" %>
@@ -50,7 +49,12 @@
                 <%= text_field_tag :external_void_reference, nil, class: "input", placeholder: "Void reference" %>
               </div>
               <div class="field">
-                <%= text_field_tag :correcting_pos_transaction_id, nil, class: "input", placeholder: "Correcting txn id" %>
+                <%= text_field_tag :exception_approver_username, nil, class: "input",
+                      placeholder: "Approver username (exception)" %>
+              </div>
+              <div class="field">
+                <%= password_field_tag :exception_approver_pin, nil, class: "input",
+                      placeholder: "Approver PIN", autocomplete: "off" %>
               </div>
               <%= form.submit "Resolve", class: "button button-outline button-small" %>
             <% end %>

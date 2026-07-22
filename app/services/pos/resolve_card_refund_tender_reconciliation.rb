@@ -8,6 +8,8 @@ module Pos
     Result = Data.define(:pos_tender, :preparation, :success?, :error)
 
     OUTCOMES = %i[externally_voided validated_and_accepted replaced].freeze
+    RECONCILE_PERMISSION = "pos.card_refund.reconcile"
+    EXCEPTION_APPROVER_PERMISSION = "pos.return.refund_exception.approve"
 
     def initialize(
       preparation: nil,
@@ -15,7 +17,9 @@ module Pos
       actor:,
       outcome:,
       reason:,
-      external_void_reference: nil
+      external_void_reference: nil,
+      exception_approver: nil,
+      exception_approver_pin: nil
     )
       @preparation = preparation
       @pos_tender = pos_tender
@@ -23,6 +27,8 @@ module Pos
       @outcome = outcome.to_sym
       @reason = reason.to_s.strip
       @external_void_reference = external_void_reference.presence
+      @exception_approver = exception_approver
+      @exception_approver_pin = exception_approver_pin
     end
 
     def call
@@ -34,6 +40,7 @@ module Pos
         transaction = PosTransaction.lock.find(preparation.pos_transaction_id)
         preparation = PosCardRefundPreparation.lock.find(preparation.id)
         tender = PosTender.lock.find(preparation.pos_tender_id)
+        RefundLockOrder.lock_linked_originals!(transaction)
 
         raise Error, "preparation is not a recorded tender" unless preparation.recorded_tender?
         raise Error, "tender does not require reconciliation" unless tender.requires_reconciliation?
@@ -42,8 +49,11 @@ module Pos
           raise Error, "transaction must be open or suspended to resolve tender reconciliation"
         end
 
+        assert_permission!(transaction.store, RECONCILE_PERMISSION)
+
         case @outcome
         when :externally_voided, :replaced
+          assert_permission!(transaction.store, "pos.tender.card_void")
           void_tender!(tender)
           preparation.update!(
             resolution_kind: @outcome.to_s,
@@ -54,24 +64,7 @@ module Pos
             requires_reconciliation: false
           )
         when :validated_and_accepted
-          assert_permission!(tender.store, "pos.tender.card_standalone")
-          bind_original = preparation.intended_original_pos_tender
-          # Do not re-check remaining capacity — this tender already consumes it.
-          if bind_original.present?
-            assert_bindable_original!(transaction, bind_original)
-          end
-          tender.update!(
-            requires_reconciliation: false,
-            original_pos_tender: bind_original || tender.original_pos_tender
-          )
-          preparation.update!(
-            resolution_kind: "validated_and_accepted",
-            resolved_at: Time.current,
-            resolved_by_user: @actor,
-            resolution_reason: @reason,
-            requires_reconciliation: false,
-            reconciliation_reasons: []
-          )
+          accept_validated!(transaction, preparation, tender)
         end
 
         Administration::RecordAuditEvent.call(
@@ -85,13 +78,15 @@ module Pos
             "pos_tender_id" => tender.id,
             "outcome" => @outcome.to_s,
             "reason" => @reason,
-            "external_void_reference" => @external_void_reference
+            "external_void_reference" => @external_void_reference,
+            "original_pos_tender_id" => tender.reload.original_pos_tender_id,
+            "pos_approval_id" => tender.pos_approval_id
           }
         )
 
-        Result.new(pos_tender: tender.reload, preparation: preparation, success?: true, error: nil)
+        Result.new(pos_tender: tender.reload, preparation: preparation.reload, success?: true, error: nil)
       end
-    rescue Error, CardRefundSupport::Error, ActiveRecord::RecordInvalid => e
+    rescue Error, CardRefundSupport::Error, RefundAllocationPolicy::Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_tender: nil, preparation: nil, success?: false, error: e.message)
     end
 
@@ -101,11 +96,76 @@ module Pos
       if @preparation
         @preparation
       elsif @pos_tender
-        prep = PosCardRefundPreparation.find_by!(pos_tender_id: @pos_tender.id)
-        prep
+        PosCardRefundPreparation.find_by!(pos_tender_id: @pos_tender.id)
       else
         raise Error, "preparation or pos_tender is required"
       end
+    end
+
+    def accept_validated!(transaction, preparation, tender)
+      intended = preparation.intended_original_pos_tender
+      bind_original = nil
+      approval = tender.pos_approval || preparation.pos_approval
+
+      if intended.present?
+        begin
+          bind_original = CardRefundSupport.validate_original!(
+            transaction: transaction,
+            original_pos_tender: intended,
+            amount_cents: tender.amount_cents,
+            excluding_refund_tender: tender
+          )
+        rescue CardRefundSupport::Error
+          bind_original = nil
+        end
+      end
+
+      if bind_original.present?
+        tender.update!(
+          requires_reconciliation: false,
+          original_pos_tender: bind_original,
+          pos_approval: approval
+        )
+      else
+        approval = authorize_acceptance_exception!(transaction, tender)
+        tender.update!(
+          requires_reconciliation: false,
+          original_pos_tender: nil,
+          pos_approval: approval
+        )
+      end
+
+      RefundAllocationPolicy.validate_plan!(pos_transaction: transaction, actor: @actor)
+
+      preparation.update!(
+        resolution_kind: "validated_and_accepted",
+        resolved_at: Time.current,
+        resolved_by_user: @actor,
+        resolution_reason: @reason,
+        requires_reconciliation: false,
+        reconciliation_reasons: []
+      )
+    end
+
+    def authorize_acceptance_exception!(transaction, tender)
+      approver = @exception_approver || @actor
+      auth = AuthorizeAction.call(
+        store: transaction.store,
+        requester: @actor,
+        permission_key: RECONCILE_PERMISSION,
+        action_type: "card_refund_reconciliation",
+        reason: @reason,
+        approval_mode: :always,
+        approver: approver,
+        approver_pin: @exception_approver_pin,
+        approver_permission_key: EXCEPTION_APPROVER_PERMISSION,
+        self_approver_permission_key: EXCEPTION_APPROVER_PERMISSION,
+        pos_transaction: transaction,
+        requested_value: tender.amount_cents
+      )
+      return auth.pos_approval if auth.allowed? && auth.pos_approval
+
+      raise Error, auth.error || "card refund acceptance requires exception approval"
     end
 
     def void_tender!(tender)
@@ -114,7 +174,8 @@ module Pos
         actor: @actor,
         reason: @reason,
         external_void_confirmed: true,
-        external_void_reference: @external_void_reference
+        external_void_reference: @external_void_reference,
+        resolve_card_refund_preparation: true
       )
       raise Error, removed.error unless removed.success?
     end
@@ -125,16 +186,6 @@ module Pos
       ) == :allow
         raise Error, "missing permission #{key}"
       end
-    end
-
-    def assert_bindable_original!(transaction, original)
-      original_txn = PosTransaction.find(original.pos_transaction_id)
-      raise Error, "original tender's transaction has been post-voided" if original_txn.post_voided?
-      unless CardRefundSupport.linked_original_transaction?(transaction, original_txn)
-        raise Error, "original tender is not linked to this return transaction"
-      end
-      raise Error, "original tender is not completed" unless original.completed?
-      raise Error, "original tender must be card" unless original.tender_type.tender_category == "card"
     end
   end
 end

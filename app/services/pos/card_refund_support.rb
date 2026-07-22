@@ -20,7 +20,7 @@ module Pos
       end
     end
 
-    def validate_original!(transaction:, original_pos_tender:, amount_cents:)
+    def validate_original!(transaction:, original_pos_tender:, amount_cents:, excluding_refund_tender: nil)
       return nil if original_pos_tender.blank?
 
       original_txn = PosTransaction.find(original_pos_tender.pos_transaction_id)
@@ -37,6 +37,11 @@ module Pos
       raise Error, "original tender must be card" unless original.tender_type.tender_category == "card"
 
       remaining = original.remaining_refundable_cents
+      if excluding_refund_tender.present? &&
+         excluding_refund_tender.original_pos_tender_id == original.id &&
+         %w[pending authorized completed].include?(excluding_refund_tender.status)
+        remaining += excluding_refund_tender.amount_cents
+      end
       if amount_cents > remaining
         raise Error, "refund exceeds remaining refundable on original tender (#{remaining})"
       end

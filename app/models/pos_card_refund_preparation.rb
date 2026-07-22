@@ -11,7 +11,7 @@ class PosCardRefundPreparation < ApplicationRecord
 
   TENDER_RESOLUTION_KINDS = %w[externally_voided validated_and_accepted replaced].freeze
   ORPHAN_RESOLUTION_KINDS = %w[
-    external_void_confirmed linked_to_correcting_transaction accepted_financial_exception
+    external_void_confirmed accepted_financial_exception
   ].freeze
 
   belongs_to :pos_transaction

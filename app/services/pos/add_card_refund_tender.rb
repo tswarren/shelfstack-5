@@ -6,8 +6,10 @@ module Pos
   # Accepts only preparation identity + terminal authorization data. Plan fields
   # are taken from the preparation. After a valid preparation ID and nonblank
   # authorization are presented, ordinary business/config failures become
-  # reconciliation reasons — the external fact is always retained (as a tender
-  # on an open transaction, or as a recorded_orphan otherwise).
+  # reconciliation reasons — the external fact is always retained.
+  #
+  # If the preparation was abandoned before auth arrives, the fact is retained as
+  # a recorded_orphan (preserving abandonment + authorization history).
   class AddCardRefundTender < ApplicationService
     Error = Class.new(StandardError)
     IdempotencyConflict = Class.new(Error)
@@ -27,7 +29,6 @@ module Pos
       raise Error, "preparation is required" if @preparation.blank?
 
       ActiveRecord::Base.transaction do
-        # Canonical lock order: transaction first, then preparation, then linked originals.
         transaction_id = @preparation.pos_transaction_id
         transaction = PosTransaction.lock.find(transaction_id)
         preparation = PosCardRefundPreparation.lock.find(@preparation.id)
@@ -38,9 +39,11 @@ module Pos
         if preparation.recorded_tender? || preparation.recorded_orphan?
           return replay_result!(preparation)
         end
-        raise Error, "preparation is abandoned" if preparation.abandoned?
-        raise Error, "preparation is not outstanding" unless preparation.prepared?
+        unless preparation.prepared? || preparation.abandoned?
+          raise Error, "preparation is not recordable (status=#{preparation.status})"
+        end
 
+        abandoned_before = preparation.abandoned?
         RefundLockOrder.lock_linked_originals!(transaction)
 
         tender_type = TenderType.find(preparation.tender_type_id)
@@ -52,6 +55,7 @@ module Pos
         warnings = []
         original = nil
 
+        reasons << "preparation was abandoned before authorization was recorded" if abandoned_before
         unless transaction.open?
           reasons << "transaction is not open (status=#{transaction.status})"
         end
@@ -72,7 +76,6 @@ module Pos
           warnings.concat(Array(recalculation.warnings))
           if recalculation.blockers.present?
             reasons << "calculation blockers: #{recalculation.blockers.join(', ')}"
-            current_snapshot = nil
           else
             refund_due = CardRefundSupport.refund_due_cents(transaction, recalculation.net_total_cents)
             reasons << "no refund balance due" if refund_due.zero?
@@ -102,8 +105,6 @@ module Pos
             amount_cents: amount_cents
           )
 
-          # Reuse preparation approval — do not re-authorize. Still validate the
-          # commercial plan with the existing approval attached to the proposed item.
           RefundAllocationPolicy.call(
             pos_transaction: transaction,
             actor: @actor,
@@ -119,9 +120,13 @@ module Pos
 
         requires_reconciliation = reasons.any?
         now = Time.current
-        raise Error, "preparation was concurrently consumed" unless preparation.prepared?
+        unless preparation.prepared? || preparation.abandoned?
+          raise Error, "preparation was concurrently consumed"
+        end
 
-        if transaction.open?
+        # Abandoned preparations always become orphans so the commercial unlock
+        # after abandon cannot silently attach a tender to a drifted plan.
+        if transaction.open? && !abandoned_before
           tender = PosTender.create!(
             pos_transaction: transaction,
             store: transaction.store,
@@ -184,7 +189,10 @@ module Pos
               "intended_original_pos_tender_id" => preparation.intended_original_pos_tender_id,
               "amount_cents" => amount_cents,
               "reasons" => orphan_reasons,
-              "transaction_status" => transaction.status
+              "transaction_status" => transaction.status,
+              "abandoned_before_record" => abandoned_before,
+              "abandoned_at" => preparation.abandoned_at,
+              "abandoned_by_user_id" => preparation.abandoned_by_user_id
             }
           )
 

@@ -65,6 +65,7 @@ class PosTransactionsController < ApplicationController
     @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
     @refundable_original_tenders = Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction)
     @card_refund_preparation = @pos_transaction.pos_card_refund_preparations.prepared.order(:created_at).last
+    @abandoned_card_refund_preparations = @pos_transaction.pos_card_refund_preparations.where(status: "abandoned").order(:abandoned_at)
     @unresolved_card_refund_orphans = @pos_transaction.pos_card_refund_preparations.unresolved_orphans.to_a
     @recon_card_refund_tenders = @pos_transaction.pos_tenders.unresolved.where(requires_reconciliation: true).to_a
     # Stable per page-render so a double-click / back-button resubmit of the

@@ -13,6 +13,8 @@ unless defined?(PHASE6_PERMISSIONS)
       description: "Authorize one's own post-void with recorded self-approval" },
     { code: "pos.return.refund_exception.approve", name: "Approve refund destination exceptions", permission_group: "pos",
       description: "Approve refunding to a destination other than a remaining original tender" },
+    { code: "pos.card_refund.reconcile", name: "Resolve card refund reconciliation", permission_group: "pos",
+      description: "Resolve reconciliation-required card refund tenders and orphan external refunds" },
     { code: "stored_value.account.view", name: "View stored-value accounts", permission_group: "stored_value",
       description: "View account and current balance" },
     { code: "stored_value.ledger.view", name: "View stored-value ledger", permission_group: "stored_value",

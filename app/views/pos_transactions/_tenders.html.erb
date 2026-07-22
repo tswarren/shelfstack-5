@@ -26,25 +26,29 @@
               <td>
                 <% if @pos_transaction.open? && tender.unresolved? %>
                   <% if tender.authorized? && tender.tender_type.tender_category == "card" %>
-                    <details>
-                      <summary>Void card</summary>
-                      <%= form_with url: pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "form" do |form| %>
-                        <div class="field">
-                          <%= form.label :external_void_reference, "External void ref", class: "field-label" %>
-                          <%= form.text_field :external_void_reference, class: "input" %>
-                        </div>
-                        <div class="checkbox-group">
-                          <label>
-                            <%= form.check_box :external_void_confirmed, {}, "true", "false" %>
-                            External void confirmed
-                          </label>
-                        </div>
-                        <div class="form-actions">
-                          <%= form.submit "Void card", class: "button button-small button-danger",
-                                data: { turbo_confirm: "Confirm the card was voided on the external terminal before continuing." } %>
-                        </div>
-                      <% end %>
-                    </details>
+                    <% if tender.requires_reconciliation? %>
+                      <span class="muted">Use reconciliation panel</span>
+                    <% else %>
+                      <details>
+                        <summary>Void card</summary>
+                        <%= form_with url: pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "form" do |form| %>
+                          <div class="field">
+                            <%= form.label :external_void_reference, "External void ref", class: "field-label" %>
+                            <%= form.text_field :external_void_reference, class: "input" %>
+                          </div>
+                          <div class="checkbox-group">
+                            <label>
+                              <%= form.check_box :external_void_confirmed, {}, "true", "false" %>
+                              External void confirmed
+                            </label>
+                          </div>
+                          <div class="form-actions">
+                            <%= form.submit "Void card", class: "button button-small button-danger",
+                                  data: { turbo_confirm: "Confirm the card was voided on the external terminal before continuing." } %>
+                          </div>
+                        <% end %>
+                      </details>
+                    <% end %>
                   <% else %>
                     <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
                   <% end %>
