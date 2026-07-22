@@ -63,6 +63,7 @@ class PosTransactionsController < ApplicationController
     @tendered_total_cents = received - refunded
     @balance_due_cents = @net_total_cents - @tendered_total_cents
     @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
+    @refundable_original_tenders = Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction)
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid

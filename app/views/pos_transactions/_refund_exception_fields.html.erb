@@ -1,0 +1,14 @@
+<details class="pos-panel">
+  <summary>Exception approval (non-original destination)</summary>
+  <p class="muted">Required when skipping a remaining original tender restoration.</p>
+  <div class="field">
+    <%= label_tag :exception_approver_username, "Approver username", class: "field-label" %>
+    <%= text_field_tag :exception_approver_username, nil, class: "input", autocomplete: "username",
+          id: "exception_approver_username_#{prefix}" %>
+  </div>
+  <div class="field">
+    <%= label_tag :exception_approver_pin, "Approver PIN", class: "field-label" %>
+    <%= password_field_tag :exception_approver_pin, nil, class: "input", autocomplete: "off",
+          id: "exception_approver_pin_#{prefix}" %>
+  </div>
+</details>

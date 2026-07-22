@@ -378,8 +378,13 @@ module Pos
         stored_value_account_id: original_tender.stored_value_account_id,
         reverses_pos_tender: original_tender,
         created_by_user: @actor,
-        external_void_confirmed_by_user: original_tender.tender_type.tender_category == "card" ? @actor : nil
+        external_void_confirmed_by_user: card_tender?(original_tender) ? @actor : nil,
+        external_void_confirmed_at: card_tender?(original_tender) ? now : nil
       )
+    end
+
+    def card_tender?(tender)
+      tender.tender_type.tender_category == "card"
     end
 
     def format_receipt_number(store, sequence)

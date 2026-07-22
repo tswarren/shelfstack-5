@@ -159,7 +159,7 @@ module Pos
         return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
       ).pos_line_item
       net = Pos::RecalculateTransaction.call(pos_transaction: return_txn).net_total_cents
-      Pos::AddCashRefundTender.call(pos_transaction: return_txn, tender_type: @cash, amount_cents: net.abs, actor: @admin)
+      pos_add_cash_refund(pos_transaction: return_txn, amount_cents: net.abs, actor: @admin)
 
       result = Pos::CompleteTransaction.call(
         pos_transaction: return_txn, pos_session: @session, actor: @admin, completion_idempotency_key: "return-key"
@@ -280,8 +280,8 @@ module Pos
         return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
       ).success?
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
-      assert AddCashRefundTender.call(
-        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin
+      assert pos_add_cash_refund(
+        pos_transaction: ret, amount_cents: refund_due, actor: @admin
       ).success?
 
       results = {}

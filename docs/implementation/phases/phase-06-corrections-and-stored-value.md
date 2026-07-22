@@ -78,7 +78,7 @@ Proven by tests in this branch unless noted:
 - [x] Completed transactions, lines, tenders, inventory entries, stored-value entries, and fulfilment facts remain immutable
 - [x] Post-void creates one new completed transaction linked to one original; uses exact historical facts; current config is not consulted (incl. cloned `PosDiscount` rows)
 - [x] Quantity-tracked inventory reverse (incl. OD-014 Case-1 exact deficit pool) and individually tracked unit restore when eligible; unavailable reverses through the ledger
-- [x] Prior returns, refunds, post-void consumption of returnable/refundable, downstream unit activity, consumed stored value, or OD-014 later deficit reduction block post-void / later return-refund where full reversal is impossible
+- [x] Prior returns, refunds (including pending/authorized in-flight), post-void consumption of returnable/refundable, downstream unit activity, consumed stored value, or OD-014 later deficit quantity change / reverse-into-deficit block post-void / later return-refund where full reversal is impossible
 - [x] Post-void of a fulfilled sale reverses fulfilment via `Requests::ReverseFulfillment` and reopens the request when derived quantity requires it (happy-path covered; broader matrix remains in decision notes)
 - [x] Gift-card issue/reload and SV redeem/refund commit atomically with POS; ledger append-only; cache reconciles; concurrent redeem cannot overspend; original-tender-first refund + exception approval
 - [x] Completion and post-void remain idempotent when stored value participates; AdjustBalance posting_key idempotent
@@ -86,11 +86,11 @@ Proven by tests in this branch unless noted:
 - [ ] Mixed sale+return post-void supported only when every effect is reversible (all-or-nothing) — **retained block** until fulfilment restoration lands
 - [x] Restricted activity retains requester, approver, reason, store, and source relationships
 
-**Retained interim blocks:** OD-014 post-settlement algorithm (later-deficit-reduction still blocks); return-containing / mixed-txn post-void (needs fulfilment restoration).
+**Retained interim blocks:** OD-014 post-settlement algorithm (any later deficit-quantity change after a deficit-affecting original, or reverse that would settle current deficit when the original did not create deficit); return-containing / mixed-txn post-void (needs fulfilment restoration).
 
 ## Test categories
 
-Post-void (including mixed txn, dispositions, fulfilment, OD-014 blockers, idempotency, rollback); stored value (identifiers, issue/reload/redeem/refund, split tender, suspend, concurrency, manual adjustment, immutable ledger). Full matrices in the decision notes.
+Post-void (including mixed txn, dispositions, fulfilment, OD-014 blockers, in-flight refund blockers, idempotency, rollback); stored value (identifiers, issue/reload/redeem/refund, split tender, concurrency, manual adjustment, immutable ledger). Suspend/unsuspend operational workflow is deferred (permission seeded; no service/UI in Gate 6d). Full matrices in the decision notes.
 
 ## Out of scope
 

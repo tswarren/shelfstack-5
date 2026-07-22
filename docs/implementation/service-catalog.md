@@ -4,7 +4,7 @@
 **Purpose:** Record concrete services as they are implemented — not a speculative design of later phases  
 **Principle:** See [AGENTS.md](../../AGENTS.md) §7 (do not restate here)
 
-Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 classes.
+Add a row when a service lands in the codebase. Do not pre-design Phase 7–8 classes.
 
 ## Columns
 
@@ -290,8 +290,6 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 6–8 cl
 - **In-house reservation.** `Requests::ReserveInHouseInventory` is the *only* way to create a `product_request`-sourced `InventoryReservation` from counted-but-not-yet-received stock; it deliberately requires an explicit `physically_confirmed: true` argument (there is no default) so a caller cannot reserve inventory that has not actually been counted/located. It shares the same accumulate-onto-existing-reservation pattern as the receipt-conversion path (lock the Product Request, then the existing active reservation, then call `Inventory::Reserve` with the new total).
 - **`product_request_fulfillments`.** Append-only fact table: `product_request_id`, nullable `inventory_reservation_id` (a walk-in sale with no prior reservation still fulfils), `pos_line_item_id`, positive `quantity`, `kind` (`fulfill`/`reverse`), `linked_fulfilment_id` (required on `reverse`, forbidden on `fulfill`; points at the original fact — a reversal is never itself reversed), `fulfilled_at`, `fulfilled_by_user_id`, and a unique `posting_key`. `ProductRequestFulfillment` forbids `update`/`destroy` (`readonly?`/`before_destroy`) — corrections are always new rows.
 - **POS wiring.** `Pos::AddLine` accepts an optional `product_request:` (validated: must be a Customer Request, open, same store, matching variant if one is already resolved, and quantity ≤ the request's `outstanding_quantity`); `pos_line_items.product_request_id` is DB-constrained to product/sale lines only. Inside `Pos::CompleteTransaction`'s existing per-line loop (same top-level transaction as tax/eligibility/tender revalidation, reservation conversion, and receipt numbering — OD-014/ADR "POS completion is atomic"), a sale line linked to a Product Request calls `Requests::RecordFulfillment` right after its `Inventory::ConvertReservation`; a linked return calls `Requests::ReverseFulfillment` right after its `Inventory::PostCustomerReturn`. Any failure (including a denied `requests.customer_request.fulfill`) raises and rolls back the entire completion — no partial fulfilment fact, reservation change, or sale/return posting survives a failed completion.
-- **Post-void (Phase 6).** `Pos::EvaluatePostVoidEligibility` (unlocked preflight) and `Pos::PostVoidTransaction` (locked construction) create a new completed reversing transaction. Inventory uses `Inventory::ReverseLedgerEntry`. Fulfilment uses `Requests::ReverseFulfillment`. Stored-value lines/tenders reverse via `StoredValue::PostEntry` (`reversal`); later redemption blocks reversing earlier positive credits. OD-014 interim blocks later deficit reductions. Return-containing originals remain blocked until fulfilment restoration. See [phase-06-post-void-eligibility-and-cross-domain-reversal.md](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md).
-- **Stored value (Phase 6b–6d).** `StoredValue::CreateAccount` (`21` ids); `StoredValue::PostEntry` (sole balance owner; concurrency-safe); `StoredValue::AdjustBalance` (`approval_mode: :always`); `Pos::AddStoredValueLine` (issue/reload); `Pos::AddStoredValueTender` / `Pos::AddStoredValueRefundTender` (redeem / store-credit refund).
 - **Coverage formula.** `ProductRequest#uncovered_quantity` is now `requested_quantity − fulfilled_quantity − active_reserved_quantity − remaining_allocated_quantity` (each clamped at 0 overall; `fulfilled_quantity` nets `fulfill` minus `reverse` rows). Ordering demand (`Requests::CreateProductRequest`), posting a receipt, or creating an in-house reservation never by themselves close a Customer Request — only `Requests::RecordFulfillment` sets `status: fulfilled`, and only when `fulfilled_quantity >= requested_quantity`.
 - **Double-reservation window.** A sale line linked to a Customer Request creates its *own* `pos_line_item`-sourced reservation via `Pos::AddLine` (as always) in addition to any pre-existing `product_request`-sourced reservation from conversion/in-house-reserve; the two are temporarily both active (may transiently warn on negative `available`) until `Pos::CompleteTransaction` converts the POS line's reservation into the sale and `RecordFulfillment` consumes the Product Request's reservation in the same transaction — inventory is never double-counted once completion finishes.
 
@@ -327,9 +325,33 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
   passed an invalid extra positional argument (`ActionView::Template::Error` on any
   `ordered` PO with amend permission).
 
-## Later phases (add when implemented)
+## Phase 6 — Corrections and stored value
 
-Placeholder only — do not invent APIs now:
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::EvaluatePostVoidEligibility` | Point of Sale | 6a | No | Yes | None (unlocked preflight) | Completed original transaction, store | `eligible?` + blockers (returns, refunds in flight, units, OD-014 interim, SV later redemption) |
+| `Pos::PostVoidTransaction` | Point of Sale | 6a | Yes | Yes (completion idempotency key) | Session, original txn/lines/tenders, inventory, SV accounts, Product Requests (canonical order) | Original completed txn, session, actor, reason, approver, card confirmations | New completed reversing txn; inventory via `Inventory::ReverseLedgerEntry`; fulfilment via `Requests::ReverseFulfillment`; SV via `StoredValue::PostEntry` (`reversal`) |
+| `Inventory::ReverseLedgerEntry` | Receiving and Inventory | 6a | Yes | Yes (posting key) | Stock balance (via find-or-create), original ledger row | Original ledger entry, source, posting key, actor | Exact historical inverse; OD-014 Case-1 snapshot restore when safe; interim conflict when later deficit activity or reverse would settle current deficit |
+| `Pos::RefundAllocationPolicy` | Point of Sale | 6d | No* | Yes | None | Return txn, destination, amount, optional original tender / exception approver | Nil when restoring an eligible original (SV first); else exception `PosApproval` or error |
+| `Pos::AddCashRefundTender` | Point of Sale | 6a/6d | Yes | No | Transaction, optional original tender | Return txn, cash tender type, amount, optional `original_pos_tender`, exception approver | `pending` refund tender with `original_pos_tender_id` when restoring |
+| `Pos::AddCardRefundTender` | Point of Sale | 6d | Yes | No | Transaction, optional original tender | Return txn, card tender type, amount, auth code, optional `original_pos_tender`, exception approver | `authorized` refund tender linked to original when restoring |
+| `Pos::AddStoredValueLine` | Point of Sale | 6c | Yes | No | Transaction | Open txn, SV operation (issue/reload), account or create flags, amount, actor | Pending stored-value line |
+| `Pos::AddStoredValueTender` | Point of Sale | 6d | Yes | No | Transaction + account | Open txn, SV tender type, account, amount, actor | Pending redeem tender |
+| `Pos::AddStoredValueRefundTender` | Point of Sale | 6d | Yes | No | Transaction + account / original tender | Return txn, amount, optional original SV tender or new/eligible `store_credit` account, exception approver | Pending SV refund tender; non-original path restricted to `store_credit` |
+| `StoredValue::CreateAccount` | Stored Value | 6b | Yes | No | Identifier sequence | Org, account type, actor, optional store / alternate id | Account with generated `21` account number |
+| `StoredValue::ResolveAccount` | Stored Value | 6d | No | Yes | None | Org, identifier (account number or alternate) | Resolved `StoredValueAccount` or error |
+| `StoredValue::PostEntry` | Stored Value | 6b | Yes | Yes (posting key) | Account (`lock`) | Account, entry type, amount, posting key, actor, optional POS refs | Append-only ledger entry; sole balance owner; issued/reloaded lifecycle; audit |
+| `StoredValue::AdjustBalance` | Stored Value | 6b | Yes | Yes (posting key) | Account then posting-key recheck | Account, amount, reason, actor, always-required approver | Adjustment entry via `PostEntry` + `PosApproval` |
+
+\*Policy itself is non-transactional; callers invoke it inside their tender/completion transactions.
+
+### Phase 6 notes
+
+- **Post-void.** Unlocked preflight + locked construction. Blocks completed returns/refunds, open/suspended linked returns, pending/authorized/completed refund tenders on those returns, later SV redemption of credited balances, and OD-014 interim deficit cases (later deficit quantity change after a deficit-affecting sale, or reverse that would settle current deficit when the original did not create deficit). Return-containing originals remain blocked until fulfilment restoration. See [phase-06-post-void-eligibility-and-cross-domain-reversal.md](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md).
+- **Refund allocation.** Restore remaining original stored-value tenders first, then eligible cash/card originals via `original_pos_tender_id`. Non-original destinations require `stored_value_refund_exception` approval. Completion revalidates the policy for every refund tender.
+- **Account suspension.** Domain statuses include `suspended`, and `stored_value.account.suspend` is seeded, but suspend/unsuspend operational workflow is deferred past Gate 6d (no service/UI yet).
+
+## Later phases (add when implemented)
 
 - Phase 7+: reporting/reconciliation interfaces over posted corrections and stored value
 

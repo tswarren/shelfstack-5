@@ -16,6 +16,7 @@ class PosTendersController < ApplicationController
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
           actor: Current.user,
+          original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
           exception_approver: exception_approver_from_params,
           exception_approver_pin: params[:exception_approver_pin]
         )
@@ -34,6 +35,7 @@ class PosTendersController < ApplicationController
           authorization_code: params[:authorization_code],
           terminal_reference: params[:terminal_reference].presence,
           actor: Current.user,
+          original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
           exception_approver: exception_approver_from_params,
           exception_approver_pin: params[:exception_approver_pin]
         )

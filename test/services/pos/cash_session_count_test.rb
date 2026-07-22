@@ -119,8 +119,8 @@ module Pos
         actor: @admin
       )
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
-      AddCashRefundTender.call(
-        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin
+      pos_add_cash_refund(
+        pos_transaction: ret, amount_cents: refund_due, actor: @admin
       )
       CompleteTransaction.call(
         pos_transaction: ret, pos_session: session, actor: @admin,
@@ -169,8 +169,8 @@ module Pos
       net = RecalculateTransaction.call(pos_transaction: exchange).net_total_cents
       assert net.negative?
       refund = -net
-      AddCashRefundTender.call(
-        pos_transaction: exchange, tender_type: @cash, amount_cents: refund, actor: @admin
+      pos_add_cash_refund(
+        pos_transaction: exchange, amount_cents: refund, actor: @admin
       )
       CompleteTransaction.call(
         pos_transaction: exchange, pos_session: session, actor: @admin,

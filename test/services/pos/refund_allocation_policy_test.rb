@@ -11,6 +11,7 @@ module Pos
       @drawer = cash_drawers(:drawer_1)
       @variant = product_variants(:sample_book_standard)
       @cash = tender_types(:cash)
+      @card = tender_types(:card_standalone)
       @sv_tender = tender_types(:stored_value)
       IdentifierSequence.ensure_defaults!
       open_inventory(@variant, quantity: 5, unit_cost_cents: 500)
@@ -56,6 +57,62 @@ module Pos
       assert allowed.pos_tender.pos_approval_id.present?
     end
 
+    test "cash refund links original cash tender and reduces remaining refundable" do
+      sale_line, sale_tender = complete_cash_sale
+      ret = open_return(sale_line)
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+
+      refund = AddCashRefundTender.call(
+        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin,
+        original_pos_tender: sale_tender
+      )
+      assert refund.success?, refund.error
+      assert_equal sale_tender.id, refund.pos_tender.original_pos_tender_id
+      assert_equal 0, sale_tender.reload.remaining_refundable_cents
+    end
+
+    test "cash refund without original is blocked while original cash remains" do
+      sale_line, = complete_cash_sale
+      ret = open_return(sale_line)
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+
+      denied = AddCashRefundTender.call(
+        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin
+      )
+      refute denied.success?
+      assert_match(/restore remaining original/, denied.error)
+    end
+
+    test "card refund links original card tender" do
+      sale_line, sale_tender = complete_card_sale
+      ret = open_return(sale_line)
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+
+      refund = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: refund_due,
+        authorization_code: "REF-1", actor: @admin, original_pos_tender: sale_tender
+      )
+      assert refund.success?, refund.error
+      assert_equal sale_tender.id, refund.pos_tender.original_pos_tender_id
+      assert_equal "authorized", refund.pos_tender.status
+      assert_equal 0, sale_tender.reload.remaining_refundable_cents
+    end
+
+    test "non-original SV refund cannot credit a gift_card account" do
+      sale_line, = complete_cash_sale
+      ret = open_return(sale_line)
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      other = create_other_approver
+
+      denied = AddStoredValueRefundTender.call(
+        pos_transaction: ret, tender_type: @sv_tender, amount_cents: refund_due, actor: @admin,
+        account: @account,
+        exception_approver: other, exception_approver_pin: "9999"
+      )
+      refute denied.success?
+      assert_match(/store_credit/, denied.error)
+    end
+
     private
 
     def complete_sv_sale
@@ -69,6 +126,35 @@ module Pos
       assert CompleteTransaction.call(
         pos_transaction: sale, pos_session: @session, actor: @admin,
         completion_idempotency_key: "sale-sv-policy-#{SecureRandom.hex(3)}"
+      ).success?
+      [ sale.pos_line_items.where(status: "completed").first, sale.pos_tenders.where(status: "completed").first ]
+    end
+
+    def complete_cash_sale
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(
+        pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin
+      )
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-cash-policy-#{SecureRandom.hex(3)}"
+      ).success?
+      [ sale.pos_line_items.where(status: "completed").first, sale.pos_tenders.where(status: "completed").first ]
+    end
+
+    def complete_card_sale
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCardTender.call(
+        pos_transaction: sale, tender_type: @card, amount_cents: sale_net,
+        authorization_code: "SALE-1", actor: @admin
+      )
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-card-policy-#{SecureRandom.hex(3)}"
       ).success?
       [ sale.pos_line_items.where(status: "completed").first, sale.pos_tenders.where(status: "completed").first ]
     end

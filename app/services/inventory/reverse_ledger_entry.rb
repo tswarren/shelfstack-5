@@ -57,6 +57,7 @@ module Inventory
         resulting_on_hand = balance.on_hand + quantity_delta
         resulting_unavailable = balance.unavailable + unavailable_delta
         raise Error, "unavailable cannot become negative" if resulting_unavailable.negative?
+        assert_safe_deficit_reverse!(original, balance, resulting_on_hand)
 
         resulting_value, resulting_mwa, resulting_quality = resulting_valuation(
           balance, resulting_on_hand, inventory_value_delta
@@ -157,6 +158,40 @@ module Inventory
       provisional_deficit_cost_quality_snapshot: nil
     )
     private_constant :NO_DEFICIT
+
+    # Interim OD-014 guard: snapshot restore is only safe when no later deficit
+    # quantity change exists after a deficit-affecting original, and when a
+    # non-deficit original would not settle today's open deficit.
+    def assert_safe_deficit_reverse!(original, balance, resulting_on_hand)
+      prior_on_hand = original.resulting_on_hand - original.quantity_delta
+      prior_deficit = [ -prior_on_hand, 0 ].max
+      original_deficit = [ -original.resulting_on_hand, 0 ].max
+      increased_deficit = original_deficit > prior_deficit
+
+      later = InventoryLedgerEntry
+        .where(store_id: original.store_id, product_variant_id: original.product_variant_id)
+        .where("posted_at > ? OR (posted_at = ? AND id > ?)", original.posted_at, original.posted_at, original.id)
+
+      if increased_deficit
+        later.find_each do |entry|
+          prev = entry.resulting_on_hand - entry.quantity_delta
+          prev_def = [ -prev, 0 ].max
+          next_def = [ -entry.resulting_on_hand, 0 ].max
+          if next_def != prev_def
+            raise ConflictError,
+                  "cannot reverse deficit-increasing entry #{original.id} after later deficit activity (OD-014 interim)"
+          end
+        end
+        return
+      end
+
+      current_deficit = [ -balance.on_hand, 0 ].max
+      resulting_deficit = [ -resulting_on_hand, 0 ].max
+      if resulting_deficit < current_deficit
+        raise ConflictError,
+              "cannot reverse entry #{original.id}: would settle current deficit without pool correction (OD-014 interim)"
+      end
+    end
 
     # Exact inverse of the original entry's deficit-pool effect (Case 1).
     # Prefers persisted prior/resulting pool snapshots on the original row.

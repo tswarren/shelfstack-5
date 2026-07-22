@@ -75,9 +75,11 @@ module Pos
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
       assert refund_due.positive?
 
+      # Cash-funded linked return ordinarily restores cash; store credit needs exception approval.
       result = AddStoredValueRefundTender.call(
         pos_transaction: ret, tender_type: @sv_tender, amount_cents: refund_due,
-        actor: @admin, create_store_credit: true
+        actor: @admin, create_store_credit: true,
+        exception_approver: create_other_approver, exception_approver_pin: "9999"
       )
       assert result.success?, result.error
       credit_account = result.account

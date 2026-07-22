@@ -70,8 +70,8 @@ module Pos
         actor: @admin
       ).success?
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
-      assert AddCashRefundTender.call(
-        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin
+      assert pos_add_cash_refund(
+        pos_transaction: ret, amount_cents: refund_due, actor: @admin
       ).success?
       assert CompleteTransaction.call(
         pos_transaction: ret, pos_session: @session, actor: @admin, completion_idempotency_key: "ret-first"

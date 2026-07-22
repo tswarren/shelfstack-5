@@ -187,18 +187,19 @@ module Pos
           if pending_here > available
             raise Error, "refund exceeds remaining refundable on original tender #{original.id}"
           end
-        else
-          destination = refund_destination_for(tender)
-          next if destination.nil?
-
-          RefundAllocationPolicy.call(
-            pos_transaction: tender.pos_transaction,
-            actor: @actor,
-            destination: destination,
-            amount_cents: tender.amount_cents,
-            existing_exception_approval: tender.pos_approval
-          )
         end
+
+        destination = refund_destination_for(tender)
+        next if destination.nil?
+
+        RefundAllocationPolicy.call(
+          pos_transaction: tender.pos_transaction,
+          actor: @actor,
+          destination: destination,
+          amount_cents: tender.amount_cents,
+          original_pos_tender: tender.original_pos_tender,
+          existing_exception_approval: tender.pos_approval
+        )
       end
     rescue RefundAllocationPolicy::Error => e
       raise Error, e.message
@@ -208,7 +209,8 @@ module Pos
       case tender.tender_type.tender_category
       when "cash" then :cash
       when "card" then :card
-      when "stored_value" then :new_stored_value
+      when "stored_value"
+        tender.original_pos_tender_id.present? ? :original_stored_value : :new_stored_value
       end
     end
 

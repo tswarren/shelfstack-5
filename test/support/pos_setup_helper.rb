@@ -65,6 +65,20 @@ module PosSetupHelper
     [ txn.reload, line.reload, net ]
   end
 
+  # Linked-return cash refund that restores the remaining original cash tender.
+  def pos_add_cash_refund(pos_transaction:, amount_cents:, actor:, tender_type: nil)
+    tender_type ||= pos_transaction.store.organization.tender_types.find_by!(tender_category: "cash")
+    original = Pos::RefundAllocationPolicy.remaining_original_tenders(pos_transaction)
+      .find { |t| t.tender_type.tender_category == "cash" }
+    Pos::AddCashRefundTender.call(
+      pos_transaction: pos_transaction,
+      tender_type: tender_type,
+      amount_cents: amount_cents,
+      actor: actor,
+      original_pos_tender: original
+    )
+  end
+
   def with_stubbed_singleton_call(klass, raiser)
     klass.singleton_class.alias_method :__original_call, :call
     klass.define_singleton_method(:call, raiser)

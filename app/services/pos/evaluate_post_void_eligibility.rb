@@ -29,8 +29,11 @@ module Pos
       end
 
       lines.each do |line|
-        if line.direction == "sale" && line.linked_return_lines.where(status: "completed").exists?
-          blockers << "sale line #{line.id} has already been returned"
+        if line.direction == "sale"
+          blockers.concat(active_return_blockers(line))
+          if line.linked_return_lines.where(status: "completed").exists?
+            blockers << "sale line #{line.id} has already been returned"
+          end
         end
         blockers.concat(unit_blockers(line))
         blockers.concat(deficit_blockers(line))
@@ -38,8 +41,8 @@ module Pos
       end
 
       tenders.each do |tender|
-        if tender.refund_tenders.where(status: "completed").exists?
-          blockers << "tender #{tender.id} has already been refunded"
+        if tender.refund_tenders.where(status: %w[pending authorized completed]).exists?
+          blockers << "tender #{tender.id} has already been refunded or has an in-flight refund"
         end
         blockers.concat(stored_value_tender_blockers(tender))
       end
@@ -48,6 +51,38 @@ module Pos
     end
 
     private
+
+    def active_return_blockers(line)
+      open_return_txns = line.linked_return_lines
+        .joins(:pos_transaction)
+        .where(pos_transactions: { status: %w[open suspended] })
+
+      blockers = []
+      if open_return_txns.exists?
+        blockers << "sale line #{line.id} has a pending linked return in an open or suspended transaction"
+      end
+
+      return_txn_ids = line.linked_return_lines
+        .joins(:pos_transaction)
+        .where(pos_transactions: { status: %w[open suspended completed] })
+        .distinct
+        .pluck("pos_transactions.id")
+
+      if return_txn_ids.any?
+        in_flight = PosTender
+          .joins(:tender_type)
+          .where(
+            pos_transaction_id: return_txn_ids,
+            direction: "refunded",
+            status: %w[pending authorized completed]
+          )
+        if in_flight.exists?
+          blockers << "sale line #{line.id} has linked return refund activity (pending, authorized, or completed)"
+        end
+      end
+
+      blockers
+    end
 
     def stored_value_line_blockers(line)
       return [] unless line.line_kind == "stored_value"
@@ -107,20 +142,45 @@ module Pos
 
       prior_deficit = [ -(sale_entry.resulting_on_hand - sale_entry.quantity_delta), 0 ].max
       resulting_deficit = [ -sale_entry.resulting_on_hand, 0 ].max
-      return [] unless resulting_deficit > prior_deficit
+      increased_deficit = resulting_deficit > prior_deficit
 
       later = InventoryLedgerEntry
         .where(store_id: sale_entry.store_id, product_variant_id: sale_entry.product_variant_id)
         .where("posted_at > ? OR (posted_at = ? AND id > ?)", sale_entry.posted_at, sale_entry.posted_at, sale_entry.id)
         .order(:posted_at, :id)
 
-      later.each do |entry|
-        prev = entry.resulting_on_hand - entry.quantity_delta
-        prev_def = [ -prev, 0 ].max
-        next_def = [ -entry.resulting_on_hand, 0 ].max
-        if next_def < prev_def
-          return [ "sale line #{line.id} increased deficit that was later reduced; post-void blocked (OD-014 interim)" ]
+      if increased_deficit
+        later.each do |entry|
+          prev = entry.resulting_on_hand - entry.quantity_delta
+          prev_def = [ -prev, 0 ].max
+          next_def = [ -entry.resulting_on_hand, 0 ].max
+          if next_def != prev_def
+            return [
+              "sale line #{line.id} increased deficit that later activity changed; " \
+              "post-void blocked (OD-014 interim)"
+            ]
+          end
         end
+        return []
+      end
+
+      # Original did not change deficit quantity. Block when reversing it would
+      # reduce the current open deficit (pool must be released with completed cost).
+      balance = StockBalance.find_by(
+        store_id: sale_entry.store_id,
+        product_variant_id: sale_entry.product_variant_id
+      )
+      return [] if balance.blank?
+
+      reverse_qty = -sale_entry.quantity_delta
+      current_deficit = [ -balance.on_hand, 0 ].max
+      resulting_on_hand = balance.on_hand + reverse_qty
+      resulting_deficit_after = [ -resulting_on_hand, 0 ].max
+      if resulting_deficit_after < current_deficit
+        return [
+          "sale line #{line.id} reverse would settle current deficit; " \
+          "post-void blocked (OD-014 interim)"
+        ]
       end
 
       []

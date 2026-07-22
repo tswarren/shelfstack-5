@@ -56,8 +56,8 @@ module Pos
 
       net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
       assert net.negative?
-      refund = AddCashRefundTender.call(
-        pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin
+      refund = pos_add_cash_refund(
+        pos_transaction: ret_txn, amount_cents: -net, actor: @admin
       )
       assert refund.success?, refund.error
 
@@ -158,8 +158,8 @@ module Pos
       ).count
 
       net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
-      AddCashRefundTender.call(
-        pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin
+      pos_add_cash_refund(
+        pos_transaction: ret_txn, amount_cents: -net, actor: @admin
       )
       complete = CompleteTransaction.call(
         pos_transaction: ret_txn, pos_session: @session, actor: @admin,
@@ -179,7 +179,7 @@ module Pos
       )
       assert result.success?, result.error
       net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
-      AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+      pos_add_cash_refund(pos_transaction: ret_txn, amount_cents: -net, actor: @admin)
       complete = CompleteTransaction.call(
         pos_transaction: ret_txn, pos_session: @session, actor: @admin, completion_idempotency_key: "ret-damaged"
       )
@@ -247,7 +247,7 @@ module Pos
         assert result.success?, result.error
         refunded += result.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
         net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
-        AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+        pos_add_cash_refund(pos_transaction: ret_txn, amount_cents: -net, actor: @admin)
         CompleteTransaction.call(
           pos_transaction: ret_txn, pos_session: @session, actor: @admin,
           completion_idempotency_key: "ret-partial-#{i}"
@@ -287,7 +287,7 @@ module Pos
         assert result.success?, result.error
         completed_refund += result.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
         net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
-        AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+        pos_add_cash_refund(pos_transaction: ret_txn, amount_cents: -net, actor: @admin)
         CompleteTransaction.call(
           pos_transaction: ret_txn, pos_session: @session, actor: @admin,
           completion_idempotency_key: "ret-pending-residual-#{i}"
@@ -386,7 +386,7 @@ module Pos
       )
       assert result.success?, result.error
       net = RecalculateTransaction.call(pos_transaction: ret_txn).net_total_cents
-      AddCashRefundTender.call(pos_transaction: ret_txn, tender_type: @cash, amount_cents: -net, actor: @admin)
+      pos_add_cash_refund(pos_transaction: ret_txn, amount_cents: -net, actor: @admin)
       complete = CompleteTransaction.call(
         pos_transaction: ret_txn, pos_session: @session, actor: @admin, completion_idempotency_key: "ret-discard-val"
       )

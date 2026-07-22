@@ -94,6 +94,9 @@ module Pos
       if @account.present?
         account = StoredValueAccount.lock.find(@account.id)
         raise Error, "account organization mismatch" unless account.organization_id == transaction.store.organization_id
+        unless account.account_type == "store_credit"
+          raise Error, "non-original stored-value refund must credit a store_credit account"
+        end
         return account
       end
 

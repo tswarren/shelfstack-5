@@ -241,5 +241,82 @@ module Inventory
       assert_equal 1000, balance.open_provisional_deficit_cost_cents
       assert_equal "actual", balance.deficit_cost_quality
     end
+
+    test "OD-014 interim: refuses reverse of earlier deficit sale after later deficit increase" do
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 1, incoming_unit_cost_cents: 1000, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "later-def-open",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "later-def-zero",
+        posted_by_user: @user
+      )
+      reviewed = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "later-def-reviewed",
+        posted_by_user: @user
+      )
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      balance.update!(last_known_unit_cost_cents: 3000, last_known_cost_quality: "actual")
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "later-def-later",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal(-2, balance.on_hand)
+      assert_equal 4000, balance.open_provisional_deficit_cost_cents
+
+      error = assert_raises(ReverseLedgerEntry::ConflictError) do
+        ReverseLedgerEntry.call(
+          reversal_of_entry: reviewed.ledger_entry,
+          source: @line,
+          posting_key: "later-def-reviewed:reverse",
+          posted_by_user: @user
+        )
+      end
+      assert_match(/later deficit activity/, error.message)
+      balance.reload
+      assert_equal(-2, balance.on_hand)
+      assert_equal 4000, balance.open_provisional_deficit_cost_cents
+    end
+
+    test "OD-014 interim: refuses reverse that would settle current deficit without original deficit change" do
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 1, incoming_unit_cost_cents: 1000, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "settle-open",
+        posted_by_user: @user
+      )
+      original = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "settle-original",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "settle-later",
+        posted_by_user: @user
+      )
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_equal(-1, balance.on_hand)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+
+      error = assert_raises(ReverseLedgerEntry::ConflictError) do
+        ReverseLedgerEntry.call(
+          reversal_of_entry: original.ledger_entry,
+          source: @line,
+          posting_key: "settle-original:reverse",
+          posted_by_user: @user
+        )
+      end
+      assert_match(/settle current deficit/, error.message)
+      balance.reload
+      assert_equal(-1, balance.on_hand)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+    end
   end
 end
