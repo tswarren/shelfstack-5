@@ -284,6 +284,103 @@ module Inventory
       assert_equal 4000, balance.open_provisional_deficit_cost_cents
     end
 
+    test "OD-014 interim: refuses reverse of deficit-reducing entry after later deficit increase" do
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 1, incoming_unit_cost_cents: 1000, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "red-open",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "red-zero",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -2, source: @line, posting_key: "red-deficit",
+        posted_by_user: @user
+      )
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_equal(-2, balance.on_hand)
+      assert_equal 2000, balance.open_provisional_deficit_cost_cents
+
+      returned = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "customer_return",
+        quantity_delta: 1, incoming_unit_cost_cents: 1000, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "red-return",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal(-1, balance.on_hand)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+
+      balance.update!(last_known_unit_cost_cents: 3000, last_known_cost_quality: "actual")
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "red-later",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal(-2, balance.on_hand)
+      assert_equal 4000, balance.open_provisional_deficit_cost_cents
+
+      error = assert_raises(ReverseLedgerEntry::ConflictError) do
+        ReverseLedgerEntry.call(
+          reversal_of_entry: returned.ledger_entry,
+          source: @line,
+          posting_key: "red-return:reverse",
+          posted_by_user: @user
+        )
+      end
+      assert_match(/later deficit activity/, error.message)
+      balance.reload
+      assert_equal(-2, balance.on_hand)
+      assert_equal 4000, balance.open_provisional_deficit_cost_cents
+    end
+
+    test "reverse of unknown inventory-value sale preserves unknown value" do
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 2, incoming_unit_cost_cents: nil, incoming_cost_method: "unknown",
+        incoming_cost_quality: "unknown", source: @line, posting_key: "unk-val-open",
+        posted_by_user: @user
+      )
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_nil balance.inventory_value_cents
+      assert_equal "unknown", balance.cost_quality
+
+      sale = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "unk-val-sale",
+        posted_by_user: @user
+      )
+      assert_nil sale.ledger_entry.inventory_value_delta_cents
+      balance.reload
+      assert_equal 1, balance.on_hand
+      assert_nil balance.inventory_value_cents
+
+      reverse = ReverseLedgerEntry.call(
+        reversal_of_entry: sale.ledger_entry,
+        source: @line,
+        posting_key: "unk-val-sale:reverse",
+        posted_by_user: @user
+      )
+      assert_nil reverse.ledger_entry.inventory_value_delta_cents
+      balance.reload
+      assert_equal 2, balance.on_hand
+      assert_nil balance.inventory_value_cents
+      assert_equal "unknown", balance.cost_quality
+
+      replay = ReverseLedgerEntry.call(
+        reversal_of_entry: sale.ledger_entry,
+        source: @line,
+        posting_key: "unk-val-sale:reverse",
+        posted_by_user: @user
+      )
+      assert replay.replayed
+    end
+
     test "OD-014 interim: refuses reverse that would settle current deficit without original deficit change" do
       PostLedgerEntry.call(
         store: @store, product_variant: @variant, movement_type: "opening_inventory",

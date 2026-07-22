@@ -167,7 +167,6 @@ module Pos
     private
 
     def create_other_approver
-      admin_role = roles(:administrator)
       user = User.create!(
         username: "sv_refund_approver_#{SecureRandom.hex(2)}",
         user_number: rand(10_000..99_999),
@@ -179,7 +178,16 @@ module Pos
         active: true,
         default_store: @store
       )
-      StoreMembership.create!(user: user, store: @store, role: admin_role, active: true)
+      role = Role.create!(
+        organization: @store.organization,
+        code: "sv_exc_#{user.username}",
+        name: "SV Exception #{user.username}",
+        active: true
+      )
+      %w[pos.return.refund_exception.approve stored_value.tender.refund pos.tender.cash].each do |code|
+        RolePermission.create!(role: role, permission: Permission.find_by!(code: code))
+      end
+      StoreMembership.create!(user: user, store: @store, role: role, active: true)
       user
     end
 

@@ -428,6 +428,10 @@ admin_stored_value_tender_refund:
   role: administrator
   permission: stored_value_tender_refund
 
+admin_pos_return_refund_exception_approve:
+  role: administrator
+  permission: pos_return_refund_exception_approve
+
 admin_stored_value_adjustment_create:
   role: administrator
   permission: stored_value_adjustment_create

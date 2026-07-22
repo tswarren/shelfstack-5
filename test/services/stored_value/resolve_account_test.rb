@@ -22,6 +22,13 @@ module StoredValue
       by_alt = ResolveAccount.call(organization: @org, identifier: @account.alternate_identifier)
       assert_equal @account.id, by_alt.account.id
       assert_equal "alternate_identifier", by_alt.matched_on
+
+      scanned = @account.alternate_identifier.upcase.chars.each_with_index.map { |ch, i|
+        i.even? ? "#{ch}-" : ch
+      }.join
+      by_case = ResolveAccount.call(organization: @org, identifier: scanned)
+      assert_equal @account.id, by_case.account.id
+      assert_equal @account.alternate_identifier, @account.alternate_identifier.downcase
     end
 
     test "not found raises" do

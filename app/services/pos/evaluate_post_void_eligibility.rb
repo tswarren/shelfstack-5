@@ -54,6 +54,7 @@ module Pos
 
     def active_return_blockers(line)
       open_return_txns = line.linked_return_lines
+        .where(status: "pending")
         .joins(:pos_transaction)
         .where(pos_transactions: { status: %w[open suspended] })
 
@@ -63,6 +64,7 @@ module Pos
       end
 
       return_txn_ids = line.linked_return_lines
+        .where(status: %w[pending completed])
         .joins(:pos_transaction)
         .where(pos_transactions: { status: %w[open suspended completed] })
         .distinct
@@ -142,21 +144,21 @@ module Pos
 
       prior_deficit = [ -(sale_entry.resulting_on_hand - sale_entry.quantity_delta), 0 ].max
       resulting_deficit = [ -sale_entry.resulting_on_hand, 0 ].max
-      increased_deficit = resulting_deficit > prior_deficit
+      changed_deficit = resulting_deficit != prior_deficit
 
       later = InventoryLedgerEntry
         .where(store_id: sale_entry.store_id, product_variant_id: sale_entry.product_variant_id)
         .where("posted_at > ? OR (posted_at = ? AND id > ?)", sale_entry.posted_at, sale_entry.posted_at, sale_entry.id)
         .order(:posted_at, :id)
 
-      if increased_deficit
+      if changed_deficit
         later.each do |entry|
           prev = entry.resulting_on_hand - entry.quantity_delta
           prev_def = [ -prev, 0 ].max
           next_def = [ -entry.resulting_on_hand, 0 ].max
           if next_def != prev_def
             return [
-              "sale line #{line.id} increased deficit that later activity changed; " \
+              "sale line #{line.id} changed deficit that later activity changed; " \
               "post-void blocked (OD-014 interim)"
             ]
           end

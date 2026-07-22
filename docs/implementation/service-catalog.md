@@ -348,7 +348,7 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 ### Phase 6 notes
 
 - **Post-void.** Unlocked preflight + locked construction. Blocks completed returns/refunds, open/suspended linked returns, pending/authorized/completed refund tenders on those returns, later SV redemption of credited balances, and OD-014 interim deficit cases (later deficit quantity change after a deficit-affecting sale, or reverse that would settle current deficit when the original did not create deficit). Return-containing originals remain blocked until fulfilment restoration. See [phase-06-post-void-eligibility-and-cross-domain-reversal.md](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md).
-- **Refund allocation.** Restore remaining original stored-value tenders first, then eligible cash/card originals via `original_pos_tender_id`. Non-original destinations require `stored_value_refund_exception` approval. Completion revalidates the policy for every refund tender.
+- **Refund allocation.** `Pos::RefundAllocationPolicy` validates the whole current-transaction refund plan (SV-first). Completed refunds reduce capacity; unresolved refunds in other transactions are in-flight blockers. Non-original destinations require approver permission `pos.return.refund_exception.approve` (requester holds the destination tender permission). Completion revalidates the plan under locks; `Pos::RemoveTender` locks original sale tenders when clearing linked refunds.
 - **Account suspension.** Domain statuses include `suspended`, and `stored_value.account.suspend` is seeded, but suspend/unsuspend operational workflow is deferred past Gate 6d (no service/UI yet).
 
 ## Later phases (add when implemented)

@@ -5,6 +5,10 @@ module Pos
   # a `pending` Tender is simply removed; an `authorized` standalone-card Tender
   # may only be `voided` after the cashier explicitly confirms the external
   # terminal void (and supplies a void reference when available).
+  #
+  # Linked refund tenders lock the original sale transaction and tender before
+  # mutating, matching CompletionLockOrder so concurrent completion cannot
+  # treat an in-flight refund as durable capacity.
   class RemoveTender < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_tender, :success?, :error)
@@ -20,10 +24,13 @@ module Pos
 
     def call
       ActiveRecord::Base.transaction do
-        tender = PosTender.lock.find(@pos_tender.id)
-        unless %w[open suspended].include?(tender.pos_transaction.status)
+        transaction = PosTransaction.lock.find(@pos_tender.pos_transaction_id)
+        unless %w[open suspended].include?(transaction.status)
           raise Error, "transaction is not open"
         end
+
+        tender = PosTender.lock.find(@pos_tender.id)
+        lock_original_refund_target!(tender)
 
         case tender.status
         when "pending"
@@ -41,6 +48,14 @@ module Pos
     end
 
     private
+
+    def lock_original_refund_target!(tender)
+      return if tender.original_pos_tender_id.blank?
+
+      original = PosTender.find(tender.original_pos_tender_id)
+      PosTransaction.lock.find(original.pos_transaction_id)
+      PosTender.lock.find(original.id)
+    end
 
     def void_authorized_card!(tender)
       unless tender.tender_type.tender_category == "card"

@@ -76,7 +76,7 @@ module Pos
         # Canonical lock order: originals before Product Requests so return
         # completion cannot deadlock with post-void of a fulfilled sale.
         locked_originals = CompletionLockOrder.lock_related_originals!(lines, tenders)
-        validate_linked_returns_and_refunds!(lines, tenders, locked_originals)
+        validate_linked_returns_and_refunds!(transaction, lines, tenders, locked_originals)
 
         linked_request_ids = lines.filter_map { |line|
           if line.sale? && line.line_kind == "product" && line.product_request_id.present?
@@ -157,7 +157,7 @@ module Pos
 
     # Re-check post-void / remaining returnable / refund restoration under locks
     # (originals already locked via CompletionLockOrder.lock_related_originals!).
-    def validate_linked_returns_and_refunds!(lines, tenders, locked_originals)
+    def validate_linked_returns_and_refunds!(transaction, lines, tenders, locked_originals)
       return_lines = lines.select { |line| line.direction == "return" && line.original_pos_line_item_id.present? }
       locked_lines = locked_originals.fetch(:lines)
       locked_tenders = locked_originals.fetch(:tenders)
@@ -174,44 +174,22 @@ module Pos
         end
       end
 
-      tenders.select { |t| t.direction == "refunded" }.each do |tender|
-        if tender.original_pos_tender_id.present?
-          original = locked_tenders.fetch(tender.original_pos_tender_id)
-          raise Error, "original tender #{original.id} has been post-voided" if original.post_voided?
-          raise Error, "original tender's transaction has been post-voided" if original.pos_transaction.post_voided?
+      refund_tenders = tenders.select { |t| t.direction == "refunded" }
+      refund_tenders.each do |tender|
+        next if tender.original_pos_tender_id.blank?
 
-          pending_here = tenders
-            .select { |other| other.original_pos_tender_id == original.id }
-            .sum(&:amount_cents)
-          available = original.remaining_refundable_cents + pending_here
-          if pending_here > available
-            raise Error, "refund exceeds remaining refundable on original tender #{original.id}"
-          end
-        end
-
-        destination = refund_destination_for(tender)
-        next if destination.nil?
-
-        RefundAllocationPolicy.call(
-          pos_transaction: tender.pos_transaction,
-          actor: @actor,
-          destination: destination,
-          amount_cents: tender.amount_cents,
-          original_pos_tender: tender.original_pos_tender,
-          existing_exception_approval: tender.pos_approval
-        )
+        original = locked_tenders.fetch(tender.original_pos_tender_id)
+        raise Error, "original tender #{original.id} has been post-voided" if original.post_voided?
+        raise Error, "original tender's transaction has been post-voided" if original.pos_transaction.post_voided?
       end
+
+      RefundAllocationPolicy.validate_plan!(
+        pos_transaction: transaction,
+        actor: @actor,
+        refund_tenders: refund_tenders
+      )
     rescue RefundAllocationPolicy::Error => e
       raise Error, e.message
-    end
-
-    def refund_destination_for(tender)
-      case tender.tender_type.tender_category
-      when "cash" then :cash
-      when "card" then :card
-      when "stored_value"
-        tender.original_pos_tender_id.present? ? :original_stored_value : :new_stored_value
-      end
     end
 
     def post_stored_value_line!(line, transaction, locked_accounts)

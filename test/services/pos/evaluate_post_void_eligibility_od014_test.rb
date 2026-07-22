@@ -63,6 +63,23 @@ module Pos
       assert eligibility.blockers.any? { |b| b.include?("settle current deficit") }, eligibility.blockers.inspect
     end
 
+    test "removed return lines do not block post-void" do
+      pos_open_inventory(store: @store, variant: @variant, quantity: 2, unit_cost_cents: 500, actor: @admin)
+      sale = complete_sale(quantity: 1, key: "pv-removed-return-sale")
+      sale_line = sale.pos_line_items.where(status: "completed").first
+
+      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      added = AddLinkedReturnLine.call(
+        pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+      )
+      assert added.success?, added.error
+      assert RemoveLine.call(pos_line_item: added.pos_line_item, actor: @admin).success?
+
+      eligibility = EvaluatePostVoidEligibility.call(original_transaction: sale)
+      refute eligibility.blockers.any? { |b| b.include?("pending linked return") }, eligibility.blockers.inspect
+    end
+
     test "blocks post-void when linked return has authorized card refund" do
       pos_open_inventory(store: @store, variant: @variant, quantity: 2, unit_cost_cents: 500, actor: @admin)
       sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction

@@ -31,19 +31,25 @@ module StoredValue
     private
 
     def lookup_candidates(raw)
-      compact = raw.to_s.strip.gsub(/[\s\-]/, "")
-      variants = [ raw, raw.downcase, compact, compact.downcase, digits_only(raw) ].compact_blank.uniq
       found = []
 
-      variants.each do |value|
+      account_variants(raw).each do |value|
         by_number = @organization.stored_value_accounts.find_by(account_number: value)
         found << [ by_number, "account_number" ] if by_number
+      end
 
-        by_alternate = @organization.stored_value_accounts.find_by(alternate_identifier: value)
+      alternate = StoredValueAccount.normalize_alternate_identifier(raw)
+      if alternate.present?
+        by_alternate = @organization.stored_value_accounts.find_by(alternate_identifier: alternate)
         found << [ by_alternate, "alternate_identifier" ] if by_alternate
       end
 
       found
+    end
+
+    def account_variants(raw)
+      compact = raw.to_s.strip.gsub(/[\s\-]/, "")
+      [ raw, raw.downcase, compact, compact.downcase, digits_only(raw) ].compact_blank.uniq
     end
 
     def digits_only(value)

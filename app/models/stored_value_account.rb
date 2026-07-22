@@ -45,9 +45,13 @@ class StoredValueAccount < ApplicationRecord
   private
 
   def normalize_alternate_identifier
-    return if alternate_identifier.blank?
+    self.alternate_identifier = self.class.normalize_alternate_identifier(alternate_identifier)
+  end
 
-    self.alternate_identifier = alternate_identifier.to_s.strip.gsub(/[\s\-]/, "")
+  def self.normalize_alternate_identifier(raw)
+    return nil if raw.blank?
+
+    raw.to_s.strip.gsub(/[\s\-]/, "").downcase.presence
   end
 
   def account_number_is_generated_21

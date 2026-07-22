@@ -164,6 +164,7 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.tax_category.override` | Override effective Tax Category on a POS line | store | 4b | — | yes | yes |
 | `pos.return.create` | Create return lines | store | 4e | — | no | yes |
 | `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_cents` | yes | yes |
+| `pos.return.refund_exception.approve` | Approve refund destination exceptions (bypass remaining original tender restoration) | store | 6 | — | — | yes |
 | `pos.tender.cash` | Accept cash tenders | store | 4c | — | no | no |
 | `pos.tender.card_standalone` | Record standalone card tenders | store | 4c | — | no | yes |
 | `pos.tender.card_void` | Confirm external card tender voids | store | 4c | — | no | yes |

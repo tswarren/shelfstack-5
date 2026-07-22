@@ -424,6 +424,12 @@ stored_value_tender_refund:
   permission_group: stored_value
   active: true
 
+pos_return_refund_exception_approve:
+  code: pos.return.refund_exception.approve
+  name: Approve refund destination exceptions
+  permission_group: pos
+  active: true
+
 stored_value_adjustment_create:
   code: stored_value.adjustment.create
   name: Create stored-value adjustments

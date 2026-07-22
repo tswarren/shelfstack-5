@@ -52,7 +52,12 @@ module Inventory
 
         quantity_delta = -original.quantity_delta
         unavailable_delta = -original.unavailable_delta.to_i
-        inventory_value_delta = -(original.inventory_value_delta_cents || 0)
+        inventory_value_delta =
+          if original.inventory_value_delta_cents.nil?
+            nil
+          else
+            -original.inventory_value_delta_cents
+          end
 
         resulting_on_hand = balance.on_hand + quantity_delta
         resulting_unavailable = balance.unavailable + unavailable_delta
@@ -160,26 +165,27 @@ module Inventory
     private_constant :NO_DEFICIT
 
     # Interim OD-014 guard: snapshot restore is only safe when no later deficit
-    # quantity change exists after a deficit-affecting original, and when a
-    # non-deficit original would not settle today's open deficit.
+    # quantity change exists after a deficit-affecting original (increase or
+    # reduction), and when a non-deficit original would not settle today's open
+    # deficit.
     def assert_safe_deficit_reverse!(original, balance, resulting_on_hand)
       prior_on_hand = original.resulting_on_hand - original.quantity_delta
       prior_deficit = [ -prior_on_hand, 0 ].max
       original_deficit = [ -original.resulting_on_hand, 0 ].max
-      increased_deficit = original_deficit > prior_deficit
+      changed_deficit = original_deficit != prior_deficit
 
       later = InventoryLedgerEntry
         .where(store_id: original.store_id, product_variant_id: original.product_variant_id)
         .where("posted_at > ? OR (posted_at = ? AND id > ?)", original.posted_at, original.posted_at, original.id)
 
-      if increased_deficit
+      if changed_deficit
         later.find_each do |entry|
           prev = entry.resulting_on_hand - entry.quantity_delta
           prev_def = [ -prev, 0 ].max
           next_def = [ -entry.resulting_on_hand, 0 ].max
           if next_def != prev_def
             raise ConflictError,
-                  "cannot reverse deficit-increasing entry #{original.id} after later deficit activity (OD-014 interim)"
+                  "cannot reverse deficit-affecting entry #{original.id} after later deficit activity (OD-014 interim)"
           end
         end
         return
@@ -292,11 +298,18 @@ module Inventory
         return [ 0, nil, "unknown" ]
       end
 
+      # Unknown historical contribution must not invent confirmed-zero value.
+      if inventory_value_delta.nil?
+        return [ nil, nil, "unknown" ]
+      end
+
       prior_value = balance.inventory_value_cents
       if prior_value.nil? && balance.on_hand <= 0
         resulting_value = inventory_value_delta.positive? ? inventory_value_delta : nil
+      elsif prior_value.nil?
+        return [ nil, nil, "unknown" ]
       else
-        resulting_value = (prior_value || 0) + inventory_value_delta
+        resulting_value = prior_value + inventory_value_delta
       end
 
       if resulting_value.nil? || resulting_value.negative?
@@ -360,10 +373,17 @@ module Inventory
     end
 
     def compatible_with?(existing)
+      expected_value_delta =
+        if @original.inventory_value_delta_cents.nil?
+          nil
+        else
+          -@original.inventory_value_delta_cents
+        end
+
       existing.reversal_of_entry_id == @original.id &&
         existing.quantity_delta == -@original.quantity_delta &&
         existing.unavailable_delta.to_i == -@original.unavailable_delta.to_i &&
-        existing.inventory_value_delta_cents.to_i == -(@original.inventory_value_delta_cents || 0) &&
+        existing.inventory_value_delta_cents == expected_value_delta &&
         existing.source_type == @source.class.name &&
         existing.source_id == @source.id
     end

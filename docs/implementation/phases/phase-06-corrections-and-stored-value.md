@@ -86,7 +86,7 @@ Proven by tests in this branch unless noted:
 - [ ] Mixed sale+return post-void supported only when every effect is reversible (all-or-nothing) — **retained block** until fulfilment restoration lands
 - [x] Restricted activity retains requester, approver, reason, store, and source relationships
 
-**Retained interim blocks:** OD-014 post-settlement algorithm (any later deficit-quantity change after a deficit-affecting original, or reverse that would settle current deficit when the original did not create deficit); return-containing / mixed-txn post-void (needs fulfilment restoration).
+**Retained interim blocks:** OD-014 post-settlement algorithm (any later deficit-quantity change after a deficit-affecting original that increased *or reduced* deficit, or reverse that would settle current deficit when the original did not change deficit); return-containing / mixed-txn post-void (needs fulfilment restoration).
 
 ## Test categories
 

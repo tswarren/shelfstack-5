@@ -47,7 +47,7 @@ module Pos
       sale_line, = complete_sv_sale
       ret = open_return(sale_line)
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
-      other = create_other_approver
+      other = create_exception_approver
 
       allowed = AddCashRefundTender.call(
         pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin,
@@ -102,7 +102,7 @@ module Pos
       sale_line, = complete_cash_sale
       ret = open_return(sale_line)
       refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
-      other = create_other_approver
+      other = create_exception_approver
 
       denied = AddStoredValueRefundTender.call(
         pos_transaction: ret, tender_type: @sv_tender, amount_cents: refund_due, actor: @admin,
@@ -168,7 +168,7 @@ module Pos
       ret
     end
 
-    def create_other_approver
+    def create_exception_approver
       user = User.create!(
         username: "cash_refund_approver_#{SecureRandom.hex(2)}",
         user_number: rand(10_000..99_999),
@@ -176,7 +176,16 @@ module Pos
         password: "password123", pin: "9999", pin_confirmation: "9999",
         active: true, default_store: @store
       )
-      StoreMembership.create!(user: user, store: @store, role: roles(:administrator), active: true)
+      role = Role.create!(
+        organization: @store.organization,
+        code: "exc_#{user.username}",
+        name: "Exception Approver #{user.username}",
+        active: true
+      )
+      %w[pos.return.refund_exception.approve pos.tender.cash stored_value.tender.refund].each do |code|
+        RolePermission.create!(role: role, permission: Permission.find_by!(code: code))
+      end
+      StoreMembership.create!(user: user, store: @store, role: role, active: true)
       user
     end
 
