@@ -229,7 +229,7 @@ class PosTransactionsController < ApplicationController
       completion_idempotency_key: params[:completion_idempotency_key].presence || SecureRandom.uuid,
       pos_approval: approval_plan[:pos_approval],
       reason: approval_plan[:reason],
-      card_confirmations: params[:card_confirmations] || {}
+      card_confirmations: card_confirmations_params
     )
 
     if result.success?
@@ -280,6 +280,12 @@ class PosTransactionsController < ApplicationController
 
   def clear_post_void_approval_session!
     session.delete(:post_void_approval)
+  end
+
+  def card_confirmations_params
+    return {} if params[:card_confirmations].blank?
+
+    params.require(:card_confirmations).permit!.to_h
   end
 
   def rebuild_scan_resolution(stored)

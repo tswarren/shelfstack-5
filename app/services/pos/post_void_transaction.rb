@@ -178,14 +178,23 @@ module Pos
     private
 
     def normalize_confirmations(raw)
-      Hash(raw).each_with_object({}) do |(key, value), out|
-        attrs = value.respond_to?(:to_unsafe_h) ? value.to_unsafe_h : value
+      coerce_to_hash(raw).each_with_object({}) do |(key, value), out|
+        attrs = coerce_to_hash(value)
         out[key.to_s] = {
           "external_void_reference" => attrs["external_void_reference"].presence || attrs[:external_void_reference].presence,
           "confirmation_note" => attrs["confirmation_note"].presence || attrs[:confirmation_note].presence ||
             attrs["note"].presence || attrs[:note].presence
         }
       end
+    end
+
+    def coerce_to_hash(value)
+      return {} if value.blank?
+      return value.to_unsafe_h if value.respond_to?(:to_unsafe_h)
+      return value.to_h if value.respond_to?(:to_h)
+      return value if value.is_a?(Hash)
+
+      Hash(value)
     end
 
     def assert_approval!(original)

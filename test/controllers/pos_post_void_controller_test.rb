@@ -55,6 +55,47 @@ class PosPostVoidControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to pos_transaction_path(reversing)
   end
 
+  test "post void accepts nested card confirmation parameters" do
+    card = tender_types(:card_standalone)
+    txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+    assert Pos::AddCardTender.call(
+      pos_transaction: txn, tender_type: card, amount_cents: net,
+      authorization_code: "AUTH-CTL", actor: @admin
+    ).success?
+    assert Pos::CompleteTransaction.call(
+      pos_transaction: txn, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ctl-card-sale"
+    ).success?
+    txn.reload
+    card_tender = txn.pos_tenders.settled.find { |t| t.tender_type.tender_category == "card" }
+
+    post approve_post_void_pos_transaction_path(txn), params: {
+      post_void_reason: "card reverse",
+      approver_username: "admin",
+      approver_pin: "1234"
+    }
+    assert_redirected_to post_void_form_pos_transaction_path(txn)
+
+    assert_difference -> { PosTransaction.where.not(reverses_pos_transaction_id: nil).count }, 1 do
+      post post_void_pos_transaction_path(txn), params: {
+        completion_idempotency_key: "ctl-pv-card",
+        card_confirmations: {
+          card_tender.id => {
+            external_void_reference: "EXT-1",
+            confirmation_note: "reversed on terminal"
+          }
+        }
+      }
+    end
+    assert_response :redirect
+    reversing = PosTransaction.find_by!(reverses_pos_transaction_id: txn.id)
+    assert_redirected_to pos_transaction_path(reversing)
+    reversing_tender = reversing.pos_tenders.find_by!(reverses_pos_tender_id: card_tender.id)
+    assert_equal "EXT-1", reversing_tender.external_void_reference
+  end
+
   private
 
   def open_inventory(variant, quantity:, unit_cost_cents:)
