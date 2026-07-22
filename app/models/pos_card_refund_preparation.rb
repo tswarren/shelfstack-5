@@ -24,7 +24,6 @@ class PosCardRefundPreparation < ApplicationRecord
   belongs_to :recorded_by_user, class_name: "User", optional: true
   belongs_to :abandoned_by_user, class_name: "User", optional: true
   belongs_to :resolved_by_user, class_name: "User", optional: true
-  belongs_to :correcting_pos_transaction, class_name: "PosTransaction", optional: true
 
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :amount_cents, numericality: { only_integer: true, greater_than: 0 }

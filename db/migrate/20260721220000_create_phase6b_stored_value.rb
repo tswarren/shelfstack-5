@@ -1,5 +1,10 @@
 # frozen_string_literal: true
 
+# Stored-value accounts. Alternate identifiers are normalized on create by
+# StoredValueAccount.normalize_alternate_identifier (btrim, strip whitespace
+# and hyphens, lowercase, blank → NULL) and must remain organization-unique
+# under that contract. First-install seeds/app code write already-normalized
+# values; no upgrade-only renormalization migration is required.
 class CreatePhase6bStoredValue < ActiveRecord::Migration[8.1]
   def change
     create_table :stored_value_adjustment_reasons do |t|

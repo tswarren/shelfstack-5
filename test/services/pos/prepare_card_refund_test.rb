@@ -124,4 +124,3 @@ module Pos
     end
   end
 end
-

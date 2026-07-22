@@ -1,6 +1,6 @@
 # Phase 6 — Corrections and Stored Value
 
-**Status:** Implementation in progress — gates 6a–6e + review remediation (post-void consume returnable, eligibility-after-locks, exact Case-1 deficit reverse, SV refund restore-first, discount clone, AdjustBalance idempotency)  
+**Status:** Implementation complete for gates 6a–6e; [#36](https://github.com/tswarren/shelfstack-5/issues/36) merge / first-install hardening in progress. Interim exit criteria below remain intentionally open after #36.  
 **Depends on:** Phase 4c, Phase 4d, Phase 4e; Phase 5 fulfilment integration (post-void must reverse Product Request fulfilment facts)  
 **Chronologically follows:** Phase 5 — purchasing and receiving are not conceptual prerequisites for stored value  
 **Unlocks:** correction, tender-refund, stored-value liability, and exception reporting in Phase 7  
@@ -111,4 +111,3 @@ Post-void (including mixed txn, dispositions, fulfilment, OD-014 blockers, in-fl
 - [../deferred-capabilities.md](../deferred-capabilities.md)
 - [../../domains/stored-value.md](../../domains/stored-value.md)
 - [../../domains/point-of-sale.md](../../domains/point-of-sale.md)
-- Draft working notes (non-governing): [../../temp_draft/phase-6-corrections-andstored-value.md](../../temp_draft/phase-6-corrections-andstored-value.md)

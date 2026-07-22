@@ -2,8 +2,10 @@
 
 require "test_helper"
 
+# Documents the first-install alternate-identifier contract: Ruby normalization
+# must match the SQL expression used for uniqueness analysis. Upgrade-only
+# renormalization migrations are not part of the release chain.
 class NormalizeStoredValueAlternateIdentifiersTest < ActiveSupport::TestCase
-  # Must match db/migrate/20260722010000_normalize_stored_value_alternate_identifiers.rb
   NORMALIZE_SQL = <<~SQL.squish.freeze
     nullif(
       lower(
@@ -44,12 +46,15 @@ class NormalizeStoredValueAlternateIdentifiersTest < ActiveSupport::TestCase
     assert_equal StoredValueAccount.normalize_alternate_identifier("PREPRINT-123"), rows.first["normalized"]
   end
 
-  test "duplicate detection SQL is organization scoped" do
-    source = File.read(
-      Rails.root.join("db/migrate/20260722010000_normalize_stored_value_alternate_identifiers.rb")
+  test "create path stores normalized alternate identifiers" do
+    result = StoredValue::CreateAccount.call(
+      organization: @org,
+      account_type: "gift_card",
+      actor: @admin,
+      alternate_identifier: " Gift-Card 99 "
     )
-    assert_match(/GROUP BY organization_id/, source)
-    assert_match(/\[\[:space:\]-\]/, source)
+    assert result.success?, result.error
+    assert_equal "giftcard99", result.account.alternate_identifier
   end
 
   private

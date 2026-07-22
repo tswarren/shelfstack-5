@@ -1,7 +1,7 @@
 # Current Phase
 
-**Active delivery phase:** Phase 6 — Corrections and Stored Value (implementation in progress; gates 6a–6e landed in working tree)  
-**Status:** Phase 5 merged to `main`; Phase 6 gates 6a–6e implemented against the accepted phase plan and decision notes — harden, PR, and close exit criteria on merge  
+**Active delivery phase:** Phase 6 — Corrections and Stored Value (merge / first-install hardening per [#36](https://github.com/tswarren/shelfstack-5/issues/36))  
+**Status:** Gates 6a–6e implemented; card-refund readiness, late-auth recovery, and corrective migration consolidation in progress on `phase/p6-corrections-and-stored-value`. Interim post-void exit criteria remain open after #36.  
 **Phase 5 merge:** `2e3e1196ec923b20a667f52b8ae79bd86c0b5c8b` (PR #34)  
 **Phase 4g merge:** `c51dcca823e4476b7f0f62441301d451e83307b2` (PR #31)  
 **Phase 4f merge:** `34f371f5590c6942f5291c5bd750a1d98756d13f` (PR #30)  
@@ -11,7 +11,7 @@
 
 ## Immediate next work
 
-1. Open PRs for Phase 6 slices (or one integrated PR) and run `./dev/rails-docker bin/ci` before merge.
+1. Finish [#36](https://github.com/tswarren/shelfstack-5/issues/36): clean-volume validation, open PR(s), merge to `main`, close the issue.
 2. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
 3. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
 4. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
@@ -19,7 +19,8 @@
 
 ## Completed recently
 
-- Phase 6 implementation (working tree): 6a post-void + unavailable ledger + `Inventory::ReverseLedgerEntry`; 6b SV accounts/ledger/adjustments; 6c gift-card issue/reload lines; 6d redeem/refund tenders; 6e SV-aware post-void with later-redemption block; OD-014 interim and return-txn post-void blocks retained.
+- Phase 6 #36 hardening (working tree): shared `ValidateCompletionReadiness`, `resolution_pos_approval_id`, store late-auth recovery, corrective/hardening migration fold into create migrations.
+- Phase 6 implementation: 6a post-void + unavailable ledger + `Inventory::ReverseLedgerEntry`; 6b SV accounts/ledger/adjustments; 6c gift-card issue/reload lines; 6d redeem/refund tenders; 6e SV-aware post-void with later-redemption block; OD-014 interim and return-txn post-void blocks retained.
 - Phase 6 planning: thin phase plan promoted; three accepted decision notes; domain and permission catalog synchronized.
 - Phase 5 — Supply and Demand merged to `main` at `2e3e119` (PR #34).
 - Phase 4a–4e (Point of Sale) and Phase 4f UX Baseline Gate merged to `main` (PR #30).
