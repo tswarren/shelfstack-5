@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_22_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -422,6 +422,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120000) do
     t.bigint "recorded_by_user_id"
     t.boolean "requires_reconciliation", default: false, null: false
     t.string "resolution_kind"
+    t.bigint "resolution_pos_approval_id"
     t.text "resolution_reason"
     t.datetime "resolved_at"
     t.bigint "resolved_by_user_id"
@@ -440,6 +441,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120000) do
     t.index ["pos_transaction_id"], name: "index_pos_card_refund_preparations_on_pos_transaction_id"
     t.index ["prepared_by_user_id"], name: "index_pos_card_refund_preparations_on_prepared_by_user_id"
     t.index ["recorded_by_user_id"], name: "index_pos_card_refund_preparations_on_recorded_by_user_id"
+    t.index ["resolution_pos_approval_id"], name: "index_pos_card_refund_preps_on_resolution_approval_unique", unique: true, where: "(resolution_pos_approval_id IS NOT NULL)"
     t.index ["resolved_by_user_id"], name: "index_pos_card_refund_preparations_on_resolved_by_user_id"
     t.index ["status"], name: "index_pos_card_refund_preps_unresolved_orphans", where: "(((status)::text = 'recorded_orphan'::text) AND (resolved_at IS NULL))"
     t.index ["tender_type_id"], name: "index_pos_card_refund_preparations_on_tender_type_id"
@@ -1505,6 +1507,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_120000) do
   add_foreign_key "pos_approvals", "users", column: "approved_by_user_id", on_delete: :restrict
   add_foreign_key "pos_approvals", "users", column: "requested_by_user_id", on_delete: :restrict
   add_foreign_key "pos_card_refund_preparations", "pos_approvals"
+  add_foreign_key "pos_card_refund_preparations", "pos_approvals", column: "resolution_pos_approval_id"
   add_foreign_key "pos_card_refund_preparations", "pos_tenders"
   add_foreign_key "pos_card_refund_preparations", "pos_tenders", column: "intended_original_pos_tender_id"
   add_foreign_key "pos_card_refund_preparations", "pos_transactions"

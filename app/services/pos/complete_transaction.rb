@@ -63,24 +63,16 @@ module Pos
           raise Error, "completion session does not control this transaction"
         end
 
-        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
-        raise Error, recalculation.blockers.join(", ") if recalculation.blockers.any?
-
-        lines = transaction.pos_line_items.lock.pending.order(:position, :id).to_a
-        raise Error, "transaction has no lines to complete" if lines.empty?
-        validate_departments!(lines)
-        validate_sale_eligibility!(lines, transaction.store)
-
-        tenders = transaction.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
-        validate_tenders_settle!(tenders, recalculation.net_total_cents)
+        readiness = ValidateCompletionReadiness.call(
+          pos_transaction: transaction, actor: @actor
+        )
+        recalculation = readiness.recalculation
+        lines = readiness.lines
+        tenders = readiness.tenders
+        locked_originals = readiness.locked_originals
 
         now = Time.current
         warnings = recalculation.warnings.dup
-
-        # Canonical lock order: originals before Product Requests so return
-        # completion cannot deadlock with post-void of a fulfilled sale.
-        locked_originals = CompletionLockOrder.lock_related_originals!(lines, tenders)
-        validate_linked_returns_and_refunds!(transaction, lines, tenders, locked_originals)
 
         linked_request_ids = lines.filter_map { |line|
           if line.sale? && line.line_kind == "product" && line.product_request_id.present?
@@ -151,50 +143,14 @@ module Pos
 
         Result.new(pos_transaction: transaction, success?: true, error: nil, warnings: warnings.uniq, replayed: false)
       end
-    rescue Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique,
+    rescue Error, ValidateCompletionReadiness::Error, ActiveRecord::RecordInvalid,
+           ActiveRecord::RecordNotUnique,
            Inventory::ConvertReservation::Error, Inventory::PostCustomerReturn::Error,
            StoredValue::PostEntry::Error => e
       Result.new(pos_transaction: nil, success?: false, error: e.message, warnings: [], replayed: false)
     end
 
     private
-
-    # Re-check post-void / remaining returnable / refund restoration under locks
-    # (originals already locked via CompletionLockOrder.lock_related_originals!).
-    def validate_linked_returns_and_refunds!(transaction, lines, tenders, locked_originals)
-      return_lines = lines.select { |line| line.direction == "return" && line.original_pos_line_item_id.present? }
-      locked_lines = locked_originals.fetch(:lines)
-      locked_tenders = locked_originals.fetch(:tenders)
-
-      return_lines.each do |line|
-        original = locked_lines.fetch(line.original_pos_line_item_id)
-        raise Error, "original sale line #{original.id} has been post-voided" if original.post_voided?
-        pending_here = return_lines
-          .select { |other| other.original_pos_line_item_id == original.id }
-          .sum(&:quantity)
-        available = original.remaining_returnable_quantity + pending_here
-        if pending_here > available
-          raise Error, "return quantity exceeds remaining returnable for line #{original.id}"
-        end
-      end
-
-      refund_tenders = tenders.select { |t| t.direction == "refunded" }
-      refund_tenders.each do |tender|
-        next if tender.original_pos_tender_id.blank?
-
-        original = locked_tenders.fetch(tender.original_pos_tender_id)
-        raise Error, "original tender #{original.id} has been post-voided" if original.post_voided?
-        raise Error, "original tender's transaction has been post-voided" if original.pos_transaction.post_voided?
-      end
-
-      RefundAllocationPolicy.validate_plan!(
-        pos_transaction: transaction,
-        actor: @actor,
-        refund_tenders: refund_tenders
-      )
-    rescue RefundAllocationPolicy::Error => e
-      raise Error, e.message
-    end
 
     def post_stored_value_line!(line, transaction, locked_accounts)
       account = locked_accounts.fetch(line.stored_value_account_id)
@@ -280,49 +236,6 @@ module Pos
     def inventory_tracked_product_line?(line)
       line.line_kind == "product" &&
         %w[quantity individual].include?(line.product_variant.inventory_tracking_mode)
-    end
-
-    # Domain: "Completion blocks when the resolved Department on a contributing
-    # line is missing, inactive, or non-postable." Departments may be deactivated
-    # after a line was added, so re-check the persisted line department here.
-    def validate_departments!(lines)
-      lines.each do |line|
-        next if line.line_kind == "stored_value"
-
-        department = line.department
-        if department.nil? || !department.active? || !department.postable?
-          raise Error, "line #{line.id} has a missing, inactive, or non-postable department"
-        end
-      end
-    end
-
-    # Domain: completion revalidates sale eligibility for pending sale product
-    # lines. Linked returns keep historical values; open-ring has no variant.
-    def validate_sale_eligibility!(lines, store)
-      lines.each do |line|
-        next unless line.sale? && line.line_kind == "product"
-
-        variant = line.product_variant
-        raise Error, "line #{line.id} is missing its product variant" if variant.blank?
-        raise Error, "line #{line.id} has no selling price" if line.unit_price_cents.nil?
-
-        eligibility = Catalog::SaleEligibility.call(variant: variant, store: store)
-        next if eligibility.blockers.empty?
-
-        raise Error, "line #{line.id} is not eligible for sale: #{eligibility.blockers.join(', ')}"
-      end
-    end
-
-    # Domain: "completed Tender net equals final Transaction net."
-    def validate_tenders_settle!(tenders, net_total_cents)
-      if tenders.any?(&:requires_reconciliation?)
-        raise Error, "tender requires reconciliation before completion"
-      end
-
-      total = tenders.sum { |tender| tender.direction == "received" ? tender.amount_cents : -tender.amount_cents }
-      return if total == net_total_cents
-
-      raise Error, "tenders (#{total}) do not settle transaction net (#{net_total_cents})"
     end
 
     def format_receipt_number(store, sequence)

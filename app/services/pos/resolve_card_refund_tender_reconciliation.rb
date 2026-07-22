@@ -80,13 +80,15 @@ module Pos
             "reason" => @reason,
             "external_void_reference" => @external_void_reference,
             "original_pos_tender_id" => tender.reload.original_pos_tender_id,
-            "pos_approval_id" => tender.pos_approval_id
+            "pos_approval_id" => tender.pos_approval_id,
+            "resolution_pos_approval_id" => preparation.resolution_pos_approval_id
           }
         )
 
         Result.new(pos_tender: tender.reload, preparation: preparation.reload, success?: true, error: nil)
       end
-    rescue Error, CardRefundSupport::Error, RefundAllocationPolicy::Error, ActiveRecord::RecordInvalid => e
+    rescue Error, CardRefundSupport::Error, ValidateCompletionReadiness::Error,
+           RefundAllocationPolicy::Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_tender: nil, preparation: nil, success?: false, error: e.message)
     end
 
@@ -105,7 +107,8 @@ module Pos
     def accept_validated!(transaction, preparation, tender)
       intended = preparation.intended_original_pos_tender
       bind_original = nil
-      approval = tender.pos_approval || preparation.pos_approval
+      destination_approval = tender.pos_approval || preparation.pos_approval
+      resolution_approval = nil
 
       if intended.present?
         begin
@@ -124,18 +127,19 @@ module Pos
         tender.update!(
           requires_reconciliation: false,
           original_pos_tender: bind_original,
-          pos_approval: approval
+          pos_approval: destination_approval
         )
       else
-        approval = authorize_acceptance_exception!(transaction, tender)
+        resolution_approval = authorize_acceptance_exception!(transaction, tender)
         tender.update!(
           requires_reconciliation: false,
           original_pos_tender: nil,
-          pos_approval: approval
+          pos_approval: resolution_approval
         )
       end
 
-      RefundAllocationPolicy.validate_plan!(pos_transaction: transaction, actor: @actor)
+      # Full readiness with the prospective clear already applied; rolls back on failure.
+      ValidateCompletionReadiness.call(pos_transaction: transaction, actor: @actor)
 
       preparation.update!(
         resolution_kind: "validated_and_accepted",
@@ -143,7 +147,8 @@ module Pos
         resolved_by_user: @actor,
         resolution_reason: @reason,
         requires_reconciliation: false,
-        reconciliation_reasons: []
+        reconciliation_reasons: [],
+        resolution_pos_approval: resolution_approval
       )
     end
 

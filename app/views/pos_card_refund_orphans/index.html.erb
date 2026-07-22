@@ -8,6 +8,32 @@
   </p>
 </section>
 
+<section class="panel" aria-labelledby="late-auth-heading">
+  <h2 id="late-auth-heading">Record late authorization</h2>
+  <p class="muted">
+    Use when a terminal authorization arrives after the preparation was abandoned or the
+    return was closed. Submit the preparation ID and authorization only — never appends a
+    tender to completed or cancelled history.
+  </p>
+  <%= form_with url: record_authorization_pos_card_refund_orphans_path, method: :post, class: "form" do |form| %>
+    <div class="field">
+      <%= label_tag :preparation_id, "Preparation ID" %>
+      <%= text_field_tag :preparation_id, nil, class: "input", required: true,
+            placeholder: "UUID from the preparation", autocomplete: "off" %>
+    </div>
+    <div class="field">
+      <%= label_tag :authorization_code, "Authorization code" %>
+      <%= text_field_tag :authorization_code, nil, class: "input", required: true,
+            autocomplete: "off" %>
+    </div>
+    <div class="field">
+      <%= label_tag :terminal_reference, "Terminal reference (optional)" %>
+      <%= text_field_tag :terminal_reference, nil, class: "input", autocomplete: "off" %>
+    </div>
+    <%= form.submit "Record authorization", class: "button" %>
+  <% end %>
+</section>
+
 <% if @preparations.empty? %>
   <p class="muted">No unresolved orphan card refunds for this store.</p>
 <% else %>

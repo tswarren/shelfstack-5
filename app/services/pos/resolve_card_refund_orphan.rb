@@ -41,12 +41,13 @@ module Pos
 
         assert_permission!(transaction.store, RECONCILE_PERMISSION)
 
+        resolution_approval = nil
         case @resolution_kind
         when :external_void_confirmed
           assert_permission!(transaction.store, "pos.tender.card_void")
           raise Error, "external void reference is required" if @external_void_reference.blank?
         when :accepted_financial_exception
-          authorize_acceptance_exception!(transaction, preparation)
+          resolution_approval = authorize_acceptance_exception!(transaction, preparation)
         end
 
         preparation.update!(
@@ -55,7 +56,8 @@ module Pos
           resolved_by_user: @actor,
           resolution_reason: @reason,
           external_void_reference: @external_void_reference,
-          requires_reconciliation: false
+          requires_reconciliation: false,
+          resolution_pos_approval: resolution_approval
         )
 
         Administration::RecordAuditEvent.call(
@@ -72,7 +74,8 @@ module Pos
             "intended_original_pos_tender_id" => preparation.intended_original_pos_tender_id,
             "authorization_code" => preparation.authorization_code,
             "abandoned_at" => preparation.abandoned_at,
-            "abandoned_by_user_id" => preparation.abandoned_by_user_id
+            "abandoned_by_user_id" => preparation.abandoned_by_user_id,
+            "resolution_pos_approval_id" => preparation.resolution_pos_approval_id
           }
         )
 

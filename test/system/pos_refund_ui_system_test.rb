@@ -182,6 +182,47 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     assert_text(/required|not found|account/i)
   end
 
+  test "store recovery form records late authorization as orphan" do
+    sign_in_and_open_session!
+    sale = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+    Pos::AddCardTender.call(
+      pos_transaction: sale, tender_type: @card, amount_cents: net,
+      authorization_code: "SALE-LATE", actor: @admin
+    )
+    assert Pos::CompleteTransaction.call(
+      pos_transaction: sale, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ui-late-sale"
+    ).success?
+    sale_line = sale.pos_line_items.where(status: "completed").first
+    card_tender = sale.pos_tenders.where(status: "completed").first
+
+    ret = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    assert Pos::AddLinkedReturnLine.call(
+      pos_transaction: ret, original_pos_line_item: sale_line, quantity: 1,
+      return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+    ).success?
+    due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+    prep = Pos::PrepareCardRefund.call(
+      pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+      original_pos_tender: card_tender
+    ).preparation
+    assert Pos::AbandonCardRefundPreparation.call(preparation: prep, actor: @admin).success?
+
+    visit pos_card_refund_orphans_path
+    assert_text(/Record late authorization/i)
+    fill_in "Preparation ID", with: prep.id
+    fill_in "Authorization code", with: "LATE-UI-1"
+    click_button "Record authorization"
+    assert_text(/orphan/i)
+
+    prep.reload
+    assert prep.recorded_orphan?
+    assert_equal "LATE-UI-1", prep.authorization_code
+    assert_text prep.authorization_code
+  end
+
   private
 
   def within_panel(summary_text, &block)

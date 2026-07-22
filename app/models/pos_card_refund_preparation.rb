@@ -18,6 +18,7 @@ class PosCardRefundPreparation < ApplicationRecord
   belongs_to :tender_type
   belongs_to :intended_original_pos_tender, class_name: "PosTender", optional: true
   belongs_to :pos_approval, optional: true
+  belongs_to :resolution_pos_approval, class_name: "PosApproval", optional: true
   belongs_to :pos_tender, optional: true
   belongs_to :prepared_by_user, class_name: "User"
   belongs_to :recorded_by_user, class_name: "User", optional: true
