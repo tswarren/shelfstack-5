@@ -28,15 +28,25 @@ class PosPostVoidControllerTest < ActionDispatch::IntegrationTest
     ).success?
   end
 
-  test "post void form and submit" do
+  test "post void form approve plan then submit" do
     get post_void_form_pos_transaction_path(@transaction)
     assert_response :success
+    assert_select "input[type=submit][value='Approve post-void plan']"
+
+    post prepare_post_void_pos_transaction_path(@transaction), params: {
+      post_void_reason: "cashier error",
+      approver_username: "admin",
+      approver_pin: "1234"
+    }
+    assert_redirected_to post_void_form_pos_transaction_path(@transaction)
+
+    get post_void_form_pos_transaction_path(@transaction)
+    assert_response :success
+    assert_select "input[type=submit][value='Post-void transaction']"
+    assert_select "input[name=approver_pin]", count: 0
 
     assert_difference -> { PosTransaction.where.not(reverses_pos_transaction_id: nil).count }, 1 do
       post post_void_pos_transaction_path(@transaction), params: {
-        post_void_reason: "cashier error",
-        approver_username: "admin",
-        approver_pin: "1234",
         completion_idempotency_key: "ctl-pv-1"
       }
     end

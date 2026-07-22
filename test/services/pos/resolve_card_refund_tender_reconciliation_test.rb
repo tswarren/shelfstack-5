@@ -300,6 +300,65 @@ module Pos
       refute replacement.requires_reconciliation?
     end
 
+    test "validated_and_accepted is denied while replacement preparation is active" do
+      tender, prep, ret = prepare_recon_refund!
+      prepared = PrepareCardRefund.call(
+        pos_transaction: ret,
+        tender_type: @card,
+        amount_cents: tender.amount_cents,
+        actor: @admin,
+        original_pos_tender: tender.original_pos_tender,
+        replaces_pos_tender: tender
+      )
+      assert prepared.ready?, prepared.error
+
+      denied = ResolveCardRefundTenderReconciliation.call(
+        preparation: prep,
+        actor: @admin,
+        outcome: :validated_and_accepted,
+        reason: "accept anyway",
+        exception_approver: @admin,
+        exception_approver_pin: "1234"
+      )
+      refute denied.success?
+      assert_match(/active replacement preparation/, denied.error)
+    end
+
+    test "recording replacement after target accepted retains reconciliation" do
+      tender, prep, ret = prepare_recon_refund!
+      replacement_prep = PrepareCardRefund.call(
+        pos_transaction: ret,
+        tender_type: @card,
+        amount_cents: tender.amount_cents,
+        actor: @admin,
+        original_pos_tender: tender.original_pos_tender,
+        replaces_pos_tender: tender
+      ).preparation
+      assert replacement_prep.present?
+
+      # Bypass the active-replacement guard to simulate a concurrent accept race
+      # that already cleared the target before recording lands.
+      tender.update!(requires_reconciliation: false)
+      prep.update!(
+        resolution_kind: "validated_and_accepted",
+        resolved_at: Time.current,
+        resolved_by_user: @admin,
+        resolution_reason: "accepted concurrently",
+        requires_reconciliation: false,
+        reconciliation_reasons: []
+      )
+
+      recorded = AddCardRefundTender.call(
+        preparation: replacement_prep,
+        authorization_code: "REPL-DRIFT-1",
+        actor: @admin
+      )
+      assert recorded.success?, recorded.error
+      assert recorded.requires_reconciliation
+      assert_includes recorded.warnings.join(" "), "replacement target no longer requires reconciliation"
+      assert recorded.pos_tender.requires_reconciliation?
+    end
+
     test "externally_voided requires external void reference" do
       _, prep, = prepare_recon_refund!
 

@@ -87,4 +87,37 @@ module PosSetupHelper
     klass.singleton_class.alias_method :call, :__original_call
     klass.singleton_class.remove_method :__original_call
   end
+
+  # Approve a post-void plan and record any eager card children so
+  # PostVoidTransaction can consume the preparation without mid-flight auth.
+  def pos_ready_post_void!(
+    original:,
+    actor:,
+    reason: "test post-void",
+    approver: nil,
+    approver_pin: "1234",
+    pos_session: nil,
+    auth_prefix: "VOID"
+  )
+    prepared = Pos::PreparePostVoid.call(
+      original_transaction: original,
+      actor: actor,
+      reason: reason,
+      approver: approver || actor,
+      approver_pin: approver_pin,
+      pos_session: pos_session
+    )
+    raise "prepare post-void failed: #{prepared.error}" unless prepared.success?
+
+    prepared.preparation.pos_post_void_card_preparations.prepared.order(:id).each_with_index do |card, index|
+      recorded = Pos::RecordPostVoidCardConfirmation.call(
+        preparation: card,
+        actor: actor,
+        authorization_code: "#{auth_prefix}-#{index + 1}"
+      )
+      raise "record post-void card failed: #{recorded.error}" unless recorded.success?
+    end
+
+    prepared.preparation
+  end
 end

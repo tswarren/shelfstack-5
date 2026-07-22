@@ -248,10 +248,10 @@ module Pos
       )
       assert @request.reload.fulfilled?
 
+      pos_ready_post_void!(original: txn, actor: @admin, reason: "fulfilment void", pos_session: @session)
       result = PostVoidTransaction.call(
         original_transaction: txn, pos_session: @session, actor: @admin,
-        reason: "fulfilment void", completion_idempotency_key: "pv-fulfil",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-fulfill"
       )
       assert result.success?, result.error
 
@@ -273,6 +273,7 @@ module Pos
         session: @session, variant: @variant, quantity: 2, actor: @admin, cash: @cash,
         key: "fulfil-race", product_request: @request
       )
+      pos_ready_post_void!(original: txn, actor: @admin, reason: "race void", pos_session: @session)
 
       ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       assert AddLinkedReturnLine.call(
@@ -297,8 +298,7 @@ module Pos
         barrier.wait
         results[:void] = PostVoidTransaction.call(
           original_transaction: txn, pos_session: @session, actor: @admin,
-          reason: "race void", completion_idempotency_key: "pv-race-fulfill",
-          approver: @admin, approver_pin: "1234"
+          completion_idempotency_key: "pv-race-fulfill"
         )
       end
       [ t1, t2 ].each(&:join)

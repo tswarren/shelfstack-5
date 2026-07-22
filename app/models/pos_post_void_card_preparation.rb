@@ -3,10 +3,12 @@
 # Durable external card confirmation for post-void. Operators prepare, run the
 # terminal, then record authorization before PostVoidTransaction consumes the
 # preparation. A recorded-but-unconsumed prep survives post-void failure.
+# Late auth after abandon becomes recorded_orphan (not consumable).
 class PosPostVoidCardPreparation < ApplicationRecord
-  STATUSES = %w[prepared recorded consumed abandoned].freeze
+  STATUSES = %w[prepared recorded consumed abandoned recorded_orphan].freeze
   TTL = 30.minutes
 
+  belongs_to :pos_post_void_preparation
   belongs_to :original_pos_transaction, class_name: "PosTransaction"
   belongs_to :original_pos_tender, class_name: "PosTender"
   belongs_to :store
@@ -22,7 +24,9 @@ class PosPostVoidCardPreparation < ApplicationRecord
 
   scope :prepared, -> { where(status: "prepared") }
   scope :recorded_unresolved, -> { where(status: "recorded", consumed_at: nil) }
+  scope :unresolved_orphans, -> { where(status: "recorded_orphan") }
   scope :active, -> { where(status: %w[prepared recorded]) }
+  scope :queue_visible, -> { where(status: %w[recorded recorded_orphan], consumed_at: nil) }
 
   def prepared?
     status == "prepared"
@@ -40,7 +44,15 @@ class PosPostVoidCardPreparation < ApplicationRecord
     status == "abandoned"
   end
 
+  def recorded_orphan?
+    status == "recorded_orphan"
+  end
+
   def unresolved_recorded?
+    recorded? && consumed_at.nil?
+  end
+
+  def consumable?
     recorded? && consumed_at.nil?
   end
 end

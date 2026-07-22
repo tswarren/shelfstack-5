@@ -92,27 +92,32 @@
 <% end %>
 
 <section class="panel" aria-labelledby="post-void-card-heading">
-  <h2 id="post-void-card-heading">Recorded post-void card confirmations</h2>
+  <h2 id="post-void-card-heading">Post-void card confirmations</h2>
   <p class="muted">
-    External card confirmations recorded for post-void that have not yet been consumed.
-    Retry post-void from the original receipt; these facts survive a failed post-void attempt.
+    External card confirmations for post-void that are not yet consumed, including late
+    authorizations after abandon (orphans). Retry post-void from the original receipt only
+    for temporary failures when status is recorded. Orphans are not consumable and need
+    reconciliation (stranded post-void resolution is Phase 7).
   </p>
   <% if @post_void_card_preparations.blank? %>
-    <p class="muted">No unresolved recorded post-void card confirmations.</p>
+    <p class="muted">No unresolved post-void card confirmations.</p>
   <% else %>
     <table class="data-table">
       <thead>
         <tr>
           <th>Recorded</th>
+          <th>Status</th>
           <th>Original receipt</th>
           <th>Amount</th>
           <th>Auth / void ref</th>
+          <th>Abandoned?</th>
         </tr>
       </thead>
       <tbody>
         <% @post_void_card_preparations.each do |prep| %>
           <tr>
             <td><%= formatted_datetime(prep.authorized_at, format: :short) %></td>
+            <td><%= prep.status %></td>
             <td>
               <%= link_to prep.original_pos_transaction.receipt_number.presence || prep.original_pos_transaction.public_id,
                     post_void_form_pos_transaction_path(prep.original_pos_transaction) %>
@@ -124,6 +129,7 @@
                 · <%= prep.external_void_reference %>
               <% end %>
             </td>
+            <td><%= prep.abandoned_at.present? ? "Yes" : "—" %></td>
           </tr>
         <% end %>
       </tbody>

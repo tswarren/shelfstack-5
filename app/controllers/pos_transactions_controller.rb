@@ -10,10 +10,12 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.transaction.cancel") }, only: %i[cancel]
   before_action -> { require_permission!("pos.transaction.complete") }, only: %i[complete]
   before_action -> { require_permission!("pos.post_void.create") },
-                only: %i[post_void_form post_void prepare_post_void_card record_post_void_card abandon_post_void_card]
-  before_action :set_transaction,
-                only: %i[show suspend recall cancel complete post_void_form post_void
+                only: %i[post_void_form prepare_post_void abandon_post_void post_void
                          prepare_post_void_card record_post_void_card abandon_post_void_card]
+  before_action :set_transaction,
+                only: %i[show suspend recall cancel complete post_void_form prepare_post_void
+                         abandon_post_void post_void prepare_post_void_card record_post_void_card
+                         abandon_post_void_card]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
@@ -21,7 +23,7 @@ class PosTransactionsController < ApplicationController
 
   def show
     if @pos_transaction.open?
-      totals = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
+      totals = open_transaction_totals(@pos_transaction)
       @subtotal_cents = totals.subtotal_cents
       @discount_total_cents = totals.discount_total_cents
       @tax_total_cents = totals.tax_total_cents
@@ -160,12 +162,63 @@ class PosTransactionsController < ApplicationController
     @eligibility = Pos::EvaluatePostVoidEligibility.call(
       original_transaction: @pos_transaction, store: Current.store
     )
+    @post_void_preparation = PosPostVoidPreparation.approved
+      .find_by(original_pos_transaction_id: @pos_transaction.id)
     @card_tenders = @pos_transaction.pos_tenders.where(status: "completed").select { |t|
       t.tender_type.tender_category == "card"
     }
-    @card_preparations = PosPostVoidCardPreparation.active
+    @card_preparations = PosPostVoidCardPreparation
       .where(original_pos_transaction_id: @pos_transaction.id)
+      .where(status: %w[prepared recorded])
       .index_by(&:original_pos_tender_id)
+  end
+
+  def prepare_post_void
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
+    end
+
+    session = current_open_session
+    return unless session
+
+    approver = if params[:approver_username].present?
+      User.find_by(username: params[:approver_username].to_s.strip)
+    else
+      Current.user
+    end
+
+    result = Pos::PreparePostVoid.call(
+      original_transaction: @pos_transaction,
+      actor: Current.user,
+      reason: params[:post_void_reason],
+      approver: approver,
+      approver_pin: params[:approver_pin],
+      pos_session: session
+    )
+    if result.success?
+      notice = if result.preparation.pos_post_void_card_preparations.any?
+        "Post-void plan approved. Process each card on the terminal, then record confirmations."
+      else
+        "Post-void plan approved. Submit post-void when ready."
+      end
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), notice: notice
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
+  def abandon_post_void
+    preparation = PosPostVoidPreparation.approved
+      .find_by!(original_pos_transaction_id: @pos_transaction.id)
+    result = Pos::AbandonPostVoid.call(
+      preparation: preparation, actor: Current.user, reason: params[:reason]
+    )
+    if result.success?
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction),
+                  notice: "Post-void plan abandoned."
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
   end
 
   def prepare_post_void_card
@@ -180,8 +233,8 @@ class PosTransactionsController < ApplicationController
   end
 
   def record_post_void_card
-    preparation = PosPostVoidCardPreparation.active
-      .where(original_pos_transaction_id: @pos_transaction.id)
+    preparation = PosPostVoidCardPreparation
+      .where(original_pos_transaction_id: @pos_transaction.id, status: %w[prepared abandoned])
       .find(params[:preparation_id])
     result = Pos::RecordPostVoidCardConfirmation.call(
       preparation: preparation,
@@ -191,8 +244,13 @@ class PosTransactionsController < ApplicationController
       external_void_reference: params[:external_void_reference]
     )
     if result.success?
-      redirect_to post_void_form_pos_transaction_path(@pos_transaction),
-                  notice: "External card confirmation recorded."
+      notice =
+        if result.preparation.recorded_orphan?
+          "Late authorization retained as an unresolved orphan — not consumable by post-void."
+        else
+          "External card confirmation recorded."
+        end
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), notice: notice
     else
       redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
     end
@@ -221,20 +279,11 @@ class PosTransactionsController < ApplicationController
       return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
     end
 
-    approver = if params[:approver_username].present?
-      User.find_by(username: params[:approver_username].to_s.strip)
-    else
-      Current.user
-    end
-
     result = Pos::PostVoidTransaction.call(
       original_transaction: @pos_transaction,
       pos_session: session,
       actor: Current.user,
-      reason: params[:post_void_reason],
-      completion_idempotency_key: params[:completion_idempotency_key].presence || SecureRandom.uuid,
-      approver: approver,
-      approver_pin: params[:approver_pin]
+      completion_idempotency_key: params[:completion_idempotency_key].presence || SecureRandom.uuid
     )
 
     if result.success?
@@ -249,6 +298,20 @@ class PosTransactionsController < ApplicationController
 
   def set_transaction
     @pos_transaction = Current.store.pos_transactions.find(params[:id])
+  end
+
+  # For open returns, finalize residuals under original locks so displayed
+  # balance matches tenderable amounts. Fall back to plain recalc on error.
+  def open_transaction_totals(transaction)
+    if transaction.pos_line_items.pending.returns.where.not(original_pos_line_item_id: nil).exists?
+      ActiveRecord::Base.transaction do
+        locked = PosTransaction.lock.find(transaction.id)
+        return Pos::FinalizeReturnFinancials.call(pos_transaction: locked).recalculation
+      end
+    end
+    Pos::RecalculateTransaction.call(pos_transaction: transaction)
+  rescue StandardError
+    Pos::RecalculateTransaction.call(pos_transaction: transaction)
   end
 
   def current_open_session

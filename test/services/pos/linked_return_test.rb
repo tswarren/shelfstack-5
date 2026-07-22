@@ -394,10 +394,9 @@ module Pos
         ).success?
       end
 
-      # Provisional snapshots may each show 33; finalize residuals under original
-      # locks before tendering so settlement matches the refreshed net.
+      # AddCashRefundTender / CompleteTransaction finalize residuals under locks.
       complete_return = ->(txn, key) {
-        net = finalize_return_residuals_net!(txn)
+        net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
         pos_add_cash_refund(pos_transaction: txn, amount_cents: -net, actor: @admin)
         assert CompleteTransaction.call(
           pos_transaction: txn, pos_session: @session, actor: @admin,
@@ -465,7 +464,7 @@ module Pos
           ActiveRecord::Base.connection_pool.with_connection do
             barriers << true
             sleep 0.05 until barriers.size >= 3
-            net = finalize_return_residuals_net!(txn)
+            net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
             pos_add_cash_refund(pos_transaction: txn, amount_cents: -net, actor: @admin)
             completed = CompleteTransaction.call(
               pos_transaction: txn, pos_session: @session, actor: @admin,
@@ -483,6 +482,64 @@ module Pos
         original_pos_line_item_id: line.id, status: "completed", direction: "return"
       ).sum(:cost_extended_cents)
       assert_equal 100, total
+    end
+
+    test "card refund prepare after sibling completion uses finalized residual net" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      card = tender_types(:card_standalone)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      assert ApplyDiscount.call(
+        pos_transaction: sale, scope: "line", pos_line_item: line, method: "fixed_amount",
+        amount_cents: 100, actor: @admin
+      ).success?
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCardTender.call(
+        pos_transaction: sale, tender_type: card, amount_cents: sale_net,
+        authorization_code: "SALE-RES", actor: @admin
+      )
+      assert CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-card-residual"
+      ).success?
+      line.reload
+      sale_card = sale.pos_tenders.where(status: "completed").first
+
+      a = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      b = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      [ a, b ].each do |txn|
+        assert AddLinkedReturnLine.call(
+          pos_transaction: txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        ).success?
+      end
+
+      due_a = ActiveRecord::Base.transaction {
+        -FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(a.id))
+          .recalculation.net_total_cents
+      }
+      prep_a = PrepareCardRefund.call(
+        pos_transaction: a, tender_type: card, amount_cents: due_a, actor: @admin,
+        original_pos_tender: sale_card
+      )
+      assert prep_a.ready?, prep_a.error
+      assert AddCardRefundTender.call(
+        preparation: prep_a.preparation, authorization_code: "RFND-A", actor: @admin
+      ).success?
+      assert CompleteTransaction.call(
+        pos_transaction: a, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "ret-a-residual"
+      ).success?
+
+      due_b = ActiveRecord::Base.transaction {
+        -FinalizeReturnFinancials.call(pos_transaction: PosTransaction.lock.find(b.id))
+          .recalculation.net_total_cents
+      }
+      prepared = PrepareCardRefund.call(
+        pos_transaction: b, tender_type: card, amount_cents: due_b, actor: @admin,
+        original_pos_tender: sale_card
+      )
+      assert prepared.ready?, prepared.error
     end
 
     test "stored-value sale lines are not linked-returnable" do
@@ -547,17 +604,6 @@ module Pos
     end
 
     private
-
-    def finalize_return_residuals_net!(txn)
-      ActiveRecord::Base.transaction do
-        locked = PosTransaction.lock.find(txn.id)
-        lines = locked.pos_line_items.lock.pending.order(:position, :id).to_a
-        tenders = locked.pos_tenders.lock.where(status: PosTender::UNRESOLVED_STATUSES).to_a
-        CompletionLockOrder.lock_related_originals!(lines, tenders)
-        ReassignReturnResiduals.call(pos_transaction: locked, return_lines: lines)
-        RecalculateTransaction.call(pos_transaction: locked).net_total_cents
-      end
-    end
 
     def open_inventory(variant, quantity:, unit_cost_cents:)
       opening = InventoryAdjustment.create!(

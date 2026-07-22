@@ -44,7 +44,6 @@ module Pos
         end
 
         abandoned_before = preparation.abandoned?
-        RefundLockOrder.lock_linked_originals!(transaction)
 
         tender_type = TenderType.find(preparation.tender_type_id)
         amount_cents = preparation.amount_cents
@@ -72,10 +71,21 @@ module Pos
         end
 
         replacing = preparation.replaces_pos_tender
-        excluding_ids = replacing.present? ? [ replacing.id ] : []
+        excluding_ids = []
+        if replacing.present?
+          replacing = PosTender.lock.find(replacing.id)
+          begin
+            CardRefundSupport.assert_replaceable_recon_tender!(transaction, replacing)
+            excluding_ids = [ replacing.id ]
+          rescue CardRefundSupport::Error
+            # External auth may already exist; retain as reconciliation rather than discard.
+            reasons << "replacement target no longer requires reconciliation"
+            replacing = nil
+          end
+        end
 
         begin
-          recalculation = RecalculateTransaction.call(pos_transaction: transaction)
+          recalculation = FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
           warnings.concat(Array(recalculation.warnings))
           if recalculation.blockers.present?
             reasons << "calculation blockers: #{recalculation.blockers.join(', ')}"

@@ -114,6 +114,8 @@ Rails.application.routes.draw do
       post :cancel
       post :complete
       get :post_void_form
+      post :prepare_post_void
+      post :abandon_post_void
       post :post_void
       post :prepare_post_void_card
       post :record_post_void_card

@@ -33,10 +33,10 @@ module Pos
     test "post-void zeros remaining returnable and blocks linked return" do
       assert_equal 2, @sale_line.remaining_returnable_quantity
 
+      pos_ready_post_void!(original: @sale, actor: @admin, reason: "mistake", pos_session: @session)
       result = PostVoidTransaction.call(
         original_transaction: @sale, pos_session: @session, actor: @admin,
-        reason: "mistake", completion_idempotency_key: "pv-consume-1",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-consume-1"
       )
       assert result.success?, result.error
 
@@ -77,10 +77,9 @@ module Pos
         pos_transaction: ret, pos_session: @session, actor: @admin, completion_idempotency_key: "ret-first"
       ).success?
 
-      denied = PostVoidTransaction.call(
-        original_transaction: @sale, pos_session: @session, actor: @admin,
-        reason: "too late", completion_idempotency_key: "pv-after-return",
-        approver: @admin, approver_pin: "1234"
+      denied = PreparePostVoid.call(
+        original_transaction: @sale, actor: @admin,
+        reason: "too late", approver: @admin, approver_pin: "1234", pos_session: @session
       )
       refute denied.success?
     end

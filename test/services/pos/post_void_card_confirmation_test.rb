@@ -34,19 +34,32 @@ module Pos
       @card_tender = @sale.pos_tenders.where(status: "completed").first
     end
 
-    test "post-void requires recorded card preparation and consumes it" do
+    test "cannot prepare or record card confirmation without approved parent preparation" do
+      denied_prepare = PreparePostVoidCardConfirmation.call(
+        original_pos_tender: @card_tender, actor: @admin
+      )
+      refute denied_prepare.success?
+      assert_match(/approved post-void preparation required/, denied_prepare.error)
+    end
+
+    test "post-void requires recorded card preparation and consumes parent approval" do
+      parent = PreparePostVoid.call(
+        original_transaction: @sale, actor: @admin, reason: "wrong sale",
+        approver: @admin, approver_pin: "1234", pos_session: @session
+      )
+      assert parent.success?, parent.error
+      card_prep = parent.preparation.pos_post_void_card_preparations.prepared.first
+      assert card_prep.present?
+
       denied = PostVoidTransaction.call(
         original_transaction: @sale, pos_session: @session, actor: @admin,
-        reason: "wrong sale", completion_idempotency_key: "pv-card-denied",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-card-denied"
       )
       refute denied.success?
       assert_match(/recorded post-void card confirmation/, denied.error)
 
-      prepared = PreparePostVoidCardConfirmation.call(original_pos_tender: @card_tender, actor: @admin)
-      assert prepared.success?, prepared.error
       recorded = RecordPostVoidCardConfirmation.call(
-        preparation: prepared.preparation,
+        preparation: card_prep,
         actor: @admin,
         authorization_code: "VOID-AUTH-1",
         external_void_reference: "VOID-REF-1"
@@ -55,12 +68,13 @@ module Pos
 
       result = PostVoidTransaction.call(
         original_transaction: @sale, pos_session: @session, actor: @admin,
-        reason: "wrong sale", completion_idempotency_key: "pv-card-ok",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-card-ok"
       )
       assert result.success?, result.error
-      assert prepared.preparation.reload.consumed?
-      assert_equal result.pos_transaction.id, prepared.preparation.correcting_pos_transaction_id
+      assert card_prep.reload.consumed?
+      assert parent.preparation.reload.consumed?
+      assert_equal parent.preparation.pos_approval_id, result.pos_transaction.post_void_pos_approval_id
+      assert_equal result.pos_transaction.id, card_prep.correcting_pos_transaction_id
 
       reversing_tender = result.pos_transaction.pos_tenders.first
       assert_equal "VOID-AUTH-1", reversing_tender.authorization_code
@@ -68,28 +82,69 @@ module Pos
     end
 
     test "recorded card preparation survives a failed post-void attempt" do
-      prepared = PreparePostVoidCardConfirmation.call(original_pos_tender: @card_tender, actor: @admin)
-      assert prepared.success?
-      assert RecordPostVoidCardConfirmation.call(
-        preparation: prepared.preparation, actor: @admin, authorization_code: "KEEP-1"
+      parent = pos_ready_post_void!(
+        original: @sale, actor: @admin, reason: "keep", pos_session: @session, auth_prefix: "KEEP"
+      )
+      card_prep = parent.pos_post_void_card_preparations.find_by!(status: "recorded")
+
+      with_stubbed_singleton_call(EvaluatePostVoidEligibility, ->(**) {
+        EvaluatePostVoidEligibility::Result.new(
+          eligible?: false, blockers: [ "forced eligibility failure" ], warnings: []
+        )
+      }) do
+        failed = PostVoidTransaction.call(
+          original_transaction: @sale, pos_session: @session, actor: @admin,
+          completion_idempotency_key: "pv-card-fail"
+        )
+        refute failed.success?
+        assert_match(/forced eligibility failure/, failed.error)
+      end
+
+      assert card_prep.reload.recorded?
+      assert_nil card_prep.consumed_at
+      assert parent.reload.approved?
+      assert_equal "KEEP-1", card_prep.authorization_code
+    end
+
+    test "late auth after abandon becomes unresolved orphan not consumable" do
+      parent = PreparePostVoid.call(
+        original_transaction: @sale, actor: @admin, reason: "late auth",
+        approver: @admin, approver_pin: "1234", pos_session: @session
+      )
+      assert parent.success?, parent.error
+      card_prep = parent.preparation.pos_post_void_card_preparations.prepared.first
+
+      assert AbandonPostVoidCardConfirmation.call(
+        preparation: card_prep, actor: @admin, reason: "operator cancelled"
       ).success?
 
-      RolePermission.where(
-        role: roles(:administrator),
-        permission: permissions(:pos_post_void_approve_self)
-      ).delete_all
-
-      failed = PostVoidTransaction.call(
-        original_transaction: @sale, pos_session: @session, actor: @admin,
-        reason: "fail auth", completion_idempotency_key: "pv-card-fail",
-        approver: @admin, approver_pin: "1234"
+      recorded = RecordPostVoidCardConfirmation.call(
+        preparation: card_prep.reload, actor: @admin, authorization_code: "LATE-1"
       )
-      refute failed.success?
+      assert recorded.success?, recorded.error
+      orphan = recorded.preparation
+      assert orphan.recorded_orphan?
+      assert orphan.abandoned_at.present?
+      assert_equal "LATE-1", orphan.authorization_code
+      refute orphan.consumable?
 
-      prep = prepared.preparation.reload
-      assert prep.recorded?
-      assert_nil prep.consumed_at
-      assert_equal "KEEP-1", prep.authorization_code
+      # Recreate prepared child and record for successful post-void path
+      recreated = PreparePostVoidCardConfirmation.call(
+        original_pos_tender: @card_tender, actor: @admin
+      )
+      assert recreated.success?, recreated.error
+      assert RecordPostVoidCardConfirmation.call(
+        preparation: recreated.preparation, actor: @admin, authorization_code: "OK-1"
+      ).success?
+
+      result = PostVoidTransaction.call(
+        original_transaction: @sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "pv-after-orphan"
+      )
+      assert result.success?, result.error
+      assert orphan.reload.recorded_orphan?
+      assert_nil orphan.consumed_at
+      assert PosPostVoidCardPreparation.unresolved_orphans.exists?(id: orphan.id)
     end
 
     private

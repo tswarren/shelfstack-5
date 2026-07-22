@@ -12,12 +12,32 @@
       </ul>
     </div>
     <p><%= link_to "Back", pos_transaction_path(@pos_transaction), class: "button button-ghost" %></p>
+  <% elsif @post_void_preparation.blank? %>
+    <%= form_with url: prepare_post_void_pos_transaction_path(@pos_transaction), method: :post, class: "form-stack" do %>
+      <div class="field">
+        <label class="field-label" for="post_void_reason">Reason</label>
+        <textarea name="post_void_reason" id="post_void_reason" class="input" required rows="3"></textarea>
+      </div>
+
+      <%= render "shared/approval_fields", prefix: "post_void" %>
+      <p class="field-hint">Leave approver username blank to self-approve (requires pos.post_void.approve_self).</p>
+
+      <div class="form-actions">
+        <%= submit_tag "Approve post-void plan", class: "button" %>
+        <%= link_to "Cancel", pos_transaction_path(@pos_transaction), class: "button button-ghost" %>
+      </div>
+    <% end %>
   <% else %>
+    <p class="muted">
+      Plan approved for reason: <%= @post_void_preparation.reason %>.
+      Approval is already bound — do not re-enter a PIN to submit.
+    </p>
+
     <% if @card_tenders.any? %>
       <fieldset class="form-stack">
         <legend>External card void / refund confirmation</legend>
         <p class="muted">
-          Prepare each card tender, process the terminal, then record the confirmation
+          Process each card on the terminal, then record the confirmation
           <strong>before</strong> submitting the post-void. Recorded confirmations are kept
           even if post-void later fails.
         </p>
@@ -70,14 +90,6 @@
     <% end %>
 
     <%= form_with url: post_void_pos_transaction_path(@pos_transaction), method: :post, class: "form-stack" do %>
-      <div class="field">
-        <label class="field-label" for="post_void_reason">Reason</label>
-        <textarea name="post_void_reason" id="post_void_reason" class="input" required rows="3"></textarea>
-      </div>
-
-      <%= render "shared/approval_fields", prefix: "post_void" %>
-      <p class="field-hint">Leave approver username blank to self-approve (requires pos.post_void.approve_self).</p>
-
       <input type="hidden" name="completion_idempotency_key" value="<%= SecureRandom.uuid %>">
 
       <div class="form-actions">
@@ -85,5 +97,11 @@
         <%= link_to "Cancel", pos_transaction_path(@pos_transaction), class: "button button-ghost" %>
       </div>
     <% end %>
+
+    <%= button_to "Abandon post-void plan",
+          abandon_post_void_pos_transaction_path(@pos_transaction),
+          method: :post,
+          class: "button button-ghost",
+          form: { data: { turbo_confirm: "Abandon this approved plan? Recorded card confirmations block abandon." } } %>
   <% end %>
 </section>

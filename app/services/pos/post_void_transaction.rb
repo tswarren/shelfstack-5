@@ -12,10 +12,10 @@ module Pos
       original_transaction:,
       pos_session:,
       actor:,
-      reason:,
       completion_idempotency_key:,
-      approver:,
-      approver_pin:,
+      reason: nil, # ignored when an approved preparation supplies the reason
+      approver: nil, # ignored; approval is bound on PosPostVoidPreparation
+      approver_pin: nil,
       card_confirmations: {} # ignored; card facts come from PosPostVoidCardPreparation
     )
       @original = original_transaction
@@ -23,14 +23,12 @@ module Pos
       @actor = actor
       @reason = reason.to_s
       @completion_idempotency_key = completion_idempotency_key.to_s
-      @approver = approver
-      @approver_pin = approver_pin
       @card_preparations_by_tender_id = {}
+      @parent_preparation = nil
     end
 
     def call
       raise Error, "completion_idempotency_key is required" if @completion_idempotency_key.blank?
-      raise Error, "post_void_reason is required" if @reason.blank?
 
       ActiveRecord::Base.transaction do
         session = PosSession.lock.find(@pos_session.id)
@@ -47,21 +45,28 @@ module Pos
           raise Error, "transaction has already been post-voided"
         end
 
-        auth = AuthorizeAction.call(
-          store: original.store,
-          requester: @actor,
-          permission_key: "pos.post_void.create",
-          action_type: "post_void",
-          reason: @reason,
-          approval_mode: :always,
-          approver: @approver,
-          approver_pin: @approver_pin,
-          approver_permission_key: "pos.post_void.approve",
-          self_approver_permission_key: "pos.post_void.approve_self",
-          pos_transaction: original,
-          pos_session: session
+        parent = PosPostVoidPreparation.lock.find_by(
+          original_pos_transaction_id: original.id,
+          status: "approved"
         )
-        raise Error, auth.error || "post-void approval required" unless auth.allowed? && auth.pos_approval
+        raise Error, "approved post-void preparation required before post-void" if parent.blank?
+
+        snapshot = PostVoidPlanSnapshot.build(original)
+        current_fingerprint = PostVoidPlanSnapshot.fingerprint(snapshot)
+        if parent.commercial_fingerprint != current_fingerprint
+          raise Error, "commercial fingerprint mismatch — abandon and re-approve the post-void plan"
+        end
+
+        @parent_preparation = parent
+        @reason = parent.reason
+        pos_approval = parent.pos_approval
+        raise Error, "post-void approval missing on preparation" if pos_approval.blank?
+
+        unless Authorization::EvaluatePermission.call(
+          user: @actor, store: original.store, permission_key: "pos.post_void.create"
+        ) == :allow
+          raise Error, "missing permission pos.post_void.create"
+        end
 
         # Canonical lock order (Pos::CompletionLockOrder): lines/tenders →
         # product requests → inventory → SV, then re-check eligibility under locks.
@@ -93,7 +98,7 @@ module Pos
           opened_at: now,
           reverses_pos_transaction: original,
           post_void_reason: @reason,
-          post_void_pos_approval: auth.pos_approval
+          post_void_pos_approval: pos_approval
         )
 
         line_map = {}
@@ -139,6 +144,7 @@ module Pos
         )
 
         consume_card_preparations!(reversing)
+        consume_parent_preparation!(reversing)
 
         Administration::RecordAuditEvent.call(
           actor: @actor, organization: store.organization, store: store,
@@ -146,7 +152,8 @@ module Pos
           metadata: {
             "original_pos_transaction_id" => original.id,
             "receipt_number" => reversing.receipt_number,
-            "pos_approval_id" => auth.pos_approval.id,
+            "pos_approval_id" => pos_approval.id,
+            "pos_post_void_preparation_id" => @parent_preparation.id,
             "post_void_card_preparation_ids" => @card_preparations_by_tender_id.values.map(&:id)
           }
         )
@@ -213,6 +220,14 @@ module Pos
           correcting_pos_transaction: reversing
         )
       end
+    end
+
+    def consume_parent_preparation!(_reversing)
+      @parent_preparation.update!(
+        status: "consumed",
+        consumed_at: Time.current,
+        consumed_by_user: @actor
+      )
     end
 
     def clone_discounts!(original, reversing, line_map)

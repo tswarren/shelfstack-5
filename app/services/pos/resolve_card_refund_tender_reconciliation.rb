@@ -51,6 +51,7 @@ module Pos
         end
 
         assert_permission!(transaction.store, RECONCILE_PERMISSION)
+        assert_no_blocking_replacement_prep!(tender)
 
         replacement = nil
         case @outcome
@@ -233,6 +234,18 @@ module Pos
       end
 
       replacement
+    end
+
+    def assert_no_blocking_replacement_prep!(tender)
+      active = PosCardRefundPreparation.active_replacements_for(tender)
+      return unless active.exists?
+
+      # Finishing via :replaced is allowed only when the replacement is already recorded.
+      if @outcome == :replaced && active.where(status: "recorded_tender").exists?
+        return
+      end
+
+      raise Error, "an active replacement preparation exists; abandon or finish the replacement first"
     end
 
     def assert_permission!(store, key)

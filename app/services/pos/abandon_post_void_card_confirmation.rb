@@ -13,6 +13,11 @@ module Pos
 
     def call
       ActiveRecord::Base.transaction do
+        original_id = PosPostVoidCardPreparation.where(id: @preparation.id)
+          .pick(:original_pos_transaction_id)
+        raise Error, "preparation not found" if original_id.blank?
+
+        PosTransaction.lock.find(original_id)
         preparation = PosPostVoidCardPreparation.lock.find(@preparation.id)
         raise Error, "only prepared confirmations can be abandoned" unless preparation.prepared?
 

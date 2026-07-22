@@ -58,9 +58,7 @@ module Pos
           excluding_ids = [ replacing.id ]
         end
 
-        RefundLockOrder.lock_linked_originals!(transaction)
-
-        recalculation = RecalculateTransaction.call(pos_transaction: transaction)
+        recalculation = FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
         TenderGuards.assert_no_calculation_blockers!(recalculation)
 
         refund_due = CardRefundSupport.refund_due_cents(

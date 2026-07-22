@@ -32,14 +32,12 @@ module Pos
     end
 
     test "post-void reverses inventory and creates a new receipt without mutating the original" do
+      pos_ready_post_void!(original: @transaction, actor: @admin, reason: "wrong tender", pos_session: @session)
       result = PostVoidTransaction.call(
         original_transaction: @transaction,
         pos_session: @session,
         actor: @admin,
-        reason: "wrong tender",
-        completion_idempotency_key: "pv-1",
-        approver: @admin,
-        approver_pin: "1234"
+        completion_idempotency_key: "pv-1"
       )
 
       assert result.success?, result.error
@@ -64,40 +62,37 @@ module Pos
     end
 
     test "same idempotency key replays; different key is blocked" do
+      pos_ready_post_void!(original: @transaction, actor: @admin, reason: "void", pos_session: @session)
       first = PostVoidTransaction.call(
         original_transaction: @transaction, pos_session: @session, actor: @admin,
-        reason: "void", completion_idempotency_key: "pv-same",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-same"
       )
       assert first.success?
 
       second = PostVoidTransaction.call(
         original_transaction: @transaction, pos_session: @session, actor: @admin,
-        reason: "void", completion_idempotency_key: "pv-same",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-same"
       )
       assert second.success?
       assert second.replayed
 
       third = PostVoidTransaction.call(
         original_transaction: @transaction, pos_session: @session, actor: @admin,
-        reason: "void", completion_idempotency_key: "pv-other",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-other"
       )
       refute third.success?
       assert_match(/already been post-voided/, third.error)
     end
 
-    test "self-approval without approve_self is denied" do
+    test "self-approval without approve_self is denied at plan approval" do
       RolePermission.where(
         role: roles(:administrator),
         permission: permissions(:pos_post_void_approve_self)
       ).delete_all
 
-      result = PostVoidTransaction.call(
-        original_transaction: @transaction, pos_session: @session, actor: @admin,
-        reason: "void", completion_idempotency_key: "pv-self-denied",
-        approver: @admin, approver_pin: "1234"
+      result = PreparePostVoid.call(
+        original_transaction: @transaction, actor: @admin,
+        reason: "void", approver: @admin, approver_pin: "1234", pos_session: @session
       )
       refute result.success?
       assert_match(/approve_self/, result.error)
@@ -125,10 +120,10 @@ module Pos
       original_discount_ids = open_sale.pos_discounts.pluck(:id)
       original_alloc_sum = PosDiscountAllocation.where(pos_discount_id: original_discount_ids).sum(:allocated_amount_cents)
 
+      pos_ready_post_void!(original: open_sale, actor: @admin, reason: "discounted void", pos_session: @session)
       result = PostVoidTransaction.call(
         original_transaction: open_sale, pos_session: @session, actor: @admin,
-        reason: "discounted void", completion_idempotency_key: "pv-disc",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-disc"
       )
       assert result.success?, result.error
       reversing = result.pos_transaction
@@ -153,12 +148,13 @@ module Pos
       assert CompleteTransaction.call(
         pos_transaction: txn, pos_session: @session, actor: @admin, completion_idempotency_key: "unit-sale"
       ).success?
+      txn.reload
       assert_equal "sold", unit.reload.status
 
+      pos_ready_post_void!(original: txn, actor: @admin, reason: "unit void", pos_session: @session)
       result = PostVoidTransaction.call(
         original_transaction: txn, pos_session: @session, actor: @admin,
-        reason: "unit void", completion_idempotency_key: "pv-unit",
-        approver: @admin, approver_pin: "1234"
+        completion_idempotency_key: "pv-unit"
       )
       assert result.success?, result.error
       assert_equal "available", unit.reload.status
@@ -166,22 +162,21 @@ module Pos
     end
 
     test "concurrent post-void allows only one success" do
+      pos_ready_post_void!(original: @transaction, actor: @admin, reason: "race", pos_session: @session)
       results = {}
       barrier = Concurrent::CyclicBarrier.new(2)
       t1 = Thread.new do
         barrier.wait
         results[:a] = PostVoidTransaction.call(
           original_transaction: @transaction, pos_session: @session, actor: @admin,
-          reason: "race a", completion_idempotency_key: "pv-race-a",
-          approver: @admin, approver_pin: "1234"
+          completion_idempotency_key: "pv-race-a"
         )
       end
       t2 = Thread.new do
         barrier.wait
         results[:b] = PostVoidTransaction.call(
           original_transaction: @transaction, pos_session: @session, actor: @admin,
-          reason: "race b", completion_idempotency_key: "pv-race-b",
-          approver: @admin, approver_pin: "1234"
+          completion_idempotency_key: "pv-race-b"
         )
       end
       [ t1, t2 ].each(&:join)

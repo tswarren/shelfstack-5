@@ -10,6 +10,7 @@ class CreatePosCardRefundPreparations < ActiveRecord::Migration[8.1]
       t.references :pos_transaction, null: false, foreign_key: true
       t.references :tender_type, null: false, foreign_key: true
       t.references :intended_original_pos_tender, foreign_key: { to_table: :pos_tenders }
+      t.references :replaces_pos_tender, foreign_key: { to_table: :pos_tenders }, index: false
       t.references :pos_approval, foreign_key: true
       t.references :resolution_pos_approval, foreign_key: { to_table: :pos_approvals }, index: false
       t.references :pos_tender, foreign_key: true
@@ -60,6 +61,10 @@ class CreatePosCardRefundPreparations < ActiveRecord::Migration[8.1]
     add_index :pos_card_refund_preparations, :status,
               where: "status = 'recorded_orphan' AND resolved_at IS NULL",
               name: "index_pos_card_refund_preps_unresolved_orphans"
+    add_index :pos_card_refund_preparations, :replaces_pos_tender_id,
+              unique: true,
+              where: "replaces_pos_tender_id IS NOT NULL AND status IN ('prepared', 'recorded_tender') AND resolved_at IS NULL",
+              name: "index_pos_card_refund_preps_one_active_replacement"
 
     add_check_constraint :pos_card_refund_preparations, "amount_cents > 0",
                          name: "pos_card_refund_preps_amount_positive"

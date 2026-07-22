@@ -46,7 +46,7 @@ module Pos
         raise Error, "transaction is not open" unless transaction.open?
         TenderGuards.assert_no_outstanding_card_refund_preparation!(transaction)
 
-        recalculation = RecalculateTransaction.call(pos_transaction: transaction)
+        recalculation = FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
         TenderGuards.assert_no_calculation_blockers!(recalculation)
 
         refund_due = [ -recalculation.net_total_cents - already_refunded_cents(transaction), 0 ].max
