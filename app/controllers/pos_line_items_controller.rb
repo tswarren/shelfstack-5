@@ -243,8 +243,7 @@ class PosLineItemsController < ApplicationController
       end
       created.account
     else
-      Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id]) ||
-        Current.organization.stored_value_accounts.find_by(account_number: params[:account_number].to_s.strip)
+      resolve_stored_value_account_for_line
     end
 
     if account.blank?
@@ -275,6 +274,21 @@ class PosLineItemsController < ApplicationController
     when "no_variant" then "Product has no sellable variant."
     else "Unable to resolve scan."
     end
+  end
+
+  def resolve_stored_value_account_for_line
+    if params[:stored_value_account_id].present?
+      return Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id])
+    end
+
+    identifier = params[:account_number].presence || params[:alternate_identifier].presence
+    return nil if identifier.blank?
+
+    StoredValue::ResolveAccount.call(
+      organization: Current.organization, identifier: identifier
+    ).account
+  rescue StoredValue::ResolveAccount::Error
+    nil
   end
 
   def set_transaction

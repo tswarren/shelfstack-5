@@ -153,10 +153,27 @@ module Pos
     rescue Error, ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique,
            Inventory::ReverseLedgerEntry::Error, Inventory::ReverseLedgerEntry::ConflictError,
            StoredValue::PostEntry::Error => e
+      audit_blocked_attempt!(e.message)
       Result.new(pos_transaction: nil, success?: false, error: e.message, replayed: false)
     end
 
     private
+
+    def audit_blocked_attempt!(message)
+      Administration::RecordAuditEvent.call(
+        actor: @actor,
+        organization: @original.store.organization,
+        store: @original.store,
+        action: "pos_transaction.post_void_blocked",
+        subject: @original,
+        metadata: {
+          "reason" => message.to_s.truncate(500),
+          "completion_idempotency_key" => @completion_idempotency_key
+        }
+      )
+    rescue StandardError
+      nil
+    end
 
     def validate_card_confirmations!(tenders)
       tenders.each do |tender|

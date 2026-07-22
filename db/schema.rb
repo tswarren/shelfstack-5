@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_260000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -219,6 +219,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
     t.datetime "posted_at", null: false
     t.bigint "posted_by_user_id", null: false
     t.string "posting_key", null: false
+    t.string "prior_deficit_cost_quality"
+    t.bigint "prior_open_provisional_deficit_cost_cents"
     t.bigint "product_variant_id", null: false
     t.bigint "provisional_cost_released_cents"
     t.string "provisional_deficit_cost_quality_snapshot"
@@ -226,9 +228,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
     t.string "reason_code"
     t.text "reason_note"
     t.string "resulting_cost_quality", null: false
+    t.string "resulting_deficit_cost_quality"
     t.bigint "resulting_inventory_value_cents"
     t.integer "resulting_moving_average_cost_cents"
     t.integer "resulting_on_hand", null: false
+    t.bigint "resulting_open_provisional_deficit_cost_cents"
     t.integer "resulting_unavailable", null: false
     t.bigint "reversal_of_entry_id"
     t.bigint "settlement_variance_cents"
@@ -252,8 +256,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
     t.check_constraint "cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_cost_quality"
     t.check_constraint "movement_cost_cents IS NULL OR movement_cost_cents >= 0", name: "inv_ledger_movement_cost_nonneg"
     t.check_constraint "movement_type::text = ANY (ARRAY['opening_inventory'::text, 'quantity_adjustment'::text, 'cost_correction'::text, 'sale'::text, 'customer_return'::text, 'receipt'::text, 'receipt_deficit_settlement'::text])", name: "inv_ledger_movement_type"
+    t.check_constraint "prior_deficit_cost_quality IS NULL OR (prior_deficit_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "inv_ledger_prior_deficit_quality_check"
     t.check_constraint "provisional_deficit_cost_quality_snapshot IS NULL OR (provisional_deficit_cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[]))", name: "inv_ledger_deficit_quality_snapshot_check"
     t.check_constraint "resulting_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_resulting_cost_quality"
+    t.check_constraint "resulting_deficit_cost_quality IS NULL OR (resulting_deficit_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "inv_ledger_resulting_deficit_quality_check"
     t.check_constraint "settlement_variance_kind IS NULL OR (settlement_variance_kind::text = ANY (ARRAY['ordinary'::character varying, 'late_cost_recognition'::character varying]::text[]))", name: "inv_ledger_variance_kind_check"
     t.check_constraint "unit_cost_cents IS NULL OR unit_cost_cents >= 0", name: "inv_ledger_unit_cost_nonneg"
   end
@@ -638,6 +644,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
     t.bigint "external_void_confirmed_by_user_id"
     t.string "external_void_reference"
     t.bigint "original_pos_tender_id"
+    t.bigint "pos_approval_id"
     t.bigint "pos_transaction_id", null: false
     t.text "remove_reason"
     t.datetime "removed_at"
@@ -656,6 +663,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
     t.index ["created_by_user_id"], name: "index_pos_tenders_on_created_by_user_id"
     t.index ["external_void_confirmed_by_user_id"], name: "index_pos_tenders_on_external_void_confirmed_by_user_id"
     t.index ["original_pos_tender_id"], name: "index_pos_tenders_on_original_pos_tender_id"
+    t.index ["pos_approval_id"], name: "index_pos_tenders_on_pos_approval_id"
     t.index ["pos_transaction_id", "status"], name: "index_pos_tenders_on_pos_transaction_id_and_status"
     t.index ["pos_transaction_id"], name: "index_pos_tenders_on_pos_transaction_id"
     t.index ["removed_by_user_id"], name: "index_pos_tenders_on_removed_by_user_id"
@@ -1283,6 +1291,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
     t.index ["reverses_entry_id"], name: "index_sv_entries_reverses_unique", unique: true, where: "(reverses_entry_id IS NOT NULL)"
     t.index ["store_id"], name: "index_stored_value_entries_on_store_id"
     t.index ["stored_value_account_id"], name: "index_stored_value_entries_on_stored_value_account_id"
+    t.index ["stored_value_account_id"], name: "index_sv_entries_one_issued_per_account", unique: true, where: "((entry_type)::text = 'issued'::text)"
     t.index ["stored_value_adjustment_reason_id"], name: "idx_on_stored_value_adjustment_reason_id_b8c64f83a2"
     t.check_constraint "amount_cents <> 0", name: "sv_entries_amount_nonzero"
     t.check_constraint "entry_type::text = ANY (ARRAY['issued'::character varying, 'reloaded'::character varying, 'redeemed'::character varying, 'refunded'::character varying, 'manual_adjustment'::character varying, 'reversal'::character varying]::text[])", name: "sv_entries_type_check"
@@ -1488,6 +1497,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_250000) do
   add_foreign_key "pos_sessions", "users", column: "opened_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "pos_approvals", on_delete: :restrict
   add_foreign_key "pos_tenders", "pos_tenders", column: "original_pos_tender_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "pos_tenders", column: "reverses_pos_tender_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "pos_transactions", on_delete: :restrict

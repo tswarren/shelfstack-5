@@ -120,6 +120,37 @@ module StoredValue
       assert_equal 1, StoredValueEntry.where(posting_key: "sv-adj-idem").count
     end
 
+    test "concurrent same posting_key creates one entry and one approval" do
+      results = {}
+      barrier = Concurrent::CyclicBarrier.new(2)
+      t1 = Thread.new do
+        barrier.wait
+        results[:a] = AdjustBalance.call(
+          account: @account, store: @store, amount_cents: 300, adjustment_reason: @reason,
+          actor: @admin, description: "note",
+          approver: @approver, approver_pin: "4321",
+          posting_key: "sv-adj-race"
+        )
+      end
+      t2 = Thread.new do
+        barrier.wait
+        results[:b] = AdjustBalance.call(
+          account: @account, store: @store, amount_cents: 300, adjustment_reason: @reason,
+          actor: @admin, description: "note",
+          approver: @approver, approver_pin: "4321",
+          posting_key: "sv-adj-race"
+        )
+      end
+      [ t1, t2 ].each(&:join)
+
+      assert results.values.all?(&:success?), results.values.map(&:error).inspect
+      assert_equal 1, StoredValueEntry.where(posting_key: "sv-adj-race").count
+      assert_equal 1, results.values.count { |r| !r.replayed }
+      assert_equal 300, @account.reload.current_balance_cents
+      approval_ids = results.values.map { |r| r.pos_approval&.id }.compact.uniq
+      assert_equal 1, approval_ids.size
+    end
+
     test "failed posting rolls back approval" do
       approvals_before = PosApproval.count
       original = PostEntry.method(:call)

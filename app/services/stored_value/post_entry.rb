@@ -5,17 +5,14 @@ module StoredValue
   # stored-value v1 operating policy "Balance posting contract"): lock
   # account → check status/eligibility → check posting key → validate
   # sufficient balance for a debit → create the immutable Entry → update the
-  # cached balance → commit. Idempotent by `posting_key`, mirroring
-  # Inventory::PostLedgerEntry. Does not itself evaluate permission or
-  # approval — callers (Pos::AddStoredValueLine/Tender, StoredValue::AdjustBalance,
-  # Pos::PostVoidTransaction) authorize before calling, the same separation
-  # PostLedgerEntry uses.
+  # cached balance → audit → commit.
   class PostEntry < ApplicationService
     Error = Class.new(StandardError)
     AccountNotActiveError = Class.new(Error)
     InsufficientBalanceError = Class.new(Error)
     IdempotencyConflictError = Class.new(Error)
     ReversalError = Class.new(Error)
+    LifecycleError = Class.new(Error)
 
     Result = Data.define(:entry, :account, :replayed)
 
@@ -56,19 +53,21 @@ module StoredValue
     def call
       validate_preconditions!
 
-      existing = StoredValueEntry.find_by(posting_key: @posting_key)
-      return replay_or_conflict!(existing) if existing
-
       ActiveRecord::Base.transaction do
         account = StoredValueAccount.lock.find(@account.id)
+
+        existing = StoredValueEntry.find_by(posting_key: @posting_key)
+        return replay_or_conflict!(existing) if existing
 
         unless @allow_suspended || account.active?
           raise AccountNotActiveError, "account #{account.account_number} is not active"
         end
 
+        validate_lifecycle!(account)
         locked_original = validate_and_lock_reversal!(account)
 
-        resulting_balance = account.current_balance_cents + @amount_cents
+        balance_before = account.current_balance_cents
+        resulting_balance = balance_before + @amount_cents
         if resulting_balance.negative?
           raise InsufficientBalanceError, "insufficient balance on account #{account.account_number}"
         end
@@ -91,19 +90,22 @@ module StoredValue
         )
 
         account.update!(current_balance_cents: resulting_balance)
+        record_audit!(entry, account, balance_before, resulting_balance)
 
         Result.new(entry: entry, account: account, replayed: false)
       end
     rescue ArgumentError => e
       raise Error, e.message
-    rescue ActiveRecord::RecordNotUnique
+    rescue ActiveRecord::RecordNotUnique => e
       existing = StoredValueEntry.find_by(posting_key: @posting_key)
-      if existing
-        replay_or_conflict!(existing)
+      return replay_or_conflict!(existing) if existing
+
+      if @entry_type == "issued"
+        raise LifecycleError, "account already has an issued entry"
       elsif @reverses_entry.present?
         raise ReversalError, "entry #{@reverses_entry.id} is already reversed"
       else
-        raise
+        raise Error, e.message
       end
     end
 
@@ -124,6 +126,27 @@ module StoredValue
       end
     end
 
+    def validate_lifecycle!(account)
+      case @entry_type
+      when "issued"
+        unless account.account_type == "gift_card"
+          raise LifecycleError, "issued entries are only allowed on gift_card accounts"
+        end
+        if StoredValueEntry.exists?(stored_value_account_id: account.id, entry_type: "issued")
+          raise LifecycleError, "account already has an issued entry"
+        end
+        raise LifecycleError, "issued amount must be positive" unless @amount_cents.positive?
+      when "reloaded"
+        unless account.account_type == "gift_card"
+          raise LifecycleError, "reloaded entries are only allowed on gift_card accounts"
+        end
+        unless StoredValueEntry.exists?(stored_value_account_id: account.id, entry_type: "issued")
+          raise LifecycleError, "reload requires a prior issued entry"
+        end
+        raise LifecycleError, "reloaded amount must be positive" unless @amount_cents.positive?
+      end
+    end
+
     def validate_and_lock_reversal!(account)
       return nil if @reverses_entry.blank?
 
@@ -139,6 +162,30 @@ module StoredValue
       end
 
       original
+    end
+
+    def record_audit!(entry, account, balance_before, balance_after)
+      Administration::RecordAuditEvent.call(
+        actor: @actor,
+        organization: account.organization,
+        store: @store,
+        action: "stored_value.entry.posted",
+        subject: entry,
+        metadata: {
+          "stored_value_account_id" => account.id,
+          "account_number" => account.account_number,
+          "entry_type" => entry.entry_type,
+          "amount_cents" => entry.amount_cents,
+          "balance_before_cents" => balance_before,
+          "balance_after_cents" => balance_after,
+          "pos_transaction_id" => entry.pos_transaction_id,
+          "pos_line_item_id" => entry.pos_line_item_id,
+          "pos_tender_id" => entry.pos_tender_id,
+          "reverses_entry_id" => entry.reverses_entry_id,
+          "pos_approval_id" => entry.pos_approval_id,
+          "posting_key" => entry.posting_key
+        }
+      )
     end
 
     def replay_or_conflict!(existing)

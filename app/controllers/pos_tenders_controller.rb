@@ -15,7 +15,9 @@ class PosTendersController < ApplicationController
         Pos::AddCashRefundTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
-          actor: Current.user
+          actor: Current.user,
+          exception_approver: exception_approver_from_params,
+          exception_approver_pin: params[:exception_approver_pin]
         )
       else
         Pos::AddCashTender.call(
@@ -25,20 +27,28 @@ class PosTendersController < ApplicationController
         )
       end
     when "card"
-      Pos::AddCardTender.call(
-        pos_transaction: @pos_transaction, tender_type: tender_type,
-        amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
-        authorization_code: params[:authorization_code],
-        terminal_reference: params[:terminal_reference].presence, actor: Current.user
-      )
+      if params[:refund].present?
+        Pos::AddCardRefundTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
+          authorization_code: params[:authorization_code],
+          terminal_reference: params[:terminal_reference].presence,
+          actor: Current.user,
+          exception_approver: exception_approver_from_params,
+          exception_approver_pin: params[:exception_approver_pin]
+        )
+      else
+        Pos::AddCardTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+          authorization_code: params[:authorization_code],
+          terminal_reference: params[:terminal_reference].presence, actor: Current.user
+        )
+      end
     when "stored_value"
-      account = Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id]) ||
-                Current.organization.stored_value_accounts.find_by(account_number: params[:account_number].to_s.strip)
+      account = resolve_stored_value_account
       if params[:refund].present?
         original = scoped_original_refund_tender(params[:original_pos_tender_id])
-        exception_approver = if params[:exception_approver_username].present?
-          User.find_by(username: params[:exception_approver_username].to_s.strip.downcase)
-        end
         Pos::AddStoredValueRefundTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
@@ -46,7 +56,7 @@ class PosTendersController < ApplicationController
           account: account,
           original_pos_tender: original,
           create_store_credit: params[:create_store_credit].present?,
-          exception_approver: exception_approver,
+          exception_approver: exception_approver_from_params,
           exception_approver_pin: params[:exception_approver_pin]
         )
       else
@@ -139,5 +149,27 @@ class PosTendersController < ApplicationController
     return nil unless linked_sale_ids.include?(tender.pos_transaction_id)
 
     tender
+  end
+
+  def exception_approver_from_params
+    return nil if params[:exception_approver_username].blank?
+
+    User.find_by(username: params[:exception_approver_username].to_s.strip.downcase)
+  end
+
+  def resolve_stored_value_account
+    if params[:stored_value_account_id].present?
+      return Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id])
+    end
+
+    identifier = params[:account_number].presence || params[:alternate_identifier].presence
+    return nil if identifier.blank?
+
+    StoredValue::ResolveAccount.call(
+      organization: Current.organization,
+      identifier: identifier
+    ).account
+  rescue StoredValue::ResolveAccount::Error
+    nil
   end
 end

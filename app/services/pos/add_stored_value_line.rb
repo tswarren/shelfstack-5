@@ -34,6 +34,13 @@ module Pos
         raise Error, "transaction is not open for editing" unless transaction.editable?
         account = StoredValueAccount.lock.find(@account.id)
         raise Error, "account is suspended" if account.suspended?
+        raise Error, "only gift cards may be issued or reloaded through POS" unless account.account_type == "gift_card"
+        if @operation == "issue" && StoredValueEntry.exists?(stored_value_account_id: account.id, entry_type: "issued")
+          raise Error, "gift card already issued"
+        end
+        if @operation == "reload" && !StoredValueEntry.exists?(stored_value_account_id: account.id, entry_type: "issued")
+          raise Error, "reload requires a prior issuance"
+        end
 
         line = PosLineItem.create!(
           pos_transaction: transaction,

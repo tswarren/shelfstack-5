@@ -2,8 +2,7 @@
 
 module StoredValue
   # Manual balance adjustment with mandatory independent approval.
-  # AuthorizeAction + PostEntry share one outer transaction; posting_key is
-  # idempotent across retries / double-submit.
+  # Lock account → recheck posting_key → approve → post, all in one transaction.
   class AdjustBalance < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:entry, :account, :pos_approval, :success?, :error, :replayed)
@@ -39,10 +38,12 @@ module StoredValue
         raise Error, "description is required for this reason"
       end
 
-      existing = StoredValueEntry.find_by(posting_key: @posting_key)
-      return replay_existing!(existing) if existing
-
       ActiveRecord::Base.transaction do
+        StoredValueAccount.lock.find(@account.id)
+
+        existing = StoredValueEntry.find_by(posting_key: @posting_key)
+        return replay_existing!(existing) if existing
+
         auth = Pos::AuthorizeAction.call(
           store: @store,
           requester: @actor,

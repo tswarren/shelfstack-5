@@ -85,6 +85,9 @@ module Inventory
           raise Error, "unavailable cannot become negative"
         end
 
+        prior_pool = balance.open_provisional_deficit_cost_cents
+        prior_deficit_quality = balance.deficit_cost_quality
+
         entry = InventoryLedgerEntry.create!(
           store: @store,
           product_variant: @product_variant,
@@ -111,6 +114,10 @@ module Inventory
           estimate_unit_cost_cents: @estimate_unit_cost_cents,
           provisional_cost_released_cents: deficit.provisional_cost_released_cents,
           provisional_deficit_cost_quality_snapshot: deficit.provisional_deficit_cost_quality_snapshot,
+          prior_open_provisional_deficit_cost_cents: deficit.changed ? prior_pool : nil,
+          resulting_open_provisional_deficit_cost_cents: deficit.changed ? deficit.resulting_open_provisional_deficit_cost_cents : nil,
+          prior_deficit_cost_quality: deficit.changed ? prior_deficit_quality : nil,
+          resulting_deficit_cost_quality: deficit.changed ? deficit.resulting_deficit_cost_quality : nil,
           settlement_variance_cents: deficit.settlement_variance_cents,
           settlement_variance_kind: deficit.settlement_variance_kind,
           posting_key: @posting_key,

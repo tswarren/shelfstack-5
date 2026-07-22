@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Pos
-  # Cash refund tender for transactions whose net total is negative (linked returns).
-  class AddCashRefundTender < ApplicationService
+  # Standalone-card refund tender for linked returns (external auth confirmed first).
+  class AddCardRefundTender < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_tender, :success?, :error, :warnings)
 
@@ -10,13 +10,17 @@ module Pos
       pos_transaction:,
       tender_type:,
       amount_cents:,
+      authorization_code:,
       actor:,
+      terminal_reference: nil,
       exception_approver: nil,
       exception_approver_pin: nil
     )
       @pos_transaction = pos_transaction
       @tender_type = tender_type
       @amount_cents = amount_cents.to_i
+      @authorization_code = authorization_code
+      @terminal_reference = terminal_reference
       @actor = actor
       @exception_approver = exception_approver
       @exception_approver_pin = exception_approver_pin
@@ -24,15 +28,15 @@ module Pos
 
     def call
       raise Error, "transaction is not open" unless @pos_transaction.open?
-      raise Error, "tender type must be cash" unless @tender_type.tender_category == "cash"
+      raise Error, "tender type must be card" unless @tender_type.tender_category == "card"
       raise Error, "refund amount must be positive" unless @amount_cents.positive?
+      raise Error, "authorization code is required" if @authorization_code.blank?
       TenderGuards.assert_active!(@tender_type)
       TenderGuards.assert_refund_enabled!(@tender_type)
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
-        assert_no_post_voided_linked_originals!(transaction)
 
         recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
         TenderGuards.assert_no_calculation_blockers!(recalculation)
@@ -44,7 +48,7 @@ module Pos
         approval = RefundAllocationPolicy.call(
           pos_transaction: transaction,
           actor: @actor,
-          destination: :cash,
+          destination: :card,
           amount_cents: @amount_cents,
           exception_approver: @exception_approver,
           exception_approver_pin: @exception_approver_pin
@@ -52,8 +56,9 @@ module Pos
 
         tender = PosTender.create!(
           pos_transaction: transaction, store: transaction.store, tender_type: @tender_type,
-          direction: "refunded", status: "pending", amount_cents: @amount_cents,
-          created_by_user: @actor,
+          direction: "refunded", status: "authorized", amount_cents: @amount_cents,
+          authorization_code: @authorization_code, terminal_reference: @terminal_reference,
+          authorized_at: Time.current, created_by_user: @actor,
           pos_approval: approval
         )
 
@@ -64,14 +69,6 @@ module Pos
     end
 
     private
-
-    def assert_no_post_voided_linked_originals!(transaction)
-      transaction.pos_line_items.pending.returns.find_each do |line|
-        original = line.original_pos_line_item
-        next if original.blank?
-        raise Error, "cannot refund against a post-voided original sale" if original.post_voided?
-      end
-    end
 
     def already_refunded_cents(transaction)
       transaction.pos_tenders.unresolved.where(direction: "refunded").sum(:amount_cents)

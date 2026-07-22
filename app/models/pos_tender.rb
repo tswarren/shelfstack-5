@@ -16,6 +16,7 @@ class PosTender < ApplicationRecord
   belongs_to :reverses_pos_tender, class_name: "PosTender", optional: true
   belongs_to :original_pos_tender, class_name: "PosTender", optional: true
   belongs_to :stored_value_account, optional: true
+  belongs_to :pos_approval, optional: true
   has_one :post_void_reversing_tender, class_name: "PosTender", foreign_key: :reverses_pos_tender_id,
           inverse_of: :reverses_pos_tender, dependent: :restrict_with_exception
   has_many :refund_tenders, class_name: "PosTender", foreign_key: :original_pos_tender_id,

@@ -262,5 +262,58 @@ module Pos
       assert_equal 0, @request.fulfilled_quantity
       assert ProductRequestFulfillment.exists?(pos_line_item_id: line.id, kind: "fulfill")
     end
+
+    test "concurrent return completion and post-void do not deadlock; one path wins" do
+      reserved = Requests::ReserveInHouseInventory.call(
+        product_request: @request, quantity: 2, actor: @admin, store: @store, physically_confirmed: true
+      )
+      assert reserved.success?, reserved.error
+
+      txn, line, = pos_complete_cash_sale(
+        session: @session, variant: @variant, quantity: 2, actor: @admin, cash: @cash,
+        key: "fulfil-race", product_request: @request
+      )
+
+      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      assert AddLinkedReturnLine.call(
+        pos_transaction: ret, original_pos_line_item: line, quantity: 1,
+        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+      ).success?
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      assert AddCashRefundTender.call(
+        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin
+      ).success?
+
+      results = {}
+      barrier = Concurrent::CyclicBarrier.new(2)
+      t1 = Thread.new do
+        barrier.wait
+        results[:return] = CompleteTransaction.call(
+          pos_transaction: ret, pos_session: @session, actor: @admin,
+          completion_idempotency_key: "ret-race"
+        )
+      end
+      t2 = Thread.new do
+        barrier.wait
+        results[:void] = PostVoidTransaction.call(
+          original_transaction: txn, pos_session: @session, actor: @admin,
+          reason: "race void", completion_idempotency_key: "pv-race-fulfill",
+          approver: @admin, approver_pin: "1234"
+        )
+      end
+      [ t1, t2 ].each(&:join)
+
+      assert results.values.any?(&:success?), results.transform_values(&:error).inspect
+      # Exactly one of: return completed, or original post-voided (not both effects surviving inconsistently).
+      ret_done = results[:return].success?
+      void_done = results[:void].success?
+      assert ret_done ^ void_done || (ret_done && !void_done) || (!ret_done && void_done)
+      if ret_done
+        refute txn.reload.post_voided?
+      end
+      if void_done
+        refute ret.reload.completed?
+      end
+    end
   end
 end

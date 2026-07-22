@@ -2,8 +2,6 @@
 
 module Pos
   # Refund to stored value: restore an original SV tender, or issue store credit.
-  # When linked sales still have remaining refundable SV tenders, those must be
-  # restored first unless an exception approval is supplied.
   class AddStoredValueRefundTender < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_tender, :account, :success?, :error, :warnings)
@@ -55,14 +53,24 @@ module Pos
         raise Error, "refund exceeds balance due (#{refund_due})" if @amount_cents > refund_due
 
         original = lock_and_validate_original!(transaction)
-        enforce_original_tender_first!(transaction, original)
+        destination = original.present? ? :original_stored_value : :new_stored_value
+        approval = RefundAllocationPolicy.call(
+          pos_transaction: transaction,
+          actor: @actor,
+          destination: destination,
+          amount_cents: @amount_cents,
+          original_pos_tender: original,
+          exception_approver: @exception_approver,
+          exception_approver_pin: @exception_approver_pin
+        )
         account = resolve_account!(transaction, original)
 
         tender = PosTender.create!(
           pos_transaction: transaction, store: transaction.store, tender_type: @tender_type,
           direction: "refunded", status: "pending", amount_cents: @amount_cents,
           stored_value_account: account, original_pos_tender: original,
-          created_by_user: @actor
+          created_by_user: @actor,
+          pos_approval: approval
         )
 
         Result.new(
@@ -70,7 +78,7 @@ module Pos
           warnings: recalculation.warnings
         )
       end
-    rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
+    rescue Error, RefundAllocationPolicy::Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_tender: nil, account: nil, success?: false, error: e.message, warnings: [])
     end
 
@@ -123,59 +131,6 @@ module Pos
       raise Error, "refund exceeds remaining refundable on original tender (#{remaining})" if @amount_cents > remaining
 
       original
-    end
-
-    def enforce_original_tender_first!(transaction, chosen_original)
-      remaining = remaining_linked_sv_originals(transaction)
-      return if remaining.empty?
-
-      if chosen_original.present?
-        unless remaining.any? { |t| t.id == chosen_original.id }
-          raise Error, "original tender is not a remaining refundable stored-value tender on a linked sale"
-        end
-        return
-      end
-
-      # Bypass only with mandatory independent approval (reuse refund permission).
-      auth = AuthorizeAction.call(
-        store: transaction.store,
-        requester: @actor,
-        permission_key: "stored_value.tender.refund",
-        action_type: "stored_value_refund_exception",
-        reason: "bypass original stored-value tender restoration",
-        approval_mode: :always,
-        approver: @exception_approver,
-        approver_pin: @exception_approver_pin,
-        approver_permission_key: "stored_value.tender.refund",
-        pos_transaction: transaction
-      )
-      return if auth.allowed? && auth.pos_approval
-
-      raise Error,
-            "restore remaining original stored-value tender(s) first " \
-            "(#{remaining.map(&:id).join(', ')}) or supply exception approval"
-    end
-
-    def remaining_linked_sv_originals(transaction)
-      linked_sale_ids = transaction.pos_line_items.pending.returns
-        .where.not(original_pos_line_item_id: nil)
-        .includes(original_pos_line_item: :pos_transaction)
-        .map { |line| line.original_pos_line_item.pos_transaction_id }
-        .uniq
-
-      return [] if linked_sale_ids.empty?
-
-      PosTender
-        .joins(:tender_type)
-        .where(
-          pos_transaction_id: linked_sale_ids,
-          direction: "received",
-          status: "completed",
-          store_id: transaction.store_id,
-          tender_types: { tender_category: "stored_value" }
-        )
-        .order(:id)
-        .select { |tender| tender.remaining_refundable_cents.positive? }
     end
 
     def linked_original_transaction?(transaction, original_txn)

@@ -29,7 +29,7 @@ Before any reversing record is created:
 1. Original transaction is `completed` and belongs to the same store.
 2. Original is not itself a post-void.
 3. Original has not already been post-voided.
-4. Requester has `pos.post_void.create`; independent approver has recorded `pos.post_void.approve` (always required in v1; no monetary threshold).
+4. Requester has `pos.post_void.create`; an approver with `pos.post_void.approve` records approval (always required in v1; no monetary threshold). Self-approval is permitted only when the requester also holds `pos.post_void.approve_self`; otherwise the approver must be a different user.
 5. Every original completed line remains fully reversible (see inventory, units, fulfilment, stored value).
 6. No original sale quantity has been customer-returned (any linked return quantity on any sale line blocks full post-void).
 7. No original tender has been partially or fully refunded via ordinary refund tenders.

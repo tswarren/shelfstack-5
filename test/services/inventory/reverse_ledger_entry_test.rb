@@ -170,5 +170,76 @@ module Inventory
       assert_equal(-1, balance.on_hand)
       assert_equal 1000, balance.open_provisional_deficit_cost_cents
     end
+
+    test "reverse restores original cost quality onto positive inventory" do
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 5, incoming_unit_cost_cents: 400, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "qual-open",
+        posted_by_user: @user
+      )
+      sale = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -5, source: @line, posting_key: "qual-sale",
+        posted_by_user: @user
+      )
+      balance = sale.stock_balance.reload
+      assert_equal 0, balance.on_hand
+      assert_equal "unknown", balance.cost_quality
+
+      ReverseLedgerEntry.call(
+        reversal_of_entry: sale.ledger_entry,
+        source: @line,
+        posting_key: "qual-sale:reverse",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal 5, balance.on_hand
+      assert_equal "actual", balance.cost_quality
+      assert_equal 2000, balance.inventory_value_cents
+    end
+
+    test "unknown-cost deficit deepening persists prior pool for exact reverse" do
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "opening_inventory",
+        quantity_delta: 1, incoming_unit_cost_cents: 1000, incoming_cost_method: "explicit",
+        incoming_cost_quality: "actual", source: @line, posting_key: "unk-open",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "unk-to-zero",
+        posted_by_user: @user
+      )
+      PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "unk-prior",
+        posted_by_user: @user
+      )
+      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+
+      # Clear last_known so the next sale posts with unknown provisional cost.
+      balance.update!(last_known_unit_cost_cents: nil, last_known_cost_quality: "unknown")
+      unknown_sale = PostLedgerEntry.call(
+        store: @store, product_variant: @variant, movement_type: "sale",
+        quantity_delta: -1, source: @line, posting_key: "unk-sale",
+        posted_by_user: @user
+      )
+      unknown_sale.stock_balance.reload
+      assert_nil unknown_sale.stock_balance.open_provisional_deficit_cost_cents
+      assert_equal 1000, unknown_sale.ledger_entry.prior_open_provisional_deficit_cost_cents
+
+      ReverseLedgerEntry.call(
+        reversal_of_entry: unknown_sale.ledger_entry,
+        source: @line,
+        posting_key: "unk-sale:reverse",
+        posted_by_user: @user
+      )
+      balance.reload
+      assert_equal(-1, balance.on_hand)
+      assert_equal 1000, balance.open_provisional_deficit_cost_cents
+      assert_equal "actual", balance.deficit_cost_quality
+    end
   end
 end

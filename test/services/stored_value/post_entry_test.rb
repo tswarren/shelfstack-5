@@ -95,6 +95,42 @@ module StoredValue
       assert_equal 0, @account.reload.current_balance_cents
     end
 
+    test "issued and reloaded enforce gift-card lifecycle" do
+      assert_raises(PostEntry::LifecycleError) do
+        PostEntry.call(
+          account: @account, store: @store, entry_type: "reloaded", amount_cents: 100,
+          posting_key: "sv-reload-before-issue", actor: @admin
+        )
+      end
+
+      PostEntry.call(
+        account: @account, store: @store, entry_type: "issued", amount_cents: 500,
+        posting_key: "sv-lifecycle-issue", actor: @admin
+      )
+      assert_raises(PostEntry::LifecycleError) do
+        PostEntry.call(
+          account: @account, store: @store, entry_type: "issued", amount_cents: 100,
+          posting_key: "sv-lifecycle-issue-2", actor: @admin
+        )
+      end
+
+      PostEntry.call(
+        account: @account, store: @store, entry_type: "reloaded", amount_cents: 100,
+        posting_key: "sv-lifecycle-reload", actor: @admin
+      )
+      assert AdministrativeAuditEvent.exists?(action: "stored_value.entry.posted")
+
+      credit = CreateAccount.call(
+        organization: @org, account_type: "store_credit", actor: @admin
+      ).account
+      assert_raises(PostEntry::LifecycleError) do
+        PostEntry.call(
+          account: credit, store: @store, entry_type: "issued", amount_cents: 100,
+          posting_key: "sv-issue-on-credit", actor: @admin
+        )
+      end
+    end
+
     test "reversal requires exact inverse amount and same account" do
       issued = PostEntry.call(
         account: @account, store: @store, entry_type: "issued", amount_cents: 1000,

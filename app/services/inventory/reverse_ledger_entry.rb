@@ -75,6 +75,8 @@ module Inventory
         )
 
         deficit = exact_deficit_inverse(original, balance, resulting_on_hand)
+        prior_pool = balance.open_provisional_deficit_cost_cents
+        prior_deficit_quality = balance.deficit_cost_quality
 
         entry = InventoryLedgerEntry.create!(
           store: original.store,
@@ -99,6 +101,10 @@ module Inventory
           reversal_of_entry: original,
           provisional_cost_released_cents: deficit.provisional_cost_released_cents,
           provisional_deficit_cost_quality_snapshot: deficit.provisional_deficit_cost_quality_snapshot,
+          prior_open_provisional_deficit_cost_cents: deficit.changed ? prior_pool : nil,
+          resulting_open_provisional_deficit_cost_cents: deficit.changed ? deficit.resulting_open_provisional_deficit_cost_cents : nil,
+          prior_deficit_cost_quality: deficit.changed ? prior_deficit_quality : nil,
+          resulting_deficit_cost_quality: deficit.changed ? deficit.resulting_deficit_cost_quality : nil,
           settlement_variance_cents: nil,
           settlement_variance_kind: nil,
           posting_key: @posting_key,
@@ -153,97 +159,97 @@ module Inventory
     private_constant :NO_DEFICIT
 
     # Exact inverse of the original entry's deficit-pool effect (Case 1).
-    # Does not use proportional current-pool math from PostLedgerEntry.
+    # Prefers persisted prior/resulting pool snapshots on the original row.
     def exact_deficit_inverse(original, balance, resulting_on_hand)
-      prior_on_hand = original.resulting_on_hand - original.quantity_delta
-      prior_deficit_qty = [ -prior_on_hand, 0 ].max
-      original_deficit_qty = [ -original.resulting_on_hand, 0 ].max
+      unless original.prior_deficit_cost_quality.present? ||
+             !original.prior_open_provisional_deficit_cost_cents.nil? ||
+             !original.resulting_open_provisional_deficit_cost_cents.nil?
+        return NO_DEFICIT unless deficit_quantity_changed?(original)
 
-      if original_deficit_qty > prior_deficit_qty
-        reverse_deficit_increase(original, balance, resulting_on_hand, original_deficit_qty - prior_deficit_qty)
-      elsif original_deficit_qty < prior_deficit_qty
-        reverse_deficit_release(original, balance, resulting_on_hand)
-      else
-        NO_DEFICIT
+        return legacy_exact_deficit_inverse(original, balance, resulting_on_hand)
       end
-    end
 
-    def reverse_deficit_increase(original, balance, resulting_on_hand, created_qty)
-      exact_added = exact_provisional_added(original, created_qty)
       resulting_deficit_qty = [ -resulting_on_hand, 0 ].max
-      prior_pool = balance.open_provisional_deficit_cost_cents
-      prior_quality = balance.deficit_cost_quality
+      restored_pool = original.prior_open_provisional_deficit_cost_cents
+      restored_quality = original.prior_deficit_cost_quality.presence || "unknown"
 
       if resulting_deficit_qty.zero?
-        return DeficitInverse.new(
-          changed: true,
-          resulting_open_provisional_deficit_cost_cents: 0,
-          resulting_deficit_cost_quality: "unknown",
-          provisional_cost_released_cents: prior_pool,
-          provisional_deficit_cost_quality_snapshot: prior_quality
-        )
+        restored_pool = 0
+        restored_quality = "unknown"
       end
 
-      if exact_added.nil? || prior_pool.nil?
-        resulting_pool = nil
-        resulting_quality = "unknown"
-        released = prior_pool
+      released = if original.resulting_open_provisional_deficit_cost_cents.nil? && restored_pool.nil?
+        nil
+      elsif original.resulting_open_provisional_deficit_cost_cents.nil?
+        nil
+      elsif restored_pool.nil?
+        original.resulting_open_provisional_deficit_cost_cents
       else
-        resulting_pool = prior_pool - exact_added
-        raise Error, "exact deficit reverse would make provisional pool negative" if resulting_pool.negative?
-
-        resulting_quality = prior_quality
-        released = exact_added
+        original.resulting_open_provisional_deficit_cost_cents - restored_pool
       end
 
       DeficitInverse.new(
         changed: true,
-        resulting_open_provisional_deficit_cost_cents: resulting_pool,
-        resulting_deficit_cost_quality: resulting_quality,
-        provisional_cost_released_cents: released,
-        provisional_deficit_cost_quality_snapshot: prior_quality
+        resulting_open_provisional_deficit_cost_cents: restored_pool,
+        resulting_deficit_cost_quality: restored_quality,
+        provisional_cost_released_cents: released&.positive? ? released : nil,
+        provisional_deficit_cost_quality_snapshot: original.resulting_deficit_cost_quality
       )
     end
 
-    def reverse_deficit_release(original, balance, resulting_on_hand)
-      released = original.provisional_cost_released_cents
-      snapshot_quality = original.provisional_deficit_cost_quality_snapshot
-      prior_pool = balance.open_provisional_deficit_cost_cents
-      resulting_deficit_qty = [ -resulting_on_hand, 0 ].max
+    def deficit_quantity_changed?(original)
+      prior_on_hand = original.resulting_on_hand - original.quantity_delta
+      prior_deficit_qty = [ -prior_on_hand, 0 ].max
+      original_deficit_qty = [ -original.resulting_on_hand, 0 ].max
+      prior_deficit_qty != original_deficit_qty
+    end
 
-      if resulting_deficit_qty.zero?
+    # Fallback for ledger rows posted before deficit snapshots existed.
+    def legacy_exact_deficit_inverse(original, balance, resulting_on_hand)
+      prior_on_hand = original.resulting_on_hand - original.quantity_delta
+      prior_deficit_qty = [ -prior_on_hand, 0 ].max
+      original_deficit_qty = [ -original.resulting_on_hand, 0 ].max
+      created_qty = original_deficit_qty - prior_deficit_qty
+
+      if created_qty.positive?
+        exact_added = if original.unit_cost_cents.present? &&
+                         CalculateQuantityCost::KNOWN_QUALITIES.include?(original.cost_quality.to_s)
+          Rounding.multiply_round_half_up(original.unit_cost_cents, created_qty)
+        end
+        resulting_deficit_qty = [ -resulting_on_hand, 0 ].max
+        if resulting_deficit_qty.zero?
+          return DeficitInverse.new(
+            changed: true,
+            resulting_open_provisional_deficit_cost_cents: 0,
+            resulting_deficit_cost_quality: "unknown",
+            provisional_cost_released_cents: balance.open_provisional_deficit_cost_cents,
+            provisional_deficit_cost_quality_snapshot: balance.deficit_cost_quality
+          )
+        end
+        if exact_added && balance.open_provisional_deficit_cost_cents
+          pool = balance.open_provisional_deficit_cost_cents - exact_added
+          raise Error, "exact deficit reverse would make provisional pool negative" if pool.negative?
+
+          return DeficitInverse.new(
+            changed: true,
+            resulting_open_provisional_deficit_cost_cents: pool,
+            resulting_deficit_cost_quality: balance.deficit_cost_quality,
+            provisional_cost_released_cents: exact_added,
+            provisional_deficit_cost_quality_snapshot: balance.deficit_cost_quality
+          )
+        end
+      elsif created_qty.negative? && original.provisional_cost_released_cents
+        pool = (balance.open_provisional_deficit_cost_cents || 0) + original.provisional_cost_released_cents
         return DeficitInverse.new(
           changed: true,
-          resulting_open_provisional_deficit_cost_cents: 0,
-          resulting_deficit_cost_quality: "unknown",
+          resulting_open_provisional_deficit_cost_cents: pool,
+          resulting_deficit_cost_quality: original.provisional_deficit_cost_quality_snapshot || balance.deficit_cost_quality,
           provisional_cost_released_cents: nil,
           provisional_deficit_cost_quality_snapshot: nil
         )
       end
 
-      if released.nil? || prior_pool.nil?
-        resulting_pool = nil
-        resulting_quality = "unknown"
-      else
-        resulting_pool = prior_pool + released
-        resulting_quality = snapshot_quality.presence || balance.deficit_cost_quality
-      end
-
-      DeficitInverse.new(
-        changed: true,
-        resulting_open_provisional_deficit_cost_cents: resulting_pool,
-        resulting_deficit_cost_quality: resulting_quality,
-        provisional_cost_released_cents: nil,
-        provisional_deficit_cost_quality_snapshot: nil
-      )
-    end
-
-    def exact_provisional_added(original, created_qty)
-      return nil if created_qty <= 0
-      return nil if original.unit_cost_cents.blank?
-      return nil unless CalculateQuantityCost::KNOWN_QUALITIES.include?(original.cost_quality.to_s)
-
-      Rounding.multiply_round_half_up(original.unit_cost_cents, created_qty)
+      NO_DEFICIT
     end
 
     def resulting_valuation(balance, resulting_on_hand, inventory_value_delta)
@@ -263,7 +269,23 @@ module Inventory
       end
 
       resulting_mwa = Rounding.round_half_up(resulting_value, resulting_on_hand)
-      [ resulting_value, resulting_mwa, balance.cost_quality.presence || "unknown" ]
+      movement_quality = @original.cost_quality.to_s
+      prior_quality = balance.on_hand.positive? ? balance.cost_quality.to_s : nil
+      resulting_quality = if prior_quality.blank? || prior_quality == "unknown" || balance.on_hand <= 0
+        CalculateQuantityCost::KNOWN_QUALITIES.include?(movement_quality) ? movement_quality : "unknown"
+      else
+        aggregate_cost_quality(prior_quality, movement_quality)
+      end
+
+      [ resulting_value, resulting_mwa, resulting_quality ]
+    end
+
+    def aggregate_cost_quality(existing, incoming)
+      return "unknown" if existing == "unknown" || incoming == "unknown"
+      return "mixed" if existing == "mixed" || incoming == "mixed"
+      return existing if existing == incoming
+
+      "mixed"
     end
 
     def apply_balance!(balance, calc, deficit, resulting_unavailable)
