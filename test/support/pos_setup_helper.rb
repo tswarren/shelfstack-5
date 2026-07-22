@@ -114,6 +114,7 @@ module PosSetupHelper
       next unless tender.tender_type.tender_category == "card"
 
       confirmations[tender.id.to_s] = {
+        "external_void_confirmed" => true,
         "external_void_reference" => "#{auth_prefix}-#{index + 1}",
         "confirmation_note" => "confirmed"
       }

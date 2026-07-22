@@ -87,6 +87,30 @@ module Pos
       assert_match(/approve_self/, result.error)
     end
 
+    test "card sale post-void requires explicit external_void_confirmed" do
+      txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
+      net = RecalculateTransaction.call(pos_transaction: txn).net_total_cents
+      assert AddCardTender.call(
+        pos_transaction: txn, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-NO-FLAG", actor: @admin
+      ).success?
+      assert CompleteTransaction.call(
+        pos_transaction: txn, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "card-sale-no-flag"
+      ).success?
+      txn.reload
+      plan = pos_ready_post_void!(original: txn, actor: @admin, reason: "need flag", pos_session: @session)
+      plan[:card_confirmations].each_value do |conf|
+        conf["external_void_confirmed"] = false
+        conf["confirmation_note"] = "manager reviewed"
+      end
+
+      result = call_post_void(txn, "pv-no-flag", plan)
+      refute result.success?
+      assert_match(/manually reversed on the external terminal/, result.error)
+    end
+
     test "card sale post-void audits confirmations before reverse and stamps reversing tenders" do
       txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
       AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)

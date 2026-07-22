@@ -22,14 +22,33 @@ module Pos
       )
     end
 
-    test "card tender exceeding balance returns amount_mismatch when over-tender is disallowed" do
+    test "card tender exceeding balance requires void confirmation when over-tender is disallowed" do
       result = AddCardTender.call(
         pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,
         authorization_code: "AUTH1", actor: @admin
       )
       refute result.success?
-      assert result.amount_mismatch?
+      assert result.requires_void_confirmation?
       assert_match(/exceeds remaining balance/, result.error)
+    end
+
+    test "zero remaining balance after valid refs requires void confirmation" do
+      net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      assert AddCashTender.call(
+        pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+      ).success?
+
+      result = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 500,
+        authorization_code: "AUTH-ZERO", actor: @admin
+      )
+      refute result.success?
+      assert result.requires_void_confirmation?
+      assert_match(/no balance due/, result.error)
+      assert RecordVoidedCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: 500, actor: @admin,
+        authorization_code: "AUTH-ZERO", external_void_confirmed: true
+      ).success?
     end
 
     test "partial card tender is accepted within remaining balance" do
@@ -65,7 +84,7 @@ module Pos
         authorization_code: "", actor: @admin
       )
       refute result.success?
-      refute result.amount_mismatch?
+      refute result.requires_void_confirmation?
       assert_match(/required/i, result.error)
     end
 

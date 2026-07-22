@@ -50,15 +50,26 @@
                 <% if tender.authorization_code.present? %>
                   <span class="muted">· <%= tender.authorization_code %></span>
                 <% end %>
+                <% if tender.terminal_reference.present? %>
+                  <span class="muted">· <%= tender.terminal_reference %></span>
+                <% end %>
               </p>
+              <div class="checkbox-group">
+                <label>
+                  <input type="hidden" name="card_confirmations[<%= tender.id %>][external_void_confirmed]" value="0">
+                  <input type="checkbox" name="card_confirmations[<%= tender.id %>][external_void_confirmed]"
+                         value="1" id="card_confirmed_<%= tender.id %>" required>
+                  I confirm this payment was manually reversed on the external terminal.
+                </label>
+              </div>
               <div class="field">
-                <label class="field-label" for="card_void_<%= tender.id %>">External void reference</label>
+                <label class="field-label" for="card_void_<%= tender.id %>">External void reference (optional)</label>
                 <input type="text" class="input"
                        name="card_confirmations[<%= tender.id %>][external_void_reference]"
                        id="card_void_<%= tender.id %>">
               </div>
               <div class="field">
-                <label class="field-label" for="card_note_<%= tender.id %>">Confirmation note</label>
+                <label class="field-label" for="card_note_<%= tender.id %>">Confirmation note (optional)</label>
                 <input type="text" class="input"
                        name="card_confirmations[<%= tender.id %>][confirmation_note]"
                        id="card_note_<%= tender.id %>">

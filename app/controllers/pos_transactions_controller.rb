@@ -67,7 +67,7 @@ class PosTransactionsController < ApplicationController
     @balance_due_cents = @net_total_cents - @tendered_total_cents
     @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
     @refundable_original_tenders = Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction)
-    @card_amount_mismatch = flash[:card_amount_mismatch]
+    @card_void_confirmation = flash[:card_void_confirmation]
     # Stable per page-render so a double-click / back-button resubmit of the
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid
@@ -283,9 +283,20 @@ class PosTransactionsController < ApplicationController
   end
 
   def card_confirmations_params
-    return {} if params[:card_confirmations].blank?
+    raw = params[:card_confirmations]
+    return {} if raw.blank?
 
-    params.require(:card_confirmations).permit!.to_h
+    hash = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
+    hash.each_with_object({}) do |(tender_id, attrs), out|
+      next if tender_id.blank?
+
+      attrs = attrs.respond_to?(:to_unsafe_h) ? attrs.to_unsafe_h : attrs.to_h
+      out[tender_id.to_s] = {
+        "external_void_confirmed" => attrs["external_void_confirmed"],
+        "external_void_reference" => attrs["external_void_reference"],
+        "confirmation_note" => attrs["confirmation_note"].presence || attrs["note"]
+      }
+    end
   end
 
   def rebuild_scan_resolution(stored)

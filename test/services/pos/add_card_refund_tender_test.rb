@@ -58,7 +58,7 @@ module Pos
       assert second.success?, second.error
     end
 
-    test "amount over remaining refund balance returns amount_mismatch" do
+    test "amount over remaining refund balance requires void confirmation" do
       sale, sale_card = complete_card_sale(key: "sale-mismatch-rfnd")
       ret, due = open_linked_return(sale, quantity: 1)
 
@@ -67,7 +67,7 @@ module Pos
         authorization_code: "RFND-BIG", original_pos_tender: sale_card
       )
       refute result.success?
-      assert result.amount_mismatch?
+      assert result.requires_void_confirmation?
     end
 
     test "required tender references are enforced" do
@@ -79,8 +79,44 @@ module Pos
         authorization_code: "", original_pos_tender: sale_card
       )
       refute result.success?
-      refute result.amount_mismatch?
+      refute result.requires_void_confirmation?
       assert_match(/required/i, result.error)
+    end
+
+    test "missing refund exception approval after valid refs requires void confirmation" do
+      sale, = complete_card_sale(key: "sale-exc-rfnd")
+      ret, due = open_linked_return(sale, quantity: 1)
+
+      result = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        authorization_code: "RFND-EXC"
+        # no original_pos_tender and no exception approver
+      )
+      refute result.success?
+      assert result.requires_void_confirmation?
+      assert_match(/restore remaining original|exception/i, result.error)
+      assert RecordVoidedCardTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        direction: "refunded", authorization_code: "RFND-EXC", external_void_confirmed: true
+      ).success?
+    end
+
+    test "unlinked original tender after valid refs requires void confirmation" do
+      sale, = complete_card_sale(key: "sale-linked")
+      _other_sale, other_card = complete_card_sale(key: "sale-unlinked")
+      ret, due = open_linked_return(sale, quantity: 1)
+
+      result = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        authorization_code: "RFND-UNLINKED", original_pos_tender: other_card
+      )
+      refute result.success?
+      assert result.requires_void_confirmation?
+      assert_match(/not linked/, result.error)
+      assert RecordVoidedCardTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        direction: "refunded", authorization_code: "RFND-UNLINKED", external_void_confirmed: true
+      ).success?
     end
 
     test "record voided card refund retains refs after mismatch" do

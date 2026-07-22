@@ -111,9 +111,9 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     visit pos_transaction_path(ret)
     due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
 
-    within_panel("Card refund") do
+    within_panel("Card (standalone) refund") do
       select_option_value("original_pos_tender_id", card_tender.id)
-      fill_in "card_refund_amount_cents", with: format("%.2f", due / 100.0)
+      fill_in "card_refund_amount_cents_#{@card.id}", with: format("%.2f", due / 100.0)
       fill_in "Auth code", with: "RFND-UI-1"
       click_button "Record card refund"
     end
@@ -131,8 +131,8 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     net = Pos::RecalculateTransaction.call(pos_transaction: txn).net_total_cents
 
     visit pos_transaction_path(txn)
-    within_panel("Standalone card tender") do
-      fill_in "card_amount_cents", with: format("%.2f", (net + 500) / 100.0)
+    within_panel("Card (standalone)") do
+      fill_in "card_amount_cents_#{@card.id}", with: format("%.2f", (net + 500) / 100.0)
       fill_in "Auth code", with: "AUTH-MISMATCH"
       click_button "Add card tender"
     end

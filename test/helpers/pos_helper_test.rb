@@ -17,6 +17,29 @@ class PosHelperTest < ActionView::TestCase
     Current.store = nil
   end
 
+  test "pos_original_card_tender_option_label includes receipt and terminal refs" do
+    Current.store = stores(:main_street)
+    txn = PosTransaction.new(
+      receipt_number: "MAIN-000042",
+      completed_at: Time.zone.parse("2026-07-22 15:30")
+    )
+    tender = PosTender.new(
+      amount_cents: 1599,
+      authorization_code: "AUTH-42",
+      terminal_reference: "TERM-9",
+      pos_transaction: txn,
+      tender_type: tender_types(:card_standalone)
+    )
+    tender.define_singleton_method(:remaining_refundable_cents) { 1599 }
+
+    label = pos_original_card_tender_option_label(tender)
+    assert_includes label, "MAIN-000042"
+    assert_includes label, "AUTH-42"
+    assert_includes label, "TERM-9"
+  ensure
+    Current.store = nil
+  end
+
   test "pos_discount_summary labels fixed-amount method without repeating the amount" do
     discount = PosDiscount.new(
       method: "fixed_amount",

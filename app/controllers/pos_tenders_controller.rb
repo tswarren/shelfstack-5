@@ -131,8 +131,8 @@ class PosTendersController < ApplicationController
     if result.success?
       notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
       redirect_to pos_transaction_path(@pos_transaction), notice: notice
-    elsif result.respond_to?(:amount_mismatch?) && result.amount_mismatch?
-      flash[:card_amount_mismatch] = {
+    elsif result.respond_to?(:requires_void_confirmation?) && result.requires_void_confirmation?
+      flash[:card_void_confirmation] = {
         "tender_type_id" => tender_type.id,
         "amount_cents" => money_param_to_cents(params[:amount_cents], label: "Amount"),
         "authorization_code" => params[:authorization_code].to_s,
@@ -176,8 +176,8 @@ class PosTendersController < ApplicationController
   end
 
   def unsupported_tender_result(message)
-    Data.define(:success?, :error, :warnings, :amount_mismatch?).new(
-      success?: false, error: message, warnings: [], amount_mismatch?: false
+    Data.define(:success?, :error, :warnings, :requires_void_confirmation?).new(
+      success?: false, error: message, warnings: [], requires_void_confirmation?: false
     )
   end
 

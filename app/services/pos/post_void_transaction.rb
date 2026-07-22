@@ -180,7 +180,11 @@ module Pos
     def normalize_confirmations(raw)
       coerce_to_hash(raw).each_with_object({}) do |(key, value), out|
         attrs = coerce_to_hash(value)
+        confirmed = ActiveModel::Type::Boolean.new.cast(
+          attrs["external_void_confirmed"].nil? ? attrs[:external_void_confirmed] : attrs["external_void_confirmed"]
+        )
         out[key.to_s] = {
+          "external_void_confirmed" => confirmed,
           "external_void_reference" => attrs["external_void_reference"].presence || attrs[:external_void_reference].presence,
           "confirmation_note" => attrs["confirmation_note"].presence || attrs[:confirmation_note].presence ||
             attrs["note"].presence || attrs[:note].presence
@@ -213,12 +217,9 @@ module Pos
     def assert_confirmations!(card_tenders)
       card_tenders.each do |tender|
         conf = @card_confirmations[tender.id.to_s]
-        if conf.blank?
-          raise Error, "card tender #{tender.id} requires an external void confirmation before post-void"
-        end
-        if conf["external_void_reference"].blank? && conf["confirmation_note"].blank?
+        if conf.blank? || !conf["external_void_confirmed"]
           raise Error,
-                "card tender #{tender.id} confirmation requires an external void reference or note"
+                "card tender #{tender.id} requires confirming the payment was manually reversed on the external terminal"
         end
       end
     end
@@ -239,6 +240,7 @@ module Pos
               "original_pos_tender_id" => tender.id,
               "authorization_code" => tender.authorization_code,
               "terminal_reference" => tender.terminal_reference,
+              "external_void_confirmed" => true,
               "external_void_reference" => conf["external_void_reference"],
               "confirmation_note" => conf["confirmation_note"],
               "confirmed_by_user_id" => @actor.id,

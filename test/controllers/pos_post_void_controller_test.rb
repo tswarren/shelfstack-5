@@ -83,6 +83,7 @@ class PosPostVoidControllerTest < ActionDispatch::IntegrationTest
         completion_idempotency_key: "ctl-pv-card",
         card_confirmations: {
           card_tender.id => {
+            external_void_confirmed: "1",
             external_void_reference: "EXT-1",
             confirmation_note: "reversed on terminal"
           }

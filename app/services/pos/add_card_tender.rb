@@ -5,13 +5,13 @@ module Pos
   # ShelfStack does not drive the terminal; ADR-0009 confirm-before-complete.
   #
   # Amount must satisfy 0 < amount <= remaining received balance (unless the
-  # tender type allows over-tender). When refs are valid but the amount is no
-  # longer attachable, returns amount_mismatch? so the UI can require
-  # record-and-void via RecordVoidedCardTender.
+  # tender type allows over-tender). Once tender-type references validate, any
+  # later business failure that prevents attachment returns
+  # `requires_void_confirmation?` so the UI can retain the refs via
+  # RecordVoidedCardTender.
   class AddCardTender < ApplicationService
     Error = Class.new(StandardError)
-    AmountMismatch = Class.new(Error)
-    Result = Data.define(:pos_tender, :success?, :error, :warnings, :amount_mismatch?)
+    Result = Data.define(:pos_tender, :success?, :error, :warnings, :requires_void_confirmation?)
 
     def initialize(pos_transaction:, tender_type:, amount_cents:, actor:,
                    authorization_code: nil, terminal_reference: nil,
@@ -27,20 +27,36 @@ module Pos
     end
 
     def call
+      refs = begin
+        validate_structure_and_references!
+      rescue Error, ValidateTenderReferences::Error, TenderGuards::Error => e
+        return failure(e.message, requires_void_confirmation: false)
+      end
+
+      attach_authorized!(refs)
+    rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
+      failure(e.message, requires_void_confirmation: true)
+    end
+
+    private
+
+    def validate_structure_and_references!
       raise Error, "transaction is not open" unless @pos_transaction.open?
       raise Error, "tender type must be card" unless @tender_type.tender_category == "card"
       raise Error, "amount must be positive" unless @amount_cents.positive?
       TenderGuards.assert_active!(@tender_type)
       TenderGuards.assert_payment_enabled!(@tender_type)
 
-      refs = ValidateTenderReferences.call(
+      ValidateTenderReferences.call(
         tender_type: @tender_type,
         reference_1: @reference_1,
         reference_2: @reference_2,
         authorization_code: @authorization_code,
         terminal_reference: @terminal_reference
       )
+    end
 
+    def attach_authorized!(refs)
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
@@ -52,7 +68,7 @@ module Pos
         raise Error, "no balance due" if balance_due.zero?
 
         if !@tender_type.allows_over_tender? && @amount_cents > balance_due
-          raise AmountMismatch,
+          raise Error,
                 "amount exceeds remaining balance (#{balance_due}); confirm external void and record as voided"
         end
 
@@ -63,16 +79,12 @@ module Pos
           authorized_at: Time.current, created_by_user: @actor
         )
 
-        Result.new(pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings,
-                   amount_mismatch?: false)
+        Result.new(
+          pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings,
+          requires_void_confirmation?: false
+        )
       end
-    rescue AmountMismatch => e
-      Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [], amount_mismatch?: true)
-    rescue Error, ValidateTenderReferences::Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
-      Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [], amount_mismatch?: false)
     end
-
-    private
 
     def recalculate_for_tender!(transaction)
       if transaction.pos_line_items.pending.returns.where.not(original_pos_line_item_id: nil).exists?
@@ -80,6 +92,13 @@ module Pos
       else
         RecalculateTransaction.call(pos_transaction: transaction)
       end
+    end
+
+    def failure(message, requires_void_confirmation:)
+      Result.new(
+        pos_tender: nil, success?: false, error: message, warnings: [],
+        requires_void_confirmation?: requires_void_confirmation
+      )
     end
   end
 end
