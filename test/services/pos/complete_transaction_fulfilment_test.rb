@@ -159,7 +159,7 @@ module Pos
         return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
       ).pos_line_item
       net = Pos::RecalculateTransaction.call(pos_transaction: return_txn).net_total_cents
-      Pos::AddCashRefundTender.call(pos_transaction: return_txn, tender_type: @cash, amount_cents: net.abs, actor: @admin)
+      pos_add_cash_refund(pos_transaction: return_txn, amount_cents: net.abs, actor: @admin)
 
       result = Pos::CompleteTransaction.call(
         pos_transaction: return_txn, pos_session: @session, actor: @admin, completion_idempotency_key: "return-key"
@@ -234,6 +234,88 @@ module Pos
       assert_equal 1, fulfillment.quantity
       assert request.reload.fulfilled?
       assert txn.completed?
+    end
+
+    test "post-void of a fulfilled sale reverses fulfilment and reopens the request" do
+      reserved = Requests::ReserveInHouseInventory.call(
+        product_request: @request, quantity: 2, actor: @admin, store: @store, physically_confirmed: true
+      )
+      assert reserved.success?, reserved.error
+
+      txn, line, = pos_complete_cash_sale(
+        session: @session, variant: @variant, quantity: 2, actor: @admin, cash: @cash,
+        key: "fulfil-then-void", product_request: @request
+      )
+      assert @request.reload.fulfilled?
+
+      result = pos_post_void!(
+        original: txn, actor: @admin, reason: "fulfilment void",
+        pos_session: @session, key: "pv-fulfill"
+      )
+      assert result.success?, result.error
+
+      reverse = ProductRequestFulfillment.find_by(pos_line_item_id: result.pos_transaction.pos_line_items.first.id, kind: "reverse")
+      assert reverse || ProductRequestFulfillment.exists?(kind: "reverse", product_request_id: @request.id)
+      @request.reload
+      refute @request.fulfilled?
+      assert_equal 0, @request.fulfilled_quantity
+      assert ProductRequestFulfillment.exists?(pos_line_item_id: line.id, kind: "fulfill")
+    end
+
+    test "concurrent return completion and post-void do not deadlock; one path wins" do
+      reserved = Requests::ReserveInHouseInventory.call(
+        product_request: @request, quantity: 2, actor: @admin, store: @store, physically_confirmed: true
+      )
+      assert reserved.success?, reserved.error
+
+      txn, line, = pos_complete_cash_sale(
+        session: @session, variant: @variant, quantity: 2, actor: @admin, cash: @cash,
+        key: "fulfil-race", product_request: @request
+      )
+      plan = pos_ready_post_void!(original: txn, actor: @admin, reason: "race void", pos_session: @session)
+
+      ret = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      assert AddLinkedReturnLine.call(
+        pos_transaction: ret, original_pos_line_item: line, quantity: 1,
+        return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
+      ).success?
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      assert pos_add_cash_refund(
+        pos_transaction: ret, amount_cents: refund_due, actor: @admin
+      ).success?
+
+      results = {}
+      barrier = Concurrent::CyclicBarrier.new(2)
+      t1 = Thread.new do
+        barrier.wait
+        results[:return] = CompleteTransaction.call(
+          pos_transaction: ret, pos_session: @session, actor: @admin,
+          completion_idempotency_key: "ret-race"
+        )
+      end
+      t2 = Thread.new do
+        barrier.wait
+        results[:void] = PostVoidTransaction.call(
+          original_transaction: txn, pos_session: @session, actor: @admin,
+          completion_idempotency_key: "pv-race-fulfill",
+          pos_approval: plan[:pos_approval],
+          reason: plan[:reason],
+          card_confirmations: plan[:card_confirmations]
+        )
+      end
+      [ t1, t2 ].each(&:join)
+
+      assert results.values.any?(&:success?), results.transform_values(&:error).inspect
+      # Exactly one of: return completed, or original post-voided (not both effects surviving inconsistently).
+      ret_done = results[:return].success?
+      void_done = results[:void].success?
+      assert ret_done ^ void_done || (ret_done && !void_done) || (!ret_done && void_done)
+      if ret_done
+        refute txn.reload.post_voided?
+      end
+      if void_done
+        refute ret.reload.completed?
+      end
     end
   end
 end

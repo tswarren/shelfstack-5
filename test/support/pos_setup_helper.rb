@@ -65,6 +65,20 @@ module PosSetupHelper
     [ txn.reload, line.reload, net ]
   end
 
+  # Linked-return cash refund that restores the remaining original cash tender.
+  def pos_add_cash_refund(pos_transaction:, amount_cents:, actor:, tender_type: nil)
+    tender_type ||= pos_transaction.store.organization.tender_types.find_by!(tender_category: "cash")
+    original = Pos::RefundAllocationPolicy.remaining_original_tenders(pos_transaction)
+      .find { |t| t.tender_type.tender_category == "cash" }
+    Pos::AddCashRefundTender.call(
+      pos_transaction: pos_transaction,
+      tender_type: tender_type,
+      amount_cents: amount_cents,
+      actor: actor,
+      original_pos_tender: original
+    )
+  end
+
   def with_stubbed_singleton_call(klass, raiser)
     klass.singleton_class.alias_method :__original_call, :call
     klass.define_singleton_method(:call, raiser)
@@ -72,5 +86,59 @@ module PosSetupHelper
   ensure
     klass.singleton_class.alias_method :call, :__original_call
     klass.singleton_class.remove_method :__original_call
+  end
+
+  # Policy A: approve post-void and build card confirmation params for
+  # PostVoidTransaction (no preparation tables).
+  def pos_ready_post_void!(
+    original:,
+    actor:,
+    reason: "test post-void",
+    approver: nil,
+    approver_pin: "1234",
+    pos_session: nil,
+    auth_prefix: "VOID"
+  )
+    approved = Pos::ApprovePostVoid.call(
+      original_transaction: original,
+      actor: actor,
+      reason: reason,
+      approver: approver || actor,
+      approver_pin: approver_pin,
+      pos_session: pos_session
+    )
+    raise "approve post-void failed: #{approved.error}" unless approved.success?
+
+    confirmations = {}
+    original.pos_tenders.where(status: "completed").includes(:tender_type).order(:id).each_with_index do |tender, index|
+      next unless tender.tender_type.tender_category == "card"
+
+      confirmations[tender.id.to_s] = {
+        "external_void_confirmed" => true,
+        "external_void_reference" => "#{auth_prefix}-#{index + 1}",
+        "confirmation_note" => "confirmed"
+      }
+    end
+
+    {
+      pos_approval: approved.pos_approval,
+      reason: approved.reason,
+      card_confirmations: confirmations
+    }
+  end
+
+  def pos_post_void!(original:, actor:, pos_session:, reason: "test post-void", key: nil, **ready_opts)
+    plan = pos_ready_post_void!(
+      original: original, actor: actor, reason: reason, pos_session: pos_session, **ready_opts
+    )
+    Pos::PostVoidTransaction.call(
+      original_transaction: original,
+      pos_session: pos_session,
+      actor: actor,
+      completion_idempotency_key: key || SecureRandom.uuid,
+      pos_approval: plan[:pos_approval],
+      reason: plan[:reason],
+      card_confirmations: plan[:card_confirmations]
+    )
   end
 end

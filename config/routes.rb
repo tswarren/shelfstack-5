@@ -55,6 +55,11 @@ Rails.application.routes.draw do
     end
   end
   resources :inventory_adjustment_reasons, except: %i[destroy]
+  resources :stored_value_accounts, only: %i[index show new create] do
+    member do
+      post :adjust
+    end
+  end
   resources :stock_balances, only: %i[index show]
   resources :inventory_adjustments, except: %i[destroy] do
     member do
@@ -108,6 +113,10 @@ Rails.application.routes.draw do
       post :recall
       post :cancel
       post :complete
+      get :post_void_form
+      post :approve_post_void
+      post :clear_post_void_approval
+      post :post_void
     end
     resources :pos_line_items, only: %i[create update destroy] do
       member do
@@ -122,7 +131,11 @@ Rails.application.routes.draw do
     end
     resources :pos_discounts, only: %i[create destroy]
     resource :pos_tax_exemption, only: %i[create], controller: "pos_tax_exemptions"
-    resources :pos_tenders, only: %i[create destroy]
+    resources :pos_tenders, only: %i[create destroy] do
+      member do
+        post :confirm_void
+      end
+    end
   end
 
   root "homes#show"

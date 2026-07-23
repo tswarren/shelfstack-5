@@ -62,7 +62,7 @@ flowchart TD
 | 4 | Point of sale (4a–4e) + UX Baseline (4f) | Complete — merged to `main` at `34f371f` (PR #30) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) |
 | 4g | Test hardening | Complete — merged to `main` at `c51dcca` (PR #31) | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
 | 5 | Supply and demand | Complete — merged to `main` at `2e3e119` (PR #34) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
-| 6 | Corrections and stored value | Not started — next planning focus | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
+| 6 | Corrections and stored value | In progress — gates 6a–6e landed; [#36](https://github.com/tswarren/shelfstack-5/issues/36) merge hardening | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
 
@@ -96,12 +96,12 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–5 product delivery. Phase 5 Supply and Demand merged to `main` at `2e3e119` (PR #34). Phase 4g test hardening remains at `c51dcca` (PR #31).
 
-**Active:** Phase 6 — Corrections and Stored Value (planning only). See [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) and [current-phase.md](current-phase.md). Do not invent unresolved post-void or stored-value details beyond ADR-0008 / ADR-0012.
+**Active:** Phase 6 — Corrections and Stored Value (merge / first-install hardening via [#36](https://github.com/tswarren/shelfstack-5/issues/36)). See [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md), [current-phase.md](current-phase.md), and accepted decision notes: [post-void eligibility](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md), [inventory correction / OD-014](decisions/phase-06-inventory-correction-and-od-014.md), [stored-value v1 policy](decisions/phase-06-stored-value-v1-operating-policy.md).
 
 **Phase 5 follow-up (non-blocking):** [#33](https://github.com/tswarren/shelfstack-5/issues/33) — receipt cost migration/tuple SQL hardening and deterministic concurrency barrier before durable databases.
 
-1. Plan Phase 6 corrections (post-void reversing records) and stored-value ledger without mutating completed POS history.
-2. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close without accepted decisions.
+1. Close [#36](https://github.com/tswarren/shelfstack-5/issues/36) (clean-volume validation + PR merge); retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
+2. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
 3. Phase 7 reporting remains a separate epic after Phase 6.
 
 

@@ -295,4 +295,14 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_match "Cash refunded", response.body
     assert_match "Expected cash", response.body
   end
+
+  test "closing a cash session formats variance with helper money formatting" do
+    Pos::CancelTransaction.call(pos_transaction: @transaction, actor: @admin)
+
+    post close_pos_session_path(@session), params: { counted_cash_cents: "1.00" }
+
+    assert_redirected_to register_path
+    assert_match(/Session closed\. Variance:/, flash[:notice].to_s)
+    assert_match(/\$/, flash[:notice].to_s)
+  end
 end

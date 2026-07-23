@@ -1,0 +1,52 @@
+<% void_required = (@pos_tenders || []).select(&:void_required?) %>
+<% if void_required.any? && Current.user.can?("pos.tender.card_void", store: Current.store) %>
+  <details class="pos-panel" open>
+    <summary>Confirm external void (authorization not attachable)</summary>
+    <p class="muted">
+      Terminal activity was retained as void-required. Void each authorization on the terminal,
+      then confirm here. Complete, suspend, and cancel stay blocked until these are resolved.
+    </p>
+    <% void_required.each do |tender| %>
+      <div class="pos-void-required-item">
+        <p>
+          <%= tender.tender_type.name %> ·
+          <%= tender.direction.humanize %> ·
+          <%= number_to_currency(tender.amount_cents / 100.0) %>
+          <% if tender.authorization_code.present? %>
+            · <%= tender.authorization_code %>
+          <% end %>
+          <% if tender.terminal_reference.present? %>
+            · <%= tender.terminal_reference %>
+          <% end %>
+        </p>
+        <% if tender.void_reason.present? %>
+          <p class="muted"><%= tender.void_reason %></p>
+        <% end %>
+        <%= form_with url: confirm_void_pos_transaction_pos_tender_path(@pos_transaction, tender),
+              method: :post, class: "form" do |form| %>
+          <div class="field">
+            <%= form.label :external_void_reference, "External void reference (optional)", class: "field-label" %>
+            <%= form.text_field :external_void_reference, class: "input" %>
+          </div>
+          <div class="checkbox-group">
+            <label>
+              <%= check_box_tag :external_void_confirmed, "true", false %>
+              External void confirmed
+            </label>
+          </div>
+          <div class="form-actions">
+            <%= form.submit "Record voided card tender", class: "button button-danger",
+                  data: { turbo_confirm: "Confirm the card was voided on the external terminal." } %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </details>
+<% elsif void_required.any? %>
+  <div class="pos-panel" role="alert">
+    <p>
+      This transaction has void-required card activity that must be confirmed by a user with
+      card-void permission before complete, suspend, or cancel can proceed.
+    </p>
+  </div>
+<% end %>

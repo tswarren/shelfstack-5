@@ -51,7 +51,7 @@ module Pos
 
       refute result.allowed?
       assert_equal :denied, result.status
-      assert_match(/differ/, result.error)
+      assert_match(/self-approval is not permitted|differ/, result.error)
     end
 
     test "an approver authenticates with their own PIN, not the requester's" do

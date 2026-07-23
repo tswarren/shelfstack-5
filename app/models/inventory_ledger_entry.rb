@@ -15,6 +15,8 @@ class InventoryLedgerEntry < ApplicationRecord
 
   validates :movement_type, presence: true, inclusion: { in: MOVEMENT_TYPES }
   validates :quantity_delta, presence: true, numericality: { only_integer: true }
+  validates :unavailable_delta, presence: true, numericality: { only_integer: true }
+  validates :resulting_unavailable, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :cost_method, presence: true, inclusion: { in: COST_METHODS }
   validates :cost_quality, presence: true, inclusion: { in: COST_QUALITIES }
   validates :resulting_cost_quality, presence: true, inclusion: { in: COST_QUALITIES }

@@ -2,3 +2,4 @@ code,name,tender_category,shortcut,payment_enabled,refund_enabled,allows_over_te
 cash,Cash,cash,1,TRUE,TRUE,TRUE,TRUE,none,,none,,TRUE
 card_standalone,Card (standalone),card,2,TRUE,TRUE,FALSE,FALSE,required,Auth code,optional,Terminal ref,TRUE
 check,Check,check,3,TRUE,TRUE,FALSE,FALSE,optional,Check #,none,,FALSE
+stored_value,Stored value,stored_value,4,TRUE,TRUE,FALSE,FALSE,none,,none,,TRUE

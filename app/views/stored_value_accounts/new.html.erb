@@ -1,0 +1,18 @@
+<% content_for :title, "New stored-value account" %>
+<section class="page-header">
+  <h1>New stored-value account</h1>
+</section>
+
+<%= form_with model: @account, class: "form" do |form| %>
+  <div class="field">
+    <%= form.label :account_type, class: "field-label" %>
+    <%= form.select :account_type, StoredValueAccount::ACCOUNT_TYPES, {}, class: "input" %>
+  </div>
+  <div class="field">
+    <%= form.label :alternate_identifier, "Alternate identifier (optional)", class: "field-label" %>
+    <%= form.text_field :alternate_identifier, class: "input" %>
+  </div>
+  <div class="form-actions">
+    <%= form.submit "Create account", class: "button button-primary" %>
+  </div>
+<% end %>

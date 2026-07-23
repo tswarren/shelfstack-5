@@ -131,10 +131,12 @@ module Pos
         raise Error, "line does not belong to this transaction" unless @pos_line_item.pos_transaction_id == transaction.id
         raise Error, "line is not pending" unless @pos_line_item.pending?
         raise Error, "cannot discount a linked return line" if @pos_line_item.return?
+        raise Error, "cannot discount a stored-value line" if @pos_line_item.line_kind == "stored_value"
 
         [ @pos_line_item ]
       when "transaction"
-        transaction.pos_line_items.pending.sales.order(:position, :id).to_a
+        transaction.pos_line_items.pending.sales.order(:position, :id)
+          .reject { |line| line.line_kind == "stored_value" }
       else
         []
       end

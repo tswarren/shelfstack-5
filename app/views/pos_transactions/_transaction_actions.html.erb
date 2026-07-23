@@ -1,27 +1,34 @@
 <% if @pos_transaction.open? %>
   <section class="pos-panel" aria-label="Transaction actions">
-    <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
-      <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post do |form| %>
-        <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
-        <div class="form-actions">
-          <%= form.submit "Complete transaction", class: "button button-primary",
-                data: { "pos-register-target": "completeButton" } %>
-        </div>
+    <% if @pos_transaction.void_required_tenders? %>
+      <p class="muted" role="status">
+        Resolve void-required card tenders before completing, suspending, or cancelling.
+      </p>
+    <% else %>
+      <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
+        <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post do |form| %>
+          <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
+          <div class="form-actions">
+            <%= form.submit "Complete transaction", class: "button button-primary",
+                  data: { "pos-register-target": "completeButton" } %>
+          </div>
+        <% end %>
+        <p class="field-hint">Tip: press Ctrl+Enter (⌘+Enter) to complete.</p>
       <% end %>
-      <p class="field-hint">Tip: press Ctrl+Enter (⌘+Enter) to complete.</p>
-    <% end %>
 
-    <div class="pos-actions">
-      <% if @pos_transaction.editable? && Current.user.can?("pos.transaction.suspend", store: Current.store) %>
-        <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction), class: "button button-outline" %>
-      <% end %>
-      <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>
-        <%= button_to "Cancel", cancel_pos_transaction_path(@pos_transaction), class: "button button-danger",
-              form: { data: { turbo_confirm: "Cancel this transaction?" } } %>
-      <% end %>
-    </div>
+      <div class="pos-actions">
+        <% if @pos_transaction.editable? && Current.user.can?("pos.transaction.suspend", store: Current.store) %>
+          <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction), class: "button button-outline" %>
+        <% end %>
+        <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>
+          <%= button_to "Cancel", cancel_pos_transaction_path(@pos_transaction), class: "button button-danger",
+                form: { data: { turbo_confirm: "Cancel this transaction?" } } %>
+        <% end %>
+      </div>
+    <% end %>
   </section>
 <% elsif @pos_transaction.suspended? && Current.user.can?("pos.transaction.recall", store: Current.store) %>
+
   <section class="pos-panel" aria-label="Transaction actions">
     <%= button_to "Recall", recall_pos_transaction_path(@pos_transaction), class: "button button-primary" %>
   </section>

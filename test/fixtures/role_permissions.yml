@@ -383,3 +383,63 @@ admin_inventory_receipt_receive_unlinked:
 admin_inventory_receipt_over_receive:
   role: administrator
   permission: inventory_receipt_over_receive
+
+admin_pos_post_void_create:
+  role: administrator
+  permission: pos_post_void_create
+
+admin_pos_post_void_approve:
+  role: administrator
+  permission: pos_post_void_approve
+
+admin_pos_post_void_approve_self:
+  role: administrator
+  permission: pos_post_void_approve_self
+
+admin_stored_value_account_view:
+  role: administrator
+  permission: stored_value_account_view
+
+admin_stored_value_ledger_view:
+  role: administrator
+  permission: stored_value_ledger_view
+
+admin_stored_value_account_create:
+  role: administrator
+  permission: stored_value_account_create
+
+admin_stored_value_account_suspend:
+  role: administrator
+  permission: stored_value_account_suspend
+
+admin_stored_value_issue:
+  role: administrator
+  permission: stored_value_issue
+
+admin_stored_value_reload:
+  role: administrator
+  permission: stored_value_reload
+
+admin_stored_value_tender_redeem:
+  role: administrator
+  permission: stored_value_tender_redeem
+
+admin_stored_value_tender_refund:
+  role: administrator
+  permission: stored_value_tender_refund
+
+admin_pos_return_refund_exception_approve:
+  role: administrator
+  permission: pos_return_refund_exception_approve
+
+admin_stored_value_adjustment_create:
+  role: administrator
+  permission: stored_value_adjustment_create
+
+admin_stored_value_adjustment_approve:
+  role: administrator
+  permission: stored_value_adjustment_approve
+
+admin_stored_value_adjustment_approve_self:
+  role: administrator
+  permission: stored_value_adjustment_approve_self

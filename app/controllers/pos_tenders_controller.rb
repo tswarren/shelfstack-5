@@ -2,8 +2,9 @@
 
 class PosTendersController < ApplicationController
   before_action :set_transaction
-  before_action :set_tender, only: %i[destroy]
+  before_action :set_tender, only: %i[destroy confirm_void]
   before_action -> { require_permission!(create_permission) }, only: %i[create]
+  before_action -> { require_permission!("pos.tender.card_void") }, only: %i[confirm_void]
   before_action -> { require_permission!(destroy_permission) }, only: %i[destroy]
 
   def create
@@ -15,7 +16,10 @@ class PosTendersController < ApplicationController
         Pos::AddCashRefundTender.call(
           pos_transaction: @pos_transaction, tender_type: tender_type,
           amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
-          actor: Current.user
+          actor: Current.user,
+          original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
+          exception_approver: exception_approver_from_params,
+          exception_approver_pin: params[:exception_approver_pin]
         )
       else
         Pos::AddCashTender.call(
@@ -25,25 +29,81 @@ class PosTendersController < ApplicationController
         )
       end
     when "card"
-      Pos::AddCardTender.call(
-        pos_transaction: @pos_transaction, tender_type: tender_type,
-        amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
-        authorization_code: params[:authorization_code],
-        terminal_reference: params[:terminal_reference].presence, actor: Current.user
-      )
+      if params[:refund].present?
+        Pos::AddCardRefundTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
+          actor: Current.user,
+          recording_idempotency_key: params[:recording_idempotency_key],
+          authorization_code: params[:authorization_code],
+          terminal_reference: params[:terminal_reference].presence,
+          original_pos_tender: scoped_original_refund_tender(params[:original_pos_tender_id]),
+          exception_approver: exception_approver_from_params,
+          exception_approver_pin: params[:exception_approver_pin]
+        )
+      else
+        Pos::AddCardTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+          recording_idempotency_key: params[:recording_idempotency_key],
+          authorization_code: params[:authorization_code],
+          terminal_reference: params[:terminal_reference].presence,
+          actor: Current.user
+        )
+      end
+
+    when "stored_value"
+      account = resolve_stored_value_account
+      if params[:refund].present?
+        original = scoped_original_refund_tender(params[:original_pos_tender_id])
+        Pos::AddStoredValueRefundTender.call(
+          pos_transaction: @pos_transaction, tender_type: tender_type,
+          amount_cents: money_param_to_cents(params[:amount_cents], label: "Refund amount"),
+          actor: Current.user,
+          account: account,
+          original_pos_tender: original,
+          create_store_credit: params[:create_store_credit].present?,
+          exception_approver: exception_approver_from_params,
+          exception_approver_pin: params[:exception_approver_pin]
+        )
+      else
+        if account.blank?
+          unsupported_tender_result("stored-value account is required")
+        else
+          Pos::AddStoredValueTender.call(
+            pos_transaction: @pos_transaction, tender_type: tender_type,
+            account: account,
+            amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+            actor: Current.user
+          )
+        end
+      end
     when "check"
       unsupported_tender_result("check tendering is not available yet")
     else
       unsupported_tender_result("tender category '#{tender_type.tender_category}' is not supported")
     end
 
+    redirect_after_tender_result(result)
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+  end
+
+  def confirm_void
+    result = Pos::RecordVoidedCardTender.call(
+      pos_tender: @tender,
+      actor: Current.user,
+      external_void_confirmed: params[:external_void_confirmed],
+      external_void_reference: params[:external_void_reference],
+      void_reason: params[:void_reason]
+    )
     if result.success?
-      notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to pos_transaction_path(@pos_transaction),
+                  notice: "Unattachable card authorization recorded as voided."
     else
       redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
-  rescue ArgumentError => e
+  rescue ArgumentError, ActiveRecord::RecordNotFound => e
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
@@ -64,6 +124,18 @@ class PosTendersController < ApplicationController
 
   private
 
+  def redirect_after_tender_result(result)
+    if result.success?
+      notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
+      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+    elsif result.respond_to?(:requires_void_confirmation?) && result.requires_void_confirmation?
+      redirect_to pos_transaction_path(@pos_transaction),
+                  alert: "#{result.error} Confirm the external void to clear the void-required tender."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
   def set_transaction
     @pos_transaction = Current.store.pos_transactions.find(params[:pos_transaction_id])
   end
@@ -76,6 +148,8 @@ class PosTendersController < ApplicationController
     tender_type = params[:tender_type_id].presence && Current.organization.tender_types.find_by(id: params[:tender_type_id])
     case tender_type&.tender_category
     when "card" then "pos.tender.card_standalone"
+    when "stored_value"
+      params[:refund].present? ? "stored_value.tender.refund" : "stored_value.tender.redeem"
     when "cash" then "pos.tender.cash"
     else "pos.tender.cash"
     end
@@ -90,6 +164,44 @@ class PosTendersController < ApplicationController
   end
 
   def unsupported_tender_result(message)
-    Data.define(:success?, :error, :warnings).new(success?: false, error: message, warnings: [])
+    Data.define(:success?, :error, :warnings, :requires_void_confirmation?).new(
+      success?: false, error: message, warnings: [], requires_void_confirmation?: false
+    )
+  end
+
+  def scoped_original_refund_tender(id)
+    return nil if id.blank?
+
+    tender = Current.store.pos_tenders.find_by(id: id)
+    return nil if tender.blank?
+
+    linked_sale_ids = @pos_transaction.pos_line_items.returns.filter_map { |line|
+      line.original_pos_line_item&.pos_transaction_id
+    }.uniq
+    return nil unless linked_sale_ids.include?(tender.pos_transaction_id)
+
+    tender
+  end
+
+  def exception_approver_from_params
+    return nil if params[:exception_approver_username].blank?
+
+    User.find_by(username: params[:exception_approver_username].to_s.strip.downcase)
+  end
+
+  def resolve_stored_value_account
+    if params[:stored_value_account_id].present?
+      return Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id])
+    end
+
+    identifier = params[:account_number].presence || params[:alternate_identifier].presence
+    return nil if identifier.blank?
+
+    StoredValue::ResolveAccount.call(
+      organization: Current.organization,
+      identifier: identifier
+    ).account
+  rescue StoredValue::ResolveAccount::Error
+    nil
   end
 end

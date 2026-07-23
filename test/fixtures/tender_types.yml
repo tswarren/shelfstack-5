@@ -27,3 +27,17 @@ card_standalone:
   reference_2_requirement: optional
   reference_2_label: Terminal ref
   active: true
+
+stored_value:
+  organization: acme
+  code: stored_value
+  name: Stored value
+  tender_category: stored_value
+  shortcut: "4"
+  payment_enabled: true
+  refund_enabled: true
+  allows_over_tender: false
+  provides_change: false
+  reference_1_requirement: none
+  reference_2_requirement: none
+  active: true

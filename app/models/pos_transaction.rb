@@ -10,11 +10,16 @@ class PosTransaction < ApplicationRecord
   belongs_to :cashier_user, class_name: "User"
   belongs_to :cancelled_by_user, class_name: "User", optional: true
   belongs_to :completed_by_user, class_name: "User", optional: true
+  belongs_to :reverses_pos_transaction, class_name: "PosTransaction", optional: true
+  belongs_to :post_void_pos_approval, class_name: "PosApproval", optional: true
+  has_one :post_void_transaction, class_name: "PosTransaction", foreign_key: :reverses_pos_transaction_id,
+          inverse_of: :reverses_pos_transaction, dependent: :restrict_with_exception
   has_many :pos_line_items, dependent: :restrict_with_exception
   has_many :pos_discounts, dependent: :restrict_with_exception
   has_many :pos_tax_exemptions, dependent: :restrict_with_exception
   has_many :pos_approvals, dependent: :restrict_with_exception
   has_many :pos_tenders, dependent: :restrict_with_exception
+  has_many :stored_value_entries, dependent: :restrict_with_exception
 
   before_validation :assign_public_id, on: :create
 
@@ -45,18 +50,27 @@ class PosTransaction < ApplicationRecord
   end
 
   # Commercial editing (lines, prices, discounts, tax category, exemptions) is
-  # locked while a pending or authorized Tender exists (domain "Tender-state lock").
-  # Clearing (removing/voiding) the Tender restores editability.
+  # locked while a pending or authorized Tender exists (domain "Tender-state lock"),
+  # or while terminal activity awaits void confirmation.
   def editable?
-    open? && !unresolved_tenders?
+    open? && !unresolved_tenders? && !void_required_tenders?
   end
 
   def unresolved_tenders?
     pos_tenders.where(status: %w[pending authorized]).exists?
   end
 
+  def void_required_tenders?
+    pos_tenders.void_required.exists?
+  end
+
+
   def tax_exempt?
     pos_tax_exemptions.exists?
+  end
+
+  def post_voided?
+    post_void_transaction&.completed? == true
   end
 
   private

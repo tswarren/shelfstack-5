@@ -41,4 +41,4 @@ Purchase-Order Allocations apply only to Customer Requests. Non-customer ordered
 - unique `posting_key` for idempotent POS completion;
 - links to `pos_line_item_id` and optionally the consumed `inventory_reservation_id`.
 
-Sale completion posts fulfilment atomically; linked returns post reversing fulfilment. Post-void of a fulfilled sale is Phase 6.
+Sale completion posts fulfilment atomically; linked returns post reversing fulfilment. Post-void of a fulfilled sale is Phase 6 and must reuse `Requests::ReverseFulfillment` — see [Phase 6 post-void eligibility](../implementation/decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md).

@@ -22,12 +22,19 @@ module Pos
           raise Error, "only open or suspended transactions may be cancelled"
         end
 
+        if transaction.void_required_tenders?
+          raise Error,
+                "cannot cancel while void_required card tenders remain; " \
+                "confirm the external terminal voids first"
+        end
+
         if transaction.pos_tenders.unresolved.joins(:tender_type)
                       .where(status: "authorized", tender_types: { tender_category: "card" }).exists?
           raise Error,
                 "cannot cancel while an authorized card tender remains unresolved; " \
                 "confirm the external terminal void first"
         end
+
 
         pending_lines = transaction.pos_line_items.pending.order(:id).lock.to_a
         request_ids = pending_lines.filter_map(&:product_request_id).uniq.sort

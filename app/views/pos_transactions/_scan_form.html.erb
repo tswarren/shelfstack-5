@@ -43,6 +43,33 @@
     <%= render "scan_resolution" %>
   </section>
 
+  <% if Current.user.can?("stored_value.issue", store: Current.store) || Current.user.can?("stored_value.reload", store: Current.store) %>
+    <details class="pos-panel">
+      <summary>Gift card issue / reload</summary>
+      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :kind, "stored_value" %>
+        <div class="field">
+          <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
+          <%= form.select :stored_value_operation, [ [ "Issue", "issue" ], [ "Reload", "reload" ] ], {}, class: "input" %>
+        </div>
+        <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "sv_amount_cents" %>
+        <div class="field">
+          <%= form.label :account_number, "Existing account number", class: "field-label" %>
+          <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
+        </div>
+        <div class="field">
+          <label class="field-label">
+            <%= check_box_tag :create_account, "1" %>
+            Create new gift-card account
+          </label>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Add gift-card line", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+  <% end %>
+
   <details class="pos-panel">
     <summary>Open-ring line</summary>
     <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>

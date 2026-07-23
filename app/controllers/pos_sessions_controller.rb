@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class PosSessionsController < ApplicationController
-  include PosHelper
-
   layout "pos"
 
   before_action -> { require_permission!("pos.session.open") }, only: %i[new create]
@@ -70,7 +68,7 @@ class PosSessionsController < ApplicationController
       notice = if result.replayed
         "Session already closed."
       elsif @session.reload.cash_enabled?
-        "Session closed. Variance: #{pos_money(@session.cash_variance_cents)}."
+        "Session closed. Variance: #{helpers.pos_money(@session.cash_variance_cents)}."
       else
         "Session closed."
       end

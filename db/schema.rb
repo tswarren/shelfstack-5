@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -205,6 +205,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   end
 
   create_table "inventory_ledger_entries", force: :cascade do |t|
+    t.string "availability_reason"
     t.string "cost_method", null: false
     t.string "cost_quality", null: false
     t.datetime "created_at", null: false
@@ -218,6 +219,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.datetime "posted_at", null: false
     t.bigint "posted_by_user_id", null: false
     t.string "posting_key", null: false
+    t.string "prior_deficit_cost_quality"
+    t.bigint "prior_open_provisional_deficit_cost_cents"
     t.bigint "product_variant_id", null: false
     t.bigint "provisional_cost_released_cents"
     t.string "provisional_deficit_cost_quality_snapshot"
@@ -225,21 +228,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.string "reason_code"
     t.text "reason_note"
     t.string "resulting_cost_quality", null: false
+    t.string "resulting_deficit_cost_quality"
     t.bigint "resulting_inventory_value_cents"
     t.integer "resulting_moving_average_cost_cents"
     t.integer "resulting_on_hand", null: false
+    t.bigint "resulting_open_provisional_deficit_cost_cents"
+    t.integer "resulting_unavailable", null: false
     t.bigint "reversal_of_entry_id"
     t.bigint "settlement_variance_cents"
     t.string "settlement_variance_kind"
     t.bigint "source_id", null: false
     t.string "source_type", null: false
     t.bigint "store_id", null: false
+    t.integer "unavailable_delta", default: 0, null: false
     t.integer "unit_cost_cents"
     t.datetime "updated_at", null: false
     t.index ["estimate_department_id"], name: "index_inventory_ledger_entries_on_estimate_department_id"
     t.index ["posted_by_user_id"], name: "index_inventory_ledger_entries_on_posted_by_user_id"
     t.index ["posting_key"], name: "index_inventory_ledger_entries_on_posting_key", unique: true
     t.index ["product_variant_id"], name: "index_inventory_ledger_entries_on_product_variant_id"
+    t.index ["reversal_of_entry_id"], name: "index_inv_ledger_reversal_of_entry_id_unique", unique: true, where: "(reversal_of_entry_id IS NOT NULL)"
     t.index ["reversal_of_entry_id"], name: "index_inventory_ledger_entries_on_reversal_of_entry_id"
     t.index ["source_type", "source_id"], name: "index_inventory_ledger_entries_on_source_type_and_source_id"
     t.index ["store_id", "product_variant_id", "posted_at"], name: "idx_on_store_id_product_variant_id_posted_at_3e7a285cee"
@@ -248,9 +256,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.check_constraint "cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_cost_quality"
     t.check_constraint "movement_cost_cents IS NULL OR movement_cost_cents >= 0", name: "inv_ledger_movement_cost_nonneg"
     t.check_constraint "movement_type::text = ANY (ARRAY['opening_inventory'::text, 'quantity_adjustment'::text, 'cost_correction'::text, 'sale'::text, 'customer_return'::text, 'receipt'::text, 'receipt_deficit_settlement'::text])", name: "inv_ledger_movement_type"
-    t.check_constraint "provisional_deficit_cost_quality_snapshot IS NULL OR (provisional_deficit_cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[]))", name: "inv_ledger_deficit_quality_snapshot_check"
+    t.check_constraint "prior_deficit_cost_quality IS NULL OR (prior_deficit_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "inv_ledger_prior_deficit_quality_check"
+    t.check_constraint "provisional_deficit_cost_quality_snapshot IS NULL OR (provisional_deficit_cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "inv_ledger_deficit_quality_snapshot_check"
     t.check_constraint "resulting_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "inv_ledger_resulting_cost_quality"
-    t.check_constraint "settlement_variance_kind IS NULL OR (settlement_variance_kind::text = ANY (ARRAY['ordinary'::character varying, 'late_cost_recognition'::character varying]::text[]))", name: "inv_ledger_variance_kind_check"
+    t.check_constraint "resulting_deficit_cost_quality IS NULL OR (resulting_deficit_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "inv_ledger_resulting_deficit_quality_check"
+    t.check_constraint "settlement_variance_kind IS NULL OR (settlement_variance_kind::text = ANY (ARRAY['ordinary'::character varying::text, 'late_cost_recognition'::character varying::text]))", name: "inv_ledger_variance_kind_check"
     t.check_constraint "unit_cost_cents IS NULL OR unit_cost_cents >= 0", name: "inv_ledger_unit_cost_nonneg"
   end
 
@@ -386,7 +396,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["pos_transaction_id"], name: "index_pos_approvals_on_pos_transaction_id"
     t.index ["requested_by_user_id"], name: "index_pos_approvals_on_requested_by_user_id"
     t.index ["store_id"], name: "index_pos_approvals_on_store_id"
-    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying::text, 'discount_apply'::character varying::text, 'tax_exemption'::character varying::text, 'tax_category_override'::character varying::text, 'cash_movement'::character varying::text])", name: "pos_approvals_action_type_check"
+    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying::text, 'discount_apply'::character varying::text, 'tax_exemption'::character varying::text, 'tax_category_override'::character varying::text, 'cash_movement'::character varying::text, 'post_void'::character varying::text, 'stored_value_adjustment'::character varying::text, 'stored_value_refund_exception'::character varying::text, 'card_refund_reconciliation'::character varying::text])", name: "pos_approvals_action_type_check"
   end
 
   create_table "pos_cash_movements", force: :cascade do |t|
@@ -483,7 +493,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["tax_category_id"], name: "index_pos_line_item_taxes_on_tax_category_id"
     t.check_constraint "amount_cents >= 0", name: "pos_line_item_taxes_amount_non_negative"
     t.check_constraint "taxable_amount_cents >= 0", name: "pos_line_item_taxes_taxable_amount_non_negative"
-    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying, 'zero_rated'::character varying, 'exempt'::character varying, 'not_applicable'::character varying]::text[])", name: "pos_line_item_taxes_treatment_check"
+    t.check_constraint "treatment_snapshot::text = ANY (ARRAY['taxable'::character varying::text, 'zero_rated'::character varying::text, 'exempt'::character varying::text, 'not_applicable'::character varying::text])", name: "pos_line_item_taxes_treatment_check"
   end
 
   create_table "pos_line_items", force: :cascade do |t|
@@ -494,7 +504,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.integer "cost_unit_cost_cents"
     t.datetime "created_at", null: false
     t.bigint "created_by_user_id", null: false
-    t.bigint "department_id", null: false
+    t.bigint "department_id"
     t.string "description_snapshot"
     t.string "direction", default: "sale", null: false
     t.bigint "inventory_unit_id"
@@ -514,7 +524,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.string "return_disposition"
     t.bigint "return_reason_id"
     t.string "return_source"
+    t.bigint "reverses_pos_line_item_id"
     t.string "status", default: "pending", null: false
+    t.bigint "stored_value_account_id"
+    t.string "stored_value_account_number_snapshot"
+    t.string "stored_value_account_type_snapshot"
+    t.string "stored_value_operation"
     t.bigint "tax_category_id"
     t.datetime "tax_category_overridden_at"
     t.bigint "tax_category_overridden_by_user_id"
@@ -532,18 +547,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["product_variant_id"], name: "index_pos_line_items_on_product_variant_id"
     t.index ["removed_by_user_id"], name: "index_pos_line_items_on_removed_by_user_id"
     t.index ["return_reason_id"], name: "index_pos_line_items_on_return_reason_id"
+    t.index ["reverses_pos_line_item_id"], name: "index_pos_line_items_on_reverses_pos_line_item_id"
+    t.index ["reverses_pos_line_item_id"], name: "index_pos_line_items_reverses_unique", unique: true, where: "(reverses_pos_line_item_id IS NOT NULL)"
+    t.index ["stored_value_account_id"], name: "index_pos_line_items_on_stored_value_account_id"
     t.index ["tax_category_id"], name: "index_pos_line_items_on_tax_category_id"
     t.index ["tax_category_overridden_by_user_id"], name: "index_pos_line_items_on_tax_category_overridden_by_user_id"
+    t.check_constraint "(line_kind::text = ANY (ARRAY['product'::character varying::text, 'open_ring'::character varying::text])) AND department_id IS NOT NULL OR line_kind::text = 'stored_value'::text AND department_id IS NULL", name: "pos_line_items_department_matches_kind"
     t.check_constraint "cost_extended_cents IS NULL OR cost_extended_cents >= 0", name: "pos_line_items_cost_extended_non_negative"
     t.check_constraint "cost_method_snapshot IS NULL OR (cost_method_snapshot::text = ANY (ARRAY['explicit'::character varying::text, 'configured_estimate'::character varying::text, 'moving_average'::character varying::text, 'last_known'::character varying::text, 'unknown'::character varying::text]))", name: "pos_line_items_cost_method_snapshot_check"
     t.check_constraint "cost_quality_snapshot IS NULL OR (cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "pos_line_items_cost_quality_snapshot_check"
     t.check_constraint "cost_unit_cost_cents IS NULL OR cost_unit_cost_cents >= 0", name: "pos_line_items_cost_unit_cost_non_negative"
-    t.check_constraint "direction::text = 'sale'::text OR original_pos_line_item_id IS NOT NULL AND return_reason_id IS NOT NULL AND return_disposition IS NOT NULL", name: "pos_line_items_return_requires_link"
+    t.check_constraint "direction::text = 'sale'::text OR reverses_pos_line_item_id IS NOT NULL OR original_pos_line_item_id IS NOT NULL AND return_reason_id IS NOT NULL AND return_disposition IS NOT NULL", name: "pos_line_items_return_requires_link"
     t.check_constraint "direction::text = ANY (ARRAY['sale'::character varying::text, 'return'::character varying::text])", name: "pos_line_items_direction_check"
     t.check_constraint "inventory_unit_id IS NULL OR line_kind::text = 'product'::text", name: "pos_line_items_unit_matches_kind"
     t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "pos_line_items_unit_quantity_one"
-    t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL", name: "pos_line_items_product_variant_matches_kind"
-    t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying::text, 'open_ring'::character varying::text])", name: "pos_line_items_line_kind_check"
+    t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL OR line_kind::text = 'stored_value'::text AND product_variant_id IS NULL AND inventory_unit_id IS NULL AND tax_category_id IS NULL AND department_id IS NULL AND stored_value_account_id IS NOT NULL AND (stored_value_operation::text = ANY (ARRAY['issue'::character varying::text, 'reload'::character varying::text])) AND quantity = 1 AND direction::text = 'sale'::text", name: "pos_line_items_product_variant_matches_kind"
+    t.check_constraint "line_kind::text = ANY (ARRAY['product'::character varying::text, 'open_ring'::character varying::text, 'stored_value'::character varying::text])", name: "pos_line_items_line_kind_check"
     t.check_constraint "product_request_id IS NULL OR line_kind::text = 'product'::text AND direction::text = 'sale'::text", name: "pos_line_items_product_request_requires_product_sale"
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
     t.check_constraint "return_disposition IS NULL OR (return_disposition::text = ANY (ARRAY['return_to_stock'::character varying::text, 'inspection_required'::character varying::text, 'damaged'::character varying::text, 'return_to_vendor'::character varying::text, 'discard'::character varying::text, 'non_inventory'::character varying::text]))", name: "pos_line_items_return_disposition_check"
@@ -560,9 +579,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.bigint "pos_session_id", null: false
     t.integer "total_cents", null: false
     t.index ["counted_by_user_id"], name: "index_pos_session_cash_counts_on_counted_by_user_id"
-    t.index ["pos_session_id", "count_type"], name: "index_pos_session_cash_counts_one_opening_closing", unique: true, where: "((count_type)::text = ANY ((ARRAY['opening'::character varying, 'closing'::character varying])::text[]))"
+    t.index ["pos_session_id", "count_type"], name: "index_pos_session_cash_counts_one_opening_closing", unique: true, where: "((count_type)::text = ANY (ARRAY[('opening'::character varying)::text, ('closing'::character varying)::text]))"
     t.index ["pos_session_id"], name: "index_pos_session_cash_counts_on_pos_session_id"
-    t.check_constraint "count_type::text = ANY (ARRAY['opening'::character varying, 'closing'::character varying, 'manager_recount'::character varying, 'reconciled'::character varying]::text[])", name: "pos_session_cash_counts_type_check"
+    t.check_constraint "count_type::text = ANY (ARRAY['opening'::character varying::text, 'closing'::character varying::text, 'manager_recount'::character varying::text, 'reconciled'::character varying::text])", name: "pos_session_cash_counts_type_check"
     t.check_constraint "total_cents >= 0", name: "pos_session_cash_counts_total_non_negative"
   end
 
@@ -624,13 +643,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.datetime "external_void_confirmed_at"
     t.bigint "external_void_confirmed_by_user_id"
     t.string "external_void_reference"
+    t.bigint "original_pos_tender_id"
+    t.bigint "pos_approval_id"
     t.bigint "pos_transaction_id", null: false
+    t.string "recording_idempotency_key"
     t.text "remove_reason"
     t.datetime "removed_at"
     t.bigint "removed_by_user_id"
     t.boolean "requires_reconciliation", default: false, null: false
+    t.bigint "reverses_pos_tender_id"
     t.string "status", default: "pending", null: false
     t.bigint "store_id", null: false
+    t.bigint "stored_value_account_id"
     t.bigint "tender_type_id", null: false
     t.string "terminal_reference"
     t.datetime "updated_at", null: false
@@ -639,17 +663,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.bigint "voided_by_user_id"
     t.index ["created_by_user_id"], name: "index_pos_tenders_on_created_by_user_id"
     t.index ["external_void_confirmed_by_user_id"], name: "index_pos_tenders_on_external_void_confirmed_by_user_id"
+    t.index ["original_pos_tender_id"], name: "index_pos_tenders_on_original_pos_tender_id"
+    t.index ["pos_approval_id"], name: "index_pos_tenders_on_pos_approval_id"
     t.index ["pos_transaction_id", "status"], name: "index_pos_tenders_on_pos_transaction_id_and_status"
     t.index ["pos_transaction_id"], name: "index_pos_tenders_on_pos_transaction_id"
+    t.index ["recording_idempotency_key"], name: "index_pos_tenders_on_recording_idempotency_key_unique", unique: true, where: "(recording_idempotency_key IS NOT NULL)"
     t.index ["removed_by_user_id"], name: "index_pos_tenders_on_removed_by_user_id"
+    t.index ["reverses_pos_tender_id"], name: "index_pos_tenders_on_reverses_pos_tender_id"
+    t.index ["reverses_pos_tender_id"], name: "index_pos_tenders_reverses_unique", unique: true, where: "(reverses_pos_tender_id IS NOT NULL)"
     t.index ["store_id"], name: "index_pos_tenders_on_store_id"
+    t.index ["stored_value_account_id"], name: "index_pos_tenders_on_stored_value_account_id"
     t.index ["tender_type_id"], name: "index_pos_tenders_on_tender_type_id"
     t.index ["voided_by_user_id"], name: "index_pos_tenders_on_voided_by_user_id"
     t.check_constraint "amount_cents >= 0", name: "pos_tenders_amount_non_negative"
     t.check_constraint "amount_tendered_cents IS NULL OR amount_tendered_cents >= 0", name: "pos_tenders_amount_tendered_non_negative"
     t.check_constraint "change_due_cents IS NULL OR change_due_cents >= 0", name: "pos_tenders_change_due_non_negative"
     t.check_constraint "direction::text = ANY (ARRAY['received'::character varying::text, 'refunded'::character varying::text])", name: "pos_tenders_direction_check"
-    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'authorized'::character varying::text, 'completed'::character varying::text, 'voided'::character varying::text, 'removed'::character varying::text])", name: "pos_tenders_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'authorized'::character varying::text, 'completed'::character varying::text, 'voided'::character varying::text, 'removed'::character varying::text, 'void_required'::character varying::text])", name: "pos_tenders_status_check"
   end
 
   create_table "pos_transactions", force: :cascade do |t|
@@ -667,10 +697,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.bigint "net_total_cents"
     t.datetime "opened_at", null: false
     t.bigint "origin_pos_session_id", null: false
+    t.bigint "post_void_pos_approval_id"
+    t.text "post_void_reason"
     t.string "public_id", null: false
     t.datetime "recalled_at"
     t.string "receipt_number"
     t.bigint "receipt_sequence"
+    t.bigint "reverses_pos_transaction_id"
     t.string "status", default: "open", null: false
     t.bigint "store_id", null: false
     t.bigint "subtotal_cents"
@@ -684,7 +717,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["completed_pos_session_id"], name: "index_pos_transactions_on_completed_pos_session_id"
     t.index ["completion_idempotency_key"], name: "index_pos_transactions_on_completion_idempotency_key", unique: true, where: "(completion_idempotency_key IS NOT NULL)"
     t.index ["origin_pos_session_id"], name: "index_pos_transactions_on_origin_pos_session_id"
+    t.index ["post_void_pos_approval_id"], name: "index_pos_transactions_on_post_void_pos_approval_id"
     t.index ["public_id"], name: "index_pos_transactions_on_public_id", unique: true
+    t.index ["reverses_pos_transaction_id"], name: "index_pos_transactions_on_reverses_pos_transaction_id"
+    t.index ["reverses_pos_transaction_id"], name: "index_pos_transactions_reverses_unique", unique: true, where: "(reverses_pos_transaction_id IS NOT NULL)"
     t.index ["store_id", "receipt_number"], name: "index_pos_transactions_on_store_and_receipt_number", unique: true, where: "(receipt_number IS NOT NULL)"
     t.index ["store_id", "receipt_sequence"], name: "index_pos_transactions_on_store_and_receipt_sequence", unique: true, where: "(receipt_sequence IS NOT NULL)"
     t.index ["store_id"], name: "index_pos_transactions_on_store_id"
@@ -716,7 +752,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.string "short_code", limit: 2, null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id", "code"], name: "index_product_formats_on_organization_id_and_code", unique: true
-    t.index ["organization_id", "short_code"], name: "index_product_formats_on_organization_id_and_short_code", unique: true, where: "(short_code IS NOT NULL)"
+    t.index ["organization_id", "short_code"], name: "index_product_formats_on_organization_id_and_short_code", unique: true
     t.index ["organization_id"], name: "index_product_formats_on_organization_id"
     t.check_constraint "default_inventory_tracking_mode::text = ANY (ARRAY['quantity'::character varying::text, 'individual'::character varying::text, 'none'::character varying::text])", name: "product_formats_tracking_mode_check"
   end
@@ -739,7 +775,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["posting_key"], name: "index_product_request_fulfillments_on_posting_key", unique: true
     t.index ["product_request_id"], name: "index_product_request_fulfillments_on_product_request_id"
     t.check_constraint "kind::text = 'fulfill'::text AND linked_fulfilment_id IS NULL OR kind::text = 'reverse'::text AND linked_fulfilment_id IS NOT NULL", name: "prf_reverse_requires_link"
-    t.check_constraint "kind::text = ANY (ARRAY['fulfill'::character varying, 'reverse'::character varying]::text[])", name: "prf_kind_check"
+    t.check_constraint "kind::text = ANY (ARRAY['fulfill'::character varying::text, 'reverse'::character varying::text])", name: "prf_kind_check"
     t.check_constraint "quantity > 0", name: "prf_quantity_positive"
   end
 
@@ -774,13 +810,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["store_id", "status"], name: "index_product_requests_on_store_id_and_status"
     t.index ["store_id"], name: "index_product_requests_on_store_id"
     t.index ["supersedes_product_request_id"], name: "index_product_requests_on_supersedes_product_request_id"
-    t.check_constraint "priority::text = ANY (ARRAY['normal'::character varying, 'high'::character varying, 'urgent'::character varying]::text[])", name: "product_requests_priority_check"
-    t.check_constraint "request_type::text = ANY (ARRAY['customer_request'::character varying, 'staff_suggestion'::character varying, 'stock_replenishment'::character varying, 'frontlist_selection'::character varying]::text[])", name: "product_requests_request_type_check"
+    t.check_constraint "priority::text = ANY (ARRAY['normal'::character varying::text, 'high'::character varying::text, 'urgent'::character varying::text])", name: "product_requests_priority_check"
+    t.check_constraint "request_type::text = ANY (ARRAY['customer_request'::character varying::text, 'staff_suggestion'::character varying::text, 'stock_replenishment'::character varying::text, 'frontlist_selection'::character varying::text])", name: "product_requests_request_type_check"
     t.check_constraint "requested_quantity > 0", name: "product_requests_requested_quantity_positive"
-    t.check_constraint "resolution IS NULL OR (resolution::text = ANY (ARRAY['ordered'::character varying, 'declined'::character varying, 'deferred'::character varying, 'duplicate'::character varying, 'superseded'::character varying, 'no_longer_needed'::character varying]::text[]))", name: "product_requests_resolution_check"
+    t.check_constraint "resolution IS NULL OR (resolution::text = ANY (ARRAY['ordered'::character varying::text, 'declined'::character varying::text, 'deferred'::character varying::text, 'duplicate'::character varying::text, 'superseded'::character varying::text, 'no_longer_needed'::character varying::text]))", name: "product_requests_resolution_check"
     t.check_constraint "resolved_quantity IS NULL OR resolved_quantity <= requested_quantity", name: "product_requests_resolved_quantity_within_requested"
     t.check_constraint "resolved_quantity IS NULL OR resolved_quantity >= 0", name: "product_requests_resolved_quantity_nonneg"
-    t.check_constraint "status::text = ANY (ARRAY['open'::character varying, 'fulfilled'::character varying, 'declined'::character varying, 'cancelled'::character varying, 'closed'::character varying]::text[])", name: "product_requests_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'fulfilled'::character varying::text, 'declined'::character varying::text, 'cancelled'::character varying::text, 'closed'::character varying::text])", name: "product_requests_status_check"
     t.check_constraint "supersedes_product_request_id IS NULL OR supersedes_product_request_id <> id", name: "product_requests_supersedes_not_self"
   end
 
@@ -899,9 +935,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["receipt_line_id"], name: "index_purchase_order_allocation_events_on_receipt_line_id"
     t.index ["user_id"], name: "index_purchase_order_allocation_events_on_user_id"
     t.check_constraint "event_type::text <> 'released'::text OR reason IS NOT NULL", name: "po_allocation_events_released_requires_reason"
-    t.check_constraint "event_type::text = ANY (ARRAY['converted_to_reservation'::character varying, 'released'::character varying]::text[])", name: "po_allocation_events_event_type_check"
+    t.check_constraint "event_type::text = ANY (ARRAY['converted_to_reservation'::character varying::text, 'released'::character varying::text])", name: "po_allocation_events_event_type_check"
     t.check_constraint "quantity > 0", name: "po_allocation_events_quantity_positive"
-    t.check_constraint "reason IS NULL OR (reason::text = ANY (ARRAY['purchase_order_cancelled'::character varying, 'line_quantity_cancelled'::character varying, 'vendor_unavailable'::character varying, 'received_unavailable'::character varying, 'request_cancelled'::character varying, 'request_quantity_reduced'::character varying, 'fulfilled_from_earlier_supply'::character varying, 'reallocated_to_other_supply'::character varying, 'manual_release'::character varying]::text[]))", name: "po_allocation_events_reason_check"
+    t.check_constraint "reason IS NULL OR (reason::text = ANY (ARRAY['purchase_order_cancelled'::character varying::text, 'line_quantity_cancelled'::character varying::text, 'vendor_unavailable'::character varying::text, 'received_unavailable'::character varying::text, 'request_cancelled'::character varying::text, 'request_quantity_reduced'::character varying::text, 'fulfilled_from_earlier_supply'::character varying::text, 'reallocated_to_other_supply'::character varying::text, 'manual_release'::character varying::text]))", name: "po_allocation_events_reason_check"
   end
 
   create_table "purchase_order_allocations", force: :cascade do |t|
@@ -945,7 +981,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["purchase_order_id"], name: "index_purchase_order_lines_on_purchase_order_id"
     t.check_constraint "cancelled_quantity <= ordered_quantity", name: "po_lines_cancelled_quantity_within_ordered"
     t.check_constraint "cancelled_quantity >= 0", name: "po_lines_cancelled_quantity_nonneg"
-    t.check_constraint "cost_entry_method::text = ANY (ARRAY['discount_from_list'::character varying, 'direct_net_cost'::character varying]::text[])", name: "po_lines_cost_entry_method_check"
+    t.check_constraint "cost_entry_method::text = ANY (ARRAY['discount_from_list'::character varying::text, 'direct_net_cost'::character varying::text])", name: "po_lines_cost_entry_method_check"
     t.check_constraint "discount_bps IS NULL OR discount_bps >= 0 AND discount_bps <= 10000", name: "po_lines_discount_bps_range"
     t.check_constraint "expected_extended_cost_cents IS NULL OR expected_extended_cost_cents >= 0", name: "po_lines_expected_extended_cost_nonneg"
     t.check_constraint "expected_unit_cost_cents >= 0", name: "po_lines_expected_unit_cost_nonneg"
@@ -980,7 +1016,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["store_id", "purchase_order_number"], name: "index_purchase_orders_on_store_and_number", unique: true
     t.index ["store_id"], name: "index_purchase_orders_on_store_id"
     t.index ["vendor_id"], name: "index_purchase_orders_on_vendor_id"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'ordered'::character varying, 'closed'::character varying, 'cancelled'::character varying]::text[])", name: "purchase_orders_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'ordered'::character varying::text, 'closed'::character varying::text, 'cancelled'::character varying::text])", name: "purchase_orders_status_check"
   end
 
   create_table "receipt_lines", force: :cascade do |t|
@@ -1008,8 +1044,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.check_constraint "accepted_unavailable_quantity <= accepted_quantity", name: "receipt_lines_accepted_unavailable_within_accepted"
     t.check_constraint "accepted_unavailable_quantity >= 0", name: "receipt_lines_accepted_unavailable_nonneg"
     t.check_constraint "actual_unit_cost_cents IS NULL OR actual_unit_cost_cents >= 0", name: "receipt_lines_unit_cost_nonneg"
-    t.check_constraint "cost_provenance IS NULL OR (cost_provenance::text = ANY (ARRAY['purchase_order_expected'::character varying, 'purchase_order_list_discount'::character varying, 'vendor_source_expected'::character varying, 'vendor_list_discount'::character varying, 'manual_receipt'::character varying, 'unknown'::character varying, 'confirmed_zero'::character varying]::text[]))", name: "receipt_lines_cost_provenance_check"
-    t.check_constraint "cost_quality IS NULL OR (cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'unknown'::character varying, 'confirmed_zero'::character varying]::text[]))", name: "receipt_lines_cost_quality_check"
+    t.check_constraint "cost_provenance IS NULL OR (cost_provenance::text = ANY (ARRAY['purchase_order_expected'::character varying::text, 'purchase_order_list_discount'::character varying::text, 'vendor_source_expected'::character varying::text, 'vendor_list_discount'::character varying::text, 'manual_receipt'::character varying::text, 'unknown'::character varying::text, 'confirmed_zero'::character varying::text]))", name: "receipt_lines_cost_provenance_check"
+    t.check_constraint "cost_quality IS NULL OR (cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'unknown'::character varying::text, 'confirmed_zero'::character varying::text]))", name: "receipt_lines_cost_quality_check"
     t.check_constraint "cost_quality::text IS DISTINCT FROM 'confirmed_zero'::text OR actual_unit_cost_cents = 0 AND cost_provenance::text = 'confirmed_zero'::text", name: "receipt_lines_cost_confirmed_zero_tuple_check"
     t.check_constraint "cost_quality::text IS DISTINCT FROM 'unknown'::text OR actual_unit_cost_cents IS NULL AND cost_provenance::text = 'unknown'::text", name: "receipt_lines_cost_unknown_tuple_check"
     t.check_constraint "delivered_quantity >= 0", name: "receipt_lines_delivered_nonneg"
@@ -1039,7 +1075,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["store_id", "receipt_number"], name: "index_receipts_on_store_and_number", unique: true
     t.index ["store_id"], name: "index_receipts_on_store_id"
     t.index ["vendor_id"], name: "index_receipts_on_vendor_id"
-    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'posted'::character varying, 'cancelled'::character varying]::text[])", name: "receipts_status_check"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'posted'::character varying::text, 'cancelled'::character varying::text])", name: "receipts_status_check"
   end
 
   create_table "return_policies", force: :cascade do |t|
@@ -1112,7 +1148,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.index ["store_id", "product_variant_id"], name: "index_stock_balances_on_store_id_and_product_variant_id", unique: true
     t.index ["store_id"], name: "index_stock_balances_on_store_id"
     t.check_constraint "cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "stock_balances_cost_quality"
-    t.check_constraint "deficit_cost_quality::text = ANY (ARRAY['actual'::character varying, 'estimated'::character varying, 'mixed'::character varying, 'unknown'::character varying]::text[])", name: "stock_balances_deficit_cost_quality_check"
+    t.check_constraint "deficit_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text])", name: "stock_balances_deficit_cost_quality_check"
     t.check_constraint "last_known_cost_quality IS NULL OR (last_known_cost_quality::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "stock_balances_last_known_cost_quality"
     t.check_constraint "on_hand < 0 OR open_provisional_deficit_cost_cents = 0 AND deficit_cost_quality::text = 'unknown'::text", name: "stock_balances_deficit_zero_state"
     t.check_constraint "on_hand <= 0 OR cost_quality::text = 'unknown'::text AND inventory_value_cents IS NULL OR cost_quality::text <> 'unknown'::text AND inventory_value_cents IS NOT NULL", name: "stock_balances_positive_value_state"
@@ -1196,6 +1232,71 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
     t.check_constraint "effective_from IS NULL OR effective_to IS NULL OR effective_from <= effective_to", name: "store_tax_rules_effective_period_order"
     t.check_constraint "taxable_fraction >= 0::numeric AND taxable_fraction <= 1::numeric", name: "store_tax_rules_taxable_fraction_range"
     t.check_constraint "treatment::text = ANY (ARRAY['taxable'::character varying::text, 'zero_rated'::character varying::text, 'exempt'::character varying::text, 'not_applicable'::character varying::text])", name: "store_tax_rules_treatment_check"
+  end
+
+  create_table "stored_value_accounts", force: :cascade do |t|
+    t.string "account_number", null: false
+    t.string "account_type", null: false
+    t.string "alternate_identifier"
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.bigint "current_balance_cents", default: 0, null: false
+    t.integer "lock_version", default: 0, null: false
+    t.bigint "organization_id", null: false
+    t.string "status", default: "active", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_number"], name: "index_stored_value_accounts_on_account_number", unique: true
+    t.index ["created_by_user_id"], name: "index_stored_value_accounts_on_created_by_user_id"
+    t.index ["organization_id", "alternate_identifier"], name: "index_sv_accounts_on_org_and_alternate", unique: true, where: "(alternate_identifier IS NOT NULL)"
+    t.index ["organization_id"], name: "index_stored_value_accounts_on_organization_id"
+    t.check_constraint "account_type::text = ANY (ARRAY['gift_card'::character varying::text, 'store_credit'::character varying::text, 'trade_credit'::character varying::text])", name: "sv_accounts_type_check"
+    t.check_constraint "current_balance_cents >= 0", name: "sv_accounts_balance_nonneg"
+    t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'suspended'::character varying::text])", name: "sv_accounts_status_check"
+  end
+
+  create_table "stored_value_adjustment_reasons", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.string "code", null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "requires_note", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "code"], name: "index_sv_adjustment_reasons_on_org_and_code", unique: true
+    t.index ["organization_id"], name: "index_stored_value_adjustment_reasons_on_organization_id"
+  end
+
+  create_table "stored_value_entries", force: :cascade do |t|
+    t.bigint "amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.text "description"
+    t.string "entry_type", null: false
+    t.bigint "pos_approval_id"
+    t.bigint "pos_line_item_id"
+    t.bigint "pos_tender_id"
+    t.bigint "pos_transaction_id"
+    t.string "posting_key", null: false
+    t.bigint "reverses_entry_id"
+    t.bigint "store_id", null: false
+    t.bigint "stored_value_account_id", null: false
+    t.bigint "stored_value_adjustment_reason_id"
+    t.index ["created_by_user_id"], name: "index_stored_value_entries_on_created_by_user_id"
+    t.index ["pos_approval_id"], name: "index_stored_value_entries_on_pos_approval_id"
+    t.index ["pos_line_item_id"], name: "index_stored_value_entries_on_pos_line_item_id"
+    t.index ["pos_tender_id"], name: "index_stored_value_entries_on_pos_tender_id"
+    t.index ["pos_transaction_id"], name: "index_stored_value_entries_on_pos_transaction_id"
+    t.index ["posting_key"], name: "index_stored_value_entries_on_posting_key", unique: true
+    t.index ["reverses_entry_id"], name: "index_stored_value_entries_on_reverses_entry_id"
+    t.index ["reverses_entry_id"], name: "index_sv_entries_reverses_unique", unique: true, where: "(reverses_entry_id IS NOT NULL)"
+    t.index ["store_id"], name: "index_stored_value_entries_on_store_id"
+    t.index ["stored_value_account_id"], name: "index_stored_value_entries_on_stored_value_account_id"
+    t.index ["stored_value_account_id"], name: "index_sv_entries_one_issued_per_account", unique: true, where: "((entry_type)::text = 'issued'::text)"
+    t.index ["stored_value_adjustment_reason_id"], name: "idx_on_stored_value_adjustment_reason_id_b8c64f83a2"
+    t.check_constraint "amount_cents <> 0", name: "sv_entries_amount_nonzero"
+    t.check_constraint "entry_type::text = ANY (ARRAY['issued'::character varying::text, 'reloaded'::character varying::text, 'redeemed'::character varying::text, 'refunded'::character varying::text, 'manual_adjustment'::character varying::text, 'reversal'::character varying::text])", name: "sv_entries_type_check"
   end
 
   create_table "stores", force: :cascade do |t|
@@ -1315,10 +1416,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   add_foreign_key "business_days", "users", column: "opened_by_user_id", on_delete: :restrict
   add_foreign_key "cash_drawers", "stores", on_delete: :restrict
   add_foreign_key "cash_movement_types", "organizations", on_delete: :restrict
-  add_foreign_key "departments", "departments", column: "parent_department_id"
-  add_foreign_key "departments", "organizations"
+  add_foreign_key "departments", "departments", column: "parent_department_id", on_delete: :restrict
+  add_foreign_key "departments", "organizations", on_delete: :restrict
   add_foreign_key "departments", "return_policies", column: "default_return_policy_id", on_delete: :restrict
-  add_foreign_key "departments", "tax_categories", column: "default_tax_category_id"
+  add_foreign_key "departments", "tax_categories", column: "default_tax_category_id", on_delete: :restrict
   add_foreign_key "discount_reasons", "organizations", on_delete: :restrict
   add_foreign_key "discount_reasons", "return_policies", column: "resulting_return_policy_id", on_delete: :nullify
   add_foreign_key "inventory_adjustment_lines", "departments", column: "estimate_department_id", on_delete: :restrict
@@ -1344,11 +1445,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   add_foreign_key "inventory_units", "product_variants", on_delete: :restrict
   add_foreign_key "inventory_units", "stores", on_delete: :restrict
   add_foreign_key "inventory_units", "users", column: "created_by_user_id", on_delete: :restrict
-  add_foreign_key "merchandise_classes", "departments", column: "default_department_id"
-  add_foreign_key "merchandise_classes", "departments", column: "default_used_department_id"
-  add_foreign_key "merchandise_classes", "merchandise_classes", column: "parent_id"
-  add_foreign_key "merchandise_classes", "organizations"
-  add_foreign_key "merchandise_classes", "tax_categories", column: "default_tax_category_id"
+  add_foreign_key "merchandise_classes", "departments", column: "default_department_id", on_delete: :restrict
+  add_foreign_key "merchandise_classes", "departments", column: "default_used_department_id", on_delete: :restrict
+  add_foreign_key "merchandise_classes", "merchandise_classes", column: "parent_id", on_delete: :restrict
+  add_foreign_key "merchandise_classes", "organizations", on_delete: :restrict
+  add_foreign_key "merchandise_classes", "tax_categories", column: "default_tax_category_id", on_delete: :restrict
   add_foreign_key "pos_approvals", "pos_line_items", on_delete: :restrict
   add_foreign_key "pos_approvals", "pos_sessions", on_delete: :restrict
   add_foreign_key "pos_approvals", "pos_transactions", on_delete: :restrict
@@ -1375,10 +1476,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   add_foreign_key "pos_line_items", "departments", on_delete: :restrict
   add_foreign_key "pos_line_items", "inventory_units", on_delete: :restrict
   add_foreign_key "pos_line_items", "pos_line_items", column: "original_pos_line_item_id", on_delete: :restrict
+  add_foreign_key "pos_line_items", "pos_line_items", column: "reverses_pos_line_item_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_line_items", "product_requests", on_delete: :restrict
   add_foreign_key "pos_line_items", "product_variants", on_delete: :restrict
   add_foreign_key "pos_line_items", "return_reasons", on_delete: :restrict
+  add_foreign_key "pos_line_items", "stored_value_accounts", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", column: "original_tax_category_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "created_by_user_id", on_delete: :restrict
@@ -1396,22 +1499,28 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   add_foreign_key "pos_sessions", "users", column: "opened_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "pos_approvals", on_delete: :restrict
+  add_foreign_key "pos_tenders", "pos_tenders", column: "original_pos_tender_id", on_delete: :restrict
+  add_foreign_key "pos_tenders", "pos_tenders", column: "reverses_pos_tender_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "pos_transactions", on_delete: :restrict
+  add_foreign_key "pos_tenders", "stored_value_accounts", on_delete: :restrict
   add_foreign_key "pos_tenders", "stores", on_delete: :restrict
   add_foreign_key "pos_tenders", "tender_types", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "external_void_confirmed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "removed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "users", column: "voided_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "pos_approvals", column: "post_void_pos_approval_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "active_pos_session_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "completed_pos_session_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "pos_sessions", column: "origin_pos_session_id", on_delete: :restrict
+  add_foreign_key "pos_transactions", "pos_transactions", column: "reverses_pos_transaction_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "stores", on_delete: :restrict
   add_foreign_key "pos_transactions", "users", column: "cancelled_by_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "users", column: "cashier_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "users", column: "completed_by_user_id", on_delete: :restrict
-  add_foreign_key "product_conditions", "organizations"
-  add_foreign_key "product_formats", "organizations"
+  add_foreign_key "product_conditions", "organizations", on_delete: :restrict
+  add_foreign_key "product_formats", "organizations", on_delete: :restrict
   add_foreign_key "product_request_fulfillments", "inventory_reservations", on_delete: :restrict
   add_foreign_key "product_request_fulfillments", "pos_line_items", on_delete: :restrict
   add_foreign_key "product_request_fulfillments", "product_request_fulfillments", column: "linked_fulfilment_id", on_delete: :restrict
@@ -1476,8 +1585,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_150000) do
   add_foreign_key "store_tax_rules", "store_tax_rates", on_delete: :restrict
   add_foreign_key "store_tax_rules", "stores", on_delete: :restrict
   add_foreign_key "store_tax_rules", "tax_categories", on_delete: :restrict
+  add_foreign_key "stored_value_accounts", "organizations", on_delete: :restrict
+  add_foreign_key "stored_value_accounts", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "stored_value_adjustment_reasons", "organizations", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "pos_approvals", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "pos_line_items", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "pos_tenders", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "pos_transactions", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "stored_value_accounts", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "stored_value_adjustment_reasons", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "stored_value_entries", column: "reverses_entry_id", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "stores", on_delete: :restrict
+  add_foreign_key "stored_value_entries", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "stores", "organizations", on_delete: :restrict
-  add_foreign_key "tax_categories", "organizations"
+  add_foreign_key "tax_categories", "organizations", on_delete: :restrict
   add_foreign_key "tender_types", "organizations", on_delete: :restrict
   add_foreign_key "users", "stores", column: "default_store_id", on_delete: :nullify
   add_foreign_key "vendors", "organizations"

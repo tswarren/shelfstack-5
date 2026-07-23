@@ -7,8 +7,11 @@ class PosLineItemsController < ApplicationController
   before_action :set_line_item, only: %i[update destroy override_price override_tax_category]
 
   def create
-    if params[:kind] == "open_ring"
+    case params[:kind]
+    when "open_ring"
       create_open_ring_line
+    when "stored_value"
+      create_stored_value_line
     else
       create_product_line
     end
@@ -220,6 +223,50 @@ class PosLineItemsController < ApplicationController
     redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
+  def create_stored_value_line
+    account = if params[:create_account].present?
+      unless Current.user.can?("stored_value.account.create", store: Current.store)
+        redirect_to pos_transaction_path(@pos_transaction), alert: "missing permission stored_value.account.create"
+        return
+      end
+
+      created = StoredValue::CreateAccount.call(
+        organization: Current.organization,
+        account_type: "gift_card",
+        actor: Current.user,
+        store: Current.store,
+        alternate_identifier: params[:alternate_identifier].presence
+      )
+      unless created.success?
+        redirect_to pos_transaction_path(@pos_transaction), alert: created.error
+        return
+      end
+      created.account
+    else
+      resolve_stored_value_account_for_line
+    end
+
+    if account.blank?
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Select or create a gift-card account."
+      return
+    end
+
+    result = Pos::AddStoredValueLine.call(
+      pos_transaction: @pos_transaction,
+      account: account,
+      operation: params[:stored_value_operation].presence || "issue",
+      amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
+      actor: Current.user
+    )
+    if result.success?
+      redirect_to pos_transaction_path(@pos_transaction), notice: "Stored-value line added."
+    else
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  rescue ArgumentError => e
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+  end
+
   def scan_error_message(resolved)
     case resolved.error
     when "not_found" then "No product found for that scan/search."
@@ -227,6 +274,21 @@ class PosLineItemsController < ApplicationController
     when "no_variant" then "Product has no sellable variant."
     else "Unable to resolve scan."
     end
+  end
+
+  def resolve_stored_value_account_for_line
+    if params[:stored_value_account_id].present?
+      return Current.organization.stored_value_accounts.find_by(id: params[:stored_value_account_id])
+    end
+
+    identifier = params[:account_number].presence || params[:alternate_identifier].presence
+    return nil if identifier.blank?
+
+    StoredValue::ResolveAccount.call(
+      organization: Current.organization, identifier: identifier
+    ).account
+  rescue StoredValue::ResolveAccount::Error
+    nil
   end
 
   def set_transaction

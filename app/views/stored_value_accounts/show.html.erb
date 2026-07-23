@@ -1,0 +1,61 @@
+<% content_for :title, @account.account_number %>
+<section class="page-header">
+  <h1><%= @account.account_number %></h1>
+  <p class="muted"><%= @account.account_type %> · <%= @account.status %> · <%= number_to_currency(@account.current_balance_cents / 100.0) %></p>
+</section>
+
+<% if Current.user.can?("stored_value.adjustment.create", store: Current.store) %>
+  <section class="panel">
+    <h2>Manual adjustment</h2>
+    <%= form_with url: adjust_stored_value_account_path(@account), method: :post, class: "form" do |form| %>
+      <%= form.hidden_field :posting_key, value: @adjustment_posting_key, name: "posting_key" %>
+      <div class="field">
+        <%= form.label :adjustment_reason_id, "Reason", class: "field-label" %>
+        <%= form.collection_select :adjustment_reason_id, @adjustment_reasons, :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount (negative to debit)", id: "sv_adjust_amount" %>
+      <div class="field">
+        <%= form.label :description, "Note", class: "field-label" %>
+        <%= form.text_area :description, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :approver_username, "Approver username", class: "field-label" %>
+        <%= form.text_field :approver_username, class: "input", autocomplete: "off" %>
+        <p class="field-hint">Leave blank to self-approve (requires stored_value.adjustment.approve_self).</p>
+      </div>
+      <div class="field">
+        <%= form.label :approver_pin, "Approver PIN", class: "field-label" %>
+        <%= form.password_field :approver_pin, class: "input", autocomplete: "off" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Post adjustment", class: "button button-primary" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<% if Current.user.can?("stored_value.ledger.view", store: Current.store) %>
+  <section class="panel">
+    <h2>Ledger</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Key</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @entries.each do |entry| %>
+          <tr>
+            <td><%= entry.created_at %></td>
+            <td><%= entry.entry_type %></td>
+            <td><%= number_to_currency(entry.amount_cents / 100.0) %></td>
+            <td class="muted"><%= entry.posting_key %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+<% end %>

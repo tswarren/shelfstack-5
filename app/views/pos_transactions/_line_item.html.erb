@@ -9,7 +9,7 @@
     <% end %>
   </td>
   <td class="num">
-    <% if @pos_transaction.editable? && line.sale? && line.inventory_unit.blank? %>
+    <% if @pos_transaction.editable? && line.sale? && line.inventory_unit.blank? && line.line_kind != "stored_value" %>
       <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>
         <%= form.number_field :quantity, value: line.quantity, min: 1, class: "input input-qty" %>
         <%= form.submit "Update", class: "button button-small button-outline" %>
@@ -29,7 +29,7 @@
     <% end %>
   </td>
 </tr>
-<% if @pos_transaction.editable? && line.sale? %>
+<% if @pos_transaction.editable? && line.sale? && line.line_kind != "stored_value" %>
   <tr class="pos-line-detail-row">
     <td colspan="8">
       <% if line.tax_category_overridden? %>

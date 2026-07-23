@@ -27,7 +27,7 @@ Do not scaffold speculative tables, statuses, or services for these areas. When 
 | Loyalty | Separate domain |
 | Stored-value replacement, transfer, expiration | Ledger baseline comes first (Phase 6) |
 | Accounting export batches | Department GL codes may remain provisional |
-| Integrated payment processing | Standalone card tender stub first |
+| Integrated payment processing; processor settlement matching; chargebacks; external discrepancy reconciliation | Phase 6 delivers operator-confirmed standalone-card recording ([ADR-0016](../adr/0016-treat-standalone-credit-card-activity.md)); processor integration remains deferred |
 | Offline POS | Requires dedicated design |
 | Optional physical shelf-location tracking | Must not fragment store inventory |
 | Weighted / decimal quantities | Integer quantities for initial release |

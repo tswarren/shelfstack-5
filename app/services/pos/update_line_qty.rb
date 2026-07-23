@@ -15,6 +15,7 @@ module Pos
       raise Error, "quantity must be positive" unless @quantity.positive?
       raise Error, "line is not pending" unless @pos_line_item.pending?
       raise Error, "transaction is not open for editing" unless @pos_line_item.pos_transaction.editable?
+      raise Error, "quantity is fixed at 1 for stored-value lines" if @pos_line_item.line_kind == "stored_value"
       if @pos_line_item.return?
         raise Error, "linked return quantity cannot be edited; remove and re-add the return line"
       end

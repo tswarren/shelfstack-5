@@ -11,6 +11,7 @@
 - [ADR-0010: Distinguish Business Days, Sessions, Devices, Drawers, and Z Reports](../adr/0010-business-days-sessions-and-z-reports.md)
 - [ADR-0011: Separate Permissions, Numeric Authority, and Approval Events](../adr/0011-permissions-authority-and-approvals.md)
 - [ADR-0012: Govern Stored Value Through Independent Accounts and an Append-Only Ledger](../adr/0012-stored-value-ledger.md)
+- [ADR-0016: Treat Standalone Card Activity as Operator-Confirmed External Records](../adr/0016-treat-standalone-credit-card-activity.md)
 
 ## Purpose
 
@@ -272,6 +273,22 @@ received
 refunded
 ```
 
+Tender statuses:
+
+```text
+pending
+authorized
+completed
+void_required
+voided
+removed
+```
+
+* `pending` and `authorized` are unresolved and participate in provisional settlement calculations;
+* `completed` settles history;
+* `void_required` is non-settling but operationally blocking (complete, suspend, and cancel stay blocked until resolved);
+* `voided` and `removed` are historical, non-settling states.
+
 Only completed Tenders settle a Transaction.
 
 ```text
@@ -282,13 +299,13 @@ completed received Tenders
 
 ### Tender-state lock
 
-Once a pending or authorized Tender exists:
+Once a pending, authorized, or `void_required` Tender exists:
 
 * line additions, removals, quantities, prices, Discounts, Tax Categories, exemptions, and other tax-affecting fields are locked;
-* the cashier must remove the Tender or confirm the required external void before commercial editing may resume;
+* the cashier must remove the Tender, resolve `void_required` via external-void confirmation, or confirm the required external void before commercial editing may resume;
 * changing an authorized standalone-card amount requires voiding or reprocessing it externally.
 
-`CompleteTransaction` revalidates the current calculation under Transaction lock and requires completed Tender net to equal the final Transaction net.
+`CompleteTransaction` revalidates the current calculation under Transaction lock and requires completed Tender net to equal the final Transaction net. No `void_required` tenders may remain.
 
 ### Cash
 
@@ -296,7 +313,7 @@ Records amount presented, amount applied, and change.
 
 ### Card
 
-MVP uses standalone terminals. ShelfStack stores no full card number. An externally approved card Tender is stored as `status: authorized` with fields such as `authorization_code`, `terminal_reference`, and `authorized_at` before internal Completion. If Completion fails, that authorized Tender remains visible and unsettled for operational follow-up. A separate exception table is not required for Phase 4c.
+MVP uses standalone terminals. ShelfStack stores no full card number and does not manage the card transaction lifecycle, settlement, or processor reconciliation. An operator-confirmed card Tender is stored as `status: authorized` with TenderType-configured references (`authorization_code` ← reference 1, `terminal_reference` ← reference 2) and `authorized_at` before internal Completion. Partial card tenders are allowed within the remaining received or refund balance. If the entered amount cannot be attached after references validate, ShelfStack immediately persists a `void_required` tender retaining amount, direction, tender type, and references under the same client-supplied request UUID (`recording_idempotency_key`) used for a successful `authorized` outcome. That status is excluded from settlement and blocks complete, suspend, and cancel until the operator confirms the external void (`RecordVoidedCardTender`), which transitions the same row to `voided`. Resolution does not require the tender type to remain active or payment-/refund-enabled, and remains available if the owning transaction is no longer open. Authorized card tenders cannot be cleared without external-void confirmation (`VoidCardTender`). Post-void follows Policy A: approve the complete operation, reverse cards on the terminal, record durable confirmation audits, then create the reversing transaction. If Completion fails after an authorized card tender was recorded, that tender remains visible and unsettled for operational follow-up. Processor chargebacks and settlement exceptions are outside Phase 6.
 
 ### Stored Value
 
@@ -329,9 +346,11 @@ It releases provisional Reservations and creates no completed sale, Return, Tend
 
 Post-Void is a new Completed Transaction fully reversing an original Completed Transaction.
 
-It receives its own Receipt Number, uses original historical values, reverses lines, tax, cost, inventory, Tenders, and Stored Value, and may be blocked when full reversal is no longer possible.
+It receives its own Receipt Number, uses original historical values, reverses lines, tax, cost, inventory, Tenders, Stored Value, and Product Request fulfilment facts where applicable, and may be blocked when full reversal is no longer possible.
 
 Partial correction uses Customer Return or another explicit correction.
+
+Phase 6 delivery detail: [post-void eligibility and cross-domain reversal](../implementation/decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md); inventory / OD-014 interaction: [inventory correction](../implementation/decisions/phase-06-inventory-correction-and-od-014.md).
 
 ## Cash accountability
 
@@ -399,7 +418,8 @@ Audit Transaction lifecycle, line removal, Price Override, Discount, tax exempti
 - Tender net equals Transaction net.
 - Discount Allocations reconcile.
 - Tax components reconcile.
-- Pending or authorized Tenders lock commercial editing until cleared.
+- Pending, authorized, or `void_required` Tenders lock commercial editing until cleared.
+- Validated unattachable card activity is retained as `void_required` until external-void confirmation (ADR-0016).
 - Linked Returns do not exceed remaining quantity.
 - Customer Return does not alter original Line.
 - Post-Void is a new full reversing Transaction.

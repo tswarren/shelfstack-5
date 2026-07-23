@@ -1,0 +1,28 @@
+<% content_for :title, "Stored value" %>
+<section class="page-header">
+  <h1>Stored-value accounts</h1>
+  <% if Current.user.can?("stored_value.account.create", store: Current.store) %>
+    <%= link_to "New account", new_stored_value_account_path, class: "button button-primary" %>
+  <% end %>
+</section>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Account</th>
+      <th>Type</th>
+      <th>Status</th>
+      <th>Balance</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @accounts.each do |account| %>
+      <tr>
+        <td><%= link_to account.account_number, account %></td>
+        <td><%= account.account_type %></td>
+        <td><%= account.status %></td>
+        <td><%= number_to_currency(account.current_balance_cents / 100.0) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

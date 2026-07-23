@@ -24,7 +24,7 @@
               <td><%= tender.status.humanize %></td>
               <td class="num"><%= pos_money(tender.amount_cents) %></td>
               <td>
-                <% if @pos_transaction.open? && tender.unresolved? %>
+                <% if @pos_transaction.open? && tender.unresolved? && !@pos_transaction.void_required_tenders? %>
                   <% if tender.authorized? && tender.tender_type.tender_category == "card" %>
                     <details>
                       <summary>Void card</summary>
@@ -49,6 +49,7 @@
                     <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
                   <% end %>
                 <% end %>
+
               </td>
             </tr>
           <% end %>

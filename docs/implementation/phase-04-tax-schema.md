@@ -132,7 +132,9 @@ Use `pos_tenders.status = authorized` plus:
 authorization_code
 terminal_reference
 authorized_at          # if not already covered by processed_at
-requires_reconciliation  # optional boolean for operational queues
+requires_reconciliation  # reserved; unused
 ```
+
+The originally anticipated operational `requires_reconciliation` queue was not adopted for standalone-card handling. [ADR-0016](../adr/0016-treat-standalone-credit-card-activity.md) instead uses the narrower `void_required` recovery state. The released column remains reserved and unused.
 
 Do not introduce a separate card-exception table for Phase 4c.

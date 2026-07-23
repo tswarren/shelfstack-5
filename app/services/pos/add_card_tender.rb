@@ -1,67 +1,226 @@
 # frozen_string_literal: true
 
 module Pos
-  # Standalone-terminal card Tender (domain "Card"): ShelfStack cannot make the
-  # external terminal authorization part of its own database transaction (MVP
-  # limitation, ADR-0009), so external approval is confirmed by the cashier before
-  # this call and stored as `authorized` with `authorization_code`,
-  # `terminal_reference`, and `authorized_at`. If internal completion later fails,
-  # this authorized Tender remains visible/unsettled for operational follow-up
-  # rather than being reverted.
+  # Records an operator-confirmed standalone-terminal card payment.
+  # ShelfStack does not drive the terminal; ADR-0009 confirm-before-complete.
   #
-  # Amounts that exceed remaining balance when the Tender Type disallows over-tender
-  # are rejected. Externally approved mismatched amounts that must still be recorded
-  # should pass `requires_reconciliation: true` with an explicit amount (operational
-  # exception path), not as a normal over-tender.
+  # Amount must satisfy 0 < amount <= remaining received balance (unless the
+  # tender type allows over-tender). Once tender-type references validate, any
+  # later business failure that prevents attachment persists a `void_required`
+  # tender so terminal activity is never discarded.
+  #
+  # `recording_idempotency_key` is a client-generated request UUID shared by the
+  # authorized or void_required outcome (ADR-0016 request idempotency).
   class AddCardTender < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_tender, :success?, :error, :warnings)
+    Result = Data.define(:pos_tender, :success?, :error, :warnings, :requires_void_confirmation?)
 
-    def initialize(pos_transaction:, tender_type:, amount_cents:, authorization_code:, actor:,
-                    terminal_reference: nil, requires_reconciliation: false)
+    def initialize(pos_transaction:, tender_type:, amount_cents:, actor:,
+                   recording_idempotency_key: nil,
+                   authorization_code: nil, terminal_reference: nil,
+                   reference_1: nil, reference_2: nil)
       @pos_transaction = pos_transaction
       @tender_type = tender_type
       @amount_cents = amount_cents.to_i
+      # Client-supplied request UUID preferred; generate only when callers omit it
+      # (tests / internal). Forms must post a stable key for double-submit safety.
+      @recording_idempotency_key = recording_idempotency_key.to_s.strip.presence || SecureRandom.uuid
       @authorization_code = authorization_code
       @terminal_reference = terminal_reference
-      @requires_reconciliation = requires_reconciliation
+      @reference_1 = reference_1
+      @reference_2 = reference_2
       @actor = actor
+      @proposed_authorization_code = CardRecordingIdempotency.normalize_reference(
+        reference_1.nil? ? authorization_code : reference_1
+      )
+      @proposed_terminal_reference = CardRecordingIdempotency.normalize_reference(
+        reference_2.nil? ? terminal_reference : reference_2
+      )
     end
 
     def call
-      raise Error, "transaction is not open" unless @pos_transaction.open?
-      raise Error, "tender type must be card" unless @tender_type.tender_category == "card"
-      raise Error, "amount must be positive" unless @amount_cents.positive?
-      raise Error, "authorization code is required" if @authorization_code.blank?
-      TenderGuards.assert_active!(@tender_type)
-      TenderGuards.assert_payment_enabled!(@tender_type)
+      begin
+        validate_structure!
+      rescue Error => e
+        return failure(e.message, requires_void_confirmation: false)
+      end
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
-        raise Error, "transaction is not open" unless transaction.open?
+        replay = resolve_recording_idempotency!(transaction)
+        return replay if replay
 
-        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
-        TenderGuards.assert_no_calculation_blockers!(recalculation)
-
-        balance_due = TenderGuards.remaining_received_balance_cents(transaction, recalculation.net_total_cents)
-        raise Error, "no balance due" if balance_due.zero?
-
-        if !@tender_type.allows_over_tender? && @amount_cents > balance_due && !@requires_reconciliation
-          raise Error, "amount exceeds remaining balance (#{balance_due})"
+        refs = begin
+          ValidateTenderReferences.call(
+            tender_type: @tender_type,
+            reference_1: @reference_1,
+            reference_2: @reference_2,
+            authorization_code: @authorization_code,
+            terminal_reference: @terminal_reference
+          )
+        rescue ValidateTenderReferences::Error => e
+          return failure(e.message, requires_void_confirmation: false)
         end
 
-        tender = PosTender.create!(
-          pos_transaction: transaction, store: transaction.store, tender_type: @tender_type,
-          direction: "received", status: "authorized", amount_cents: @amount_cents,
-          authorization_code: @authorization_code, terminal_reference: @terminal_reference,
-          authorized_at: Time.current, requires_reconciliation: @requires_reconciliation,
-          created_by_user: @actor
-        )
-
-        Result.new(pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings)
+        attach_authorized!(transaction, refs)
       end
     rescue Error, TenderGuards::Error, ActiveRecord::RecordInvalid => e
-      Result.new(pos_tender: nil, success?: false, error: e.message, warnings: [])
+      retain_void_required_after_failure!(e.message)
+    end
+
+    private
+
+    def validate_structure!
+      raise Error, "tender type must be card" unless @tender_type.tender_category == "card"
+      raise Error, "amount must be positive" unless @amount_cents.positive?
+    end
+
+    def attach_authorized!(transaction, refs)
+      unless transaction.open?
+        return retain_void_required!(transaction, refs, "transaction is not open")
+      end
+
+      TenderGuards.assert_active!(@tender_type)
+      TenderGuards.assert_payment_enabled!(@tender_type)
+
+      recalculation = recalculate_for_tender!(transaction)
+      TenderGuards.assert_no_calculation_blockers!(recalculation)
+
+      balance_due = TenderGuards.remaining_received_balance_cents(transaction, recalculation.net_total_cents)
+      raise Error, "no balance due" if balance_due.zero?
+
+      if !@tender_type.allows_over_tender? && @amount_cents > balance_due
+        raise Error,
+              "amount exceeds remaining balance (#{balance_due}); confirm external void and record as voided"
+      end
+
+      tender = PosTender.create!(
+        pos_transaction: transaction, store: transaction.store, tender_type: @tender_type,
+        direction: "received", status: "authorized", amount_cents: @amount_cents,
+        authorization_code: refs.authorization_code, terminal_reference: refs.terminal_reference,
+        authorized_at: Time.current, created_by_user: @actor,
+        recording_idempotency_key: @recording_idempotency_key
+      )
+
+      Result.new(
+        pos_tender: tender, success?: true, error: nil, warnings: recalculation.warnings,
+        requires_void_confirmation?: false
+      )
+    end
+
+    def resolve_recording_idempotency!(transaction)
+      outcome = CardRecordingIdempotency.resolve!(
+        recording_idempotency_key: @recording_idempotency_key,
+        pos_transaction: transaction,
+        tender_type_id: @tender_type.id,
+        direction: "received",
+        amount_cents: @amount_cents,
+        authorization_code: @proposed_authorization_code,
+        terminal_reference: @proposed_terminal_reference
+      )
+
+      return nil if outcome.proceed?
+      return conflict_result(outcome.pos_tender) if outcome.conflict?
+
+      replay_result(outcome.pos_tender)
+    rescue ArgumentError => e
+      raise Error, e.message
+    end
+
+    def replay_result(existing)
+      case existing.status
+      when "authorized", "completed"
+        Result.new(
+          pos_tender: existing, success?: true, error: nil, warnings: [],
+          requires_void_confirmation?: false
+        )
+      when "void_required"
+        Result.new(
+          pos_tender: existing, success?: false,
+          error: existing.void_reason.presence || "void confirmation required",
+          warnings: [], requires_void_confirmation?: true
+        )
+      when "voided"
+        Result.new(
+          pos_tender: existing, success?: false,
+          error: "card tender already voided for this request",
+          warnings: [], requires_void_confirmation?: false
+        )
+      else
+        raise Error, "unexpected tender status for recording_idempotency_key (#{existing.status})"
+      end
+    end
+
+    def conflict_result(existing)
+      Result.new(
+        pos_tender: existing, success?: false,
+        error: CardRecordingIdempotency::CONFLICT_MESSAGE,
+        warnings: [], requires_void_confirmation?: false
+      )
+    end
+
+    def retain_void_required_after_failure!(reason)
+      ActiveRecord::Base.transaction do
+        transaction = PosTransaction.lock.find(@pos_transaction.id)
+        replay = resolve_recording_idempotency!(transaction)
+        return replay if replay
+
+        refs = ValidateTenderReferences::Result.new(
+          authorization_code: @proposed_authorization_code,
+          terminal_reference: @proposed_terminal_reference,
+          reference_1: @proposed_authorization_code,
+          reference_2: @proposed_terminal_reference
+        )
+        retain_void_required!(transaction, refs, reason)
+      end
+    end
+
+    def retain_void_required!(transaction, refs, reason)
+      tender = RetainVoidRequiredCardTender.call(
+        pos_transaction: transaction,
+        tender_type: @tender_type,
+        amount_cents: @amount_cents,
+        direction: "received",
+        refs: refs,
+        actor: @actor,
+        reason: reason,
+        recording_idempotency_key: @recording_idempotency_key
+      )
+
+      if tender.voided?
+        return Result.new(
+          pos_tender: tender, success?: false,
+          error: "card tender already voided for this request",
+          warnings: [], requires_void_confirmation?: false
+        )
+      end
+
+      if tender.authorized? || tender.completed?
+        return Result.new(
+          pos_tender: tender, success?: true, error: nil, warnings: [],
+          requires_void_confirmation?: false
+        )
+      end
+
+      Result.new(
+        pos_tender: tender, success?: false, error: reason, warnings: [],
+        requires_void_confirmation?: true
+      )
+    end
+
+    def recalculate_for_tender!(transaction)
+      if transaction.pos_line_items.pending.returns.where.not(original_pos_line_item_id: nil).exists?
+        FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
+      else
+        RecalculateTransaction.call(pos_transaction: transaction)
+      end
+    end
+
+    def failure(message, requires_void_confirmation:)
+      Result.new(
+        pos_tender: nil, success?: false, error: message, warnings: [],
+        requires_void_confirmation?: requires_void_confirmation
+      )
     end
   end
 end

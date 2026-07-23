@@ -9,7 +9,11 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
   before_action -> { require_permission!("pos.transaction.cancel") }, only: %i[cancel]
   before_action -> { require_permission!("pos.transaction.complete") }, only: %i[complete]
-  before_action :set_transaction, only: %i[show suspend recall cancel complete]
+  before_action -> { require_permission!("pos.post_void.create") },
+                only: %i[post_void_form approve_post_void clear_post_void_approval post_void]
+  before_action :set_transaction,
+                only: %i[show suspend recall cancel complete post_void_form approve_post_void
+                         clear_post_void_approval post_void]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
@@ -17,7 +21,7 @@ class PosTransactionsController < ApplicationController
 
   def show
     if @pos_transaction.open?
-      totals = Pos::RecalculateTransaction.call(pos_transaction: @pos_transaction)
+      totals = open_transaction_totals(@pos_transaction)
       @subtotal_cents = totals.subtotal_cents
       @discount_total_cents = totals.discount_total_cents
       @tax_total_cents = totals.tax_total_cents
@@ -62,7 +66,9 @@ class PosTransactionsController < ApplicationController
     @tendered_total_cents = received - refunded
     @balance_due_cents = @net_total_cents - @tendered_total_cents
     @change_due_cents = @pos_tenders.sum { |t| t.change_due_cents.to_i }
+    @refundable_original_tenders = Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction)
     # Stable per page-render so a double-click / back-button resubmit of the
+
     # completion form reuses the same idempotency key (ADR-0009).
     @completion_idempotency_key = SecureRandom.uuid
 
@@ -143,16 +149,154 @@ class PosTransactionsController < ApplicationController
     end
   end
 
+  def post_void_form
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
+    end
+
+    @eligibility = Pos::EvaluatePostVoidEligibility.call(
+      original_transaction: @pos_transaction, store: Current.store
+    )
+    @post_void_approval = load_post_void_approval_from_session
+    @card_tenders = @pos_transaction.pos_tenders.where(status: "completed").select { |t|
+      t.tender_type.tender_category == "card"
+    }
+  end
+
+  def approve_post_void
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
+    end
+
+    open_session = current_open_session
+    return unless open_session
+
+    approver = if params[:approver_username].present?
+      User.find_by(username: params[:approver_username].to_s.strip)
+    else
+      Current.user
+    end
+
+    result = Pos::ApprovePostVoid.call(
+      original_transaction: @pos_transaction,
+      actor: Current.user,
+      reason: params[:post_void_reason],
+      approver: approver,
+      approver_pin: params[:approver_pin],
+      pos_session: open_session
+    )
+    if result.success?
+      session[:post_void_approval] = {
+        "pos_transaction_id" => @pos_transaction.id,
+        "pos_approval_id" => result.pos_approval.id,
+        "reason" => result.reason
+      }
+      notice = if @pos_transaction.pos_tenders.where(status: "completed").joins(:tender_type)
+                   .where(tender_types: { tender_category: "card" }).exists?
+        "Post-void approved. Reverse each card on the terminal, enter confirmations, then submit."
+      else
+        "Post-void approved. Submit post-void when ready."
+      end
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), notice: notice
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
+  def clear_post_void_approval
+    clear_post_void_approval_session!
+    redirect_to post_void_form_pos_transaction_path(@pos_transaction), notice: "Post-void approval cleared."
+  end
+
+  def post_void
+    open_session = current_open_session
+    return unless open_session
+
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed transactions can be post-voided."
+    end
+
+    approval_plan = load_post_void_approval_from_session
+    if approval_plan.blank?
+      return redirect_to post_void_form_pos_transaction_path(@pos_transaction),
+                         alert: "Approve the post-void before submitting."
+    end
+
+    result = Pos::PostVoidTransaction.call(
+      original_transaction: @pos_transaction,
+      pos_session: open_session,
+      actor: Current.user,
+      completion_idempotency_key: params[:completion_idempotency_key].presence || SecureRandom.uuid,
+      pos_approval: approval_plan[:pos_approval],
+      reason: approval_plan[:reason],
+      card_confirmations: card_confirmations_params
+    )
+
+    if result.success?
+      clear_post_void_approval_session!
+      redirect_to pos_transaction_path(result.pos_transaction),
+                  notice: (result.replayed ? "Post-void already recorded." : "Post-void completed.")
+    else
+      redirect_to post_void_form_pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  end
+
   private
 
   def set_transaction
     @pos_transaction = Current.store.pos_transactions.find(params[:id])
   end
 
+  # For open returns, finalize residuals under original locks so displayed
+  # balance matches tenderable amounts. Fall back to plain recalc on error.
+  def open_transaction_totals(transaction)
+    if transaction.pos_line_items.pending.returns.where.not(original_pos_line_item_id: nil).exists?
+      ActiveRecord::Base.transaction do
+        locked = PosTransaction.lock.find(transaction.id)
+        return Pos::FinalizeReturnFinancials.call(pos_transaction: locked).recalculation
+      end
+    end
+    Pos::RecalculateTransaction.call(pos_transaction: transaction)
+  rescue StandardError
+    Pos::RecalculateTransaction.call(pos_transaction: transaction)
+  end
+
   def current_open_session
-    session = Current.store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
-    redirect_to register_path, alert: "Open a POS session first." if session.blank?
-    session
+    open_session = Current.store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
+    redirect_to register_path, alert: "Open a POS session first." if open_session.blank?
+    open_session
+  end
+
+  def load_post_void_approval_from_session
+    raw = session[:post_void_approval]
+    return nil if raw.blank?
+    return nil unless raw["pos_transaction_id"] == @pos_transaction.id
+
+    approval = PosApproval.find_by(id: raw["pos_approval_id"])
+    return nil if approval.blank?
+
+    { pos_approval: approval, reason: raw["reason"].to_s }
+  end
+
+  def clear_post_void_approval_session!
+    session.delete(:post_void_approval)
+  end
+
+  def card_confirmations_params
+    raw = params[:card_confirmations]
+    return {} if raw.blank?
+
+    hash = raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
+    hash.each_with_object({}) do |(tender_id, attrs), out|
+      next if tender_id.blank?
+
+      attrs = attrs.respond_to?(:to_unsafe_h) ? attrs.to_unsafe_h : attrs.to_h
+      out[tender_id.to_s] = {
+        "external_void_confirmed" => attrs["external_void_confirmed"],
+        "external_void_reference" => attrs["external_void_reference"],
+        "confirmation_note" => attrs["confirmation_note"].presence || attrs["note"]
+      }
+    end
   end
 
   def rebuild_scan_resolution(stored)
@@ -190,6 +334,7 @@ class PosTransactionsController < ApplicationController
     @return_lookup_transaction = original_txn
     @return_lookup_lines = original_txn.pos_line_items
       .where(status: "completed", direction: "sale")
+      .where.not(line_kind: "stored_value")
       .includes(:inventory_unit, product_variant: :product)
       .order(:position)
       .select { |line| line.remaining_returnable_quantity.positive? }

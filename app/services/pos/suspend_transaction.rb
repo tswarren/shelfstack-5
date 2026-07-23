@@ -17,6 +17,10 @@ module Pos
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "only open transactions may be suspended" unless transaction.open?
         raise Error, "cannot suspend while unresolved tenders exist" if transaction.unresolved_tenders?
+        if transaction.void_required_tenders?
+          raise Error, "cannot suspend while void_required card tenders remain; confirm external voids first"
+        end
+
 
         transaction.update!(
           status: "suspended",
