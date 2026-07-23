@@ -1406,7 +1406,7 @@ Corrections must use explicit linked records such as:
 * Post-Voids;
 * Inventory reversals;
 * Stored-Value reversals;
-* Reconciliation Adjustments.
+* Reconciliation resolutions that link domain-owned corrections without mutating source balances.
 
 ## INV-HIST-003 — Historical records retain source relationships
 

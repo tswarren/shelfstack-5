@@ -97,11 +97,11 @@ Current open/close services carry actor identity but do not implement a dedicate
 - [ADR-0010](../adr/0010-business-days-sessions-and-z-reports.md) — Business Day, Session, Device, Drawer, and Z concepts remain distinct.
 - [ADR-0011](../adr/0011-permissions-authority-and-approvals.md) — permissions and approvals remain separate.
 
-## Unresolved details
+## Unresolved / follow-on details
 
-- Business-date assignment policy remains open.
-- Session Z numbering, Business-Day Z numbering, X/Z report persistence, and `closed → reconciled` lifecycle are Phase 7 — see [phase-07-reporting-and-reconciliation.md](../implementation/phases/phase-07-reporting-and-reconciliation.md).
-- Phase 7 extends close (not only recon): Session close may collect merchant-slip card totals when store `card_reconciliation_grain` is `session`; Business-Day close collects machine/batch card totals when the day has card tenders. Close collects evidence; Z reports it; reconciliation reviews persisted variances.
+- Business-date assignment is accepted (OD-001): `reporting_date` selected at business-day open — see [architectural-locks.md](../implementation/architectural-locks.md#business--reporting-date-v1-choice).
+- Session Z numbering, Business-Day Z numbering, X/Z report persistence, close-time card evidence, and `closed → reconciled` lifecycle are Phase 7 — see [phase-07-reporting-and-reconciliation.md](../implementation/phases/phase-07-reporting-and-reconciliation.md) and [phase-07-reporting-and-reconciliation-v1.md](../implementation/decisions/phase-07-reporting-and-reconciliation-v1.md).
+- Phase 7 MVP: session close has no card prompt when grain is `business_day` (default); business-day close collects one machine/batch net total (or `evidence_unavailable`). Reconciliation uses comparisons / findings / resolutions — not a generic reconciliation adjustment.
 - Processor settlement automation, chargebacks, and integrated payment batch matching remain deferred.
-- No reopen workflow is implemented for closed Business Days or Sessions.
-- Explicit permission enforcement for open/close services is not represented in the current service boundary and should be reconciled with ADR-0011 before treating it as settled.
+- No reopen workflow is implemented for closed or reconciled Business Days or Sessions (Phase 7 v1: no reopen after reconcile).
+- Explicit permission enforcement for open/close services is not yet represented in the current service boundary. Phase 7b/7c must enforce `pos.session.close` / `pos.business_day.close` (and related reporting close-evidence permissions) at the service boundary when extending those services.

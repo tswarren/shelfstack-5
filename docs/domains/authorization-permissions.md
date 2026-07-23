@@ -248,15 +248,41 @@ Canonical keys for Stored Value. Domain lists must match this catalog. Policy: [
 - Every manual adjustment requires `stored_value.adjustment.create` plus a recorded approval: another user with `stored_value.adjustment.approve`, or the same user with `stored_value.adjustment.approve_self` (PIN re-auth still required). Holding only `stored_value.adjustment.approve` does not imply self-approval.
 - Post-void always requires `pos.post_void.create` plus a recorded approval: another user with `pos.post_void.approve`, or the same user with `pos.post_void.approve_self` (PIN re-auth still required). Holding only `pos.post_void.approve` does not imply self-approval.
 
-## Reporting
+## Reporting (Phase 7)
 
-Seed when Phase 7 begins. Canonicalize domain lists to this grammar at that time:
+Canonical keys for Reporting and Reconciliation. Accepted v1 policy: [phase-07-reporting-and-reconciliation-v1.md](../implementation/decisions/phase-07-reporting-and-reconciliation-v1.md). Session/business-day **close** remains under POS (`pos.session.close`, `pos.business_day.close`). Do not seed `pos.reconcile_*` or `reporting.record_adjustment`.
 
-| Namespace | Phase | Source domain list to normalize |
-| --- | --- | --- |
-| `reporting.*` | 7 | [reporting-and-reconciliation.md](reporting-and-reconciliation.md) |
+| Key | Description | Scope | Phase | Authority | Approvals | Audit |
+| --- | --- | --- | --- | --- | --- | --- |
+| `reporting.view_sales` | View commercial / sales reports | store | 7 | — | no | no |
+| `reporting.view_tax` | View tax reports | store | 7 | — | no | no |
+| `reporting.view_tenders` | View tender reports | store | 7 | — | no | no |
+| `reporting.view_cash` | View cash accountability and expected cash on X/Z | store | 7 | — | no | no |
+| `reporting.view_inventory` | View inventory quantity / movement reports | store | 7 | — | no | no |
+| `reporting.view_purchasing` | View purchasing / receiving operational reports | store | 7 | — | no | no |
+| `reporting.view_requests` | View product-request reports | store | 7 | — | no | no |
+| `reporting.view_cost` | View cost figures on reports | store | 7 | — | no | yes |
+| `reporting.view_margin` | View margin figures on reports | store | 7 | — | no | yes |
+| `reporting.view_stored_value` | View stored-value liability / activity reports | store | 7 | — | no | no |
+| `reporting.view_audit` | View audit / exception report packs | store | 7 | — | no | yes |
+| `reporting.view_session_x` | View Session X | store | 7 | — | no | no |
+| `reporting.view_session_z` | View Session Z | store | 7 | — | no | no |
+| `reporting.view_business_day_x` | View Business-Day X | store | 7 | — | no | no |
+| `reporting.view_business_day_z` | View Business-Day Z | store | 7 | — | no | no |
+| `reporting.export` | Export tabular reports (e.g. CSV) | store | 7 | — | no | yes |
+| `reporting.reconcile_session` | Draft and finalize session reconciliation | store | 7 | cash/card variance thresholds when accepting differences | conditional | yes |
+| `reporting.reconcile_business_day` | Draft and finalize business-day reconciliation | store | 7 | cash/card variance thresholds when accepting differences | conditional | yes |
+| `reporting.record_reconciliation_resolution` | Record reconciliation resolutions (including accept-exception) | store | 7 | per resolution type | conditional | yes |
+| `reporting.close_evidence_unavailable` | Record `evidence_unavailable` at close without fabricating observed amounts | store | 7 | — | conditional | yes |
+| `reporting.reconcile.approve` | Independently approve over-threshold variance acceptance | store | 7 | approver’s variance authority | — | yes |
+| `reporting.reconcile.approve_self` | Self-approve over-threshold variance acceptance (PIN re-auth + recorded approval) | store | 7 | — | — | yes |
 
-Until normalized, prefer adding explicit rows here before seeding that phase.
+### Reporting evaluation
+
+- Exact-match finalize requires only the relevant `reporting.reconcile_*` permission.
+- Accepting nonzero variance within the actor’s configured authority does not require a second user.
+- Accepting variance above authority requires `reporting.reconcile.approve` by another user, or `reporting.reconcile.approve_self` with re-auth (ADR-0011 pattern).
+- Cost and margin view keys do not imply reconcile authority.
 
 ## Seeding rules
 

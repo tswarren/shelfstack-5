@@ -176,12 +176,17 @@ Reports must not reinterpret completed history or modify source records.
 | Card close evidence | Session merchant-slip totals (when configured); business-day machine/batch totals |
 | Session / business-day close | Completed activity + persisted Z snapshots |
 
-### Phase 7 close-control locks (planning defaults until 7a decision note)
+### Phase 7 close-control locks (accepted)
+
+Accepted detail: [decisions/phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md).
 
 - Separate store-scoped Session Z and Business-Day Z sequences; Z number + structured snapshot created atomically with successful close.
 - Business-Day Z consolidates persisted Session Z snapshots and validates the roll-up against completed activity.
-- Store `card_reconciliation_grain` = `session` \| `business_day`: session close may collect merchant-slip card totals; business-day close collects machine/batch card totals. Close collects; Z reports; reconcile reviews.
+- MVP: new stores default `card_reconciliation_grain = business_day` (no session card prompt); day close collects one machine/batch **net** total by default.
+- Card evidence may be multi-row with precision `net_only` or `received_and_refunded`; `evidence_unavailable` permits close without fabricating amounts.
+- Close never auto-reconciles; finalize is a separate audited action (one-click Reconcile now allowed).
 - Reconciliation uses comparisons / findings / resolutions — not a generic balance-changing adjustment.
+- Reporting reconcile/view keys under `reporting.*`; close remains `pos.*.close`.
 
 Phase 7 delivery detail: [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md).
 

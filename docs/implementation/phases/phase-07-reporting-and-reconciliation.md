@@ -1,10 +1,11 @@
 # Phase 7 — Reporting and Reconciliation
 
-**Status:** Not started  
+**Status:** 7a decisions accepted — implementation not started  
 **Depends on:** Phases 4–6 complete on `main` (posted POS, inventory, purchasing, stored value, corrections)  
 **Preferred after:** Phase 6.5 cashier workspace ([phase-06.5-cashier-workspace.md](phase-06.5-cashier-workspace.md)) — complete; operable register before report UX dominates  
 **Unlocks:** dependable close control, cash and standalone-card accountability, first operational and historical report pack; later accounting exports remain deferred  
-**Governing docs:** [reporting-and-reconciliation](../../domains/reporting-and-reconciliation.md); [ADR-0008](../../adr/0008-immutable-pos-transactions.md); [ADR-0010](../../adr/0010-business-days-sessions-and-z-reports.md); [ADR-0012](../../adr/0012-stored-value-ledger.md); [ADR-0013](../../adr/0013-govern-quantity-tracked-inventory-cost.md); [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md); [architectural-locks](../architectural-locks.md); [authorization-permissions](../../domains/authorization-permissions.md)  
+**Governing docs:** [reporting-and-reconciliation](../../domains/reporting-and-reconciliation.md); [ADR-0008](../../adr/0008-immutable-pos-transactions.md); [ADR-0010](../../adr/0010-business-days-sessions-and-z-reports.md); [ADR-0011](../../adr/0011-permissions-authority-and-approvals.md); [ADR-0012](../../adr/0012-stored-value-ledger.md); [ADR-0013](../../adr/0013-govern-quantity-tracked-inventory-cost.md); [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md); [architectural-locks](../architectural-locks.md); [authorization-permissions](../../domains/authorization-permissions.md)  
+**Decision note (accepted):** [phase-07-reporting-and-reconciliation-v1.md](../decisions/phase-07-reporting-and-reconciliation-v1.md)  
 **Source drafts (non-governing):** [phase-7-reports-ideas](../../temp_draft/phase-7-reports-ideas); [phase-7-pos-x-and-z-reports.md](../../temp_draft/phase-7-pos-x-and-z-reports.md)  
 **Parked draft:** [phase-7-optional-receipt-printing.md](../../temp_draft/phase-7-optional-receipt-printing.md) — customer receipt presentation; not a Phase 7 gate
 
@@ -207,7 +208,7 @@ These prevent the relevant close (computed over completed activity included in t
 - completed tender net does not equal completed transaction net for included activity;
 - Session Z totals do not equal the completed activity included in that session;
 - Business-Day Z totals (Session Z consolidation) do not tie to included completed activity;
-- required close-time evidence for the scope is missing (cash count; session merchant-slip total when grain requires it and card tenders exist; business-day machine/batch total when card tenders exist for the day);
+- required close-time evidence for the scope is missing **and** no authorized `evidence_unavailable` exception is recorded (cash count; session merchant-slip when grain=`session` and card tenders exist; business-day machine/batch when card tenders exist for the day);
 - a required Z snapshot cannot be persisted.
 
 ### Reportable integrity exceptions
@@ -223,26 +224,50 @@ Visible and escalated, but **not** automatic POS close blockers:
 
 Internal consistency remains distinct from reconciliation. An internal mismatch must not be cleared merely by accepting a reconciliation variance.
 
-## Card reconciliation grain (store configuration)
+## MVP operating profile
+
+**Extensible model underneath; narrow default on top.** Accepted detail: [phase-07-reporting-and-reconciliation-v1.md](../decisions/phase-07-reporting-and-reconciliation-v1.md).
+
+New stores default to `card_reconciliation_grain = business_day`. The ordinary store experiences:
+
+```text
+SESSION CLOSE     → count drawer → close (no card prompt)
+BUSINESS-DAY CLOSE → enter one terminal batch net total → close
+RECONCILIATION    → expected vs observed → Reconcile now | Review later
+```
+
+Session-grain card reconciliation, multi-terminal rows, and received/refunded detail are optional progressive capabilities — not the operator’s default vocabulary.
+
+## Card reconciliation grain and evidence
 
 Store-level policy (simple store column or equivalent for v1; need not wait on full OD-009):
 
 ```text
-card_reconciliation_grain = session | business_day
+card_reconciliation_grain = session | business_day   # default: business_day
 ```
 
 | Value | Session close | Business-day close |
 | --- | --- | --- |
-| `session` | When the session has card tenders, prompt for **merchant-slip / merchant-receipt total** (cashier accountability), same interaction pattern as cash count | Prompt for **terminal / machine batch total** (device settlement) when the day has card tenders |
-| `business_day` | No merchant-slip prompt | Prompt for **terminal / machine batch total** when the day has card tenders |
+| `business_day` | No merchant-slip prompt | Collect machine/batch card evidence when the day has card tenders |
+| `session` | Collect merchant-slip evidence when the session has card tenders | Still collect machine/batch evidence when the day has card tenders |
 
-Default for many indie bookstores: `business_day`.
+**Close collects; Z reports; reconcile reviews.**
 
-**Close collects; Z reports; reconcile reviews.** External card amounts are not invented at reconciliation time when they were required at close — reconciliation reviews the persisted close evidence and variances (parallel to cash).
+### Evidence cardinality and precision
 
-Merchant-slip totals and machine-batch totals are **different comparison types**. Neither substitutes for the other. Config expresses required grain; it does not claim every terminal can isolate a session total if procedures do not support it. If grain is `session` but the store cannot produce slip totals, operators must use an authorized exception path — do not silently fabricate session card evidence.
+- One scope may contain **one or more** evidence rows (normally by terminal or batch reference).
+- Each row has precision `net_only` or `received_and_refunded`.
+- `net_only`: observed net only — do not invent received/refunded splits (MVP default for machine batch).
+- `received_and_refunded`: store both sides; net is derived; optional counts may be retained.
+- MVP UI: one row — batch/net total + optional reference. “Add another terminal/batch” and received/refunded fields are progressive.
+- Comparisons use the row’s precision. ShelfStack received and refunded tenders remain separately reportable in history regardless of evidence precision.
+- Merchant-slip and machine-batch are distinct comparison types.
 
-Evidence fields for each close-time card total: amount, optional external/batch reference, optional terminal identifier, applicable range notes, entering user, timestamp.
+### Missing evidence (`evidence_unavailable`)
+
+Missing required close-time evidence **blocks close by default**.
+
+An authorized `evidence_unavailable` exception may permit close **without fabricating an observed amount**: actor, reason, timestamp, optional terminal/batch applicability; second-user approval only when policy/thresholds require it. Z shows the exception. Comparisons may carry an unavailable observed value. Reconciliation must later enter evidence or accept the exception; day recon cannot finalize while a required day card comparison remains unresolved `evidence_unavailable` unless an authorized accept-exception resolution exists.
 
 Processor settlement automation, chargebacks, and integrated payment batch matching remain deferred.
 
@@ -250,7 +275,7 @@ Processor settlement automation, chargebacks, and integrated payment batch match
 
 Close and reconciliation remain separate (ADR-0010). A session or business day may close with a documented cash and/or card variance and be reconciled later.
 
-Closing cash variance is calculated and persisted during close. Session merchant-slip and business-day machine-batch card variances are likewise persisted at close when those prompts apply. Reconciliation later reviews and resolves those persisted variances; it does not create the original close variance.
+Closing cash variance is calculated and persisted during close. Card evidence variances (or `evidence_unavailable`) are likewise persisted at close when those prompts apply. Reconciliation later reviews and resolves those persisted results; it does not create the original close variance.
 
 Phase 7 does **not** introduce a generic balance-changing reconciliation adjustment. Model separately:
 
@@ -258,8 +283,8 @@ Phase 7 does **not** introduce a generic balance-changing reconciliation adjustm
 reconciliation
 ├── comparisons
 │   ├── expected amount (ShelfStack)
-│   ├── observed amount (count, merchant slips, or machine batch)
-│   ├── variance
+│   ├── observed amount | unavailable
+│   ├── variance (when observed is numeric)
 │   └── external reference
 ├── findings
 │   ├── reason / category
@@ -276,26 +301,29 @@ When an operational balance requires correction, resolution uses the owning doma
 ### Reconciliation finalization and mutability
 
 - One canonical reconciliation per Session or Business Day.
-- Comparisons and findings may be assembled while the reconciliation is in draft (not while the session/day is still open for operations).
-- Finalization records `reconciled_at` / `reconciled_by` (and transitions status to reconciled).
+- **Close never automatically marks a session or day reconciled**, including exact (zero-variance) matches.
+- UI may offer one-action **Reconcile now** after close; it remains a separate audited finalize action.
+- Comparisons and findings may be assembled in draft (after operational close).
+- Finalization records `reconciled_at` / `reconciled_by`.
 - After finalization, evidence and resolutions are immutable or corrected only through append-only superseding records.
 
 ### Variance acceptance authority
 
-- Close may persist nonzero cash or card variance without resolving it (existing cash close behavior preserved).
-- **Accepting** a nonzero variance is a reconciliation act.
-- Cash: reuse existing cash-variance review / authority thresholds.
-- Card: nonzero accepted differences require reason and appropriate reconciliation authority (v1: any nonzero card acceptance needs recon authority + reason; no separate card threshold required unless added later).
+| Result | MVP behavior |
+| --- | --- |
+| Exact match | User with reconcile permission may finalize |
+| Nonzero within configured authority | Same user may explain and accept (cash-style numeric authority; card analogous when configured) |
+| Above authority | Another authorized user required (ADR-0011); self-approval needs distinct elevated permission + re-auth |
+| Evidence unavailable | Reason required; unresolved or authorized accept-exception — never invent $0 observed |
+
+Close may persist nonzero variance without resolving it. Stores without configured thresholds fail closed for accepting differences while still allowing close with evidence or `evidence_unavailable`.
 
 ### Reconciliation hierarchy (v1)
 
 - A session may be reconciled only after it closes.
-- Session reconciliation requirements:
-  - cash-enabled sessions: cash variance review/resolution;
-  - when `card_reconciliation_grain = session` and the session has card tenders: merchant-slip card comparison review/resolution;
-  - when grain is `business_day`, session recon does **not** require card comparison.
-- A business day may be reconciled only after it closes and every included session that has configured reconciliation requirements is reconciled or explicitly excepted.
-- Business-day reconciliation owns the machine/batch card comparison when the day has card tenders (always, under both grain values).
+- Session requirements: cash for cash-enabled; session card only when grain=`session`.
+- A business day may be reconciled only after it closes and every included session with configured requirements is reconciled or explicitly excepted.
+- Business-day reconciliation owns the machine/batch card comparison when the day has card tenders.
 - Card-only sessions follow the card grain (no cash path).
 - No reopen of a reconciled session or business day in v1.
 
@@ -354,10 +382,10 @@ Gates may land as sequential short-lived PRs. Prefer finishing 7a before deep UI
 
 | Gate | Focus | Core? |
 | --- | --- | --- |
-| **7a** | **Contracts & schema locks** — shared definitions; time attribution; integrity severity; Z numbering and snapshot shapes; Day Z = Session Z consolidation + activity validation; `card_reconciliation_grain`; merchant-slip vs machine-batch comparison types; recon taxonomy and finalization; permission ownership; variance authority; legacy closed-record treatment; no reopen for v1 | Yes |
-| **7b** | **Session X / Z** — live Session X (blind-count cash visibility rules); extend `CloseSession` for atomic Session Z; cash count path; merchant-slip card total when grain=`session` and card tenders exist; settlement bridge; cashier view omits cost/margin | Yes |
-| **7c** | **Business-Day X / Z** — live Day X with session status; extend `CloseBusinessDay` for atomic Business-Day Z as consolidation of Session Zs; machine/batch card total when day has card tenders; close-blocking tie-outs; broader anomalies as exceptions | Yes |
-| **7d** | **Reconciliation** — draft → finalize one canonical recon per session/day; review persisted cash and card variances; comparisons/findings/resolutions; link domain corrections; enforce hierarchy from grain setting | Yes |
+| **7a** | **Contracts & schema locks** — accepted in [decision note](../decisions/phase-07-reporting-and-reconciliation-v1.md); schema sketches for Z, multi-row directional card evidence, `evidence_unavailable`, recon records; seed `reporting.*` permissions | Yes |
+| **7b** | **Session X / Z** — MVP: cash count only at session close; live Session X; extend `CloseSession` for atomic Session Z; merchant-slip path only when grain=`session`; enforce `pos.session.close`; settlement bridge | Yes |
+| **7c** | **Business-Day X / Z** — MVP: one machine/batch net total (+ optional ref) at day close; Day Z consolidates Session Zs; `evidence_unavailable` path; enforce `pos.business_day.close` | Yes |
+| **7d** | **Reconciliation** — never auto at close; Reconcile now / Review later; exact-match one-click finalize; authority-bounded variance accept; comparisons/findings/resolutions | Yes |
 | **7e** | **First report pack** — commercial activity; tender received/refunded; tax by component; current stock + ledger movements; open PO / on order; SV liability roll-forward; CSV export | Yes for full phase; may trail 7b–7d |
 
 ### Optional extensions (not a gate)
@@ -369,55 +397,54 @@ Gates may land as sequential short-lived PRs. Prefer finishing 7a before deep UI
 
 Do **not** absorb customer-receipt product design or hardware printing into these extensions.
 
-## Decisions to lock in 7a
+## Decisions (accepted in 7a)
 
-Record accepted outcomes in a Phase 7 decision note and update domain / permission docs in the same change when practical. Proposed v1 directions below are the working defaults for implementation planning.
+Full text: [phase-07-reporting-and-reconciliation-v1.md](../decisions/phase-07-reporting-and-reconciliation-v1.md).
 
-| # | Decision | Proposed / default direction |
+| # | Decision | Accepted direction (summary) |
 | ---: | --- | --- |
-| 1 | v1 required reports | X/Z family + cash/card recon + first report pack |
-| 2 | Print / export | Browser print for all four X/Z; CSV for tabular pack; no hardware |
-| 3 | Card reconciliation scope and evidence | Store `card_reconciliation_grain` = `session` \| `business_day`. Session close (when grain=`session` and card tenders exist) collects **merchant-slip total**. Business-day close (when card tenders exist) collects **machine/batch total**. Close collects; Z reports; reconcile reviews. |
-| 4 | Reconciliation taxonomy | Separate comparison types, finding reasons, and resolution types; no generic balance-changing reconciliation adjustment |
-| 5 | Reconciliation hierarchy | Day recon only after close and after every included session with **configured reconciliation requirements** is reconciled or explicitly excepted (cash for cash-enabled; session card only when grain=`session`; day always owns machine/batch card when applicable) |
-| 6 | Reopen after reconcile | **No** for v1 |
-| 7 | Permission ownership | Choose one namespace; update POS domain prose, reporting domain, and permission catalog together. Prefer `reporting.record_reconciliation_resolution` over `record_adjustment`. Do not seed overlapping keys |
-| 8 | Integrity severity | Close-blocking vs reportable exceptions as in this plan |
-| 9 | Z atomicity and idempotency | Number + snapshot with close; retries do not duplicate or consume numbers; successful close requires canonical snapshot |
-| 10 | Time attribution | Confirm OD-001 business-date assignment; activity attribution by completion Business Day (POS), posting time/date (ledgers), explicit as-of (current-state); timezone + source cutoff in metadata |
-| 11 | Current vs historical classification views | Historical snapshots authoritative; current-name views not required for core |
-| 12 | Z numbering model | Separate store-scoped Session Z and Business-Day Z sequences; never reused; formatting presentation-only; distinct from any session operating number |
-| 13 | Business-Day Z derivation | Consolidate persisted Session Z snapshots (retain breakdown); validate roll-up against completed activity; do not persist an independently recalculated alternate total set |
-| 14 | Z snapshot and reprint fidelity | Structured snapshot authoritative; reprint from snapshot; historical/numerical equivalence; byte-identical HTML not required unless rendered artifact retained |
-| 15 | Reconciliation finalization and mutability | One canonical recon per session/day; draft then finalize with `reconciled_at/by`; after finalize, immutable or append-only superseding corrections |
-| 16 | Variance acceptance authority | Close may persist variance; accepting nonzero cash uses cash-variance thresholds; accepting nonzero card requires reason + recon authority |
-| 17 | Pre-Phase-7 closed records | Legacy unsnapshotted (or discard dev data); no silent backfill; any backfill explicitly marked generated after original close |
+| 1 | v1 required reports | X/Z + cash/card recon + first report pack |
+| 2 | Print / export | Browser print all four X/Z; CSV tabular; no hardware |
+| 3 | Card grain and evidence | Default `business_day`; multi-row evidence; `net_only` \| `received_and_refunded`; MVP one net batch total |
+| 4 | Reconciliation taxonomy | Comparisons / findings / resolutions; no generic balance-changing adjustment |
+| 5 | Hierarchy + missing evidence | Configured session requirements; `evidence_unavailable` without inventing amounts |
+| 6 | Reopen after reconcile | No for v1 |
+| 7 | Permission ownership | `reporting.*` for recon/views; close stays `pos.*.close`; use `record_reconciliation_resolution` |
+| 8 | Integrity severity | Close-blocking vs reportable split |
+| 9 | Z atomicity / idempotency | Number + snapshot with close |
+| 10 | Time attribution | OD-001 confirmed; activity by completion day / posting / as-of |
+| 11 | Classification views | Historical snapshots authoritative for core |
+| 12 | Z numbering | Separate store-scoped Session and Business-Day sequences |
+| 13 | Day Z derivation | Consolidate Session Zs; validate vs activity |
+| 14 | Reprint fidelity | Structured snapshot; historical/numerical equivalence |
+| 15 | Finalization | Never auto-reconcile at close; one-click Reconcile now allowed as separate action |
+| 16 | Variance authority | Exact match / within threshold / above threshold / evidence unavailable (cash-style) |
+| 17 | Pre-Phase-7 closes | Legacy unsnapshotted; no silent backfill |
 
-**Pre-7b policy (not a separate governing OD):** X-report cash visibility respects blind-count when configured; Z always retains expected/counted/variance.
+**MVP profile + pre-7b X cash visibility** are part of the same decision note.
 
 ## Likely supporting records
 
 Schema design should consider records equivalent to:
 
-- store `card_reconciliation_grain` (or equivalent);
+- store `card_reconciliation_grain` (default `business_day`);
 - store-scoped Session Z and Business-Day Z sequences;
 - persisted Session Z and Business-Day Z snapshots;
-- session close merchant-slip card evidence (when used);
-- business-day close machine/batch card evidence;
+- card evidence rows (precision, received/refunded/net, optional counts, terminal/batch ref) and/or `evidence_unavailable` exceptions;
 - reconciliation headers (one canonical per session/day);
-- reconciliation comparisons, findings, and resolutions;
+- reconciliation comparisons (observed may be unavailable), findings, and resolutions;
 - links from resolutions to domain-owned corrective records;
 - report / close / reconciliation audit events.
 
 Exact table names remain implementation detail. A generic reconciliation record must not act as an alternative financial, inventory, cash, or stored-value ledger.
 
-## Permissions (direction)
+## Permissions
 
-View and export keys remain under `reporting.*` as listed in the reporting domain (`view_sales`, `view_tax`, `view_tenders`, `view_cash`, `view_inventory`, `view_purchasing`, `view_requests`, `view_cost`, `view_margin`, `view_stored_value`, `view_audit`, `export`), plus view keys for Session/Business-Day X and Z as needed.
+Canonical rows: [authorization-permissions.md](../../domains/authorization-permissions.md) (`reporting.*`).
 
-Close remains on existing `pos.session.close` and `pos.business_day.close`.
+Close remains `pos.session.close` / `pos.business_day.close`. Reconcile and resolution keys are under `reporting.*` (decision 7). Cost, margin, and audit access remain more restricted than ordinary sales reporting.
 
-Reconcile state-change keys are decided in 7a (see decision 7). Cost, margin, and audit access remain more restricted than ordinary sales reporting.
+**7b/7c:** extend close services only with service-boundary enforcement of the existing close permissions (gap called out in [business-day-close.md](../../workflows/business-day-close.md)).
 
 ## Exit criteria
 
@@ -425,30 +452,31 @@ Reconcile state-change keys are decided in 7a (see decision 7). Cost, margin, an
 
 - [ ] Shared definitions documented and used: gross sales, price-override variance, discounts, returns, post-voids, net sales, tax, SV issuance/reload, tender received/refunded/net, settlement bridge
 - [ ] Time attribution and source cutoff are defined per report class and visible in report metadata; OD-001 business-date policy confirmed
-- [ ] Store `card_reconciliation_grain` is configurable (`session` \| `business_day`) with documented close prompts
+- [ ] New stores default to `card_reconciliation_grain = business_day`; MVP session close has no card prompt
 - [ ] Session X is live, recalculated, and does not close, number, or reconcile; X cash visibility respects blind-count rules when configured
 - [ ] Successful session close atomically assigns Session Z number and persists one canonical structured Z snapshot
-- [ ] When grain=`session` and card tenders exist, session close requires merchant-slip total; variance persists on session/Z
+- [ ] When grain=`session` and card tenders exist, session close requires merchant-slip evidence or `evidence_unavailable`
 - [ ] Failed or retried session close does not consume another Z number; repeated close is idempotent
 - [ ] A session cannot be successfully closed without its required Z snapshot
 - [ ] Session Z cash path retains expected/counted/variance; recounts append; cashier view omits cost/margin
 - [ ] Business-Day X retains session breakdown
 - [ ] Successful business-day close atomically assigns Business-Day Z number and persists consolidation of Session Z snapshots
-- [ ] When the day has card tenders, business-day close requires machine/batch total; variance persists on day/Z
+- [ ] When the day has card tenders, day close accepts machine/batch evidence (`net_only` MVP) or `evidence_unavailable` — never invents $0 observed
+- [ ] Card evidence schema supports multiple rows and `received_and_refunded` precision; MVP UI is one net row
 - [ ] Day Z totals are Session Z consolidation; close validates roll-up against completed activity
 - [ ] Failed or retried business-day close does not consume another Z number; repeated close is idempotent
 - [ ] A business day cannot be successfully closed without its required Z snapshot
 - [ ] Business day still cannot close while a session remains open (preserved)
 - [ ] Defined close-blocking tie-out failures prevent close; broader integrity anomalies surface as exceptions without automatically blocking close
-- [ ] Close and reconcile remain separate; Z is not rewritten by reconciliation
+- [ ] Close never auto-reconciles; Reconcile now / Review later remains a separate audited action (including exact matches)
 - [ ] One canonical reconciliation per session/day; finalization is immutable or append-only superseding
-- [ ] Reconciliation reviews persisted close variances (cash; merchant-slip; machine/batch) per hierarchy and grain
+- [ ] Reconciliation reviews persisted close results per hierarchy and grain; unavailable observed values are supported
 - [ ] Comparisons, findings, and resolutions do not alter POS, tenders, ledgers, counts, or Z rows
 - [ ] Operational correction from reconciliation uses owning-domain services and is linkable from the reconciliation record
 - [ ] Internal tie-out failures cannot be cleared only by accepting a reconciliation variance
-- [ ] Variance acceptance authority enforced for nonzero cash and card acceptances
+- [ ] Variance acceptance follows cash-style authority (exact / within / above / evidence unavailable)
 - [ ] Pre-Phase-7 closed records remain legacy unsnapshotted (no silent backfill)
-- [ ] Permission ownership decision is recorded; keys seeded; report and reconcile surfaces enforce authorization
+- [ ] `reporting.*` permissions seeded; close and reconcile surfaces enforce authorization at the service boundary
 - [ ] Browser print works for Session X, Session Z, Business-Day X, and Business-Day Z without a hardware-specific stack
 - [ ] Reprint of a Z report reproduces historical and numerical equivalence from the structured snapshot without current master data
 
@@ -481,26 +509,28 @@ Proportionate coverage for:
 - Z atomicity and idempotency on session and business-day close;
 - Session Z vs Business-Day Z sequence isolation;
 - Day Z consolidation from Session Zs plus activity validation;
-- `card_reconciliation_grain` session vs business_day prompt behavior;
-- merchant-slip vs machine-batch comparison types;
+- MVP `business_day` path (no session card prompt; one day net batch total);
+- `card_reconciliation_grain` session path and multi-row / received_and_refunded progressive detail;
+- `evidence_unavailable` close without invented observed amounts;
+- close never auto-reconciles; exact-match finalize is a separate action;
 - close-blocking versus reportable integrity classification;
 - X non-mutation and X cash visibility rules;
 - Z reprint from snapshot after master-data rename;
 - cash and card variance persistence at close and later reconciliation review;
+- authority-bounded variance accept vs over-threshold approval;
 - reconciliation finalization immutability / append-only supersede;
-- reconciliation hierarchy under both grain settings;
 - resolution linking to domain corrections without mutating sources;
 - permission denials on cost/margin and reconcile actions;
 - CSV export of first-pack tabular reports.
 
-Prefer service and request tests for close/recon paths; system tests for the primary close → Z → reconcile operator path.
+Prefer service and request tests for close/recon paths; system tests for the MVP close → Z → Reconcile now path.
 
 ## Implementation order
 
-1. Complete 7a contracts, schema shapes, grain setting, and permission ownership decision; update governing docs.
-2. 7b — Session X and Session Z on `CloseSession` (cash + conditional merchant slips).
-3. 7c — Business-Day X and Business-Day Z on `CloseBusinessDay` (machine/batch card total).
-4. 7d — Reconciliation workflows and records.
+1. 7a accepted — keep schema sketches and seeded `reporting.*` keys aligned with the decision note.
+2. 7b — Session X and Session Z on `CloseSession` (MVP cash only; enforce close permission).
+3. 7c — Business-Day X and Business-Day Z on `CloseBusinessDay` (net batch total or `evidence_unavailable`).
+4. 7d — Reconciliation (Reconcile now / Review later).
 5. 7e — First report pack (may overlap after 7a).
 6. Optional extensions only if schedule allows; do not block phase exit.
 

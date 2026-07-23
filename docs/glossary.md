@@ -490,7 +490,7 @@ Examples include:
 * Post-Void;
 * Inventory Adjustment;
 * Stored-Value reversal;
-* Reconciliation Adjustment.
+* Reconciliation resolution (may link a domain-owned correction; does not itself mutate balances).
 
 ## Cost correction
 
@@ -1772,11 +1772,11 @@ Examples include:
 
 Reconciliation does not rewrite source Transactions or Tenders.
 
-## Reconciliation adjustment
+## Reconciliation resolution
 
-An explicit record acknowledging or categorizing a difference discovered during Reconciliation.
+An explicit record that explains, accepts, or links a domain-owned correction for a difference discovered during Reconciliation (comparisons and findings).
 
-It does not alter the original completed source activity.
+It does not alter the original completed source activity or act as a generic balance-changing ledger. Phase 7 v1: [phase-07-reporting-and-reconciliation-v1.md](implementation/decisions/phase-07-reporting-and-reconciliation-v1.md).
 
 ## Record owner
 

@@ -399,9 +399,9 @@ Within one database transaction:
 
 ## Permissions
 
-The `pos.*` permission set covers access, Transaction lifecycle, line removal, Discounts and Price Overrides, Returns, Tender exceptions, tax exemptions, Session and Business-Day control, cash movements, variance review, receipt reprint, Post-Void, and Approval.
+The `pos.*` permission set covers access, Transaction lifecycle, line removal, Discounts and Price Overrides, Returns, Tender exceptions, tax exemptions, Session and Business-Day control (including open/close), cash movements, variance review at close, receipt reprint, Post-Void, and Approval.
 
-Reconciliation view/finalize permissions are owned with Reporting for Phase 7; gate 7a must choose a single namespace and must not leave overlapping `pos.reconcile_*` and `reporting.reconcile_*` keys. See [reporting-and-reconciliation.md](reporting-and-reconciliation.md) and [phase-07-reporting-and-reconciliation.md](../implementation/phases/phase-07-reporting-and-reconciliation.md).
+Reconciliation finalize/resolution permissions are under `reporting.*` (Phase 7). Do not use overlapping `pos.reconcile_*` keys. See [authorization-permissions.md](authorization-permissions.md) and [phase-07-reporting-and-reconciliation-v1.md](../implementation/decisions/phase-07-reporting-and-reconciliation-v1.md).
 
 Exact codes are maintained in [authorization-permissions.md](authorization-permissions.md).
 

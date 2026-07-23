@@ -752,7 +752,7 @@ Corrections use:
 * Post-Void transactions;
 * inventory reversals;
 * Stored-Value reversals;
-* Reconciliation Adjustments.
+* Reconciliation resolutions (link domain-owned corrections; do not mutate balances).
 
 ### Principal invariants
 
@@ -894,8 +894,7 @@ It answers:
 * Session Z Reports;
 * Business-Day X Reports;
 * Business-Day Z Reports;
-* reconciliation records;
-* Reconciliation Adjustments;
+* reconciliation records (comparisons, findings, resolutions; close-time external evidence);
 * operational exception reporting;
 * future accounting-export batches.
 

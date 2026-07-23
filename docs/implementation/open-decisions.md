@@ -135,6 +135,10 @@ These are not open decisions. They live in decision notes and [architectural-loc
 - [Inventory correction and OD-014 interaction](decisions/phase-06-inventory-correction-and-od-014.md) (interim post-settlement post-void block; OD-010 remains open)
 - [Stored-value v1 operating policy](decisions/phase-06-stored-value-v1-operating-policy.md)
 
+## Phase 7 delivery decisions (accepted; not open)
+
+- [Reporting and reconciliation v1](decisions/phase-07-reporting-and-reconciliation-v1.md) — MVP `business_day` card grain; multi-row directional card evidence; `evidence_unavailable`; no auto-reconcile at close; `reporting.*` permissions; comparisons/findings/resolutions
+
 ## Already settled (do not reopen here)
 
 See [architectural-locks.md](architectural-locks.md):
@@ -147,7 +151,8 @@ See [architectural-locks.md](architectural-locks.md):
 - prefer derived `on_order`;
 - reporting source rules;
 - no display categories (ADR-0003);
-- Phase 6 post-void / unavailable ledger / stored-value v1 locks (above).
+- Phase 6 post-void / unavailable ledger / stored-value v1 locks (above);
+- Phase 7 reporting / close-control / reconciliation v1 locks (above).
 
 ## Sources
 
