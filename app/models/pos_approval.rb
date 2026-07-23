@@ -8,9 +8,10 @@ class PosApproval < ApplicationRecord
   ACTION_TYPES = %w[
     price_override discount_apply tax_exemption tax_category_override cash_movement
     post_void stored_value_adjustment stored_value_refund_exception card_refund_reconciliation
+    reconciliation_variance
   ].freeze
   # card_refund_reconciliation retained for schema check compatibility; unused after Phase 6 simplification.
-  SELF_APPROVAL_ACTION_TYPES = %w[post_void stored_value_adjustment].freeze
+  SELF_APPROVAL_ACTION_TYPES = %w[post_void stored_value_adjustment reconciliation_variance].freeze
 
   belongs_to :store
   belongs_to :pos_session, optional: true

@@ -27,6 +27,10 @@ class Store < ApplicationRecord
   has_many :receipts, dependent: :restrict_with_exception
   has_many :product_requests, dependent: :restrict_with_exception
   has_many :stored_value_entries, dependent: :restrict_with_exception
+  has_many :pos_session_z_reports, dependent: :restrict_with_exception
+  has_many :business_day_z_reports, dependent: :restrict_with_exception
+  has_many :pos_close_card_evidences, dependent: :restrict_with_exception
+  has_many :reconciliations, dependent: :restrict_with_exception
 
   validates :code, presence: true, uniqueness: { scope: :organization_id }
   validates :name, presence: true
