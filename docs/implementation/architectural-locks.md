@@ -172,6 +172,18 @@ Reports must not reinterpret completed history or modify source records.
 | Stored-value history | Stored-value ledger |
 | Open order / receiving ops | Current purchase orders and receipts |
 | Holds | Current reservation records |
+| Cash accountability | Sessions, cash movements, counts, business days |
+| Card close evidence | Session merchant-slip totals (when configured); business-day machine/batch totals |
+| Session / business-day close | Completed activity + persisted Z snapshots |
+
+### Phase 7 close-control locks (planning defaults until 7a decision note)
+
+- Separate store-scoped Session Z and Business-Day Z sequences; Z number + structured snapshot created atomically with successful close.
+- Business-Day Z consolidates persisted Session Z snapshots and validates the roll-up against completed activity.
+- Store `card_reconciliation_grain` = `session` \| `business_day`: session close may collect merchant-slip card totals; business-day close collects machine/batch card totals. Close collects; Z reports; reconcile reviews.
+- Reconciliation uses comparisons / findings / resolutions — not a generic balance-changing adjustment.
+
+Phase 7 delivery detail: [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md).
 
 ## Related
 

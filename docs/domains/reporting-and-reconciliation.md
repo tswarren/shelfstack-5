@@ -194,24 +194,24 @@ A Business Day cannot close while a Session remains open.
 
 Close and Reconciliation are distinct.
 
-Reconciliation compares expected internal totals with counted or external totals, such as expected versus counted cash, ShelfStack card Tenders versus terminal totals, Stored-Value totals, and Session totals versus Business-Day totals.
+Close may collect and persist accountability evidence (cash counts; optional session merchant-slip card totals; business-day machine/batch card totals). Reconciliation later reviews those persisted expected-versus-observed variances. A difference does not rewrite source activity.
 
-A difference does not rewrite source activity.
+Standalone-card evidence distinguishes:
 
-### Reconciliation Adjustment
+- **Merchant-slip / merchant-receipt totals** — cashier accountability for a session when store `card_reconciliation_grain` is `session`;
+- **Terminal / machine batch totals** — device settlement for the business day.
 
-Suggested attributes:
+These are separate comparison types. Phase 7 delivery detail: [phase-07-reporting-and-reconciliation.md](../implementation/phases/phase-07-reporting-and-reconciliation.md).
 
-- Store;
-- affected Session or Business Day;
-- type;
-- amount;
-- reason;
-- performing User;
-- approving User when required;
-- timestamp.
+### Reconciliation records (Phase 7 direction)
 
-The exact schema remains Open.
+Phase 7 does not introduce a generic balance-changing reconciliation adjustment. Prefer:
+
+- comparisons (expected, observed, variance, external reference);
+- findings (reason/category, explanation);
+- resolutions (`explained_no_correction`, `accepted_variance`, `linked_domain_correction`, `unresolved`).
+
+Operational balance corrections use the owning domain’s correction mechanism and may be linked from a resolution. Exact schema remains open until Phase 7 gate 7a locks it.
 
 ## Permissions
 
@@ -233,11 +233,13 @@ reporting.reconcile_business_day
 reporting.record_adjustment
 ```
 
+Phase 7 gate 7a must resolve permission ownership versus POS-domain prose that also mentions reconciliation, and should prefer `reporting.record_reconciliation_resolution` over `record_adjustment` if keys are renamed. Do not seed overlapping POS and reporting keys for the same action.
+
 Cost, margin, and audit access may be more restricted than ordinary sales reporting.
 
 ## Audit requirements
 
-Audit Session and Business-Day close, Reconciliation, reopening where permitted, Reconciliation Adjustments, significant report generation, export batches, and report-definition or configuration changes.
+Audit Session and Business-Day close, Reconciliation (including finalization), reopening where permitted, reconciliation resolutions, significant report generation, export batches, and report-definition or configuration changes.
 
 ## Invariants
 
@@ -257,11 +259,16 @@ Audit Session and Business-Day close, Reconciliation, reopening where permitted,
 
 ## Open questions
 
-- Which reports are required for the first operational release?
-- Which reports must print or export?
-- What external totals are entered during card Reconciliation?
-- How are Reconciliation Adjustments categorized?
-- May a reconciled Session or Business Day reopen?
+Phase 7 gate **7a** proposes working defaults for the operational set below; accept them in a Phase 7 decision note before treating them as fully settled:
+
+- Which reports are required for the first operational release? → see Phase 7 decisions 1–2.
+- Which reports must print or export? → browser print for X/Z; CSV for tabular pack.
+- What external card totals are entered, and at which grain? → store `card_reconciliation_grain`; session merchant slips vs day machine/batch (decision 3).
+- How are reconciliation outcomes categorized? → comparisons / findings / resolutions (decision 4); no generic balance-changing adjustment.
+- May a reconciled Session or Business Day reopen? → no for v1 (decision 6).
+- Should reports support current-classification views in addition to historical attribution? → historical authoritative for core (decision 11).
+
+Still open beyond Phase 7 core:
+
 - How is dated inventory valuation calculated?
 - Which accounting integration is required?
-- Should reports support current-classification views in addition to historical attribution?

@@ -321,9 +321,9 @@ Proven by focused request/system tests and a manual walkthrough unless noted:
 
 ## Relationship to Phase 7
 
-Phase 7 (Reporting and Reconciliation) does **not** hard-depend on Phase 6.5 for schema or posting correctness. Delivery preference is **6 → 6.5 → 7** so cashiers can operate the register before report work dominates. If schedule pressure requires it, Phase 7 may start after Phase 6 while 6.5 continues in parallel — but 6.5 must not invent reporting behavior, and Phase 7 must not invent cashier UX.
+Phase 6.5 is complete on `main`. Phase 7 (Reporting and Reconciliation) did **not** hard-depend on Phase 6.5 for schema or posting correctness; delivery preference **6 → 6.5 → 7** was followed so cashiers could operate the register before report work dominates.
 
-Session X / business-day Z **generation** remains Phase 7 even though the cashier workflow map mentions them.
+Session X / business-day Z **generation**, Z persistence, and reconciliation remain Phase 7 — see [phase-07-reporting-and-reconciliation.md](phase-07-reporting-and-reconciliation.md). Phase 6.5 must not invent reporting behavior; Phase 7 must not invent cashier UX.
 
 ## Related
 

@@ -100,7 +100,8 @@ Current open/close services carry actor identity but do not implement a dedicate
 ## Unresolved details
 
 - Business-date assignment policy remains open.
-- Session Z numbering, Business-Day Z numbering, X/Z report persistence, final reconciliation workflows, and any future `closed → reconciled` lifecycle remain Phase 7/deferred.
-- Card terminal settlement, chargebacks, and external reconciliation remain deferred.
+- Session Z numbering, Business-Day Z numbering, X/Z report persistence, and `closed → reconciled` lifecycle are Phase 7 — see [phase-07-reporting-and-reconciliation.md](../implementation/phases/phase-07-reporting-and-reconciliation.md).
+- Phase 7 extends close (not only recon): Session close may collect merchant-slip card totals when store `card_reconciliation_grain` is `session`; Business-Day close collects machine/batch card totals when the day has card tenders. Close collects evidence; Z reports it; reconciliation reviews persisted variances.
+- Processor settlement automation, chargebacks, and integrated payment batch matching remain deferred.
 - No reopen workflow is implemented for closed Business Days or Sessions.
 - Explicit permission enforcement for open/close services is not represented in the current service boundary and should be reconciled with ADR-0011 before treating it as settled.
