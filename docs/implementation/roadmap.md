@@ -99,11 +99,11 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–6.5 product delivery. Phase 6.5 Cashier Workspace merged to `main` at `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 Corrections and Stored Value remains at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed). Phase 5 remains at `2e3e119` (PR #34). Phase 4g remains at `c51dcca` (PR #31).
 
-**Active:** Phase 7 — Reporting and Reconciliation (7a accepted; implement 7b+). See [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md), [decisions/phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md), and [current-phase.md](current-phase.md). Phase 6 decision notes remain governing for corrections/SV: [post-void eligibility](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md), [inventory correction / OD-014](decisions/phase-06-inventory-correction-and-od-014.md), [stored-value v1 policy](decisions/phase-06-stored-value-v1-operating-policy.md).
+**Active:** Phase 7 — Reporting and Reconciliation (gates 7a–7e implemented on `phase/p7-reporting-and-reconciliation`; awaiting operator walkthrough before merge). See [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md), [decisions/phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md), and [current-phase.md](current-phase.md). Phase 6 decision notes remain governing for corrections/SV: [post-void eligibility](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md), [inventory correction / OD-014](decisions/phase-06-inventory-correction-and-od-014.md), [stored-value v1 policy](decisions/phase-06-stored-value-v1-operating-policy.md).
 
 **Phase 5 follow-up (non-blocking):** [#33](https://github.com/tswarren/shelfstack-5/issues/33) — receipt cost migration/tuple SQL hardening and deterministic concurrency barrier before durable databases.
 
-1. Deliver Phase 7 **7b–7d** (MVP: session cash close → day batch net total → Reconcile now / Review later), then 7e first report pack.
+1. Operator-walkthrough Phase 7 on branch, then merge; mark phase complete after acceptance.
 2. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
 3. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
 

@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 7 — Reporting and Reconciliation  
-**Status:** Implementing on `phase/p7-reporting-and-reconciliation` (7a.1 store grain/sequences/`reporting.*` seeds)  
+**Status:** Implementing on `phase/p7-reporting-and-reconciliation` (gates 7a–7e code path ready for operator walkthrough)  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
 **Phase 6 merge:** `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed)  
 **Phase 5 merge:** `2e3e1196ec923b20a667f52b8ae79bd86c0b5c8b` (PR #34)  
@@ -17,9 +17,8 @@
 
 ## Immediate next work
 
-1. Implement Phase 7 gate **7b** — Session X/Z on `CloseSession` (MVP: cash count only; enforce `pos.session.close`); schema for Z + card evidence ready for 7c.
-2. Then **7c** (Business-Day X/Z + one machine/batch net total or `evidence_unavailable`) and **7d** (Reconcile now / Review later).
-3. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+1. Operator walkthrough on `phase/p7-reporting-and-reconciliation`: session close → Session Z → day close with batch/unavailable → recon queue → report pack.
+2. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
 4. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
 5. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
 6. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.
