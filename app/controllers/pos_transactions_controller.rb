@@ -132,6 +132,9 @@ class PosTransactionsController < ApplicationController
 
     open_txn = PosTransaction.open_transactions.find_by(active_pos_session: pos_session)
     unless open_txn
+      require_permission!("pos.transaction.open")
+      return if performed?
+
       opened = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
       unless opened.success?
         return redirect_to pos_transaction_path(@pos_transaction), alert: opened.error
@@ -243,8 +246,9 @@ class PosTransactionsController < ApplicationController
   private
 
   def assign_workspace_context!(presentation_param:)
-    pending_lines = @pos_transaction.pos_line_items.pending.order(:position, :id).to_a
-    snapshots = Pos::LineFinancialSnapshots.call(pos_line_item_ids: pending_lines.map(&:id))
+    @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position)
+    pending_lines = @pos_line_items.select(&:pending?)
+    snapshots = Pos::LineFinancialSnapshots.call(pos_line_item_ids: @pos_line_items.map(&:id))
     @line_discount_cents_by_id = snapshots.discount_cents_by_id
     @line_tax_cents_by_id = snapshots.tax_cents_by_id
 
@@ -263,7 +267,6 @@ class PosTransactionsController < ApplicationController
       @net_total_cents = @pos_transaction.net_total_cents || 0
     end
 
-    @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position)
     @removed_line_items = @pos_transaction.pos_line_items.where(status: "removed").order(:position)
     @pos_discounts = @pos_transaction.pos_discounts
       .includes(:discount_reason, :target_pos_line_item, :pos_discount_allocations)
@@ -385,8 +388,8 @@ class PosTransactionsController < ApplicationController
     pending_lines.each do |line|
       sign = line.return? ? -1 : 1
       subtotal += sign * line.extended_price_cents.to_i
-      discount += sign * @line_discount_cents_by_id[line.id].to_i
-      tax += sign * @line_tax_cents_by_id[line.id].to_i
+      discount += sign * @line_discount_cents_by_id.fetch(line.id, 0)
+      tax += sign * @line_tax_cents_by_id.fetch(line.id, 0)
     end
     SnapshotTotals.new(
       subtotal_cents: subtotal,

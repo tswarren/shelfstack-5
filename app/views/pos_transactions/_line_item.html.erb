@@ -17,9 +17,12 @@
   <td class="num"><%= line.quantity %></td>
   <td class="num"><%= pos_money(line.unit_price_cents) %></td>
   <td class="num"><%= pos_money(line.extended_price_cents) %></td>
-  <td class="num"><%= pos_money(@line_discount_cents_by_id&.dig(line.id) || line.discount_amount_cents) %></td>
-  <td class="num"><%= pos_money(@line_tax_cents_by_id&.dig(line.id) || line.tax_amount_cents) %></td>
-  <td class="num"><%= pos_money(line.extended_price_cents - (@line_discount_cents_by_id&.dig(line.id) || line.discount_amount_cents).to_i + (@line_tax_cents_by_id&.dig(line.id) || line.tax_amount_cents).to_i) %></td>
+  <td class="num"><%= pos_money(@line_discount_cents_by_id ? @line_discount_cents_by_id.fetch(line.id, 0) : line.discount_amount_cents) %></td>
+  <td class="num"><%= pos_money(@line_tax_cents_by_id ? @line_tax_cents_by_id.fetch(line.id, 0) : line.tax_amount_cents) %></td>
+  <td class="num"><%
+    discount_cents = @line_discount_cents_by_id ? @line_discount_cents_by_id.fetch(line.id, 0) : line.discount_amount_cents.to_i
+    tax_cents = @line_tax_cents_by_id ? @line_tax_cents_by_id.fetch(line.id, 0) : line.tax_amount_cents.to_i
+  %><%= pos_money(line.extended_price_cents - discount_cents + tax_cents) %></td>
   <td>
     <% if @pos_transaction.editable? && Current.user.can?("pos.line.remove", store: Current.store) %>
       <%= button_to "Remove", pos_transaction_pos_line_item_path(@pos_transaction, line), method: :delete,

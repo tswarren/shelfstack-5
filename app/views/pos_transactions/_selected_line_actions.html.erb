@@ -8,7 +8,11 @@
       <% line = @selected_line %>
       <p>
         Selected: <strong><%= line.effective_description %></strong>
-        · <%= pos_money(line.extended_price_cents - (@line_discount_cents_by_id&.dig(line.id) || line.discount_amount_cents).to_i + (@line_tax_cents_by_id&.dig(line.id) || line.tax_amount_cents).to_i) %>
+        <%
+          discount_cents = @line_discount_cents_by_id ? @line_discount_cents_by_id.fetch(line.id, 0) : line.discount_amount_cents.to_i
+          tax_cents = @line_tax_cents_by_id ? @line_tax_cents_by_id.fetch(line.id, 0) : line.tax_amount_cents.to_i
+        %>
+        · <%= pos_money(line.extended_price_cents - discount_cents + tax_cents) %>
       </p>
       <% if line.sale? && line.inventory_unit.blank? && line.line_kind != "stored_value" %>
         <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>

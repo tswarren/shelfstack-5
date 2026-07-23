@@ -120,12 +120,12 @@ module Pos
       lines.sum do |line|
         sign = line.return? ? -1 : 1
         discount = if @discount_cents_by_id
-          @discount_cents_by_id[line.id].to_i
+          @discount_cents_by_id.fetch(line.id, 0)
         else
           line.discount_amount_cents.to_i
         end
         tax = if @tax_cents_by_id
-          @tax_cents_by_id[line.id].to_i
+          @tax_cents_by_id.fetch(line.id, 0)
         else
           line.tax_amount_cents.to_i
         end

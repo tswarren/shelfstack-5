@@ -357,6 +357,42 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select "input[name=original_pos_line_item_id]", count: 1
   end
 
+  test "start linked return requires pos.transaction.open when no open transaction exists" do
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    Pos::AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+    )
+    complete = Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-start-return-no-open-perm"
+    )
+    assert complete.success?, complete.error
+    @transaction.reload
+
+    device_b = PosDevice.find_or_create_by!(store: @store, code: "REG2") do |device|
+      device.name = "Register 2"
+      device.device_type = "register"
+      device.active = true
+    end
+    cashier = create_limited_cashier(%w[pos.access pos.return.create])
+    cashier_session = Pos::OpenSession.call(
+      business_day: @day, store: @store, pos_device: device_b,
+      cashier: cashier, actor: @admin
+    )
+    assert cashier_session.success?, cashier_session.error
+
+    delete session_path
+    post session_path, params: { username: cashier.username, password: "password123" }
+
+    assert_no_difference -> { PosTransaction.open_transactions.count } do
+      post start_linked_return_pos_transaction_path(@transaction)
+    end
+    assert_redirected_to root_path
+    assert_match(/not authorized/i, flash[:alert])
+  end
+
   private
 
   def open_inventory(variant, quantity:, unit_cost_cents:)
