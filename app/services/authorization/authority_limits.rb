@@ -23,7 +23,8 @@ module Authorization
       maximum_price_override_rate: BigDecimal("1"),
       maximum_cash_refund_cents: 2_147_483_647,
       maximum_no_receipt_return_cents: 2_147_483_647,
-      maximum_paid_out_cents: 2_147_483_647
+      maximum_paid_out_cents: 2_147_483_647,
+      cash_variance_review_threshold_cents: 2_147_483_647
     }.freeze
 
     module_function

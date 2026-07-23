@@ -1,0 +1,37 @@
+<% content_for :title, "Reconciliations" %>
+
+<%= render "shared/page_header", title: "Reconciliations",
+      subtitle: "Pending session and business-day reconciliation queue." %>
+
+<section class="card workspace-card">
+  <h2>Pending session reconciliations</h2>
+  <% if @pending_sessions.any? %>
+    <ul>
+      <% @pending_sessions.each do |session| %>
+        <li>
+          Session #<%= session.id %> · day <%= session.business_day.reporting_date %>
+          · variance <%= number_to_currency(session.cash_variance_cents.to_i / 100.0) %>
+          <%= link_to "Reconcile", session_reconciliation_path(session), class: "button button-outline" %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No pending cash-enabled session reconciliations.</p>
+  <% end %>
+</section>
+
+<section class="card workspace-card">
+  <h2>Pending business-day reconciliations</h2>
+  <% if @pending_days.any? %>
+    <ul>
+      <% @pending_days.each do |day| %>
+        <li>
+          <%= day.reporting_date %>
+          <%= link_to "Reconcile", business_day_reconciliation_path(day), class: "button button-outline" %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No pending business-day reconciliations.</p>
+  <% end %>
+</section>

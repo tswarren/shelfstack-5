@@ -1,0 +1,24 @@
+<section class="card workspace-card">
+  <h2>Comparisons</h2>
+  <ul>
+    <% reconciliation.reconciliation_comparisons.order(:position).each do |comparison| %>
+      <li>
+        <%= comparison.comparison_type %>
+        <% if comparison.observed_unavailable %>
+          · observed unavailable
+          <% unless reconciliation.finalized? %>
+            <%= button_to "Accept unavailable",
+                  accept_unavailable_comparison_path(reconciliation, comparison),
+                  method: :post,
+                  params: { explanation: "Accepted unavailable evidence" },
+                  class: "button button-outline" %>
+          <% end %>
+        <% else %>
+          · expected <%= number_to_currency(comparison.expected_cents.to_i / 100.0) %>
+          · observed <%= number_to_currency(comparison.observed_cents.to_i / 100.0) %>
+          · variance <%= number_to_currency(comparison.variance_cents.to_i / 100.0) %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</section>

@@ -1,0 +1,36 @@
+<% content_for :title, "Reconcile business day #{@business_day.reporting_date}" %>
+
+<%= render "shared/page_header", title: "Reconcile business day #{@business_day.reporting_date}",
+      subtitle: @reconciliation.finalized? ? "Finalized" : "Draft — consolidates session cash status; owns card batch comparison." %>
+
+<section class="card workspace-card">
+  <h2>Session cash status</h2>
+  <ul>
+    <% @business_day.pos_sessions.order(:id).each do |session| %>
+      <li>
+        Session #<%= session.id %>:
+        <% if session.cash_enabled? %>
+          variance <%= number_to_currency(session.cash_variance_cents.to_i / 100.0) %>
+          · <%= session.reconciled_at? ? "reconciled" : "pending" %>
+        <% else %>
+          non-cash
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</section>
+
+<%= render "reconciliations/comparisons", reconciliation: @reconciliation %>
+
+<% unless @reconciliation.finalized? %>
+  <%= form_with url: finalize_reconciliation_path(@reconciliation), method: :post, local: true do %>
+    <div class="form-row">
+      <label for="reason">Reason (required when variance is nonzero)</label>
+      <textarea id="reason" name="reason" rows="2"></textarea>
+    </div>
+    <div class="page-actions">
+      <%= submit_tag "Reconcile now", class: "button" %>
+      <%= link_to "Review later", reconciliations_path, class: "button button-outline" %>
+    </div>
+  <% end %>
+<% end %>
