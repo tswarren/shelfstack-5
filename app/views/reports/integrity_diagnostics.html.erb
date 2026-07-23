@@ -1,0 +1,20 @@
+<% content_for :title, "Integrity diagnostics" %>
+
+<%= render "shared/page_header", title: "Integrity diagnostics",
+      subtitle: "Non-blocking checks. Findings do not rewrite source records." %>
+
+<% if @findings.empty? %>
+  <p class="muted">No diagnostic findings.</p>
+<% else %>
+  <ul>
+    <% @findings.each do |finding| %>
+      <li>
+        <strong><%= finding.code %></strong>
+        (<%= finding.severity %>) — <%= finding.count %>
+        <% if finding.sample_ids.any? %>
+          · sample ids: <%= finding.sample_ids.join(", ") %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

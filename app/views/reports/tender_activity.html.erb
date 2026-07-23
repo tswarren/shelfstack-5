@@ -1,0 +1,31 @@
+<% content_for :title, "Tender activity" %>
+
+<%= render "shared/page_header", title: "Tender activity",
+      subtitle: "#{@from_date} to #{@to_date}. Received and refunded remain separate." %>
+
+<%= form_with url: tender_activity_report_path, method: :get, local: true do %>
+  <div class="form-row">
+    <label>From <input type="date" name="from_date" value="<%= @from_date %>"></label>
+    <label>To <input type="date" name="to_date" value="<%= @to_date %>"></label>
+    <%= submit_tag "Apply", class: "button button-outline" %>
+    <% if Current.user.can?("reporting.export", store: Current.store) %>
+      <%= link_to "CSV", export_report_path(report: "tender_activity", from_date: @from_date, to_date: @to_date), class: "button" %>
+    <% end %>
+  </div>
+<% end %>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Category</th><th>Received</th><th>Refunded</th><th>Net</th></tr>
+  </thead>
+  <tbody>
+    <% @rows.each do |row| %>
+      <tr>
+        <td><%= row.tender_category %></td>
+        <td><%= number_to_currency(row.received_cents / 100.0) %></td>
+        <td><%= number_to_currency(row.refunded_cents / 100.0) %></td>
+        <td><%= number_to_currency(row.net_cents / 100.0) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

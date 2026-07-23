@@ -1,0 +1,35 @@
+<% content_for :title, "Stored-value liability" %>
+
+<%= render "shared/page_header", title: "Stored-value liability",
+      subtitle: "Ledger-tied roll-forward by account type. Issuance is liability, not sales." %>
+
+<table class="data-table">
+  <thead>
+    <tr><th>Type</th><th>Accounts</th><th>Cached balance</th><th>Ledger balance</th></tr>
+  </thead>
+  <tbody>
+    <% @report.by_type.each do |row| %>
+      <tr>
+        <td><%= row["account_type"] %></td>
+        <td><%= row["account_count"] %></td>
+        <td><%= number_to_currency(row["cached_balance_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["ledger_balance_cents"] / 100.0) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% if @report.cache_ledger_mismatches.any? %>
+  <section class="card workspace-card">
+    <h2>Cache / ledger mismatches</h2>
+    <ul>
+      <% @report.cache_ledger_mismatches.each do |row| %>
+        <li>
+          <%= row["account_number"] %>:
+          cache <%= number_to_currency(row["cached_balance_cents"] / 100.0) %>,
+          ledger <%= number_to_currency(row["ledger_balance_cents"] / 100.0) %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>
