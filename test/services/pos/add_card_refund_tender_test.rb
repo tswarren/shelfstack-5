@@ -161,8 +161,13 @@ module Pos
         recording_idempotency_key: key
       )
       assert first.pos_tender.void_required?
+      refute second.success?
+      assert second.requires_void_confirmation?
       assert_equal first.pos_tender.id, second.pos_tender.id
+      assert_equal sale_card.id, second.pos_tender.original_pos_tender_id
+      refute_match(/different details/, second.error)
     end
+
 
     test "same request UUID replays authorized card refund" do
       sale, sale_card = complete_card_sale(key: "sale-rfnd-ok-idem")

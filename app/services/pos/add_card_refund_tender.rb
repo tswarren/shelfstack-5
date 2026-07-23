@@ -218,7 +218,8 @@ module Pos
         refs: refs,
         actor: @actor,
         reason: reason,
-        recording_idempotency_key: @recording_idempotency_key
+        recording_idempotency_key: @recording_idempotency_key,
+        original_pos_tender: @original_pos_tender
       )
 
       if tender.voided?

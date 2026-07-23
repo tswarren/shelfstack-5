@@ -8,7 +8,7 @@ module Pos
     module_function
 
     def call(pos_transaction:, tender_type:, amount_cents:, direction:, refs:, actor:, reason:,
-             recording_idempotency_key:)
+             recording_idempotency_key:, original_pos_tender: nil)
       key = recording_idempotency_key.to_s.strip
       raise ArgumentError, "recording_idempotency_key is required" if key.blank?
 
@@ -27,6 +27,7 @@ module Pos
         authorized_at: Time.current,
         void_reason: reason.to_s.truncate(500),
         recording_idempotency_key: key,
+        original_pos_tender: original_pos_tender,
         created_by_user: actor
       )
     end
