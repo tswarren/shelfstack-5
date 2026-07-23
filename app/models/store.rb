@@ -3,6 +3,8 @@
 class Store < ApplicationRecord
   include TimezoneValidatable
 
+  CARD_RECONCILIATION_GRAINS = %w[business_day session].freeze
+
   belongs_to :organization
   has_many :defaulting_users, class_name: "User", foreign_key: :default_store_id, dependent: :nullify, inverse_of: :default_store
   has_many :store_memberships, dependent: :restrict_with_exception
@@ -41,4 +43,7 @@ class Store < ApplicationRecord
   validates :next_purchase_order_number, presence: true,
             numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :next_receipt_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validates :card_reconciliation_grain, presence: true, inclusion: { in: CARD_RECONCILIATION_GRAINS }
+  validates :next_session_z_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validates :next_business_day_z_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
 end

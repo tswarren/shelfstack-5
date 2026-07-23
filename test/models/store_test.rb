@@ -24,4 +24,30 @@ class StoreTest < ActiveSupport::TestCase
     assert_not store.valid?
     assert_includes store.errors[:timezone], "is not a recognized time zone"
   end
+
+  test "defaults card reconciliation grain to business_day" do
+    store = stores(:main_street)
+    assert_equal "business_day", store.card_reconciliation_grain
+    assert_equal 1, store.next_session_z_number
+    assert_equal 1, store.next_business_day_z_number
+  end
+
+  test "rejects invalid card reconciliation grain" do
+    store = stores(:main_street)
+    store.card_reconciliation_grain = "terminal_batch"
+    assert_not store.valid?
+    assert_includes store.errors[:card_reconciliation_grain], "is not included in the list"
+  end
+
+  test "requires positive z number sequences" do
+    store = stores(:main_street)
+    store.next_session_z_number = 0
+    assert_not store.valid?
+    assert_includes store.errors[:next_session_z_number], "must be greater than or equal to 1"
+
+    store = stores(:main_street)
+    store.next_business_day_z_number = 0
+    assert_not store.valid?
+    assert_includes store.errors[:next_business_day_z_number], "must be greater than or equal to 1"
+  end
 end

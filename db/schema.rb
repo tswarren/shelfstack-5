@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_23_204725) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -1303,6 +1303,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.boolean "active", default: true, null: false
     t.string "address_line_1"
     t.string "address_line_2"
+    t.string "card_reconciliation_grain", default: "business_day", null: false
     t.string "city"
     t.string "code", null: false
     t.string "country_code", limit: 2
@@ -1311,9 +1312,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.string "email"
     t.string "legal_name"
     t.string "name", null: false
+    t.bigint "next_business_day_z_number", default: 1, null: false
     t.bigint "next_purchase_order_number", default: 1, null: false
     t.bigint "next_receipt_number", default: 1, null: false
     t.bigint "next_receipt_sequence", default: 1, null: false
+    t.bigint "next_session_z_number", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone", limit: 30
     t.string "postal_code", limit: 12
@@ -1327,9 +1330,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.index ["organization_id", "code"], name: "index_stores_on_organization_id_and_code", unique: true
     t.index ["organization_id", "store_number"], name: "index_stores_on_organization_id_and_store_number", unique: true, where: "(store_number IS NOT NULL)"
     t.index ["organization_id"], name: "index_stores_on_organization_id"
+    t.check_constraint "card_reconciliation_grain::text = ANY (ARRAY['business_day'::character varying, 'session'::character varying]::text[])", name: "stores_card_reconciliation_grain_check"
+    t.check_constraint "next_business_day_z_number >= 1", name: "stores_next_business_day_z_number_positive"
     t.check_constraint "next_purchase_order_number >= 1", name: "stores_next_purchase_order_number_positive"
     t.check_constraint "next_receipt_number >= 1", name: "stores_next_receipt_number_positive"
     t.check_constraint "next_receipt_sequence >= 1", name: "stores_next_receipt_sequence_positive"
+    t.check_constraint "next_session_z_number >= 1", name: "stores_next_session_z_number_positive"
   end
 
   create_table "tax_categories", force: :cascade do |t|

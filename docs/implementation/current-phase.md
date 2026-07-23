@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 7 — Reporting and Reconciliation  
-**Status:** 7a decisions accepted; implementation not started (next: 7b Session X/Z)  
+**Status:** Implementing on `phase/p7-reporting-and-reconciliation` (7a.1 store grain/sequences/`reporting.*` seeds)  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
 **Phase 6 merge:** `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed)  
 **Phase 5 merge:** `2e3e1196ec923b20a667f52b8ae79bd86c0b5c8b` (PR #34)  

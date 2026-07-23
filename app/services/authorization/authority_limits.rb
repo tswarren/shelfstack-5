@@ -9,6 +9,7 @@ module Authorization
       maximum_cash_refund_cents: { column: :maximum_cash_refund_cents, type: :money },
       maximum_no_receipt_return_cents: { column: :maximum_no_receipt_return_cents, type: :money },
       maximum_paid_out_cents: { column: :maximum_paid_out_cents, type: :money },
+      # Phase 7: also the shared threshold for accepting cash and card reconciliation differences.
       cash_variance_review_threshold_cents: { column: :cash_variance_review_threshold_cents, type: :money }
     }.freeze
 

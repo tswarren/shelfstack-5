@@ -172,11 +172,13 @@ Structured snapshot is authoritative (definition version, historical labels, sou
 | Result | MVP behavior |
 | --- | --- |
 | Exact match (zero variance) | User with reconcile permission may finalize (one-click allowed) |
-| Nonzero variance within user’s configured authority | Same user may explain and accept (reuse cash-style numeric authority; card uses analogous threshold when configured) |
+| Nonzero variance within user’s configured authority | Same user may explain and accept |
 | Variance above authority | Requires another authorized user (ADR-0011 pattern) |
 | Evidence unavailable | Reason required; remains unresolved or accepted via authorized exception resolution — do not invent $0 observed |
 
-Close may persist nonzero variance without resolving it. Accepting variance is a reconciliation act. Self-acceptance of over-threshold variance requires distinct elevated self-approval permission, reauthentication, reason, and audit (same pattern as other ADR-0011 self-approvals). Stores without configured thresholds fail closed for accepting differences while still allowing close with proper evidence or `evidence_unavailable`.
+**Shared threshold:** membership `cash_variance_review_threshold_cents` is the single Phase 7 limit for accepting both cash and card reconciliation differences. Fail closed when null. Exact-match finalize needs no threshold.
+
+Close may persist nonzero variance without resolving it. Accepting variance is a reconciliation act. Self-acceptance of over-threshold variance requires distinct elevated self-approval permission, reauthentication, reason, and audit (same pattern as other ADR-0011 self-approvals).
 
 ### 17 — Pre-Phase-7 closed records
 
