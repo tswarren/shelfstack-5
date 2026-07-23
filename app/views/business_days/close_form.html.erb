@@ -1,0 +1,46 @@
+<% content_for :title, "Close business day" %>
+
+<%= render "shared/page_header", title: "Close business day",
+      subtitle: "Reporting date #{@business_day.reporting_date}." %>
+
+<%= form_with url: close_business_day_path(@business_day), method: :post, local: true do %>
+  <% if @requires_card_evidence %>
+    <section class="card workspace-card">
+      <h2>Machine / batch card total</h2>
+      <p class="muted">Enter one net total from the terminal batch report, or record that evidence is unavailable.</p>
+
+      <div class="form-row">
+        <label>
+          <input type="radio" name="card_evidence_mode" value="recorded" checked>
+          Record batch net total
+        </label>
+      </div>
+      <div class="form-row">
+        <label for="card_net">Batch net</label>
+        <input id="card_net" name="card_net_cents" type="text" inputmode="decimal">
+      </div>
+      <div class="form-row">
+        <label for="card_batch_ref">Batch reference (optional)</label>
+        <input id="card_batch_ref" name="card_batch_reference" type="text">
+      </div>
+
+      <div class="form-row">
+        <label>
+          <input type="radio" name="card_evidence_mode" value="unavailable">
+          Evidence unavailable
+        </label>
+      </div>
+      <div class="form-row">
+        <label for="card_unavailable_reason">Reason</label>
+        <textarea id="card_unavailable_reason" name="card_unavailable_reason" rows="2"></textarea>
+      </div>
+    </section>
+  <% else %>
+    <p class="muted">No card tenders for this day — no batch total is required.</p>
+  <% end %>
+
+  <div class="page-actions">
+    <%= submit_tag "Close business day", class: "button button-danger" %>
+    <%= link_to "Cancel", register_path, class: "button button-outline" %>
+  </div>
+<% end %>

@@ -1,0 +1,88 @@
+<% commercial = payload.fetch("commercial") %>
+<% tenders = payload.fetch("tenders") %>
+<% cash_summary = payload.fetch("cash_summary") %>
+<% settlement = payload.fetch("settlement") %>
+<% sessions = payload.fetch("session_breakdown") %>
+
+<section class="card workspace-card">
+  <h2>Commercial activity</h2>
+  <dl class="detail-list">
+    <div><dt>Gross sales</dt><dd><%= number_to_currency(commercial["gross_sales_cents"].to_i / 100.0) %></dd></div>
+    <div><dt>Net sales</dt><dd><%= number_to_currency(commercial["net_sales_cents"].to_i / 100.0) %></dd></div>
+    <div><dt>Units sold</dt><dd><%= commercial["units_sold"] %></dd></div>
+    <% if show_cost %>
+      <div><dt>Cost</dt><dd><%= number_to_currency(commercial["cost_extended_cents"].to_i / 100.0) %></dd></div>
+    <% end %>
+    <% if show_margin && show_cost %>
+      <% margin = commercial["net_sales_cents"].to_i - commercial["cost_extended_cents"].to_i %>
+      <div><dt>Margin</dt><dd><%= number_to_currency(margin / 100.0) %></dd></div>
+    <% end %>
+  </dl>
+</section>
+
+<section class="card workspace-card">
+  <h2>Tenders</h2>
+  <ul>
+    <% tenders.each do |row| %>
+      <li>
+        <%= row["tender_category"] %>:
+        net <%= number_to_currency(row["net_cents"].to_i / 100.0) %>
+        (received <%= number_to_currency(row["received_cents"].to_i / 100.0) %>,
+        refunded <%= number_to_currency(row["refunded_cents"].to_i / 100.0) %>)
+      </li>
+    <% end %>
+  </ul>
+</section>
+
+<% if show_cash %>
+  <section class="card workspace-card">
+    <h2>Consolidated session cash</h2>
+    <p class="muted">Display only — no separate business-day cash count.</p>
+    <dl class="detail-list">
+      <div><dt>Expected</dt><dd><%= number_to_currency(cash_summary["expected_cash_cents"].to_i / 100.0) %></dd></div>
+      <div><dt>Counted</dt><dd><%= number_to_currency(cash_summary["counted_cash_cents"].to_i / 100.0) %></dd></div>
+      <div><dt>Variance</dt><dd><%= number_to_currency(cash_summary["cash_variance_cents"].to_i / 100.0) %></dd></div>
+    </dl>
+  </section>
+<% end %>
+
+<section class="card workspace-card">
+  <h2>Session breakdown</h2>
+  <ul>
+    <% sessions.each do |row| %>
+      <li>
+        Session #<%= row["pos_session_id"] %>:
+        net sales <%= number_to_currency(row["net_sales_cents"].to_i / 100.0) %>,
+        <%= row["completed_transactions"] %> transactions
+      </li>
+    <% end %>
+  </ul>
+</section>
+
+<section class="card workspace-card">
+  <h2>Settlement</h2>
+  <p>
+    Transaction total <%= number_to_currency(settlement["transaction_total_cents"].to_i / 100.0) %>
+    · Net tenders <%= number_to_currency(settlement["net_tenders_cents"].to_i / 100.0) %>
+    · <%= settlement["balanced"] ? "Balanced" : "Out of balance" %>
+  </p>
+</section>
+
+<% if payload["card_evidence"].present? %>
+  <section class="card workspace-card">
+    <h2>Card close evidence</h2>
+    <ul>
+      <% payload["card_evidence"].each do |row| %>
+        <li>
+          <%= row["kind"] %> · <%= row["status"] %>
+          <% if row["status"] == "unavailable" %>
+            — <%= row["unavailable_reason"] %>
+          <% else %>
+            — net <%= number_to_currency(row["net_cents"].to_i / 100.0) %>
+            <% if row["batch_reference"].present? %> (<%= row["batch_reference"] %>)<% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

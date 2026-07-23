@@ -1,0 +1,15 @@
+<% content_for :title, "Business-Day X" %>
+
+<%= render "shared/page_header", title: "Business-Day X",
+      subtitle: "Live store totals for #{@business_day.reporting_date}." %>
+
+<%= render "business_day_reports/payload",
+      payload: @totals.to_payload,
+      show_cash: @show_cash,
+      show_cost: @show_cost,
+      show_margin: @show_margin %>
+
+<div class="page-actions">
+  <%= link_to "Back", business_days_path, class: "button button-outline" %>
+  <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
+</div>
