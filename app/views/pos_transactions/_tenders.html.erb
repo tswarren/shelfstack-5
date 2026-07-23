@@ -46,7 +46,14 @@
                       <% end %>
                     </details>
                   <% else %>
-                    <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender), method: :delete, class: "button button-small button-danger" %>
+                    <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, tender),
+                          method: :delete,
+                          class: "button button-small button-danger",
+                          form: { data: {
+                            turbo_confirm: (tender.authorized? && tender.tender_type.tender_category == "card" ?
+                              "Remove this authorized card tender? Confirm the external void if required." :
+                              "Remove this tender?")
+                          } } %>
                   <% end %>
                 <% end %>
 

@@ -1,0 +1,28 @@
+<% if @presentation_state == "recovery" || @completion_outcome == "failed" %>
+  <section class="pos-panel pos-recovery-panel" aria-label="Recovery" data-pos-register-target="recoveryPanel">
+    <h2>Recovery</h2>
+    <% if @pos_transaction.void_required_tenders? %>
+      <p role="status">
+        <strong>Code:</strong> card_void_required<br>
+        ShelfStack did not complete posting for this card activity. Confirm the external void below.
+        Do not run the card again unless instructed.
+      </p>
+      <%= render "void_required_tenders" %>
+    <% elsif @completion_outcome == "failed" %>
+      <p role="status">
+        <strong>Code:</strong> <%= @completion_code.presence || "validation_failed" %><br>
+        Transaction not completed. Receipt not assigned. Inventory not posted for this attempt.
+      </p>
+      <p><%= flash[:alert] %></p>
+      <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
+        <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post do |form| %>
+          <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
+          <%= form.submit "Retry completion", class: "button button-primary",
+                data: { "pos-register-target": "completeButton" } %>
+        <% end %>
+      <% end %>
+    <% else %>
+      <p class="muted">Resolve the condition shown in readiness, then continue.</p>
+    <% end %>
+  </section>
+<% end %>

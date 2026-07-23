@@ -87,7 +87,8 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
       delete pos_transaction_pos_discount_path(@transaction, discount)
     end
 
-    assert_redirected_to pos_transaction_path(@transaction)
+    assert_redirected_to pos_transaction_path(@transaction,
+      selected_line_id: @line.id, focus_target: "line_actions")
     assert_equal "Discount removed.", flash[:notice]
     assert_equal 0, @line.reload.discount_amount_cents
   end
@@ -102,7 +103,7 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
       rate_bps: 500, actor: @admin
     ).pos_discount
 
-    get pos_transaction_path(@transaction)
+    get pos_transaction_path(@transaction, selected_line_id: @line.id, focus_target: "line_actions")
     assert_response :success
     assert_match(/Line discount/, response.body)
     assert_match(/Transaction discount/, response.body)
@@ -155,7 +156,8 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
 
     delete pos_transaction_pos_discount_path(ret_txn, reversal)
 
-    assert_redirected_to pos_transaction_path(ret_txn)
+    assert_redirected_to pos_transaction_path(ret_txn,
+      selected_line_id: return_line.id, focus_target: "line_actions")
     assert_match(/historical return discount reversals cannot be removed/i, flash[:alert])
     assert PosDiscount.exists?(reversal.id)
   end

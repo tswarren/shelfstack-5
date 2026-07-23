@@ -373,6 +373,41 @@ module Pos
       assert_equal [ 33, 34, 33 ], ret_txn.pos_line_items.returns.pending.order(:position, :id).pluck(:cost_extended_cents)
     end
 
+    test "removing a middle partial linked return reassigns cost residuals" do
+      open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
+      sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      line = AddLine.call(pos_transaction: sale, product_variant: @variant, quantity: 3, actor: @admin).pos_line_item
+      sale_net = RecalculateTransaction.call(pos_transaction: sale).net_total_cents
+      AddCashTender.call(pos_transaction: sale, tender_type: @cash, amount_tendered_cents: sale_net, actor: @admin)
+      CompleteTransaction.call(
+        pos_transaction: sale, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "sale-remove-cost-residual"
+      )
+      line.reload
+      line.update_columns(cost_extended_cents: 100, cost_unit_cost_cents: 33)
+
+      ret_txn = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+      returns = 3.times.map do
+        result = AddLinkedReturnLine.call(
+          pos_transaction: ret_txn, original_pos_line_item: line, quantity: 1,
+          return_reason: @reason, return_disposition: "return_to_stock", actor: @admin
+        )
+        assert result.success?, result.error
+        result.pos_line_item
+      end
+      assert_equal [ 33, 34, 33 ], returns.map(&:cost_extended_cents)
+
+      # Removing the middle claim without reassignment would leave stale [33, 33]
+      # (sum 66). Reassignment yields cumulative [33, 34] for the surviving two.
+      removed = RemoveLine.call(pos_line_item: returns[1], actor: @admin)
+      assert removed.success?, removed.error
+
+      remaining = ret_txn.pos_line_items.returns.pending.order(:position, :id)
+      assert_equal 2, remaining.count
+      assert_equal [ 33, 34 ], remaining.pluck(:cost_extended_cents)
+      assert_equal 67, remaining.sum(:cost_extended_cents)
+    end
+
     test "two separate pending return transactions reassign cost residuals when completed in either order" do
       open_inventory(@variant, quantity: 3, unit_cost_cents: 100)
       sale = OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction

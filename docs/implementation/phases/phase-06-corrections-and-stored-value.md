@@ -1,6 +1,6 @@
 # Phase 6 — Corrections and Stored Value
 
-**Status:** Implementation complete for gates 6a–6e; [#36](https://github.com/tswarren/shelfstack-5/issues/36) merge / first-install hardening in progress. Interim exit criteria below remain intentionally open after #36.  
+**Status:** Complete — merged to `main` at `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed). Interim exit criteria below remain intentionally open (OD-014 post-settlement block; return-containing post-void).  
 **Depends on:** Phase 4c, Phase 4d, Phase 4e; Phase 5 fulfilment integration (post-void must reverse Product Request fulfilment facts)  
 **Chronologically follows:** Phase 5 — purchasing and receiving are not conceptual prerequisites for stored value  
 **Unlocks:** correction, tender-refund, stored-value liability, and exception reporting in Phase 7  
@@ -113,7 +113,7 @@ Proven by tests in this branch unless noted:
 
 ### Standalone card completion criteria (ADR-0016)
 
-Distinct from still-open #36 / OD-014 interim exits:
+Distinct from retained OD-014 interim exits:
 
 - [x] Preparation / orphan / reconciliation machinery removed
 - [x] ADR-0016 governs the implemented `void_required` boundary

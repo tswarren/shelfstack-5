@@ -3,8 +3,7 @@
 require "application_system_test_case"
 
 # Phase 4g-3: critical register workflows (scan→complete, suspend/recall,
-# failed-completion recovery, keyboard complete). Does not duplicate completed-
-# screen Enter / <summary> coverage in PosReviewFixesSystemTest.
+# unpaid Complete gated by readiness, keyboard complete).
 class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
   setup do
     @store = stores(:main_street)
@@ -28,13 +27,10 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     assert_text(/available quantity is negative|Line added/i, wait: 5)
     assert_equal 1, @transaction.reload.pos_line_items.pending.count
 
-    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
-    fill_in "Amount tendered", with: format("%.2f", net / 100.0)
-    click_button "Add cash tender"
-    assert_text "Tender recorded"
+    enter_tender_and_cash!(Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents)
 
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
@@ -53,37 +49,34 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     visit register_path
     assert_text "Suspended transactions"
     within("details", text: /Suspended transactions/) do
-      click_button "Recall"
+      accept_confirm do
+        click_button "Recall"
+      end
     end
     assert_text "Transaction recalled"
     assert @transaction.reload.open?
 
-    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
-    fill_in "Amount tendered", with: format("%.2f", net / 100.0)
-    click_button "Add cash tender"
+    enter_tender_and_cash!(Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents)
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
-  test "failed completion recovers after tender is corrected" do
+  test "unpaid transaction does not expose Complete until settled" do
     open_register_with_transaction!
     Pos::AddOpenRingLine.call(
       pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
     )
 
     visit pos_transaction_path(@transaction)
-    click_button "Complete transaction"
-    assert_text(/tenders .* do not settle|settle/i)
-    assert @transaction.reload.open?
+    assert_no_button "Complete transaction"
+    assert_link "Tender", href: /\/tender/
 
-    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
-    fill_in "Amount tendered", with: format("%.2f", net / 100.0)
-    click_button "Add cash tender"
+    enter_tender_and_cash!(Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents)
     assert_text "Tender recorded"
 
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
@@ -101,18 +94,23 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     visit pos_transaction_path(@transaction)
     assert_button "Complete transaction"
 
-    # With a pending tender the scan field is locked; Ctrl+Enter is handled on
-    # the register workspace (see pos_register_controller).
     page.execute_script(<<~JS)
       document.querySelector(".pos-workspace").dispatchEvent(
         new KeyboardEvent("keydown", { key: "Enter", code: "Enter", ctrlKey: true, bubbles: true })
       )
     JS
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
   private
+
+  def enter_tender_and_cash!(net_cents)
+    click_link "Tender", href: /\/tender/
+    fill_in "Amount tendered", with: format("%.2f", net_cents / 100.0)
+    click_button "Add cash tender"
+    assert_text "Tender recorded"
+  end
 
   def open_register_with_transaction!
     visit new_session_path

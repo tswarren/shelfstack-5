@@ -338,7 +338,7 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 | `Pos::EvaluatePostVoidEligibility` | Point of Sale | 6a | No | Yes | None (unlocked preflight) | Completed original transaction, store | `eligible?` + blockers (returns, refunds in flight, units, OD-014 interim, SV later redemption) |
 | `Pos::ApprovePostVoid` | Point of Sale | 6a | Yes | No | None beyond `AuthorizeAction` | Original completed txn, actor, reason, approver | Policy A approval (`PosApproval`) authorizing ShelfStack correction + terminal reverse; no prep tables |
 | `Pos::PostVoidTransaction` | Point of Sale | 6a | Yes | Yes (completion idempotency key) | Session, original txn/lines/tenders, inventory, SV accounts, Product Requests (canonical order) | Original completed txn, session, actor, completion key, `pos_approval`, reason, per-card confirmations | Writes durable `pos_post_void.card_reversal_confirmed` audits (own commits) then creates reversing txn; stamps reversing card tenders; inventories via `Inventory::ReverseLedgerEntry`; fulfilment via `Requests::ReverseFulfillment`; SV via `StoredValue::PostEntry` (`reversal`) |
-| `Pos::FinalizeReturnFinancials` | Point of Sale | 6a | Yes | No | Return txn (caller may hold txn lock); pending return lines + related originals | Open return txn | Locks lines/originals, runs `ReassignReturnResiduals`, then `RecalculateTransaction`; used by tender paths and open-return show |
+| `Pos::FinalizeReturnFinancials` | Point of Sale | 6a | Yes | No | Return txn (caller may hold txn lock); pending return lines + related originals | Open return txn | Locks lines/originals, runs `ReassignReturnResiduals`, then `RecalculateTransaction`; used by tender/completion paths (not GET show) |
 | `Pos::ReassignReturnResiduals` | Point of Sale | 6a | Yes | No | Caller holds original-line locks | Return txn + pending return lines | Reassigns historical discount/cost residuals under locks before tax/settlement |
 | `Inventory::ReverseLedgerEntry` | Receiving and Inventory | 6a | Yes | Yes (posting key) | Stock balance (via find-or-create), original ledger row | Original ledger entry, source, posting key, actor | Exact historical inverse; OD-014 Case-1 snapshot restore when safe; interim conflict when later deficit activity or reverse would settle current deficit |
 | `Pos::RefundAllocationPolicy` | Point of Sale | 6d | No* | Yes | None | Return txn, destination, amount, optional original tender / exception approver | Nil when restoring an eligible original (SV first); else exception `PosApproval` or error |
@@ -361,6 +361,20 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 - **Refund allocation.** `Pos::RefundAllocationPolicy` validates the whole current-transaction refund plan (SV-first). Completed refunds reduce capacity; unresolved refunds in other transactions are in-flight blockers. Non-original destinations require approver permission `pos.return.refund_exception.approve` (requester holds the destination tender permission). Completion revalidates the plan under locks; `Pos::RemoveTender` locks original sale tenders when clearing linked refunds.
 - **Standalone card recording.** Public surface: `ValidateTenderReferences`, `AddCardTender`, `AddCardRefundTender`, `VoidCardTender`, `RecordVoidedCardTender`, `ApprovePostVoid`, `PostVoidTransaction` ([ADR-0016](../adr/0016-treat-standalone-credit-card-activity.md); internal completion under ADR-0009). Partial card tenders are allowed within remaining balances. After references validate, unattachable terminal activity is persisted as `void_required` under the same client-supplied request UUID as a successful `authorized` tender; resolved only via `RecordVoidedCardTender` (`pos.tender.card_void`). `RetainVoidRequiredCardTender` is an internal helper. Post-void uses Policy A. No prep/orphan/recon tables. Chargebacks and processor settlement remain Phase 7.
 - **Account suspension.** Domain statuses include `suspended`, and `stored_value.account.suspend` is seeded, but suspend/unsuspend operational workflow is deferred past Gate 6d (no service/UI yet).
+
+## Phase 6.5 — Cashier workspace
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::WorkspacePresentation` | Point of Sale | 6.5 | No | Yes | None | Open/completed txn + optional presentation param + readiness + totals | Derived cashier presentation state (`ready` / `transaction` / `tender` / `receipt` / `recovery`) and primary CTA labels — not a persisted status |
+| `Pos::ProjectCompletionReadiness` | Point of Sale | 6.5 | No | Yes | None | Open txn | Side-effect-free issues (blocker/warning/approval/info) + tender/completion readiness; shares nonmutating checks with completion; **never** called as a substitute for `ValidateCompletionReadiness` under locks |
+| `Pos::ScanToStart` | Point of Sale | 6.5 | Yes | No | Via `OpenTransaction` / `AddLine` | Open session, actor, query, quantity | Resolve-first Ready scan: opens + adds only when resolved; rolls back empty txn on failure; reuses existing open txn for the session |
+
+### Phase 6.5 notes
+
+- Presentation state is URL/record-derived (`?presentation=tender`, `/tender`, void-required → recovery). Processing is client-ephemeral only.
+- GET show/tender must not call `ValidateCompletionReadiness`, `RecalculateTransaction`, or `FinalizeReturnFinancials`. Mutation paths still recalculate and completion still validates under locks.
+- Narrow Ready receipt lookup is a controller adapter over existing completed-transaction find-by-receipt-number (no new search subsystem).
 
 ## Later phases (add when implemented)
 

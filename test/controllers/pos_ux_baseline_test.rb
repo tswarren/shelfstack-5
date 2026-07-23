@@ -140,13 +140,14 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     get register_path
     assert_response :success
     assert_select ".workspace-primary"
-    assert_select ".workspace-primary .button-primary", text: "New transaction"
+    assert_select ".workspace-primary input.button-primary[value=?]", "Scan to start"
+    assert_select ".workspace-primary .button-outline", text: "New transaction"
     assert_select "a", text: "Main workspace"
     assert_select "a[href=?]", root_path, text: "Main workspace"
   end
 
   test "open-ring fields appear in department price quantity description order" do
-    get pos_transaction_path(@transaction)
+    get pos_transaction_path(@transaction, intent: "open_ring")
     assert_response :success
 
     start = response.body.index("Open-ring line")
@@ -164,7 +165,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
   end
 
   test "open-ring department options keep hierarchy order after filtering postable" do
-    get pos_transaction_path(@transaction)
+    get pos_transaction_path(@transaction, intent: "open_ring")
     assert_response :success
 
     start = response.body.index("Open-ring line")
@@ -198,7 +199,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".pos-completed-summary"
     assert_match "Change due", response.body
-    assert_select "a", text: "Back to register"
+    assert_select "a", text: "Next transaction"
     assert_no_match(/Print Receipt/i, response.body)
   end
 
@@ -218,9 +219,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     return_txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     post lookup_pos_transaction_pos_return_lines_path(return_txn), params: { receipt_number: receipt }
-    assert_redirected_to pos_transaction_path(return_txn)
+    assert_redirected_to pos_transaction_path(return_txn, intent: "return")
 
-    get pos_transaction_path(return_txn)
+    get pos_transaction_path(return_txn, intent: "return")
     assert_response :success
     assert_match(/Receipt #{Regexp.escape(receipt)}/, response.body)
     assert_select "input[name=original_pos_line_item_id]", count: 1
@@ -304,5 +305,172 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_redirected_to register_path
     assert_match(/Session closed\. Variance:/, flash[:notice].to_s)
     assert_match(/\$/, flash[:notice].to_s)
+  end
+
+  test "entry intents are filtered by permission and forbidden intent falls back to sale" do
+    cashier = create_limited_cashier(%w[
+      pos.access pos.transaction.open pos.line.remove
+    ])
+
+    delete session_path
+    post session_path, params: { username: cashier.username, password: "password123" }
+
+    get pos_transaction_path(@transaction, intent: "return")
+    assert_response :success
+    assert_select "[aria-label='Entry intent'] a", text: "Sale"
+    assert_select "[aria-label='Entry intent'] a", text: "Open ring"
+    assert_select "[aria-label='Entry intent'] a", text: "Return", count: 0
+    assert_select "[aria-label='Entry intent'] a", text: "Stored value", count: 0
+    assert_select "[aria-label='Entry intent'] a[aria-current=true]", text: "Sale"
+    assert_select "section[aria-label='Linked return']", count: 0
+  end
+
+  test "completed receipt start linked return seeds return lookup on open transaction" do
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    Pos::AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+    )
+    complete = Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-start-linked-return"
+    )
+    assert complete.success?, complete.error
+    @transaction.reload
+    assert @transaction.completed?
+    assert @transaction.receipt_number.present?
+
+    get pos_transaction_path(@transaction)
+    assert_response :success
+    assert_select "form[action=?]", start_linked_return_pos_transaction_path(@transaction)
+
+    assert_difference -> { PosTransaction.open_transactions.count }, 1 do
+      post start_linked_return_pos_transaction_path(@transaction)
+    end
+    open_txn = PosTransaction.open_transactions.order(:id).last
+    assert_redirected_to pos_transaction_path(open_txn, intent: "return")
+
+    get pos_transaction_path(open_txn, intent: "return")
+    assert_response :success
+    assert_match(/Receipt #{Regexp.escape(@transaction.receipt_number)}/, response.body)
+    assert_select "input[name=original_pos_line_item_id]", count: 1
+  end
+
+  test "start linked return requires pos.transaction.open when no open transaction exists" do
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    Pos::AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+    )
+    complete = Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-start-return-no-open-perm"
+    )
+    assert complete.success?, complete.error
+    @transaction.reload
+
+    device_b = PosDevice.find_or_create_by!(store: @store, code: "REG2") do |device|
+      device.name = "Register 2"
+      device.device_type = "register"
+      device.active = true
+    end
+    cashier = create_limited_cashier(%w[pos.access pos.return.create])
+    cashier_session = Pos::OpenSession.call(
+      business_day: @day, store: @store, pos_device: device_b,
+      cashier: cashier, actor: @admin
+    )
+    assert cashier_session.success?, cashier_session.error
+
+    delete session_path
+    post session_path, params: { username: cashier.username, password: "password123" }
+
+    assert_no_difference -> { PosTransaction.open_transactions.count } do
+      post start_linked_return_pos_transaction_path(@transaction)
+    end
+    assert_redirected_to root_path
+    assert_match(/not authorized/i, flash[:alert])
+  end
+
+  test "completed receipt detail shows historical line discount and tax cents" do
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    line = Pos::AddLine.call(
+      pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin
+    ).pos_line_item
+    discount = Pos::ApplyDiscount.call(
+      pos_transaction: @transaction, scope: "line", pos_line_item: line,
+      method: "fixed_amount", amount_cents: 150, actor: @admin
+    )
+    assert discount.success?, discount.error
+    Pos::RecalculateTransaction.call(pos_transaction: @transaction)
+    line.reload
+    discount_cents = line.discount_amount_cents
+    tax_cents = line.tax_amount_cents
+    assert discount_cents.positive?
+    assert tax_cents.positive?
+
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+    )
+    complete = Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-completed-snapshot-detail"
+    )
+    assert complete.success?, complete.error
+    @transaction.reload
+    line.reload
+    assert_equal discount_cents, line.discount_amount_cents
+    assert_equal tax_cents, line.tax_amount_cents
+
+    get pos_transaction_path(@transaction)
+    assert_response :success
+    assert_select ".pos-completed-workspace"
+    # Expanded transaction detail must retain historical discount/tax (not $0.00).
+    body = response.body
+    detail_start = body.index("Transaction detail")
+    assert detail_start, "expected transaction detail section"
+    detail = body[detail_start..]
+    assert_includes detail, format("$%.2f", discount_cents / 100.0)
+    assert_includes detail, format("$%.2f", tax_cents / 100.0)
+  end
+
+  private
+
+  def open_inventory(variant, quantity:, unit_cost_cents:)
+    opening = InventoryAdjustment.create!(
+      store: @store, kind: "opening_inventory", status: "draft",
+      inventory_adjustment_reason: inventory_adjustment_reasons(:opening_initial),
+      created_by_user: @admin
+    )
+    InventoryAdjustmentLine.create!(
+      inventory_adjustment: opening, product_variant: variant, position: 0,
+      quantity_delta: quantity, input_unit_cost_cents: unit_cost_cents,
+      input_cost_method: "explicit", input_cost_quality: "actual"
+    )
+    assert Inventory::PostAdjustment.call(adjustment: opening, actor: @admin, store: @store).success?
+  end
+
+  def create_limited_cashier(permission_codes)
+    username = "cashier_#{SecureRandom.hex(2)}"
+    user = User.create!(
+      username: username,
+      user_number: rand(10_000..99_999),
+      first_name: "Cash", last_name: "Ier",
+      password: "password123",
+      active: true, default_store: @store
+    )
+    role = Role.create!(
+      organization: @store.organization,
+      code: "role_#{username}",
+      name: "Role #{username}",
+      active: true
+    )
+    permission_codes.each do |code|
+      RolePermission.create!(role: role, permission: Permission.find_by!(code: code))
+    end
+    StoreMembership.create!(user: user, store: @store, role: role, active: true)
+    user
   end
 end

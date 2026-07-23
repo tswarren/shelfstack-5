@@ -15,6 +15,8 @@ module Pos
       ActiveRecord::Base.transaction do
         # Lock parent Session and recheck status under the lock before creating
         # a child Transaction (prevents open-on-closed race with CloseSession).
+        # Multiple open transactions per session remain allowed (e.g. concurrent
+        # pending returns). Scan-to-start enforces reuse separately.
         session = PosSession.lock.find(@pos_session.id)
         raise Error, "session must be open" unless session.open?
 

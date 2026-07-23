@@ -1,0 +1,25 @@
+<% if @readiness.present? %>
+  <section class="pos-panel" aria-label="Readiness">
+    <h2>Readiness</h2>
+    <% if @readiness.issues.empty? %>
+      <p class="muted" role="status">Ready for tender.</p>
+    <% else %>
+      <ul class="pos-readiness-list">
+        <% @readiness.issues.each do |issue| %>
+          <li class="pos-readiness-<%= issue.severity %>">
+            <span class="pos-readiness-code"><%= issue.severity.to_s.upcase %></span>
+            <%= issue.message %>
+            <% if issue.line_id.present? %>
+              <%= link_to "Go to line",
+                    pos_transaction_path(@pos_transaction,
+                      intent: @entry_intent,
+                      selected_line_id: issue.line_id,
+                      focus_target: "line_actions"),
+                    class: "button button-small button-ghost" %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </section>
+<% end %>

@@ -94,6 +94,8 @@ Rails.application.routes.draw do
   get "reports/allocation_events", to: "reports#allocation_events", as: :allocation_events_report
 
   get "register", to: "register#show", as: :register
+  post "register/scan_to_start", to: "register#scan_to_start", as: :register_scan_to_start
+  post "register/lookup_receipt", to: "register#lookup_receipt", as: :register_lookup_receipt
 
   resources :business_days, only: %i[index new create] do
     member do
@@ -113,6 +115,8 @@ Rails.application.routes.draw do
       post :recall
       post :cancel
       post :complete
+      post :start_linked_return
+      get :tender
       get :post_void_form
       post :approve_post_void
       post :clear_post_void_approval

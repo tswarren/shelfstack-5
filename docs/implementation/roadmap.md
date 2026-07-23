@@ -63,8 +63,8 @@ flowchart TD
 | 4 | Point of sale (4a–4e) + UX Baseline (4f) | Complete — merged to `main` at `34f371f` (PR #30) | [phases/phase-04-point-of-sale.md](phases/phase-04-point-of-sale.md), [phases/phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) |
 | 4g | Test hardening | Complete — merged to `main` at `c51dcca` (PR #31) | [phases/phase-04g-test-hardening.md](phases/phase-04g-test-hardening.md) |
 | 5 | Supply and demand | Complete — merged to `main` at `2e3e119` (PR #34) | [phases/phase-05-supply-and-demand.md](phases/phase-05-supply-and-demand.md) |
-| 6 | Corrections and stored value | In progress — gates 6a–6e landed; [#36](https://github.com/tswarren/shelfstack-5/issues/36) merge hardening | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
-| 6.5 | Cashier workspace | Draft — after Phase 6 #36; before preferred Phase 7 start | [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) |
+| 6 | Corrections and stored value | Complete — merged to `main` at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed) | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
+| 6.5 | Cashier workspace | Complete — walkthrough accepted; merge via PR | [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) |
 | 7 | Reporting and reconciliation | Not started | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Deferred capabilities | Deferred | [deferred-capabilities.md](deferred-capabilities.md) |
 
@@ -97,15 +97,15 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–5 product delivery. Phase 5 Supply and Demand merged to `main` at `2e3e119` (PR #34). Phase 4g test hardening remains at `c51dcca` (PR #31).
+Completed: Phases 0–6 product delivery. Phase 6 Corrections and Stored Value merged to `main` at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed). Phase 5 remains at `2e3e119` (PR #34). Phase 4g remains at `c51dcca` (PR #31).
 
-**Active:** Phase 6 — Corrections and Stored Value (merge / first-install hardening via [#36](https://github.com/tswarren/shelfstack-5/issues/36)). See [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md), [current-phase.md](current-phase.md), and accepted decision notes: [post-void eligibility](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md), [inventory correction / OD-014](decisions/phase-06-inventory-correction-and-od-014.md), [stored-value v1 policy](decisions/phase-06-stored-value-v1-operating-policy.md).
+**Active:** Phase 6.5 — Cashier Workspace. See [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) and [current-phase.md](current-phase.md). Phase 6 decision notes remain governing for corrections/SV: [post-void eligibility](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md), [inventory correction / OD-014](decisions/phase-06-inventory-correction-and-od-014.md), [stored-value v1 policy](decisions/phase-06-stored-value-v1-operating-policy.md).
 
 **Phase 5 follow-up (non-blocking):** [#33](https://github.com/tswarren/shelfstack-5/issues/33) — receipt cost migration/tuple SQL hardening and deterministic concurrency barrier before durable databases.
 
-1. Close [#36](https://github.com/tswarren/shelfstack-5/issues/36) (clean-volume validation + PR merge); retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
-2. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
-3. Preferred next delivery after #36: Phase 6.5 cashier workspace ([phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md)) — thin interaction gate over existing POS services.
+1. Deliver Phase 6.5 cashier workspace (thin interaction gate over existing POS services).
+2. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
+3. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
 4. Phase 7 reporting remains a separate epic; prefer 6 → 6.5 → 7 (6.5 does not hard-gate Phase 7 schema).
 
 

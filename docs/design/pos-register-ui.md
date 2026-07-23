@@ -1,23 +1,26 @@
 # POS register UI
 
-**Status:** Governing for Phase 4 POS workspace interaction  
+**Status:** Governing for Phase 6.5 cashier workspace (supersedes Phase 4-only interaction notes where they conflict)  
 **Prototype reference:** [prototypes/ui_mockup/pos.html](prototypes/ui_mockup/pos.html)  
-**Workflows:** POS transaction/completion docs under `docs/workflows/` as they land  
+**Phase plan:** [../implementation/phases/phase-06.5-cashier-workspace.md](../implementation/phases/phase-06.5-cashier-workspace.md)  
+**Related:** [scanner-and-hotkeys.md](scanner-and-hotkeys.md); [accessibility.md](accessibility.md)  
 **Domain:** [point-of-sale](../domains/point-of-sale.md)
 
 ## Layout principles
 
-Two-panel register workspace:
+Persistent cashier workspace with stable regions:
 
 ```text
-[ session context strip: store · register/device · drawer · cashier · session ]
-[ sale panel: scan + lines ]     [ pay panel: totals · tender · complete ]
+Header: store · device · session · cashier · presentation status
+Entry:  scan / identifier / search          [ current intent ]
+Lines:  transaction lines (selection)    | Summary: totals + readiness
+Action: selected-line or transaction actions     [ dynamic primary CTA ]
 ```
 
-- Scan entry is primary; retain focus after successful add where safe.
-- Totals and tender controls stay visible.
+- Scan entry is primary; restore focus per the focus contract below.
 - Product / Product Variant / Inventory Unit remain distinguishable in resolution UI.
 - Labels may be cashier-friendly (for example “Register 2”) while the system records POS device and drawer separately.
+- Day/session open forms are **pre-Ready operational** states, not POS transaction presentation states.
 
 ## Terminology (UI vs domain)
 
@@ -30,49 +33,144 @@ Two-panel register workspace:
 
 Stored-value redemption is tender, not a discount. Issuance is non-revenue liability activity.
 
-## POS workspace states
+## Presentation states
 
-Define UI behavior from states, not from ad hoc buttons:
+These are **cashier-facing presentation states**. They do **not** require corresponding database status values. Do not invent persisted statuses such as `processing`, `receipt`, or `recovery`.
+
+Derive state in one server-side place (`Pos::WorkspacePresentation` or equivalent):
 
 ```text
-no_transaction
-empty_open_transaction
-active_transaction
-item_resolution_required
-variant_selection_required
-exact_unit_selection_required   # Phase 4d
-warning_present
-blocker_present
-approval_required               # Phase 4b+
-tendering                       # Phase 4c
-ready_to_complete
-completion_in_progress
-completion_failed
-completed
-suspended
-recalled
-cancelled
+No active transaction and operational session open
+→ Ready
+  (missing day/session/device = pre-Ready operational setup)
+
+Completed transaction
+→ Receipt
+
+Open transaction with void_required tender activity
+→ Recovery
+
+Open transaction with unresolved tenders
+→ Tender (forced by server)
+
+Open transaction with presentation=tender (or /tender) and editable
+→ Tender (UI choice; reload-safe URL)
+
+Otherwise open
+→ Transaction
+
+Processing
+→ client-ephemeral only while the completion form is submitting
 ```
 
-For each state, specify: what is visible, primary action, disabled actions, keyboard focus, what is provisional, and failure/retry behavior.
+After pending or authorized tenders exist, reload **must** force Tender (or Recovery if `void_required`). Opening Tender before any tender is entered is a UI choice via reload-safe URL (`GET .../tender` or `?presentation=tender`).
 
-## Warnings, blockers, and approvals
+### Entry intents (not transaction types)
+
+Within **Transaction**:
+
+```text
+Sale (default) | Return | Stored value | Open ring
+```
+
+Receipt lookup from Ready is a **register utility**, not an entry intent.
+
+### Navigation context (URL / form state only)
+
+Never used for eligibility or posting:
+
+```text
+intent=sale|return|stored_value|open_ring
+selected_line_id=
+presentation=transaction|tender
+focus_target=scan|line_actions|first_blocker|next_transaction|...
+```
+
+## Primary actions (sign-aware)
+
+| Situation | Primary action |
+| --- | --- |
+| Empty / scanning | Focus entry (Continue scanning) |
+| Positive net, unpaid | **Tender $X** |
+| Negative net, unpaid | **Issue refund $X** |
+| Blockers present | **Resolve N blockers** |
+| Payment remaining | **Add payment $X** |
+| Refund remaining | **Add refund $X** |
+| Settled | **Complete transaction** |
+| Completed | **Next transaction** → Ready (no empty txn) |
+| Recoverable failure | Explicit recovery control |
+
+Avoid generic **Continue** / **Submit** / **Save** as the dominant control.
+
+## Focus-management contract
+
+- Opening a transaction focuses the entry field.
+- Completing a selected-line action restores entry focus unless another required task remains.
+- Cancelling an intent restores Sale intent and entry focus.
+- Closing an approval prompt returns to the affected action or line.
+- Returning from tender restores the previously selected line or entry field.
+- Validation failure moves focus to the first resolvable blocker.
+- Receipt focuses the **Next transaction** control; live region announces completion and receipt number first.
+- Recovery focuses the primary recovery control.
+
+## Confirmation standards
+
+Confirm hard-to-reverse or money-abandoning actions only:
+
+- cancel transaction;
+- remove or alter an externally approved card tender;
+- leave Tender with unresolved activity (when allowed);
+- recall that would displace current work.
+
+Do **not** require confirmation for ordinary line removal unless policy already demands a reason/approval. Post-void begin uses the existing post-void workflow (not a core 6.5 confirmation).
+
+## Warnings, blockers, approvals, and readiness
 
 | Kind | Meaning | UI |
 | --- | --- | --- |
-| Warning | Proceed allowed after acknowledgment (for example negative available per policy) | Non-blocking alert; retain ability to continue |
-| Blocker | Cannot proceed until resolved | Disable completion / add; clear message |
-| Approval | Independent approver credentials required | Modal/drawer; requester and approver distinct |
+| Information | No action required | Quiet display |
+| Warning | Proceed allowed (for example negative available) | Persistent; do not block Tender |
+| Approval | Restricted result needs approver | Interrupt; return to same context |
+| Blocker | Cannot tender/complete until resolved | Disable Tender/Complete; link to line/field |
 
-Never present a shortcut as bypassing validation. A shortcut may **request** completion; the server may reject it.
+**The server determines readiness; the interface presents it.** Use a side-effect-free projection (`Pos::ProjectCompletionReadiness`) for GET renders. Do **not** call locking/mutating `ValidateCompletionReadiness` or `RecalculateTransaction` from show. Completion always reruns authoritative validation under locks.
 
-## Phase 4 gate focus
+Stable issue/recovery **codes** drive focus and recovery UI — do not parse flash alert text.
 
-| Gate | UI must support | Defer |
-| --- | --- | --- |
-| 4a | Scan/search, variant resolve, lines, qty, suspend/recall/cancel, reservation feedback, session context | Receipt, tender polish |
-| 4b | Price/tax/discount display, approval pattern | Exhaustive promotion UX |
-| 4c | Tender entry, completion progress/failure/retry, receipt presentation | Animation, PWA, offline |
+## Recovery (closed list)
+
+Present from persisted state + structured outcome codes:
+
+- validation failed before posting;
+- duplicate / already-completed (idempotent);
+- card approved but internal completion failed;
+- `void_required`;
+- transaction / session / business day no longer valid;
+- stale or invalid reservation;
+- stored-value balance changed / redemption blocked.
+
+Triage new categories; do not invent a broad exception framework.
+
+## Supported register viewport
+
+- Intended: desktop register / laptop widths with the persistent shell usable.
+- Minimum usable width: align with existing POS CSS breakpoint (~960px stacks to one column; declare phone-width POS **unsupported**).
+- Summary may stack below lines on narrow widths within the supported range.
+- Drawers/panels overlay the workspace; trap focus while open ([accessibility.md](accessibility.md)).
+- Touch-first / phone POS is out of Phase 6.5 scope.
+
+## Accessibility
+
+Apply [accessibility.md](accessibility.md) while restructuring: real controls, keyboard reachability, visible focus, live-region announcements, severity not by color alone, modal/drawer focus containment, labeled intent and readiness.
+
+Line selection must be a keyboard-focusable control (button / radio / equivalent), not mouse-only row click.
+
+## Turbo / Back
+
+- Active Transaction, Tender, Processing, and Recovery must not restore stale Turbo snapshots.
+- Clear transient disabled-submit state on `turbo:before-cache`.
+- Browser Back must not show editable controls for an already completed transaction.
+- Server state always wins after navigation.
 
 ## Server authority
 

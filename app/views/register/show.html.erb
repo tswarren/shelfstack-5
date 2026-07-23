@@ -7,7 +7,12 @@
   One dominant primary action based on register state. Secondary operational
   controls (close day/session, cash movements, recalls) stay below.
 %>
-<section class="card workspace-card workspace-primary" aria-label="Next action">
+<section class="card workspace-card workspace-primary" aria-label="Next action"
+         data-controller="pos-register"
+         data-pos-register-scan-outcome-value="<%= @scan_outcome %>">
+  <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
+  <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
+
   <% if @business_day.blank? %>
     <h2>Open a business day</h2>
     <p class="muted">No business day is open for this store.</p>
@@ -34,11 +39,53 @@
       <%= link_to "Resume transaction", pos_transaction_path(@open_transaction), class: "button button-primary button-large" %>
     </div>
   <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
-    <h2>New transaction</h2>
-    <p class="muted">Start a sale, return, or mixed transaction.</p>
-    <div class="action-group">
-      <%= button_to "New transaction", pos_transactions_path, class: "button button-primary button-large" %>
+    <h2>Register ready</h2>
+    <p class="muted">Scan merchandise to start, or open an empty transaction.</p>
+
+    <% if @scan_outcome == "ambiguous" %>
+      <p class="pos-readiness-warning" role="status">
+        Multiple matches for <strong><%= @scan_query %></strong>. Open a transaction to resolve candidates.
+      </p>
+      <div class="action-group">
+        <%= button_to "Open transaction to resolve", pos_transactions_path,
+              params: { query: @scan_query, quantity: @scan_quantity },
+              class: "button button-primary button-large" %>
+      </div>
+    <% end %>
+
+    <%= form_with url: register_scan_to_start_path, method: :post, class: "pos-inline-form",
+          data: { "pos-register-target": "scanForm" } do |form| %>
+      <div class="field">
+        <label class="field-label" for="ready_scan_query">Scan or search</label>
+        <%= form.text_field :query, id: "ready_scan_query", name: "query",
+              placeholder: "ISBN / SKU / unit ID",
+              autocomplete: "off", class: "input",
+              value: @scan_query,
+              data: { "pos-register-target": "scanInput" } %>
+      </div>
+      <div class="field">
+        <label class="field-label" for="ready_scan_quantity">Qty</label>
+        <%= number_field_tag :quantity, @scan_quantity || 1, id: "ready_scan_quantity", min: 1, class: "input input-qty" %>
+      </div>
+      <%= form.submit "Scan to start", class: "button button-primary button-large" %>
+    <% end %>
+
+    <div class="action-group" style="margin-top: 1rem;">
+      <%= button_to "New transaction", pos_transactions_path, class: "button button-outline button-large" %>
     </div>
+
+    <details class="pos-panel" style="margin-top: 1rem;">
+      <summary>Receipt lookup</summary>
+      <%= form_with url: register_lookup_receipt_path, method: :post, class: "form" do |form| %>
+        <div class="field">
+          <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
+          <%= text_field_tag :receipt_number, nil, class: "input", autocomplete: "off" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Look up receipt", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
   <% else %>
     <h2>Register ready</h2>
     <p class="muted">Session is open. You do not have permission to start a transaction.</p>
@@ -166,7 +213,13 @@
                 <td><%= formatted_datetime(transaction.suspended_at, format: :short) %></td>
                 <td>
                   <% if Current.user.can?("pos.transaction.recall", store: Current.store) %>
-                    <%= button_to "Recall", recall_pos_transaction_path(transaction), class: "button button-small button-outline" %>
+                    <%= button_to "Recall", recall_pos_transaction_path(transaction),
+                          class: "button button-small button-outline",
+                          form: { data: {
+                            turbo_confirm: (@open_transaction.present? ?
+                              "You have an open transaction. Suspend or complete it before recalling another?" :
+                              "Recall this suspended transaction? This replaces Ready with that sale.")
+                          } } %>
                   <% end %>
                 </td>
               </tr>

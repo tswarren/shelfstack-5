@@ -2,175 +2,112 @@
   <%
     preserve_scan = %w[failed ambiguous].include?(@scan_outcome.to_s)
     scan_value = preserve_scan ? @scan_query.to_s : nil
+    intent = @entry_intent.presence || "sale"
   %>
-  <section class="pos-panel" aria-label="Scan or search">
-    <h2>Scan / search</h2>
-    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post,
-          class: "pos-inline-form",
-          data: { "pos-register-target": "scanForm" } do |form| %>
-      <div class="field">
-        <label class="field-label" for="scan_query">Scan or search</label>
-        <%= form.text_field :query, id: "scan_query", placeholder: "ISBN / SKU / unit ID",
-              autocomplete: "off", class: "input",
-              value: scan_value,
-              data: { "pos-register-target": "scanInput" } %>
-      </div>
-      <div class="field">
-        <label class="field-label" for="scan_quantity">Qty</label>
-        <%= form.number_field :quantity, id: "scan_quantity", value: 1, min: 1, class: "input input-qty" %>
-      </div>
-      <% if @fulfillable_customer_requests.present? %>
-        <div class="field">
-          <label class="field-label" for="scan_product_request_id">Customer request (optional)</label>
-          <%= form.select :product_request_id,
-                @fulfillable_customer_requests.map { |request|
-                  label = "##{request.id} — #{request.product.name}"
-                  label += " / #{request.product_variant.name}" if request.product_variant
-                  label += " (#{request.outstanding_quantity} outstanding)"
-                  [ label, request.id ]
-                },
-                { include_blank: "None" },
-                id: "scan_product_request_id", class: "input" %>
-          <p class="field-hint">
-            Select a request and click Add line to ring up its item (no scan needed when the variant is resolved).
-            Or scan an item with a request selected to link that scan to the request.
-          </p>
-        </div>
-      <% end %>
-      <%= form.submit "Add line", class: "button button-primary" %>
-    <% end %>
 
-    <%= render "scan_resolution" %>
-  </section>
-
-  <% if Current.user.can?("stored_value.issue", store: Current.store) || Current.user.can?("stored_value.reload", store: Current.store) %>
-    <details class="pos-panel">
-      <summary>Gift card issue / reload</summary>
-      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :kind, "stored_value" %>
+  <% if intent == "sale" %>
+    <section class="pos-panel" aria-label="Scan or search">
+      <h2>Scan / search</h2>
+      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post,
+            class: "pos-inline-form",
+            data: { "pos-register-target": "scanForm" } do |form| %>
+        <%= hidden_field_tag :intent, intent %>
         <div class="field">
-          <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
-          <%= form.select :stored_value_operation, [ [ "Issue", "issue" ], [ "Reload", "reload" ] ], {}, class: "input" %>
-        </div>
-        <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "sv_amount_cents" %>
-        <div class="field">
-          <%= form.label :account_number, "Existing account number", class: "field-label" %>
-          <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
+          <label class="field-label" for="scan_query">Scan or search</label>
+          <%= form.text_field :query, id: "scan_query", placeholder: "ISBN / SKU / unit ID",
+                autocomplete: "off", class: "input",
+                value: scan_value,
+                data: { "pos-register-target": "scanInput" } %>
         </div>
         <div class="field">
-          <label class="field-label">
-            <%= check_box_tag :create_account, "1" %>
-            Create new gift-card account
-          </label>
+          <label class="field-label" for="scan_quantity">Qty</label>
+          <%= form.number_field :quantity, id: "scan_quantity", value: 1, min: 1, class: "input input-qty" %>
         </div>
-        <div class="form-actions">
-          <%= form.submit "Add gift-card line", class: "button button-outline" %>
-        </div>
-      <% end %>
-    </details>
-  <% end %>
-
-  <details class="pos-panel">
-    <summary>Open-ring line</summary>
-    <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
-      <%= hidden_field_tag :kind, "open_ring" %>
-      <div class="field">
-        <%= form.label :department_id, "Department", class: "field-label" %>
-        <%= form.select :department_id,
-              @departments.map { |d| [ hierarchy_path_label(d), d.id ] },
-              {}, class: "input" %>
-      </div>
-      <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "open_ring_unit_price_cents" %>
-      <div class="field">
-        <%= form.label :quantity, class: "field-label" %>
-        <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
-      </div>
-      <div class="field">
-        <%= form.label :description, "Description (optional)", class: "field-label" %>
-        <%= form.text_field :description, placeholder: "Blank uses department name", class: "input" %>
-        <p class="field-hint">When blank, the department name is used on the line.</p>
-      </div>
-      <div class="form-actions">
-        <%= form.submit "Add open-ring line", class: "button button-outline" %>
-      </div>
-    <% end %>
-  </details>
-
-  <% if Current.user.can?("pos.return.create", store: Current.store) %>
-    <details class="pos-panel" <%= "open" if @return_lookup_transaction.present? %>>
-      <summary>Linked return</summary>
-      <p class="muted">Look up a completed receipt, then choose a returnable line.</p>
-
-      <%= form_with url: lookup_pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <div class="field">
-          <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
-          <%= form.text_field :receipt_number, class: "input",
-                value: @return_lookup_transaction&.receipt_number, required: true,
-                autocomplete: "off", placeholder: "e.g. 001-000001" %>
-        </div>
-        <div class="form-actions">
-          <%= form.submit "Find receipt", class: "button button-outline" %>
-        </div>
-      <% end %>
-
-      <% if @return_lookup_transaction.present? %>
-        <h3>Receipt <%= @return_lookup_transaction.receipt_number %></h3>
-        <% if @return_lookup_lines.blank? %>
-          <p class="muted">No returnable lines remain on this receipt.</p>
-        <% else %>
-          <ul class="pos-resolution-list">
-            <% @return_lookup_lines.each do |line| %>
-              <% remaining = line.remaining_returnable_quantity %>
-              <% returned = line.quantity - remaining %>
-              <li>
-                <p>
-                  <% if line.product_variant.present? %>
-                    <strong><%= variant_option_label(line.product_variant) %></strong>
-                    <% if line.inventory_unit.present? %>
-                      <span class="muted">· Unit <%= line.inventory_unit.unit_identifier %></span>
-                    <% end %>
-                  <% else %>
-                    <strong><%= line.effective_description %></strong>
-                  <% end %>
-                  <span class="muted">
-                    · sold <%= line.quantity %>
-                    · returned <%= returned %>
-                    · remaining <%= remaining %>
-                    · <%= pos_money(line.unit_price_cents) %> each
-                  </span>
-                </p>
-                <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
-                  <%= hidden_field_tag :original_pos_line_item_id, line.id %>
-                  <div class="form-grid">
-                    <div class="field">
-                      <%= form.label :quantity, class: "field-label" %>
-                      <%= form.number_field :quantity, value: 1, min: 1, max: remaining, class: "input input-qty" %>
-                    </div>
-                    <div class="field">
-                      <%= form.label :return_reason_id, "Reason", class: "field-label" %>
-                      <%= form.collection_select :return_reason_id, @return_reasons, :id, :name, {}, class: "input" %>
-                    </div>
-                    <div class="field">
-                      <%= form.label :return_disposition, "Disposition", class: "field-label" %>
-                      <%= form.select :return_disposition, [
-                            [ "Return to stock", "return_to_stock" ],
-                            [ "Inspection required", "inspection_required" ],
-                            [ "Damaged", "damaged" ],
-                            [ "Return to vendor", "return_to_vendor" ],
-                            [ "Discard", "discard" ],
-                            [ "Non-inventory", "non_inventory" ]
-                          ], {}, class: "input" %>
-                    </div>
-                  </div>
-                  <div class="form-actions">
-                    <%= form.submit "Add return line", class: "button button-small button-outline" %>
-                  </div>
-                <% end %>
-              </li>
-            <% end %>
-          </ul>
+        <% if @fulfillable_customer_requests.present? %>
+          <div class="field">
+            <label class="field-label" for="scan_product_request_id">Customer request (optional)</label>
+            <%= form.select :product_request_id,
+                  @fulfillable_customer_requests.map { |request|
+                    label = "##{request.id} — #{request.product.name}"
+                    label += " / #{request.product_variant.name}" if request.product_variant
+                    label += " (#{request.outstanding_quantity} outstanding)"
+                    [ label, request.id ]
+                  },
+                  { include_blank: "None" },
+                  id: "scan_product_request_id", class: "input" %>
+          </div>
         <% end %>
+        <%= form.submit "Add line", class: "button button-primary" %>
       <% end %>
-    </details>
+      <%= render "scan_resolution" %>
+    </section>
+  <% elsif intent == "stored_value" %>
+    <%
+      can_issue = Current.user.can?("stored_value.issue", store: Current.store)
+      can_reload = Current.user.can?("stored_value.reload", store: Current.store)
+      sv_operations = []
+      sv_operations << [ "Issue", "issue" ] if can_issue
+      sv_operations << [ "Reload", "reload" ] if can_reload
+    %>
+    <% if sv_operations.any? %>
+      <section class="pos-panel" aria-label="Gift card issue / reload">
+        <h2>Gift card issue / reload</h2>
+        <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+          <%= hidden_field_tag :kind, "stored_value" %>
+          <%= hidden_field_tag :intent, "stored_value" %>
+          <div class="field">
+            <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
+            <%= form.select :stored_value_operation, sv_operations, {}, class: "input" %>
+          </div>
+          <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "sv_amount_cents_intent" %>
+          <div class="field">
+            <%= form.label :account_number, "Existing account number", class: "field-label" %>
+            <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
+          </div>
+          <% if Current.user.can?("stored_value.account.create", store: Current.store) %>
+            <div class="field">
+              <label class="field-label">
+                <%= check_box_tag :create_account, "1" %>
+                Create new gift-card account
+              </label>
+            </div>
+          <% end %>
+          <div class="form-actions">
+            <%= form.submit "Add gift-card line", class: "button button-outline" %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
+  <% elsif intent == "open_ring" %>
+    <section class="pos-panel" aria-label="Open-ring line">
+      <h2>Open-ring line</h2>
+      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+        <%= hidden_field_tag :kind, "open_ring" %>
+        <%= hidden_field_tag :intent, "open_ring" %>
+        <div class="field">
+          <%= form.label :department_id, "Department", class: "field-label" %>
+          <%= form.select :department_id,
+                @departments.map { |d| [ hierarchy_path_label(d), d.id ] },
+                {}, class: "input" %>
+        </div>
+        <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "open_ring_unit_price_cents_intent" %>
+        <div class="field">
+          <%= form.label :quantity, class: "field-label" %>
+          <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
+        </div>
+        <div class="field">
+          <%= form.label :description, "Description (optional)", class: "field-label" %>
+          <%= form.text_field :description, placeholder: "Blank uses department name", class: "input" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Add open-ring line", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </section>
+  <% elsif intent == "return" && Current.user.can?("pos.return.create", store: Current.store) %>
+    <section class="pos-panel" aria-label="Linked return">
+      <h2>Linked return</h2>
+      <%= render "return_lookup_body" %>
+    </section>
   <% end %>
 <% end %>

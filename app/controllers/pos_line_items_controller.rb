@@ -21,18 +21,18 @@ class PosLineItemsController < ApplicationController
     result = Pos::UpdateLineQty.call(pos_line_item: @line_item, quantity: params[:quantity], actor: Current.user)
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Quantity updated."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to txn_redirect_path, notice: notice
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   end
 
   def destroy
     result = Pos::RemoveLine.call(pos_line_item: @line_item, actor: Current.user, reason: params[:reason])
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Line removed."
+      redirect_to txn_redirect_path, notice: "Line removed."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   end
 
@@ -45,18 +45,18 @@ class PosLineItemsController < ApplicationController
       **approver_params
     )
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Price overridden."
+      redirect_to txn_redirect_path, notice: "Price overridden."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_to txn_redirect_path, alert: e.message
   end
 
   def override_tax_category
     tax_category = Current.organization.tax_categories.find_by(id: params[:tax_category_id])
     if tax_category.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a tax category."
+      redirect_to txn_redirect_path, alert: "Select a tax category."
       return
     end
 
@@ -68,9 +68,9 @@ class PosLineItemsController < ApplicationController
       **approver_params
     )
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Tax category overridden."
+      redirect_to txn_redirect_path, notice: "Tax category overridden."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   end
 
@@ -102,11 +102,11 @@ class PosLineItemsController < ApplicationController
     if resolved.variant.blank?
       if resolved.error == "ambiguous_match"
         store_scan_resolution(params[:query], params[:quantity])
-        redirect_to pos_transaction_path(@pos_transaction),
+        redirect_to txn_redirect_path,
           alert: scan_error_message(resolved),
           flash: { scan_outcome: "ambiguous", scan_query: params[:query].to_s }
       else
-        redirect_to pos_transaction_path(@pos_transaction),
+        redirect_to txn_redirect_path,
           alert: scan_error_message(resolved),
           flash: { scan_outcome: "failed", scan_query: params[:query].to_s }
       end
@@ -119,7 +119,7 @@ class PosLineItemsController < ApplicationController
   def add_line_from_product_request
     product_request = Current.store.product_requests.find_by(id: params[:product_request_id])
     if product_request.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a valid customer request."
+      redirect_to txn_redirect_path, alert: "Select a valid customer request."
       return
     end
 
@@ -129,7 +129,7 @@ class PosLineItemsController < ApplicationController
       if variants.size == 1
         variant = variants.first
       else
-        redirect_to pos_transaction_path(@pos_transaction),
+        redirect_to txn_redirect_path,
           alert: "This customer request has no resolved variant. Scan or search for the exact item, then keep the request selected."
         return
       end
@@ -145,7 +145,7 @@ class PosLineItemsController < ApplicationController
       )
       inventory_unit = reservation&.inventory_unit
       if inventory_unit.blank?
-        redirect_to pos_transaction_path(@pos_transaction),
+        redirect_to txn_redirect_path,
           alert: "Scan the reserved inventory unit for this customer request, or reserve a unit on the request first."
         return
       end
@@ -159,7 +159,7 @@ class PosLineItemsController < ApplicationController
                             .where(products: { organization_id: Current.organization.id })
                             .find_by(id: params[:product_variant_id])
     if variant.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a valid product variant."
+      redirect_to txn_redirect_path, alert: "Select a valid product variant."
       return
     end
 
@@ -181,9 +181,9 @@ class PosLineItemsController < ApplicationController
     )
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Line added."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice, flash: { scan_outcome: "added" }
+      redirect_to txn_redirect_path, notice: notice, flash: { scan_outcome: "added" }
     else
-      redirect_to pos_transaction_path(@pos_transaction),
+      redirect_to txn_redirect_path,
         alert: result.error,
         flash: { scan_outcome: "failed", scan_query: params[:query].to_s }
     end
@@ -202,7 +202,7 @@ class PosLineItemsController < ApplicationController
   def create_open_ring_line
     department = Current.organization.departments.find_by(id: params[:department_id])
     if department.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: "Select a department."
+      redirect_to txn_redirect_path, alert: "Select a department."
       return
     end
 
@@ -215,18 +215,18 @@ class PosLineItemsController < ApplicationController
       actor: Current.user
     )
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Open-ring line added."
+      redirect_to sale_after_intent_path, notice: "Open-ring line added."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_to txn_redirect_path, alert: e.message
   end
 
   def create_stored_value_line
     account = if params[:create_account].present?
       unless Current.user.can?("stored_value.account.create", store: Current.store)
-        redirect_to pos_transaction_path(@pos_transaction), alert: "missing permission stored_value.account.create"
+        redirect_to txn_redirect_path, alert: "missing permission stored_value.account.create"
         return
       end
 
@@ -238,7 +238,7 @@ class PosLineItemsController < ApplicationController
         alternate_identifier: params[:alternate_identifier].presence
       )
       unless created.success?
-        redirect_to pos_transaction_path(@pos_transaction), alert: created.error
+        redirect_to txn_redirect_path, alert: created.error
         return
       end
       created.account
@@ -247,7 +247,7 @@ class PosLineItemsController < ApplicationController
     end
 
     if account.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: "Select or create a gift-card account."
+      redirect_to txn_redirect_path, alert: "Select or create a gift-card account."
       return
     end
 
@@ -259,12 +259,12 @@ class PosLineItemsController < ApplicationController
       actor: Current.user
     )
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Stored-value line added."
+      redirect_to sale_after_intent_path, notice: "Stored-value line added."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_to txn_redirect_path, alert: e.message
   end
 
   def scan_error_message(resolved)
@@ -297,5 +297,18 @@ class PosLineItemsController < ApplicationController
 
   def set_line_item
     @line_item = @pos_transaction.pos_line_items.find(params[:id])
+  end
+
+  def txn_redirect_path
+    opts = {}
+    opts[:intent] = params[:intent] if params[:intent].present?
+    opts[:presentation] = params[:presentation] if params[:presentation].present?
+    opts[:selected_line_id] = params[:selected_line_id] if params[:selected_line_id].present?
+    opts[:focus_target] = params[:focus_target] if params[:focus_target].present?
+    pos_transaction_path(@pos_transaction, opts)
+  end
+
+  def sale_after_intent_path
+    pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan")
   end
 end
