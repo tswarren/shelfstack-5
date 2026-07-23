@@ -32,11 +32,12 @@ Keep workflows record-level. Screen layout belongs elsewhere.
 | [suspended-transaction.md](suspended-transaction.md) | Delivered | Phase 4a |
 | [cancel-transaction.md](cancel-transaction.md) | Delivered | Phase 4a |
 | [customer-return.md](customer-return.md) | Delivered | Phase 4e |
-| [purchase-order.md](purchase-order.md) | Minimal stub, points to service catalog | Phase 5a/5b/5c/5e |
-| [product-request.md](product-request.md) | Minimal stub, points to service catalog | Phase 5d/5e/5f |
+| [purchase-order.md](purchase-order.md) | Delivered | Phase 5a/5b/5e |
+| [purchasing-and-receiving.md](purchasing-and-receiving.md) | Delivered | Phase 5c/5f |
+| [product-request.md](product-request.md) | Delivered | Phase 5d/5e/5f |
 | [post-void.md](post-void.md) | Delivered (Policy A card path) | Phase 6 |
-| [business-day-close.md](business-day-close.md) | Stub (not yet written) | Phase 4 / 7 |
-| [stored-value.md](stored-value.md) | Stub (not yet written) | Phase 6 |
+| [business-day-close.md](business-day-close.md) | Delivered close boundary; reconciliation deferred | Phase 4 / 7 |
+| [stored-value.md](stored-value.md) | Delivered v1 operating policy | Phase 6 |
 
 ## Phase 4 notes
 
@@ -46,7 +47,6 @@ Keep workflows record-level. Screen layout belongs elsewhere.
 
 ## Phase 5 notes
 
-- Purchasing and receiving: [purchase-order.md](purchase-order.md); receiving itself
-  (`Inventory::PostReceipt`) has no dedicated workflow doc yet — see the Phase 5c/5f
-  service-catalog entries.
+- Purchasing intent: [purchase-order.md](purchase-order.md).
+- Receiving and allocation conversion: [purchasing-and-receiving.md](purchasing-and-receiving.md).
 - Demand and fulfilment: [product-request.md](product-request.md).
