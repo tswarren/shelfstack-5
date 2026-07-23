@@ -17,9 +17,9 @@
   <td class="num"><%= line.quantity %></td>
   <td class="num"><%= pos_money(line.unit_price_cents) %></td>
   <td class="num"><%= pos_money(line.extended_price_cents) %></td>
-  <td class="num"><%= pos_money(line.discount_amount_cents) %></td>
-  <td class="num"><%= pos_money(line.tax_amount_cents) %></td>
-  <td class="num"><%= pos_money(line.extended_price_cents - line.discount_amount_cents + line.tax_amount_cents) %></td>
+  <td class="num"><%= pos_money(@line_discount_cents_by_id&.dig(line.id) || line.discount_amount_cents) %></td>
+  <td class="num"><%= pos_money(@line_tax_cents_by_id&.dig(line.id) || line.tax_amount_cents) %></td>
+  <td class="num"><%= pos_money(line.extended_price_cents - (@line_discount_cents_by_id&.dig(line.id) || line.discount_amount_cents).to_i + (@line_tax_cents_by_id&.dig(line.id) || line.tax_amount_cents).to_i) %></td>
   <td>
     <% if @pos_transaction.editable? && Current.user.can?("pos.line.remove", store: Current.store) %>
       <%= button_to "Remove", pos_transaction_pos_line_item_path(@pos_transaction, line), method: :delete,

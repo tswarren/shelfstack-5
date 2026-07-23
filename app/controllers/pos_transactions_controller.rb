@@ -11,10 +11,11 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
   before_action -> { require_permission!("pos.transaction.cancel") }, only: %i[cancel]
   before_action -> { require_permission!("pos.transaction.complete") }, only: %i[complete]
+  before_action -> { require_permission!("pos.return.create") }, only: %i[start_linked_return]
   before_action -> { require_permission!("pos.post_void.create") },
                 only: %i[post_void_form approve_post_void clear_post_void_approval post_void]
   before_action :set_transaction,
-                only: %i[show tender suspend recall cancel complete post_void_form approve_post_void
+                only: %i[show tender suspend recall cancel complete start_linked_return post_void_form approve_post_void
                          clear_post_void_approval post_void]
   before_action :disable_turbo_and_browser_cache, only: %i[show tender]
 
@@ -32,11 +33,19 @@ class PosTransactionsController < ApplicationController
   end
 
   def create
-    session = current_open_session
-    return unless session
+    pos_session = current_open_session
+    return unless pos_session
 
-    result = Pos::OpenTransaction.call(pos_session: session, actor: Current.user)
+    result = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
     if result.success?
+      if params[:query].present?
+        session[:pos_scan_resolution] = {
+          "transaction_id" => result.pos_transaction.id,
+          "query" => params[:query].to_s,
+          "quantity" => (params[:quantity].presence || 1).to_i,
+          "product_request_id" => params[:product_request_id].presence
+        }
+      end
       redirect_to pos_transaction_path(result.pos_transaction)
     else
       redirect_to register_path, alert: result.error
@@ -103,6 +112,40 @@ class PosTransactionsController < ApplicationController
       redirect_to pos_transaction_path(@pos_transaction, presentation: (@pos_transaction.void_required_tenders? ? nil : "tender")),
                   alert: result.error
     end
+  end
+
+  def start_linked_return
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "Only completed receipts can start a linked return."
+    end
+
+    returnable = @pos_transaction.pos_line_items
+      .where(status: "completed", direction: "sale")
+      .where.not(line_kind: "stored_value")
+      .any? { |line| line.remaining_returnable_quantity.positive? }
+    unless returnable
+      return redirect_to pos_transaction_path(@pos_transaction), alert: "No returnable lines remain on this receipt."
+    end
+
+    pos_session = current_open_session
+    return unless pos_session
+
+    open_txn = PosTransaction.open_transactions.find_by(active_pos_session: pos_session)
+    unless open_txn
+      opened = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
+      unless opened.success?
+        return redirect_to pos_transaction_path(@pos_transaction), alert: opened.error
+      end
+      open_txn = opened.pos_transaction
+    end
+
+    session[:pos_return_lookup] = {
+      "for_transaction_id" => open_txn.id,
+      "original_transaction_id" => @pos_transaction.id,
+      "receipt_number" => @pos_transaction.receipt_number
+    }
+    redirect_to pos_transaction_path(open_txn, intent: "return"),
+                notice: "Receipt #{@pos_transaction.receipt_number} loaded for return."
   end
 
   def post_void_form
@@ -200,10 +243,15 @@ class PosTransactionsController < ApplicationController
   private
 
   def assign_workspace_context!(presentation_param:)
+    pending_lines = @pos_transaction.pos_line_items.pending.order(:position, :id).to_a
+    snapshots = Pos::LineFinancialSnapshots.call(pos_line_item_ids: pending_lines.map(&:id))
+    @line_discount_cents_by_id = snapshots.discount_cents_by_id
+    @line_tax_cents_by_id = snapshots.tax_cents_by_id
+
     if @pos_transaction.open?
       # GET-safe: sum persisted line snapshots. Do not call RecalculateTransaction
       # or FinalizeReturnFinancials from show/tender render (Phase 6.5).
-      totals = snapshot_open_totals(@pos_transaction)
+      totals = snapshot_open_totals(pending_lines)
       @subtotal_cents = totals.subtotal_cents
       @discount_total_cents = totals.discount_total_cents
       @tax_total_cents = totals.tax_total_cents
@@ -254,7 +302,7 @@ class PosTransactionsController < ApplicationController
     end
     @scan_outcome = flash[:scan_outcome]
     @scan_query = flash[:scan_query]
-    @entry_intent = %w[sale return stored_value open_ring].include?(params[:intent].to_s) ? params[:intent].to_s : "sale"
+    @entry_intent = permitted_entry_intent(params[:intent].to_s)
     @selected_line_id = params[:selected_line_id].presence&.to_i
     @selected_line = @pos_line_items.find { |line| line.id == @selected_line_id } if @selected_line_id
     @focus_target = params[:focus_target].presence
@@ -262,7 +310,11 @@ class PosTransactionsController < ApplicationController
     @completion_code = flash[:completion_code]
 
     if @pos_transaction.open?
-      @readiness = Pos::ProjectCompletionReadiness.call(pos_transaction: @pos_transaction)
+      @readiness = Pos::ProjectCompletionReadiness.call(
+        pos_transaction: @pos_transaction,
+        discount_cents_by_id: @line_discount_cents_by_id,
+        tax_cents_by_id: @line_tax_cents_by_id
+      )
     end
 
     @workspace = Pos::WorkspacePresentation.for(
@@ -275,6 +327,24 @@ class PosTransactionsController < ApplicationController
     @presentation_state = @workspace.state
 
     load_return_lookup!
+  end
+
+  def permitted_entry_intent(requested)
+    return "sale" unless %w[sale return stored_value open_ring].include?(requested)
+
+    case requested
+    when "return"
+      Current.user.can?("pos.return.create", store: Current.store) ? "return" : "sale"
+    when "stored_value"
+      if Current.user.can?("stored_value.issue", store: Current.store) ||
+         Current.user.can?("stored_value.reload", store: Current.store)
+        "stored_value"
+      else
+        "sale"
+      end
+    else
+      requested
+    end
   end
 
   def navigation_redirect_params
@@ -308,15 +378,15 @@ class PosTransactionsController < ApplicationController
   end
 
   # Read-only totals from persisted pending-line fields (no locks, no writes).
-  def snapshot_open_totals(transaction)
+  def snapshot_open_totals(pending_lines)
     subtotal = 0
     discount = 0
     tax = 0
-    transaction.pos_line_items.pending.each do |line|
+    pending_lines.each do |line|
       sign = line.return? ? -1 : 1
       subtotal += sign * line.extended_price_cents.to_i
-      discount += sign * line.discount_amount_cents.to_i
-      tax += sign * line.tax_amount_cents.to_i
+      discount += sign * @line_discount_cents_by_id[line.id].to_i
+      tax += sign * @line_tax_cents_by_id[line.id].to_i
     end
     SnapshotTotals.new(
       subtotal_cents: subtotal,

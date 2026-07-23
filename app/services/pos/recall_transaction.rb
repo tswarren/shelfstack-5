@@ -26,6 +26,10 @@ module Pos
         raise Error, "only suspended transactions may be recalled" unless transaction.suspended?
         raise Error, "transaction belongs to a different store" unless transaction.store_id == session.store_id
 
+        if PosTransaction.open_transactions.exists?(active_pos_session_id: session.id)
+          raise Error, "Suspend or complete the current transaction before recalling another."
+        end
+
         transaction.update!(
           status: "open",
           active_pos_session: session,

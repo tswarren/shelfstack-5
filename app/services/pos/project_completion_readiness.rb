@@ -22,8 +22,10 @@ module Pos
       def ready_for_completion? = ready_for_completion
     end
 
-    def initialize(pos_transaction:)
+    def initialize(pos_transaction:, discount_cents_by_id: nil, tax_cents_by_id: nil)
       @pos_transaction = pos_transaction
+      @discount_cents_by_id = discount_cents_by_id
+      @tax_cents_by_id = tax_cents_by_id
     end
 
     def call
@@ -117,7 +119,17 @@ module Pos
     def snapshot_net_cents(lines)
       lines.sum do |line|
         sign = line.return? ? -1 : 1
-        sign * (line.extended_price_cents.to_i - line.discount_amount_cents.to_i + line.tax_amount_cents.to_i)
+        discount = if @discount_cents_by_id
+          @discount_cents_by_id[line.id].to_i
+        else
+          line.discount_amount_cents.to_i
+        end
+        tax = if @tax_cents_by_id
+          @tax_cents_by_id[line.id].to_i
+        else
+          line.tax_amount_cents.to_i
+        end
+        sign * (line.extended_price_cents.to_i - discount + tax)
       end
     end
 

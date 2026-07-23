@@ -47,6 +47,14 @@
         <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
               data: { "pos-register-target": "backToRegister" },
               autofocus: true %>
+        <% returnable = @pos_transaction.pos_line_items
+             .where(status: "completed", direction: "sale")
+             .where.not(line_kind: "stored_value")
+             .any? { |line| line.remaining_returnable_quantity.positive? } %>
+        <% if returnable && Current.user.can?("pos.return.create", store: Current.store) %>
+          <%= button_to "Start linked return", start_linked_return_pos_transaction_path(@pos_transaction),
+                method: :post, class: "button button-outline button-large" %>
+        <% end %>
         <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
           <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
                 class: "button button-ghost button-large" %>
@@ -99,7 +107,6 @@
       <%= render "totals" %>
       <%= render "readiness_summary" %>
       <%= render "primary_cta" %>
-      <%= render "void_required_tenders" %>
       <% if tender_mode || !@pos_transaction.editable? || @pos_tenders.any? %>
         <%= render "tenders" %>
         <%= render "tender_entry" %>

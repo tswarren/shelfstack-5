@@ -11,6 +11,7 @@ class RegisterController < ApplicationController
   def show
     load_register_context!
     @scan_query = flash[:scan_query]
+    @scan_quantity = flash[:scan_quantity].presence || 1
     @scan_outcome = flash[:scan_outcome]
     @workspace = Pos::WorkspacePresentation.for(
       pos_transaction: nil,
@@ -44,6 +45,7 @@ class RegisterController < ApplicationController
     elsif result.outcome == "ambiguous"
       flash[:scan_outcome] = "ambiguous"
       flash[:scan_query] = params[:query].to_s
+      flash[:scan_quantity] = (params[:quantity].presence || 1).to_i
       flash[:alert] = result.error
       # Offer opening an empty transaction so cashier can resolve candidates there.
       redirect_to register_path

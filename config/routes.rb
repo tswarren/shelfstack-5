@@ -115,6 +115,7 @@ Rails.application.routes.draw do
       post :recall
       post :cancel
       post :complete
+      post :start_linked_return
       get :tender
       get :post_void_form
       post :approve_post_void

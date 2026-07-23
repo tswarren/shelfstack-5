@@ -110,6 +110,43 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to register_path
   end
 
+  test "ambiguous ready scan open-to-resolve carries query into transaction candidates" do
+    products(:sample_book).update!(alternate_identifier: "SHAREDALT01")
+    products(:upc_product).update!(alternate_identifier: "SHAREDALT01")
+
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+
+    assert_no_difference -> { PosTransaction.count } do
+      post register_scan_to_start_path, params: { query: "SHAREDALT01", quantity: 2 }
+    end
+    assert_redirected_to register_path
+    assert_equal "ambiguous", flash[:scan_outcome]
+    assert_equal "SHAREDALT01", flash[:scan_query]
+
+    assert_difference -> { PosTransaction.count }, 1 do
+      post pos_transactions_path, params: { query: "SHAREDALT01", quantity: 2 }
+    end
+    transaction = PosTransaction.order(:id).last
+    assert_redirected_to pos_transaction_path(transaction)
+
+    get pos_transaction_path(transaction)
+    assert_response :success
+    assert_select ".pos-scan-resolution"
+    assert_match "The Illustrated Man", response.body
+    assert_match "UPC Sample", response.body
+    assert_select ".pos-scan-resolution input[name=quantity][value='2']"
+  end
+
   test "receipt lookup finds completed receipt" do
     post session_path, params: { username: "admin", password: "password123" }
     post business_days_path, params: { business_day: { reporting_date: Date.current } }

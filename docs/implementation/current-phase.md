@@ -13,7 +13,8 @@
 
 ## Immediate next work
 
-1. Squash-merge the Phase 6.5 PR to `main`, then prefer Phase 7 reporting.2. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+1. Squash-merge the Phase 6.5 PR to `main`, then prefer Phase 7 reporting.
+2. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
 3. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
 4. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
 5. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.

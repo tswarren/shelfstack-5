@@ -61,7 +61,16 @@ module Pos
           remove_reason: @reason
         )
 
-        recalculation = Pos::RecalculateTransaction.call(pos_transaction: transaction)
+        # Linked-return cost/discount residuals depend on remaining pending
+        # return order. Reassign under original-line locks when any survive.
+        remaining_linked_returns = transaction.pos_line_items.pending.returns
+          .where.not(original_pos_line_item_id: nil)
+          .exists?
+        recalculation = if remaining_linked_returns
+          FinalizeReturnFinancials.call(pos_transaction: transaction).recalculation
+        else
+          RecalculateTransaction.call(pos_transaction: transaction)
+        end
 
         Result.new(pos_line_item: line, success?: true, error: nil,
                    warnings: (recalculation.blockers + recalculation.warnings).uniq)

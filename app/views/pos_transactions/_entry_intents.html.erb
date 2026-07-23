@@ -2,7 +2,14 @@
   <section class="pos-panel" aria-label="Entry intent">
     <h2 class="sr-only">Entry intent</h2>
     <div class="action-group" role="group" aria-label="Current entry intent">
-      <% %w[sale return stored_value open_ring].each do |intent| %>
+      <% available_intents = [ "sale" ]
+         available_intents << "return" if Current.user.can?("pos.return.create", store: Current.store)
+         if Current.user.can?("stored_value.issue", store: Current.store) ||
+            Current.user.can?("stored_value.reload", store: Current.store)
+           available_intents << "stored_value"
+         end
+         available_intents << "open_ring" %>
+      <% available_intents.each do |intent| %>
         <% active = (@entry_intent || "sale") == intent %>
         <%= link_to intent.humanize,
               pos_transaction_path(@pos_transaction, intent: intent, selected_line_id: @selected_line_id),

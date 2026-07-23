@@ -47,7 +47,9 @@
         Multiple matches for <strong><%= @scan_query %></strong>. Open a transaction to resolve candidates.
       </p>
       <div class="action-group">
-        <%= button_to "Open transaction to resolve", pos_transactions_path, class: "button button-primary button-large" %>
+        <%= button_to "Open transaction to resolve", pos_transactions_path,
+              params: { query: @scan_query, quantity: @scan_quantity },
+              class: "button button-primary button-large" %>
       </div>
     <% end %>
 
@@ -63,7 +65,7 @@
       </div>
       <div class="field">
         <label class="field-label" for="ready_scan_quantity">Qty</label>
-        <%= number_field_tag :quantity, 1, id: "ready_scan_quantity", min: 1, class: "input input-qty" %>
+        <%= number_field_tag :quantity, @scan_quantity || 1, id: "ready_scan_quantity", min: 1, class: "input input-qty" %>
       </div>
       <%= form.submit "Scan to start", class: "button button-primary button-large" %>
     <% end %>

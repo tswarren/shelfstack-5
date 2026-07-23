@@ -42,31 +42,42 @@
       <%= render "scan_resolution" %>
     </section>
   <% elsif intent == "stored_value" %>
-    <section class="pos-panel" aria-label="Gift card issue / reload">
-      <h2>Gift card issue / reload</h2>
-      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
-        <%= hidden_field_tag :kind, "stored_value" %>
-        <%= hidden_field_tag :intent, "stored_value" %>
-        <div class="field">
-          <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
-          <%= form.select :stored_value_operation, [ [ "Issue", "issue" ], [ "Reload", "reload" ] ], {}, class: "input" %>
-        </div>
-        <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "sv_amount_cents_intent" %>
-        <div class="field">
-          <%= form.label :account_number, "Existing account number", class: "field-label" %>
-          <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
-        </div>
-        <div class="field">
-          <label class="field-label">
-            <%= check_box_tag :create_account, "1" %>
-            Create new gift-card account
-          </label>
-        </div>
-        <div class="form-actions">
-          <%= form.submit "Add gift-card line", class: "button button-outline" %>
-        </div>
-      <% end %>
-    </section>
+    <%
+      can_issue = Current.user.can?("stored_value.issue", store: Current.store)
+      can_reload = Current.user.can?("stored_value.reload", store: Current.store)
+      sv_operations = []
+      sv_operations << [ "Issue", "issue" ] if can_issue
+      sv_operations << [ "Reload", "reload" ] if can_reload
+    %>
+    <% if sv_operations.any? %>
+      <section class="pos-panel" aria-label="Gift card issue / reload">
+        <h2>Gift card issue / reload</h2>
+        <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+          <%= hidden_field_tag :kind, "stored_value" %>
+          <%= hidden_field_tag :intent, "stored_value" %>
+          <div class="field">
+            <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
+            <%= form.select :stored_value_operation, sv_operations, {}, class: "input" %>
+          </div>
+          <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "sv_amount_cents_intent" %>
+          <div class="field">
+            <%= form.label :account_number, "Existing account number", class: "field-label" %>
+            <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
+          </div>
+          <% if Current.user.can?("stored_value.account.create", store: Current.store) %>
+            <div class="field">
+              <label class="field-label">
+                <%= check_box_tag :create_account, "1" %>
+                Create new gift-card account
+              </label>
+            </div>
+          <% end %>
+          <div class="form-actions">
+            <%= form.submit "Add gift-card line", class: "button button-outline" %>
+          </div>
+        <% end %>
+      </section>
+    <% end %>
   <% elsif intent == "open_ring" %>
     <section class="pos-panel" aria-label="Open-ring line">
       <h2>Open-ring line</h2>
