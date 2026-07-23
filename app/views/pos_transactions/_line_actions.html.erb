@@ -1,11 +1,18 @@
 <%# locals: line: %>
-<details class="pos-line-actions">
+<%
+  nav_intent = @entry_intent.presence || "sale"
+  nav_focus = "line_actions"
+%>
+<details class="pos-line-actions" open>
   <summary>Line actions</summary>
 
   <% if line.line_kind == "product" %>
     <div class="pos-panel">
       <h3>Override price</h3>
       <%= form_with url: override_price_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "form" do |form| %>
+        <%= hidden_field_tag :intent, nav_intent %>
+        <%= hidden_field_tag :selected_line_id, line.id %>
+        <%= hidden_field_tag :focus_target, nav_focus %>
         <%= render "shared/currency_field", name: "requested_unit_price_cents", label: "New unit price",
               id: "override_price_cents_#{line.id}" %>
         <div class="field">
@@ -23,6 +30,9 @@
   <div class="pos-panel">
     <h3>Override tax category</h3>
     <%= form_with url: override_tax_category_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "form" do |form| %>
+      <%= hidden_field_tag :intent, nav_intent %>
+      <%= hidden_field_tag :selected_line_id, line.id %>
+      <%= hidden_field_tag :focus_target, nav_focus %>
       <div class="field">
         <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
         <%= form.collection_select :tax_category_id, @tax_categories, :id, :name, { selected: line.tax_category_id }, class: "input" %>
@@ -54,6 +64,7 @@
                     pos_transaction_pos_discount_path(@pos_transaction, discount),
                     method: :delete,
                     class: "button button-small button-danger",
+                    params: { intent: nav_intent, selected_line_id: line.id, focus_target: nav_focus },
                     form: { data: { turbo_confirm: "Remove this line discount?" } } %>
             <% end %>
           </li>
@@ -64,6 +75,9 @@
     <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "form" do |form| %>
       <%= hidden_field_tag :scope, "line" %>
       <%= hidden_field_tag :pos_line_item_id, line.id %>
+      <%= hidden_field_tag :intent, nav_intent %>
+      <%= hidden_field_tag :selected_line_id, line.id %>
+      <%= hidden_field_tag :focus_target, nav_focus %>
       <div class="field">
         <%= form.label :method, "Method", class: "field-label" %>
         <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ], [ "Fixed price", "fixed_price" ] ], {}, class: "input" %>

@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "scanInput", "scanForm", "liveRegion", "completeButton", "announce",
-    "backToRegister", "recoveryPanel", "lineActions"
+    "backToRegister", "recoveryPanel", "lineActions", "saleIntent"
   ]
   static values = {
     scanOutcome: String,
@@ -18,6 +18,12 @@ export default class extends Controller {
     this.onBeforeCache = this.handleBeforeCache.bind(this)
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
     document.addEventListener("turbo:before-cache", this.onBeforeCache)
+
+    if (window.Turbo?.Cache?.exemptPageFromCache) {
+      Turbo.Cache.exemptPageFromCache()
+    } else if (window.Turbo?.cache?.exemptPageFromCache) {
+      Turbo.cache.exemptPageFromCache()
+    }
 
     if (this.completedValue) {
       document.addEventListener("keydown", this.onKeydown)
@@ -99,7 +105,11 @@ export default class extends Controller {
     }
 
     if (event.key === "Escape") {
-      // Intent cancel is server-driven via Sale intent link; restore scan focus.
+      event.preventDefault()
+      if (this.hasSaleIntentTarget && this.saleIntentTarget.getAttribute("aria-current") !== "true") {
+        this.saleIntentTarget.click()
+        return
+      }
       this.focusScanInput()
       return
     }

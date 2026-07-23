@@ -16,6 +16,7 @@ class PosTransactionsController < ApplicationController
   before_action :set_transaction,
                 only: %i[show tender suspend recall cancel complete post_void_form approve_post_void
                          clear_post_void_approval post_void]
+  before_action :disable_turbo_and_browser_cache, only: %i[show tender]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
@@ -299,6 +300,11 @@ class PosTransactionsController < ApplicationController
 
   def set_transaction
     @pos_transaction = Current.store.pos_transactions.find(params[:id])
+  end
+
+  # Prevent Turbo Drive and browser Back from restoring stale editable snapshots.
+  def disable_turbo_and_browser_cache
+    response.headers["Cache-Control"] = "no-store"
   end
 
   # Read-only totals from persisted pending-line fields (no locks, no writes).

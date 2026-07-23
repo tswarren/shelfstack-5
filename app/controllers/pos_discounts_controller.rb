@@ -28,21 +28,21 @@ class PosDiscountsController < ApplicationController
     )
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Discount applied."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to txn_redirect_path, notice: notice
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_to txn_redirect_path, alert: e.message
   end
 
   def destroy
     result = Pos::RemoveDiscount.call(pos_discount: @pos_discount, actor: Current.user)
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Discount removed."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to txn_redirect_path, notice: notice
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to txn_redirect_path, alert: result.error
     end
   end
 
@@ -54,6 +54,19 @@ class PosDiscountsController < ApplicationController
 
   def set_discount
     @pos_discount = @pos_transaction.pos_discounts.find(params[:id])
+  end
+
+  def txn_redirect_path
+    opts = {}
+    opts[:intent] = params[:intent] if params[:intent].present?
+    opts[:presentation] = params[:presentation] if params[:presentation].present?
+    opts[:selected_line_id] = params[:selected_line_id] if params[:selected_line_id].present?
+    opts[:focus_target] = params[:focus_target] if params[:focus_target].present?
+    if opts[:selected_line_id].blank? && @pos_discount&.target_pos_line_item_id.present?
+      opts[:selected_line_id] = @pos_discount.target_pos_line_item_id
+      opts[:focus_target] ||= "line_actions"
+    end
+    pos_transaction_path(@pos_transaction, opts)
   end
 
   def line_item

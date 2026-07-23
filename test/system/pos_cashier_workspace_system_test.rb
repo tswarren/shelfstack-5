@@ -67,6 +67,47 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     assert_equal 0, PosTransaction.open_transactions.where(active_pos_session: PosSession.open_sessions.last).count
   end
 
+  test "browser back after complete does not expose editable controls" do
+    open_inventory(@variant, quantity: 5, unit_cost_cents: 500)
+
+    visit new_session_path
+    fill_in "Username", with: "admin"
+    fill_in "Password", with: "password123"
+    click_button "Sign in"
+    assert_text "Home"
+
+    day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+    Pos::OpenSession.call(
+      business_day: day, store: @store, pos_device: @device, cash_drawer: @drawer,
+      opening_cash_cents: 0, cashier: @admin, actor: @admin
+    )
+
+    visit register_path
+    within("section[aria-label='Next action']") do
+      fill_in "Scan or search", with: @variant.sku
+      click_button "Scan to start"
+    end
+    assert_text(/Line added|available quantity/i, wait: 5)
+    transaction = PosTransaction.order(:id).last
+
+    click_link "Tender", href: /\/tender/
+    net = Pos::RecalculateTransaction.call(pos_transaction: transaction).net_total_cents
+    fill_in "Amount tendered", with: format("%.2f", net / 100.0)
+    click_button "Add cash tender"
+    assert_text "Tender recorded"
+    click_button "Complete transaction"
+    assert_text(/Transaction complete|Receipt/i, wait: 5)
+
+    visit register_path
+    assert_text "Register ready"
+    page.go_back
+
+    assert_text "Transaction complete", wait: 5
+    assert_no_button "Add line"
+    assert_no_button "Complete transaction"
+    assert_no_field "Scan or search"
+  end
+
   private
 
   def open_inventory(variant, quantity:, unit_cost_cents:)

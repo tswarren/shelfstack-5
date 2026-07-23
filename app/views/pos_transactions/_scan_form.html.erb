@@ -46,7 +46,7 @@
       <h2>Gift card issue / reload</h2>
       <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
         <%= hidden_field_tag :kind, "stored_value" %>
-        <%= hidden_field_tag :intent, "sale" %>
+        <%= hidden_field_tag :intent, "stored_value" %>
         <div class="field">
           <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
           <%= form.select :stored_value_operation, [ [ "Issue", "issue" ], [ "Reload", "reload" ] ], {}, class: "input" %>
@@ -72,7 +72,7 @@
       <h2>Open-ring line</h2>
       <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
         <%= hidden_field_tag :kind, "open_ring" %>
-        <%= hidden_field_tag :intent, "sale" %>
+        <%= hidden_field_tag :intent, "open_ring" %>
         <div class="field">
           <%= form.label :department_id, "Department", class: "field-label" %>
           <%= form.select :department_id,

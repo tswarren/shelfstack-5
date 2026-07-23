@@ -14,6 +14,7 @@
                     pos_transaction_pos_discount_path(@pos_transaction, discount),
                     method: :delete,
                     class: "button button-small button-danger",
+                    params: { intent: @entry_intent.presence || "sale", selected_line_id: @selected_line_id }.compact,
                     form: { data: { turbo_confirm: "Remove this transaction discount?" } } %>
             <% end %>
           </li>
@@ -23,6 +24,8 @@
 
     <%= form_with url: pos_transaction_pos_discounts_path(@pos_transaction), method: :post, class: "form" do |form| %>
       <%= hidden_field_tag :scope, "transaction" %>
+      <%= hidden_field_tag :intent, @entry_intent.presence || "sale" %>
+      <%= hidden_field_tag :selected_line_id, @selected_line_id if @selected_line_id.present? %>
       <div class="field">
         <%= form.label :method, "Method", class: "field-label" %>
         <%= form.select :method, [ [ "Percentage", "percentage" ], [ "Fixed amount", "fixed_amount" ] ], {}, class: "input" %>

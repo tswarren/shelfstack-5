@@ -99,7 +99,7 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
       pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
     )
 
-    visit pos_transaction_path(@transaction)
+    visit tender_pos_transaction_path(@transaction)
     assert_text "Amount tendered"
     # Cover tax so tenders settle the net total.
     fill_in "Amount tendered", with: "5.65"

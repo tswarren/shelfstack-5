@@ -41,6 +41,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     cash_amount = due - sv_amount
     assert cash_amount.positive?
 
+    visit tender_pos_transaction_path(ret)
     within_panel("Stored-value refund") do
       select_option_value("original_pos_tender_id", sv_tender.id)
       find("#sv_refund_amount_cents").set(format("%.2f", sv_amount / 100.0))
@@ -74,7 +75,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
       return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
     ).success?
 
-    visit pos_transaction_path(ret)
+    visit tender_pos_transaction_path(ret)
     due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
 
     within_panel("Cash refund") do
@@ -108,7 +109,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
       return_reason: return_reasons(:unwanted), return_disposition: "return_to_stock", actor: @admin
     ).success?
 
-    visit pos_transaction_path(ret)
+    visit tender_pos_transaction_path(ret)
     due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
 
     within_panel("Card (standalone) refund") do
@@ -130,7 +131,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
     net = Pos::RecalculateTransaction.call(pos_transaction: txn).net_total_cents
 
-    visit pos_transaction_path(txn)
+    visit tender_pos_transaction_path(txn)
     within_panel("Card (standalone)") do
       fill_in "card_amount_cents_#{@card.id}", with: format("%.2f", (net + 500) / 100.0)
       fill_in "Auth code", with: "AUTH-MISMATCH"
@@ -152,7 +153,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
 
-    visit pos_transaction_path(txn)
+    visit tender_pos_transaction_path(txn)
     within_panel("Stored-value tender") do
       fill_in "Account number", with: "0000000000000"
       fill_in "sv_tender_amount_cents", with: "1.00"
@@ -165,7 +166,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     sign_in_and_open_session!
     txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
-    visit pos_transaction_path(txn)
+    visit tender_pos_transaction_path(txn)
 
     within_panel("Stored-value tender") do
       fill_in "Account number", with: @account.account_number
@@ -176,7 +177,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
 
     txn2 = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     Pos::AddLine.call(pos_transaction: txn2, product_variant: @variant, quantity: 1, actor: @admin)
-    visit pos_transaction_path(txn2)
+    visit tender_pos_transaction_path(txn2)
     within_panel("Stored-value tender") do
       fill_in "Account number", with: @account.alternate_identifier
       fill_in "sv_tender_amount_cents", with: "1.00"

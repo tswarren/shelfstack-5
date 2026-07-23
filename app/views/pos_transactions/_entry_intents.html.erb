@@ -7,7 +7,8 @@
         <%= link_to intent.humanize,
               pos_transaction_path(@pos_transaction, intent: intent, selected_line_id: @selected_line_id),
               class: "button button-small #{active ? 'button-primary' : 'button-outline'}",
-              aria: { current: (active ? "true" : nil) } %>
+              aria: { current: (active ? "true" : nil) },
+              data: (intent == "sale" ? { "pos-register-target": "saleIntent" } : {}) %>
       <% end %>
     </div>
   </section>

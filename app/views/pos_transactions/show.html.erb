@@ -1,7 +1,9 @@
 <% if @pos_transaction.completed? %>
+  <% content_for :head do %>
+    <meta name="turbo-cache-control" content="no-cache">
+  <% end %>
   <div class="pos-workspace pos-completed-workspace" data-controller="pos-register"
-       data-pos-register-completed-value="true"
-       data-turbo-cache="false">
+       data-pos-register-completed-value="true">
     <span hidden data-pos-register-target="announce">
       <%= flash[:notice].presence || "Transaction complete. Receipt #{@pos_transaction.receipt_number}." %>
     </span>
@@ -61,14 +63,16 @@
   </div>
 <% else %>
   <% tender_mode = @presentation_state == "tender" || @presentation_state == "recovery" %>
+  <% content_for :head do %>
+    <meta name="turbo-cache-control" content="no-cache">
+  <% end %>
   <%= render "session_context" %>
   <%= render "transaction_status" %>
   <%= render "recall_summary" %>
 
   <div class="pos-workspace" data-controller="pos-register"
        data-pos-register-scan-outcome-value="<%= @scan_outcome %>"
-       data-pos-register-focus-target-value="<%= @focus_target %>"
-       data-turbo-cache="false">
+       data-pos-register-focus-target-value="<%= @focus_target %>">
     <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
     <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
 
@@ -83,7 +87,7 @@
       <% end %>
     </div>
 
-    <section class="pos-sale-panel" aria-label="Sale" <% if tender_mode && @pos_transaction.unresolved_tenders? %>hidden<% end %>>
+    <section class="pos-sale-panel" aria-label="Sale" <% if tender_mode %>hidden<% end %>>
       <%= render "entry_intents" %>
       <%= render "scan_form" %>
       <%= render "line_items" %>
@@ -96,13 +100,11 @@
       <%= render "readiness_summary" %>
       <%= render "primary_cta" %>
       <%= render "void_required_tenders" %>
-      <%# Focused Tender (or forced unresolved/void recovery) shows tender chrome;
-          otherwise keep legacy details so every tender op remains reachable. %>
       <% if tender_mode || !@pos_transaction.editable? || @pos_tenders.any? %>
         <%= render "tenders" %>
         <%= render "tender_entry" %>
       <% else %>
-        <details class="pos-panel" open>
+        <details class="pos-panel">
           <summary>Tender entry</summary>
           <%= render "tenders" %>
           <%= render "tender_entry" %>

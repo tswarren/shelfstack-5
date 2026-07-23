@@ -5,20 +5,6 @@
         Resolve void-required card tenders before completing, suspending, or cancelling.
       </p>
     <% else %>
-      <% unless @workspace&.primary_action == :complete %>
-        <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
-          <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post,
-                data: { action: "submit->pos-register#startProcessing" } do |form| %>
-            <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
-            <div class="form-actions">
-              <%= form.submit "Complete transaction", class: "button button-primary",
-                    data: { "pos-register-target": "completeButton" } %>
-            </div>
-          <% end %>
-          <p class="field-hint">Tip: press Ctrl+Enter (⌘+Enter) to complete.</p>
-        <% end %>
-      <% end %>
-
       <div class="pos-actions">
         <% if @pos_transaction.editable? && Current.user.can?("pos.transaction.suspend", store: Current.store) %>
           <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction), class: "button button-outline" %>

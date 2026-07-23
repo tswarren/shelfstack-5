@@ -215,7 +215,7 @@ class PosLineItemsController < ApplicationController
       actor: Current.user
     )
     if result.success?
-      redirect_to txn_redirect_path, notice: "Open-ring line added."
+      redirect_to sale_after_intent_path, notice: "Open-ring line added."
     else
       redirect_to txn_redirect_path, alert: result.error
     end
@@ -259,7 +259,7 @@ class PosLineItemsController < ApplicationController
       actor: Current.user
     )
     if result.success?
-      redirect_to txn_redirect_path, notice: "Stored-value line added."
+      redirect_to sale_after_intent_path, notice: "Stored-value line added."
     else
       redirect_to txn_redirect_path, alert: result.error
     end
@@ -305,9 +305,10 @@ class PosLineItemsController < ApplicationController
     opts[:presentation] = params[:presentation] if params[:presentation].present?
     opts[:selected_line_id] = params[:selected_line_id] if params[:selected_line_id].present?
     opts[:focus_target] = params[:focus_target] if params[:focus_target].present?
-    if action_name == "create" && %w[open_ring stored_value].include?(params[:kind].to_s) && opts[:intent].blank?
-      opts[:intent] = "sale"
-    end
     pos_transaction_path(@pos_transaction, opts)
+  end
+
+  def sale_after_intent_path
+    pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan")
   end
 end
