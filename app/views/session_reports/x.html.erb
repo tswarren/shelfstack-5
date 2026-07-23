@@ -1,0 +1,15 @@
+<% content_for :title, "Session X" %>
+
+<%= render "shared/page_header", title: "Session X",
+      subtitle: "Live session totals through #{l(@totals.source_cutoff_at, format: :long)}." %>
+
+<%= render "session_reports/payload_totals",
+      payload: @totals.to_payload,
+      show_cash: @show_cash,
+      show_cost: @show_cost,
+      show_margin: @show_margin %>
+
+<div class="page-actions">
+  <%= link_to "Back to register", register_path, class: "button button-outline" %>
+  <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
+</div>

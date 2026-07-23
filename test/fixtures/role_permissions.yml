@@ -443,3 +443,91 @@ admin_stored_value_adjustment_approve:
 admin_stored_value_adjustment_approve_self:
   role: administrator
   permission: stored_value_adjustment_approve_self
+
+admin_reporting_view_sales:
+  role: administrator
+  permission: reporting_view_sales
+
+admin_reporting_view_tax:
+  role: administrator
+  permission: reporting_view_tax
+
+admin_reporting_view_tenders:
+  role: administrator
+  permission: reporting_view_tenders
+
+admin_reporting_view_cash:
+  role: administrator
+  permission: reporting_view_cash
+
+admin_reporting_view_inventory:
+  role: administrator
+  permission: reporting_view_inventory
+
+admin_reporting_view_purchasing:
+  role: administrator
+  permission: reporting_view_purchasing
+
+admin_reporting_view_requests:
+  role: administrator
+  permission: reporting_view_requests
+
+admin_reporting_view_cost:
+  role: administrator
+  permission: reporting_view_cost
+
+admin_reporting_view_margin:
+  role: administrator
+  permission: reporting_view_margin
+
+admin_reporting_view_stored_value:
+  role: administrator
+  permission: reporting_view_stored_value
+
+admin_reporting_view_audit:
+  role: administrator
+  permission: reporting_view_audit
+
+admin_reporting_view_session_x:
+  role: administrator
+  permission: reporting_view_session_x
+
+admin_reporting_view_session_z:
+  role: administrator
+  permission: reporting_view_session_z
+
+admin_reporting_view_business_day_x:
+  role: administrator
+  permission: reporting_view_business_day_x
+
+admin_reporting_view_business_day_z:
+  role: administrator
+  permission: reporting_view_business_day_z
+
+admin_reporting_export:
+  role: administrator
+  permission: reporting_export
+
+admin_reporting_reconcile_session:
+  role: administrator
+  permission: reporting_reconcile_session
+
+admin_reporting_reconcile_business_day:
+  role: administrator
+  permission: reporting_reconcile_business_day
+
+admin_reporting_record_reconciliation_resolution:
+  role: administrator
+  permission: reporting_record_reconciliation_resolution
+
+admin_reporting_close_evidence_unavailable:
+  role: administrator
+  permission: reporting_close_evidence_unavailable
+
+admin_reporting_reconcile_approve:
+  role: administrator
+  permission: reporting_reconcile_approve
+
+admin_reporting_reconcile_approve_self:
+  role: administrator
+  permission: reporting_reconcile_approve_self
