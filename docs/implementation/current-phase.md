@@ -16,6 +16,7 @@
 3. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
 4. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
 5. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.
+6. After #36: preferred next phase is **6.5 Cashier workspace** ([phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md)) before Phase 7 reporting. Do not start 6.5 product PRs while Phase 6 merge hardening is open.
 
 ## Completed recently
 
@@ -23,6 +24,7 @@
 - Phase 6 #36 hardening: shared `ValidateCompletionReadiness`, corrective/hardening migration fold into create migrations.
 - Phase 6 implementation: 6a post-void + unavailable ledger + `Inventory::ReverseLedgerEntry`; 6b SV accounts/ledger/adjustments; 6c gift-card issue/reload lines; 6d redeem/refund tenders; 6e SV-aware post-void with later-redemption block; OD-014 interim and return-txn post-void blocks retained.
 - Phase 6 planning: thin phase plan promoted; three accepted decision notes; domain and permission catalog synchronized.
+- Phase 6.5 draft: cashier workspace interaction gate planned ([phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md)); preferred before Phase 7.
 - Phase 5 — Supply and Demand merged to `main` at `2e3e119` (PR #34).
 - Phase 4a–4e (Point of Sale) and Phase 4f UX Baseline Gate merged to `main` (PR #30).
 - Phase 4g test hardening merged to `main` (PR #31).
@@ -35,6 +37,7 @@
 - Deferred capabilities in [deferred-capabilities.md](deferred-capabilities.md).
 - PWA / offline POS as adopted architecture.
 - External Inter font dependency (see deferred UX in the 4f phase plan).
+- Phase 6.5 product implementation before [#36](https://github.com/tswarren/shelfstack-5/issues/36) closes; fat 6.5 scope (printers, gift receipts, promotions, global scanner capture, new POS command façade) — see [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) out of scope.
 
 ## Pointers
 

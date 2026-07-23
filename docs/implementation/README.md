@@ -71,6 +71,7 @@ ShelfStack uses a **POS-forward** delivery order:
 4. POS through atomic completion;
 5. purchasing, receiving, and product requests;
 6. corrections and stored value;
+6.5. cashier workspace (interaction gate over existing POS services);
 7. reporting and reconciliation.
 
 Full purchasing does not block the first real, inventory-aware completed sale.

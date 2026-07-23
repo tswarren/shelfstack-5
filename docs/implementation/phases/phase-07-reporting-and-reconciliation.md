@@ -2,6 +2,7 @@
 
 **Status:** Not started  
 **Depends on:** Phase 4c minimum; Phases 5–6 for full coverage  
+**Preferred delivery order:** after Phase 6.5 cashier workspace ([phase-06.5-cashier-workspace.md](phase-06.5-cashier-workspace.md)) when schedule allows; 6.5 does not hard-gate reporting schema  
 **Governing docs:** [reporting-and-reconciliation](../../domains/reporting-and-reconciliation.md); [architectural-locks](../architectural-locks.md)
 
 ## Goal
