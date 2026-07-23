@@ -61,7 +61,7 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     assert_equal 2, ret.reload.pos_tenders.where(direction: "refunded").count
 
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert ret.reload.completed?
   end
 

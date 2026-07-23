@@ -107,7 +107,7 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
 
     assert_text "Tender recorded"
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 

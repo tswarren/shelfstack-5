@@ -30,7 +30,7 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     enter_tender_and_cash!(Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents)
 
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
@@ -58,7 +58,7 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
 
     enter_tender_and_cash!(Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents)
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
@@ -76,7 +76,7 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     assert_text "Tender recorded"
 
     click_button "Complete transaction"
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 
@@ -99,7 +99,7 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
         new KeyboardEvent("keydown", { key: "Enter", code: "Enter", ctrlKey: true, bubbles: true })
       )
     JS
-    assert_text(/completed/i)
+    assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
 

@@ -393,6 +393,49 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_match(/not authorized/i, flash[:alert])
   end
 
+  test "completed receipt detail shows historical line discount and tax cents" do
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    line = Pos::AddLine.call(
+      pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin
+    ).pos_line_item
+    discount = Pos::ApplyDiscount.call(
+      pos_transaction: @transaction, scope: "line", pos_line_item: line,
+      method: "fixed_amount", amount_cents: 150, actor: @admin
+    )
+    assert discount.success?, discount.error
+    Pos::RecalculateTransaction.call(pos_transaction: @transaction)
+    line.reload
+    discount_cents = line.discount_amount_cents
+    tax_cents = line.tax_amount_cents
+    assert discount_cents.positive?
+    assert tax_cents.positive?
+
+    net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+    )
+    complete = Pos::CompleteTransaction.call(
+      pos_transaction: @transaction, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "ux-completed-snapshot-detail"
+    )
+    assert complete.success?, complete.error
+    @transaction.reload
+    line.reload
+    assert_equal discount_cents, line.discount_amount_cents
+    assert_equal tax_cents, line.tax_amount_cents
+
+    get pos_transaction_path(@transaction)
+    assert_response :success
+    assert_select ".pos-completed-workspace"
+    # Expanded transaction detail must retain historical discount/tax (not $0.00).
+    body = response.body
+    detail_start = body.index("Transaction detail")
+    assert detail_start, "expected transaction detail section"
+    detail = body[detail_start..]
+    assert_includes detail, format("$%.2f", discount_cents / 100.0)
+    assert_includes detail, format("$%.2f", tax_cents / 100.0)
+  end
+
   private
 
   def open_inventory(variant, quantity:, unit_cost_cents:)

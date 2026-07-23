@@ -130,17 +130,20 @@ class PosTransactionsController < ApplicationController
     pos_session = current_open_session
     return unless pos_session
 
-    open_txn = PosTransaction.open_transactions.find_by(active_pos_session: pos_session)
-    unless open_txn
-      require_permission!("pos.transaction.open")
-      return if performed?
-
-      opened = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
-      unless opened.success?
-        return redirect_to pos_transaction_path(@pos_transaction), alert: opened.error
+    can_open = Current.user.can?("pos.transaction.open", store: Current.store)
+    opened = Pos::FindOrOpenActiveTransaction.call(
+      pos_session: pos_session,
+      actor: Current.user,
+      create_if_missing: can_open
+    )
+    unless opened.success?
+      unless can_open
+        require_permission!("pos.transaction.open")
+        return if performed?
       end
-      open_txn = opened.pos_transaction
+      return redirect_to pos_transaction_path(@pos_transaction), alert: opened.error
     end
+    open_txn = opened.pos_transaction
 
     session[:pos_return_lookup] = {
       "for_transaction_id" => open_txn.id,
