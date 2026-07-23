@@ -35,7 +35,7 @@ Receiving records delivered and accepted supply. Only posted accepted receipt qu
 - `Inventory::PostReceipt` changes status to `posted`, records posting metadata, posts accepted inventory effects, advances linked `PurchaseOrderLine#received_quantity`, and writes audit facts.
 - Quantity-tracked accepted quantity posts `InventoryLedgerEntry` rows and updates one Store × Variant `StockBalance`.
 - Individually tracked accepted quantity creates receipt-sourced `InventoryUnit` records; accepted unavailable quantity creates units in `inspection` status.
-- Quantity-tracked linked lines may create/increase `product_request`-sourced `InventoryReservation` rows and append `converted_to_reservation` Purchase-Order Allocation Events.
+- Linked sellable accepted quantity may create/increase `product_request`-sourced `InventoryReservation` rows and append `converted_to_reservation` Purchase-Order Allocation Events: quantity-tracked supply aggregates into reservation quantity, while individually tracked supply reserves one exact newly created sellable unit per reservation. Unavailable/inspection units are not converted into customer reservations.
 
 ## Transaction boundary
 
@@ -45,9 +45,9 @@ Receiving records delivered and accepted supply. Only posted accepted receipt qu
 
 - Create locks the Store for receipt-number assignment.
 - Draft update, cancellation, and posting lock the Receipt.
-- Posting locks each Stock Balance through `FindOrCreateStockBalance` or locks each linked Purchase Order Line.
-- Allocation conversion locks Product Requests, Purchase-Order Allocations, and existing Inventory Reservations through the reservation service.
-- OD-014 settlement uses the stock-balance/ledger lock path for deterministic deficit-pool updates.
+- Posting follows the implemented canonical order: Receipt → Purchase Orders → Purchase Order Lines → Product Requests → resolved cost snapshots → inventory balances or units → reservations → Purchase-Order Allocations.
+- Linked quantity-tracked receipt lines lock both the Purchase Order Line path and the Store × Variant Stock Balance path; OD-014 settlement uses that stock-balance/ledger lock path for deterministic deficit-pool updates.
+- Linked individually tracked receipt lines lock the Purchase Order Line path, create exact Inventory Units for accepted units, reserve newly created sellable units, and then lock Purchase-Order Allocations last before appending conversion events.
 
 ## Status transitions
 
@@ -101,5 +101,5 @@ Posted receipts are immutable in current implementation; there is no posted rece
 
 - Posted receipt correction/reversal workflow is not implemented.
 - Detailed RTV, receipt variance approval, invoice matching, and accounting export behavior remain deferred.
-- Individually tracked receipt-to-customer-request reservation conversion remains out of scope.
+- Individually tracked conversion is limited to newly created sellable receipt units; unavailable/inspection units are not converted to customer reservations.
 - Receiving unavailable locations/status taxonomy is intentionally minimal; authoritative shelf-location tracking remains deferred.

@@ -17,19 +17,19 @@ A Purchase Order records the store's intent to acquire merchandise from a vendor
 - Placement requires a draft Purchase Order.
 - Amendment requires an ordered Purchase Order; placed line identity, original quantity, and cost snapshots are immutable.
 - Cancellation requires a draft or ordered Purchase Order with no received quantity on any line.
-- Closing requires an ordered Purchase Order whose every line has zero derived open quantity.
+- Closing requires an ordered Purchase Order whose every line has zero derived open quantity and no remaining Purchase-Order Allocation quantity.
 
 ## Records read
 
 - Store, Organization, Vendor, Product Variant, Vendor Source, actor Membership/Permission records.
 - Purchase Order and Purchase Order Lines for update/place/amend/cancel/close.
 - Purchase-Order Allocations and Allocation Events when amendments or cancellation release committed customer-request allocations.
-- Receipt Lines when deriving received quantity, open quantity, and receiving state.
+- Receipt Lines are historical sources that advanced stored line received quantities during receipt posting; ordinary Purchase Order projections do not reread Receipt Lines.
 
 ## Records created or changed
 
 - `Purchasing::CreatePurchaseOrder` creates a draft Purchase Order, store-scoped never-reused order number, Purchase Order Lines, line snapshots, and audit metadata.
-- `Purchasing::UpdateDraftPurchaseOrder` updates draft header data and replaces the draft line set.
+- `Purchasing::UpdateDraftPurchaseOrder` updates draft header data and synchronizes the draft line set, updating submitted existing lines in place, adding new lines, and deleting omitted lines.
 - `Purchasing::PlacePurchaseOrder` changes status to `ordered` and records ordered timestamp/user/date.
 - `Purchasing::AmendPurchaseOrder` increases supply by adding new lines or decreases expected supply by increasing `cancelled_quantity`; it never edits placed line identity fields in place.
 - `Purchasing::CancelPurchaseOrder` changes status to `cancelled`, records cancellation metadata, and releases remaining allocations on its lines.
@@ -76,7 +76,7 @@ Implemented permissions are service-specific and store-scoped, including `purcha
 - Draft update rejects non-draft orders.
 - Amendment rejects reductions that would make open quantity less than remaining allocated quantity unless matching releases are included.
 - Cancellation rejects closed orders and orders with any received quantity.
-- Close rejects orders with remaining open quantity.
+- Close rejects orders with remaining open quantity or remaining allocated quantity.
 - Soft MOQ/order-multiple warnings do not block placement.
 
 ## Idempotency behavior

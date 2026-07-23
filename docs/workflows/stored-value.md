@@ -10,7 +10,7 @@ Stored Value manages gift card, store credit, and trade credit accounts through 
 
 ## Preconditions
 
-- Account creation requires Organization context and stored-value account-create permission.
+- Account creation requires Organization context; the current controller workflow checks `stored_value.account.create`, while `StoredValue::CreateAccount` assumes its caller already authorized the action.
 - Every account receives a generated `21` EAN-13 account number; alternate identifiers are optional and do not replace canonical identity.
 - POS issue/reload lines and redemption/refund tenders require an open POS Transaction in an open Session/Business Day.
 - Gift cards may be issued and reloaded through POS in Phase 6; store credit and trade credit are not cash-funded/reloaded through POS.
@@ -27,7 +27,7 @@ Stored Value manages gift card, store credit, and trade credit accounts through 
 
 ## Records created or changed
 
-- `StoredValue::CreateAccount` creates an account and canonical account number.
+- `StoredValue::CreateAccount` creates an account and canonical account number after caller-side authorization.
 - `StoredValue::ResolveAccount` reads account identifiers without changing records.
 - `Pos::AddStoredValueLine` creates a pending POS stored-value issue/reload line.
 - `Pos::AddStoredValueTender` creates a pending redemption tender after locking/finalizing return residuals as needed.

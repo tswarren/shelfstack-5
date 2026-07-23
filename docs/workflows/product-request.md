@@ -36,7 +36,7 @@ A Product Request records demand: a customer request, staff suggestion, stock re
 - `Purchasing::AddDemandToDraftPurchaseOrder` may add non-customer demand to a draft Purchase Order and resolve that request as ordered; it never creates a Purchase-Order Allocation.
 - `Purchasing::CreateAllocation` creates a Purchase-Order Allocation for a Customer Request.
 - `Purchasing::ReleaseAllocation` appends release events.
-- `Requests::ReserveInHouseInventory` creates or increases a `product_request`-sourced Inventory Reservation for physically confirmed stock.
+- `Requests::ReserveInHouseInventory` creates or increases a `product_request`-sourced Inventory Reservation for physically confirmed stock: quantity-tracked variants aggregate requested quantity, while individually tracked variants require an exact Inventory Unit and reserve quantity one per unit.
 - `Requests::RecordFulfillment` appends a fulfilment fact from POS completion and may set the request to `fulfilled`.
 - `Requests::ReverseFulfillment` appends a reversal fact from linked returns/post-voids and may reopen the request.
 
@@ -47,9 +47,9 @@ Each direct request service runs in its own database transaction. Cross-domain e
 ## Locks
 
 - Update, assignment, resolution, cancellation, in-house reservation, fulfilment, and reversal lock the Product Request.
-- Allocation creation locks Purchase Order Line then Product Request.
-- Allocation release locks the Purchase-Order Allocation.
-- In-house reservation and fulfilment lock existing active Inventory Reservations through inventory reservation services.
+- Allocation creation locks Purchase Order → Purchase Order Line → Product Request.
+- Allocation release locks Purchase Order → Purchase Order Line → Product Request → Purchase-Order Allocation.
+- In-house quantity reservations lock the Product Request, then use inventory reservation service locks; individually tracked in-house reservations also lock/reserve the exact Inventory Unit through the inventory reservation service.
 - POS fulfilment follows the POS completion lock order before entering request fulfilment.
 
 ## Status transitions
@@ -109,5 +109,5 @@ Implemented permissions include `requests.product_request.*`, `requests.customer
 
 - Detailed customer identity/notification workflows remain deferred.
 - Exact policy for partial customer fulfilment communication and abandonment remains open.
-- Individually tracked in-house customer holds and receipt-to-reservation conversion are out of current scope.
+- Individually tracked customer-request reservation is implemented for exact sellable units; deferred scope is broader customer communication/abandonment policy, not the reservation mechanism itself.
 - Buyer scoring, vendor availability automation, and demand prioritization beyond current deterministic conversion ordering remain deferred.

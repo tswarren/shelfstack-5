@@ -22,7 +22,7 @@ Business Days define store reporting periods. POS Sessions define device/cashier
 
 ## Records read
 
-- Store, actor Membership/Permission records, POS Device, optional Cash Drawer.
+- Store, actor identity for attribution, POS Device, optional Cash Drawer.
 - Business Day and POS Sessions.
 - POS Transactions controlled by a Session.
 - POS Session Cash Counts and POS Cash Movements for cash-enabled Session close.
@@ -57,7 +57,6 @@ Each open/close/count/cash-movement service owns a database transaction. Session
 
 ```text
 open → closed
-closed → reconciled   (deferred; not current close service)
 ```
 
 ### POS Session
@@ -101,7 +100,7 @@ Current open/close services carry actor identity but do not implement a dedicate
 ## Unresolved details
 
 - Business-date assignment policy remains open.
-- Session Z numbering, Business-Day Z numbering, X/Z report persistence, and final reconciliation workflows remain Phase 7/deferred.
+- Session Z numbering, Business-Day Z numbering, X/Z report persistence, final reconciliation workflows, and any future `closed → reconciled` lifecycle remain Phase 7/deferred.
 - Card terminal settlement, chargebacks, and external reconciliation remain deferred.
 - No reopen workflow is implemented for closed Business Days or Sessions.
 - Explicit permission enforcement for open/close services is not represented in the current service boundary and should be reconciled with ADR-0011 before treating it as settled.
