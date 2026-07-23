@@ -65,7 +65,7 @@ module Reporting
     end
 
     def completed_taxes(lines)
-      PosLineItemTax.where(pos_line_item_id: lines.map(&:id))
+      PosLineItemTax.where(pos_line_item_id: lines.map(&:id)).includes(:store_tax_rate)
     end
 
     def build_commercial(lines, txns)
@@ -93,10 +93,17 @@ module Reporting
     end
 
     def build_tax(taxes)
-      by_code = taxes.group_by { |t| t.receipt_code_snapshot.presence || "tax" }
-      components = by_code.map do |code, rows|
-        { "receipt_code" => code, "amount_cents" => rows.sum(&:amount_cents) }
-      end
+      components = taxes.group_by(&:store_tax_rate_id).map do |_rate_id, rows|
+        rate = rows.first.store_tax_rate
+        receipt_code = rows.first.receipt_code_snapshot.presence || rate&.receipt_code.presence || "tax"
+        name = rate&.name.presence || receipt_code.presence || "Tax"
+        {
+          "store_tax_rate_id" => rate&.id,
+          "name" => name,
+          "receipt_code" => receipt_code,
+          "amount_cents" => rows.sum(&:amount_cents)
+        }
+      end.sort_by { |row| row["name"].to_s }
       {
         "tax_total_cents" => taxes.sum(&:amount_cents),
         "components" => components
@@ -151,15 +158,31 @@ module Reporting
     end
 
     def build_cash(session)
+      unless session.cash_enabled?
+        return {
+          "cash_enabled" => false,
+          "opening_cash_cents" => nil,
+          "expected_cash_cents" => nil,
+          "counted_cash_cents" => nil,
+          "cash_variance_cents" => nil
+        }
+      end
+
+      breakdown = Pos::CalculateExpectedCash.call(pos_session: session)
       expected = if session.closed? && session.expected_cash_cents.present?
         session.expected_cash_cents
-      elsif session.cash_enabled?
-        Pos::CalculateExpectedCash.call(pos_session: session).expected_cash_cents
+      else
+        breakdown.expected_cash_cents
       end
 
       {
-        "cash_enabled" => session.cash_enabled?,
-        "opening_cash_cents" => session.opening_cash_cents,
+        "cash_enabled" => true,
+        "opening_cash_cents" => breakdown.opening_cash_cents,
+        "cash_received_cents" => breakdown.cash_received_cents,
+        "change_given_cents" => breakdown.change_given_cents,
+        "cash_refunded_cents" => breakdown.cash_refunded_cents,
+        "cash_movement_in_cents" => breakdown.cash_movement_in_cents,
+        "cash_movement_out_cents" => breakdown.cash_movement_out_cents,
         "expected_cash_cents" => expected,
         "counted_cash_cents" => session.counted_cash_cents,
         "cash_variance_cents" => session.cash_variance_cents
@@ -168,16 +191,22 @@ module Reporting
 
     def build_departments(lines)
       product_lines = lines.select { |l| l.line_kind != "stored_value" }
+      dept_meta = Department.where(id: product_lines.map(&:department_id).compact.uniq)
+        .pluck(:id, :name, :department_number)
+        .to_h { |id, name, number| [ id, { "name" => name, "department_number" => number } ] }
       product_lines.group_by(&:department_id).map do |department_id, rows|
         sales = rows.select { |l| l.direction == "sale" }
         returns = rows.select { |l| l.direction == "return" }
+        meta = dept_meta[department_id] || {}
         {
           "department_id" => department_id,
+          "department_name" => meta["name"] || "Unassigned",
+          "department_number" => meta["department_number"],
           "gross_sales_cents" => sales.sum { |l| l.extended_price_cents.to_i },
           "return_total_cents" => returns.sum { |l| l.extended_price_cents.to_i },
           "units_sold" => sales.sum { |l| l.quantity.to_i }
         }
-      end
+      end.sort_by { |row| row["department_number"].presence || "~" }
     end
 
     def build_activity_counts(txns, lines, tenders)

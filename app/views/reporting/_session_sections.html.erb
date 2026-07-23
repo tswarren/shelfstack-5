@@ -1,0 +1,209 @@
+<%# locals: payload, show_cash, show_cost, show_margin %>
+<% commercial = payload.fetch("commercial") %>
+<% tax = payload.fetch("tax") %>
+<% stored_value = payload.fetch("stored_value", {}) %>
+<% settlement = payload.fetch("settlement") %>
+<% tenders = payload.fetch("tenders") %>
+<% cash = payload.fetch("cash", {}) %>
+<% departments = payload.fetch("departments", []) %>
+<% activity = payload.fetch("activity_counts", {}) %>
+<% difference = settlement["transaction_total_cents"].to_i - settlement["net_tenders_cents"].to_i %>
+
+<section class="report-kpis" aria-label="Summary">
+  <div class="report-kpi">
+    <span class="report-kpi__label">Net sales</span>
+    <span class="report-kpi__value"><%= pos_money(commercial["net_sales_cents"]) %></span>
+  </div>
+  <div class="report-kpi">
+    <span class="report-kpi__label">Transaction total</span>
+    <span class="report-kpi__value"><%= pos_money(settlement["transaction_total_cents"]) %></span>
+  </div>
+  <div class="report-kpi">
+    <span class="report-kpi__label">Net tenders</span>
+    <span class="report-kpi__value"><%= pos_money(settlement["net_tenders_cents"]) %></span>
+    <span class="report-kpi__hint"><%= difference.zero? ? "Ties" : "Difference #{pos_money(difference)}" %></span>
+  </div>
+  <div class="report-kpi">
+    <span class="report-kpi__label">Completed receipts</span>
+    <span class="report-kpi__value"><%= activity["completed_transactions"].to_i %></span>
+  </div>
+  <% if show_cash && cash["cash_enabled"] %>
+    <div class="report-kpi">
+      <span class="report-kpi__label">Expected cash</span>
+      <span class="report-kpi__value"><%= pos_money(cash["expected_cash_cents"]) %></span>
+      <span class="report-kpi__hint">
+        <% if cash["counted_cash_cents"] %>
+          Counted <%= pos_money(cash["counted_cash_cents"]) %> · var <%= pos_money(cash["cash_variance_cents"]) %>
+        <% else %>
+          Not counted
+        <% end %>
+      </span>
+    </div>
+  <% end %>
+</section>
+
+<section class="report-section">
+  <h2>Commercial activity</h2>
+  <table class="report-table">
+    <tbody>
+      <tr><td>Gross sales</td><td class="num"><%= pos_money(commercial["gross_sales_cents"]) %></td></tr>
+      <tr><td>Discounts</td><td class="num"><%= pos_money(commercial["discount_total_cents"]) %></td></tr>
+      <tr><td>Customer returns</td><td class="num"><%= pos_money(commercial["return_total_cents"]) %></td></tr>
+      <tr><td>Post-void transactions</td><td class="num"><%= commercial["post_void_count"].to_i %></td></tr>
+      <tr class="is-total"><td>Net sales</td><td class="num"><%= pos_money(commercial["net_sales_cents"]) %></td></tr>
+      <tr><td>Units sold</td><td class="num"><%= commercial["units_sold"].to_i %></td></tr>
+      <tr><td>Units returned</td><td class="num"><%= commercial["units_returned"].to_i %></td></tr>
+      <tr><td>Price-override lines</td><td class="num"><%= commercial["price_override_line_count"].to_i %></td></tr>
+      <% if show_cost %>
+        <tr><td>Cost</td><td class="num"><%= pos_money(commercial["cost_extended_cents"]) %></td></tr>
+        <tr><td>Missing cost lines</td><td class="num"><%= commercial["missing_cost_line_count"].to_i %></td></tr>
+      <% end %>
+      <% if show_margin && show_cost %>
+        <tr><td>Margin</td><td class="num"><%= pos_money(commercial["net_sales_cents"].to_i - commercial["cost_extended_cents"].to_i) %></td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</section>
+
+<section class="report-section">
+  <h2>Tax</h2>
+  <table class="report-table">
+    <thead>
+      <tr><th>Component</th><th class="num">Amount</th></tr>
+    </thead>
+    <tbody>
+      <% Array(tax["components"]).each do |row| %>
+        <tr>
+          <td><%= row["name"].presence || row["receipt_code"] %></td>
+          <td class="num"><%= pos_money(row["amount_cents"]) %></td>
+        </tr>
+      <% end %>
+      <tr class="is-total"><td>Net tax</td><td class="num"><%= pos_money(tax["tax_total_cents"]) %></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="report-section">
+  <h2>Stored-value activity</h2>
+  <table class="report-table">
+    <tbody>
+      <tr><td>Issued (liability)</td><td class="num"><%= pos_money(stored_value["issued_cents"]) %></td></tr>
+      <tr><td>Reloaded (liability)</td><td class="num"><%= pos_money(stored_value["reloaded_cents"]) %></td></tr>
+      <tr class="is-total">
+        <td>Customer-funded stored value</td>
+        <td class="num"><%= pos_money(stored_value["issued_cents"].to_i + stored_value["reloaded_cents"].to_i) %></td>
+      </tr>
+      <tr><td>Redeemed (tender)</td><td class="num"><%= pos_money(stored_value["redeemed_cents"]) %></td></tr>
+      <tr><td>Refunded / restored (tender)</td><td class="num"><%= pos_money(stored_value["refunded_cents"]) %></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">Issuance and reload are liability activity, not sales revenue.</p>
+</section>
+
+<section class="report-section">
+  <h2>Settlement bridge</h2>
+  <table class="report-table">
+    <tbody>
+      <tr><td>Net sales</td><td class="num"><%= pos_money(settlement["net_sales_cents"]) %></td></tr>
+      <tr><td>Net tax</td><td class="num"><%= pos_money(settlement["net_tax_cents"]) %></td></tr>
+      <tr><td>Stored value issued / reloaded</td><td class="num"><%= pos_money(settlement["stored_value_issued_reloaded_cents"]) %></td></tr>
+      <tr class="is-bridge"><td>Transaction total settled</td><td class="num"><%= pos_money(settlement["transaction_total_cents"]) %></td></tr>
+      <tr><td>Net completed tenders</td><td class="num"><%= pos_money(settlement["net_tenders_cents"]) %></td></tr>
+      <tr class="is-total">
+        <td>Difference <%= difference.zero? ? "✓" : "" %></td>
+        <td class="num"><%= pos_money(difference) %></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="report-section">
+  <h2>Tenders</h2>
+  <table class="report-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th class="num">Received</th>
+        <th class="num">Refunded</th>
+        <th class="num">Net</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% tenders.each do |row| %>
+        <tr>
+          <td><%= row["tender_category"].to_s.humanize %></td>
+          <td class="num"><%= pos_money(row["received_cents"]) %></td>
+          <td class="num"><%= pos_money(row["refunded_cents"]) %></td>
+          <td class="num"><%= pos_money(row["net_cents"]) %></td>
+        </tr>
+      <% end %>
+      <tr class="is-total">
+        <td>Total</td>
+        <td class="num"><%= pos_money(tenders.sum { |r| r["received_cents"].to_i }) %></td>
+        <td class="num"><%= pos_money(tenders.sum { |r| r["refunded_cents"].to_i }) %></td>
+        <td class="num"><%= pos_money(settlement["net_tenders_cents"]) %></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<% if show_cash && cash["cash_enabled"] %>
+  <section class="report-section">
+    <h2>Cash accountability</h2>
+    <table class="report-table">
+      <tbody>
+        <tr><td>Opening cash</td><td class="num"><%= pos_money(cash["opening_cash_cents"]) %></td></tr>
+        <tr><td>Cash received</td><td class="num"><%= pos_money(cash["cash_received_cents"]) %></td></tr>
+        <tr><td>Change given</td><td class="num"><%= pos_money(cash["change_given_cents"]) %></td></tr>
+        <tr><td>Cash refunded</td><td class="num"><%= pos_money(cash["cash_refunded_cents"]) %></td></tr>
+        <tr><td>Cash movements in</td><td class="num"><%= pos_money(cash["cash_movement_in_cents"]) %></td></tr>
+        <tr><td>Cash movements out</td><td class="num"><%= pos_money(cash["cash_movement_out_cents"]) %></td></tr>
+        <tr class="is-total"><td>Expected drawer cash</td><td class="num"><%= pos_money(cash["expected_cash_cents"]) %></td></tr>
+        <% if cash["counted_cash_cents"] %>
+          <tr><td>Counted cash</td><td class="num"><%= pos_money(cash["counted_cash_cents"]) %></td></tr>
+          <tr class="is-total"><td>Cash variance</td><td class="num"><%= pos_money(cash["cash_variance_cents"]) %></td></tr>
+        <% else %>
+          <tr><td colspan="2" class="muted">No closing count yet (Session X / open session).</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+<% end %>
+
+<% if departments.any? %>
+  <section class="report-section">
+    <h2>Departments</h2>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Department</th>
+          <th class="num">Gross sales</th>
+          <th class="num">Returns</th>
+          <th class="num">Units sold</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% departments.each do |row| %>
+          <tr>
+            <td><%= row["department_name"] || "Unassigned" %></td>
+            <td class="num"><%= pos_money(row["gross_sales_cents"]) %></td>
+            <td class="num"><%= pos_money(row["return_total_cents"]) %></td>
+            <td class="num"><%= row["units_sold"].to_i %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+<% end %>
+
+<section class="report-section">
+  <h2>Activity counts</h2>
+  <table class="report-table">
+    <tbody>
+      <tr><td>Completed transactions</td><td class="num"><%= activity["completed_transactions"].to_i %></td></tr>
+      <tr><td>Completed lines</td><td class="num"><%= activity["completed_lines"].to_i %></td></tr>
+      <tr><td>Completed tenders</td><td class="num"><%= activity["completed_tenders"].to_i %></td></tr>
+      <tr><td>Post-void transactions</td><td class="num"><%= activity["post_void_transactions"].to_i %></td></tr>
+    </tbody>
+  </table>
+</section>

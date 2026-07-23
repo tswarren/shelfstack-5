@@ -45,6 +45,53 @@ module Reporting
       assert_equal 1, totals.activity_counts["completed_transactions"]
       assert totals.settlement.key?("balanced")
       assert_equal @session.id, totals.to_payload["pos_session_id"]
+      assert totals.cash["cash_enabled"]
+      assert totals.cash.key?("cash_received_cents")
+      assert totals.cash.key?("change_given_cents")
+      assert totals.stored_value.key?("issued_cents")
+      assert totals.departments.is_a?(Array)
+
+      tax_names = totals.tax["components"].map { |c| c["name"] }
+      assert_includes tax_names, store_tax_rates(:gst_13).name
+      refute_includes tax_names, store_tax_rates(:gst_13).receipt_code
+      assert totals.tax["components"].all? { |c| c.key?("store_tax_rate_id") }
+    end
+
+    test "departments are sorted by department number" do
+      early_dept = Department.create!(
+        organization: @store.organization,
+        parent_department: departments(:books_parent),
+        department_number: "050",
+        code: "early_dept_#{SecureRandom.hex(3)}",
+        name: "ZZ Late Alphabetically",
+        postable: true,
+        default_tax_category: tax_categories(:physical_book),
+        active: true
+      )
+      other = product_variants(:upc_product_standard)
+      other.product.update!(default_department: early_dept)
+      StockBalance.create!(
+        store: @store, product_variant: other,
+        on_hand: 5, reserved: 0, unavailable: 0,
+        inventory_value_cents: 1000, moving_average_cost_cents: 200, cost_quality: "actual"
+      )
+
+      Pos::AddLine.call(pos_transaction: @transaction, product_variant: @variant, quantity: 1, actor: @admin)
+      Pos::AddLine.call(pos_transaction: @transaction, product_variant: other, quantity: 1, actor: @admin)
+      net = Pos::RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      Pos::AddCashTender.call(
+        pos_transaction: @transaction, tender_type: @cash, amount_tendered_cents: net, actor: @admin
+      )
+      complete = Pos::CompleteTransaction.call(
+        pos_transaction: @transaction, pos_session: @session, actor: @admin,
+        completion_idempotency_key: "rpt-dept-sort"
+      )
+      assert complete.success?, complete.error
+
+      totals = BuildSessionTotals.call(pos_session: @session)
+      numbers = totals.departments.map { |d| d["department_number"] }
+      assert_equal [ "050", departments(:books_new).department_number ], numbers
+      assert_equal "ZZ Late Alphabetically", totals.departments.first["department_name"]
     end
 
     test "live X does not mutate session or create Z" do

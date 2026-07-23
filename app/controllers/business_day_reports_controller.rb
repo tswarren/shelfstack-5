@@ -5,10 +5,9 @@ class BusinessDayReportsController < ApplicationController
 
   def x
     require_permission!("reporting.view_business_day_x")
+    load_report_flags!
+    load_sessions_index!
     @totals = Reporting::BuildBusinessDayTotals.call(business_day: @business_day, mode: :live)
-    @show_cash = Current.user.can?("reporting.view_cash", store: Current.store)
-    @show_cost = Current.user.can?("reporting.view_cost", store: Current.store)
-    @show_margin = Current.user.can?("reporting.view_margin", store: Current.store)
   end
 
   def z
@@ -19,10 +18,9 @@ class BusinessDayReportsController < ApplicationController
       return
     end
 
+    load_report_flags!
+    load_sessions_index!
     @payload = @z_report.payload
-    @show_cash = Current.user.can?("reporting.view_cash", store: Current.store)
-    @show_cost = Current.user.can?("reporting.view_cost", store: Current.store)
-    @show_margin = Current.user.can?("reporting.view_margin", store: Current.store)
 
     Administration::RecordAuditEvent.call(
       actor: Current.user,
@@ -38,5 +36,17 @@ class BusinessDayReportsController < ApplicationController
 
   def set_business_day
     @business_day = Current.store.business_days.find(params[:id])
+  end
+
+  def load_report_flags!
+    @show_cash = Current.user.can?("reporting.view_cash", store: Current.store)
+    @show_cost = Current.user.can?("reporting.view_cost", store: Current.store)
+    @show_margin = Current.user.can?("reporting.view_margin", store: Current.store)
+  end
+
+  def load_sessions_index!
+    @sessions_by_id = @business_day.pos_sessions
+      .includes(:pos_device, :cashier_user, :pos_session_z_report)
+      .index_by(&:id)
   end
 end

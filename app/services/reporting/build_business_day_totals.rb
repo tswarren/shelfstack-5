@@ -98,8 +98,17 @@ module Reporting
 
     def merge_tax(taxes)
       components = taxes.flat_map { |t| t["components"] || [] }
-                        .group_by { |c| c["receipt_code"] }
-                        .map { |code, rows| { "receipt_code" => code, "amount_cents" => rows.sum { |r| r["amount_cents"].to_i } } }
+        .group_by { |c| c["store_tax_rate_id"] || c["receipt_code"] }
+        .map do |_key, rows|
+          sample = rows.find { |r| r["name"].present? } || rows.first
+          {
+            "store_tax_rate_id" => sample["store_tax_rate_id"],
+            "name" => sample["name"].presence || sample["receipt_code"].presence || "Tax",
+            "receipt_code" => sample["receipt_code"],
+            "amount_cents" => rows.sum { |r| r["amount_cents"].to_i }
+          }
+        end
+        .sort_by { |row| row["name"].to_s }
       {
         "tax_total_cents" => taxes.sum { |t| t["tax_total_cents"].to_i },
         "components" => components
@@ -138,13 +147,16 @@ module Reporting
 
     def merge_departments(lists)
       lists.flatten.group_by { |d| d["department_id"] }.map do |department_id, rows|
+        sample = rows.find { |r| r["department_name"].present? } || rows.first
         {
           "department_id" => department_id,
+          "department_name" => sample["department_name"].presence || "Unassigned",
+          "department_number" => sample["department_number"],
           "gross_sales_cents" => rows.sum { |r| r["gross_sales_cents"].to_i },
           "return_total_cents" => rows.sum { |r| r["return_total_cents"].to_i },
           "units_sold" => rows.sum { |r| r["units_sold"].to_i }
         }
-      end
+      end.sort_by { |row| row["department_number"].presence || "~" }
     end
 
     def build_cash_summary(session_totals)

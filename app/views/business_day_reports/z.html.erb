@@ -1,29 +1,54 @@
 <% content_for :title, "Business-Day Z ##{@z_report.z_number}" %>
 
-<%= render "shared/page_header", title: "Business-Day Z ##{@z_report.z_number}",
-      subtitle: "Closed snapshot · definition #{@z_report.report_definition_version}." %>
-
-<%= render "business_day_reports/payload",
-      payload: @payload,
-      show_cash: @show_cash,
-      show_cost: @show_cost,
-      show_margin: @show_margin %>
-
-<section class="card workspace-card" data-recon-cta="true">
-  <h2>Reconciliation</h2>
-  <% if @business_day.reconciled_at? %>
-    <p class="muted">Business day reconciled at <%= l(@business_day.reconciled_at, format: :long) %>.</p>
-  <% elsif Current.user.can?("reporting.reconcile_business_day", store: Current.store) %>
-    <div class="page-actions">
-      <%= link_to "Reconcile now", business_day_reconciliation_path(@business_day), class: "button" %>
-      <%= link_to "Review later", reconciliations_path, class: "button button-outline" %>
+<article class="report-doc">
+  <header class="report-masthead">
+    <div class="report-masthead__title-row">
+      <h1 class="report-masthead__title">Business-Day Z #<%= @z_report.z_number %></h1>
+      <span class="report-badge report-badge--final">Final close report</span>
     </div>
-  <% else %>
-    <p class="muted">Reconciliation requires reporting.reconcile_business_day.</p>
-  <% end %>
-</section>
+    <p class="report-masthead__meta">
+      <%= Current.store.name %>
+      · Business date <%= @z_report.business_date %>
+      <br>
+      Opened <%= formatted_datetime(@business_day.opened_at, format: :short) %>
+      · Closed <%= formatted_datetime(@business_day.closed_at, format: :short) %>
+      by <%= @business_day.closed_by_user&.username || "—" %>
+      <br>
+      Reconciliation:
+      <% if @business_day.reconciled_at? %>
+        finalized <%= formatted_datetime(@business_day.reconciled_at, format: :short) %>
+      <% else %>
+        not yet reconciled
+      <% end %>
+      <br>
+      Generated <%= formatted_datetime(@z_report.generated_at, format: :short) %>
+      · Definition <%= @z_report.report_definition_version %>
+    </p>
+  </header>
 
-<div class="page-actions">
-  <%= link_to "Back", business_days_path, class: "button button-outline" %>
-  <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
-</div>
+  <%= render "reporting/day_sections",
+        payload: @payload,
+        show_cash: @show_cash,
+        show_cost: @show_cost,
+        show_margin: @show_margin,
+        sessions_by_id: @sessions_by_id %>
+
+  <section class="card workspace-card report-section" data-recon-cta="true">
+    <h2>Reconciliation</h2>
+    <% if @business_day.reconciled_at? %>
+      <p class="muted">Business day reconciled at <%= l(@business_day.reconciled_at, format: :long) %>.</p>
+    <% elsif Current.user.can?("reporting.reconcile_business_day", store: Current.store) %>
+      <div class="page-actions">
+        <%= link_to "Reconcile now", business_day_reconciliation_path(@business_day), class: "button" %>
+        <%= link_to "Review later", reconciliations_path, class: "button button-outline" %>
+      </div>
+    <% else %>
+      <p class="muted">Reconciliation requires reporting.reconcile_business_day.</p>
+    <% end %>
+  </section>
+
+  <div class="report-actions page-actions">
+    <%= link_to "Back to register", register_path, class: "button button-outline" %>
+    <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
+  </div>
+</article>

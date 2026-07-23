@@ -1,30 +1,62 @@
 <% content_for :title, "Session Z ##{@z_report.z_number}" %>
 
-<%= render "shared/page_header", title: "Session Z ##{@z_report.z_number}",
-      subtitle: "Closed snapshot · definition #{@z_report.report_definition_version}." %>
-
-<%= render "session_reports/payload_totals",
-      payload: @payload,
-      show_cash: @show_cash,
-      show_cost: @show_cost,
-      show_margin: @show_margin %>
-
-<section class="card workspace-card" data-recon-cta="true">
-  <h2>Reconciliation</h2>
-  <% if @session.reconciled_at? %>
-    <p class="muted">Session reconciled at <%= l(@session.reconciled_at, format: :long) %>.</p>
-  <% elsif Current.user.can?("reporting.reconcile_session", store: Current.store) %>
-    <div class="page-actions">
-      <%= link_to "Reconcile session now", session_reconciliation_path(@session), class: "button" %>
-      <%= link_to "Review later", reconciliations_path, class: "button button-outline" %>
+<article class="report-doc">
+  <header class="report-masthead">
+    <div class="report-masthead__title-row">
+      <h1 class="report-masthead__title">Session Z #<%= @z_report.z_number %></h1>
+      <span class="report-badge report-badge--final">Final close report</span>
     </div>
-  <% else %>
-    <p class="muted">Reconciliation requires reporting.reconcile_session.</p>
-  <% end %>
-</section>
+    <p class="report-masthead__meta">
+      <%= Current.store.name %>
+      · <%= @session.pos_device.name %>
+      <% if @session.cash_drawer.present? %>
+        · Drawer <%= @session.cash_drawer.name %>
+      <% else %>
+        · Card-only
+      <% end %>
+      <br>
+      Session #<%= @session.id %>
+      · Business date <%= @z_report.business_date %>
+      · Cashier <%= @session.cashier_user.username %>
+      <br>
+      Opened <%= formatted_datetime(@session.opened_at, format: :short) %>
+      · Closed <%= formatted_datetime(@session.closed_at, format: :short) %>
+      by <%= @session.closed_by_user&.username || "—" %>
+      <br>
+      Reconciliation:
+      <% if @session.reconciled_at? %>
+        finalized <%= formatted_datetime(@session.reconciled_at, format: :short) %>
+      <% else %>
+        not yet reconciled
+      <% end %>
+      <br>
+      Generated <%= formatted_datetime(@z_report.generated_at, format: :short) %>
+      · Definition <%= @z_report.report_definition_version %>
+    </p>
+  </header>
 
+  <%= render "reporting/session_sections",
+        payload: @payload,
+        show_cash: @show_cash,
+        show_cost: @show_cost,
+        show_margin: @show_margin %>
 
-<div class="page-actions">
-  <%= link_to "Back to register", register_path, class: "button button-outline" %>
-  <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
-</div>
+  <section class="card workspace-card report-section" data-recon-cta="true">
+    <h2>Reconciliation</h2>
+    <% if @session.reconciled_at? %>
+      <p class="muted">Session reconciled at <%= l(@session.reconciled_at, format: :long) %>.</p>
+    <% elsif Current.user.can?("reporting.reconcile_session", store: Current.store) %>
+      <div class="page-actions">
+        <%= link_to "Reconcile session now", session_reconciliation_path(@session), class: "button" %>
+        <%= link_to "Review later", reconciliations_path, class: "button button-outline" %>
+      </div>
+    <% else %>
+      <p class="muted">Reconciliation requires reporting.reconcile_session.</p>
+    <% end %>
+  </section>
+
+  <div class="report-actions page-actions">
+    <%= link_to "Back to register", register_path, class: "button button-outline" %>
+    <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
+  </div>
+</article>

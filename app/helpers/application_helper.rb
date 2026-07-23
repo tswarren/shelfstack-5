@@ -276,6 +276,7 @@ module ApplicationHelper
       "shelfstack/tables",
       "shelfstack/patterns",
       "shelfstack/pos",
+      "shelfstack/reports",
       "application",
       "data-turbo-track": "reload"
     )

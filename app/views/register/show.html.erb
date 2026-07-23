@@ -104,36 +104,100 @@
           Open since <strong><%= formatted_datetime(@business_day.opened_at, format: :short) %></strong>
           <br><span class="muted">Reporting date <%= @business_day.reporting_date %></span>
         </p>
-        <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
-          <div class="action-group">
-            <%= button_to "Close business day", close_business_day_path(@business_day), class: "button button-small button-outline" %>
-          </div>
+        <% if @day_totals && (@can_view_day_x || @can_view_session_x) %>
+          <p>
+            Net sales <strong><%= pos_money(@day_totals.commercial["net_sales_cents"]) %></strong>
+            · Net tenders <strong><%= pos_money(@day_totals.settlement["net_tenders_cents"]) %></strong>
+            · <%= @day_totals.activity_counts["completed_transactions"].to_i %> transactions
+          </p>
         <% end %>
+        <div class="action-group">
+          <% if @can_view_day_x %>
+            <%= link_to "Day X", business_day_x_report_business_day_path(@business_day), class: "button button-small button-outline" %>
+          <% end %>
+          <% if @can_view_day_z && @business_day.business_day_z_report.present? %>
+            <%= link_to "Day Z ##{@business_day.business_day_z_report.z_number}",
+                  business_day_z_report_business_day_path(@business_day),
+                  class: "button button-small button-outline" %>
+          <% end %>
+          <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
+            <%= link_to "Close business day", close_form_business_day_path(@business_day), class: "button button-small button-outline" %>
+          <% end %>
+        </div>
       <% end %>
     </section>
 
     <% if @business_day.present? %>
-      <section class="card workspace-card" aria-label="POS session">
-        <h2>Session</h2>
-        <% if @open_session.blank? %>
-          <p class="muted">No open POS session.</p>
+      <section class="card workspace-card" aria-label="POS sessions">
+        <h2>Sessions</h2>
+        <% if @day_sessions.blank? %>
+          <p class="muted">No POS sessions for this day.</p>
         <% else %>
-          <p>
-            Device <strong><%= @open_session.pos_device.name %></strong>
-            <% if @open_session.cash_drawer.present? %>
-              <br>Drawer <strong><%= @open_session.cash_drawer.name %></strong>
-            <% else %>
-              <br><span class="muted">Card-only (no drawer)</span>
-            <% end %>
-          </p>
-          <% if Current.user.can?("pos.session.close", store: Current.store) %>
-            <div class="action-group">
-              <% if @open_session.cash_enabled? %>
-                <%= link_to "Close session", close_form_pos_session_path(@open_session), class: "button button-small button-outline" %>
-              <% else %>
-                <%= button_to "Close session", close_pos_session_path(@open_session), class: "button button-small button-outline" %>
-              <% end %>
-            </div>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Session</th>
+                  <th scope="col">Cashier</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" class="num">Net sales</th>
+                  <th scope="col" class="num">Txns</th>
+                  <th scope="col"><span class="sr-only">Reports</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% @day_sessions.each do |session| %>
+                  <% row = @session_totals_by_id[session.id] || {} %>
+                  <tr>
+                    <td>
+                      #<%= session.id %>
+                      <br><span class="muted"><%= session.pos_device.name %></span>
+                      <% if session.id == @open_session&.id %>
+                        <br><span class="muted">Your open session</span>
+                      <% end %>
+                    </td>
+                    <td><%= session.cashier_user.username %></td>
+                    <td><%= session.status %></td>
+                    <td class="num">
+                      <% if row["net_sales_cents"] %>
+                        <%= pos_money(row["net_sales_cents"]) %>
+                      <% else %>
+                        —
+                      <% end %>
+                    </td>
+                    <td class="num"><%= row["completed_transactions"] || "—" %></td>
+                    <td>
+                      <div class="action-group">
+                        <% if session.open? && @can_view_session_x %>
+                          <%= link_to "Session X", session_x_report_pos_session_path(session), class: "button button-small button-outline" %>
+                        <% end %>
+                        <% if session.closed? && @can_view_session_z && session.pos_session_z_report.present? %>
+                          <%= link_to "Session Z ##{session.pos_session_z_report.z_number}",
+                                session_z_report_pos_session_path(session),
+                                class: "button button-small button-outline" %>
+                        <% elsif session.closed? && @can_view_session_x %>
+                          <%= link_to "Session X", session_x_report_pos_session_path(session), class: "button button-small button-outline" %>
+                        <% end %>
+                        <% if session.id == @open_session&.id && Current.user.can?("pos.session.close", store: Current.store) %>
+                          <% if session.cash_enabled? %>
+                            <%= link_to "Close", close_form_pos_session_path(session), class: "button button-small button-outline" %>
+                          <% else %>
+                            <%= button_to "Close", close_pos_session_path(session), class: "button button-small button-outline" %>
+                          <% end %>
+                        <% end %>
+                      </div>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+          <% if @can_view_cash && @day_totals %>
+            <p class="muted" style="margin-top: 0.75rem;">
+              Consolidated session cash variance
+              <%= pos_money(@day_totals.cash_summary["cash_variance_cents"]) %>
+              (display only — no day cash count).
+            </p>
           <% end %>
         <% end %>
       </section>
