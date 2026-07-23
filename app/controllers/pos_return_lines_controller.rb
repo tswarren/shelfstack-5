@@ -7,14 +7,15 @@ class PosReturnLinesController < ApplicationController
   def lookup
     receipt = params[:receipt_number].to_s.strip
     if receipt.blank?
-      redirect_to pos_transaction_path(@pos_transaction), alert: "Enter a receipt number."
+      redirect_to pos_transaction_path(@pos_transaction, intent: "return"), alert: "Enter a receipt number."
       return
     end
 
     original = Current.store.pos_transactions.completed.find_by(receipt_number: receipt)
     if original.blank?
       session.delete(:pos_return_lookup)
-      redirect_to pos_transaction_path(@pos_transaction), alert: "No completed transaction found for that receipt."
+      redirect_to pos_transaction_path(@pos_transaction, intent: "return"),
+                  alert: "No completed transaction found for that receipt."
       return
     end
 
@@ -23,7 +24,8 @@ class PosReturnLinesController < ApplicationController
       "original_transaction_id" => original.id,
       "receipt_number" => original.receipt_number
     }
-    redirect_to pos_transaction_path(@pos_transaction), notice: "Receipt #{original.receipt_number} loaded for return."
+    redirect_to pos_transaction_path(@pos_transaction, intent: "return"),
+                notice: "Receipt #{original.receipt_number} loaded for return."
   end
 
   def create
@@ -42,9 +44,10 @@ class PosReturnLinesController < ApplicationController
     )
 
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Return line added."
+      redirect_to pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan"),
+                  notice: "Return line added."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction, intent: "return"), alert: result.error
     end
   end
 

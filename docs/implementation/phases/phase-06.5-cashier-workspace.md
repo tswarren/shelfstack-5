@@ -1,7 +1,7 @@
 # Phase 6.5 — Cashier Workspace
 
-**Status:** Draft — not started; begins only after Phase 6 merge hardening ([#36](https://github.com/tswarren/shelfstack-5/issues/36)) closes  
-**Depends on:** Phase 6 gates 6a–6e landed; Phase 4f UX Baseline patterns  
+**Status:** Complete — walkthrough accepted 2026-07-23; merge via PR  
+**Depends on:** Phase 6 complete on `main`; Phase 4f UX Baseline patterns  
 **Chronologically follows:** Phase 6 — Corrections and Stored Value  
 **Unlocks:** operable register UX before Phase 7 reporting; does **not** gate Phase 7 domain work technically  
 **Governing docs:** [pos-register-ui.md](../../design/pos-register-ui.md); [scanner-and-hotkeys.md](../../design/scanner-and-hotkeys.md); [accessibility.md](../../design/accessibility.md); [application-shell.md](../../design/application-shell.md); [point-of-sale](../../domains/point-of-sale.md); ADR-0009; ADR-0011; [ADR-0016](../../adr/0016-treat-standalone-credit-card-activity.md)  
@@ -260,11 +260,11 @@ Gates may land as sequential short-lived PRs. Prefer finishing 6.5b before deep 
 
 ## Implementation order
 
-1. Close Phase 6 [#36](https://github.com/tswarren/shelfstack-5/issues/36); do not start 6.5 product PRs while Phase 6 merge hardening is open.
+1. Phase 6 is complete on `main` (`853ae3b` / PR #39). Start 6.5a design contract, then product gates.
 2. **6.5a** — Update governing design docs; lock presentation states, focus, confirmations, viewport, recovery list.
 3. **6.5b** — Persistent shell + ordinary path including scan-to-start and Next → Ready.
 4. **6.5c** — Exception intents and selected-line reorganization of existing actions.
-5. **6.5d** — Readiness, tender focus, recovery, stale-context presentation, a11y hardening.
+5. **6.5d** — Readiness, tender focus, recovery, stale-context presentation, a11y hardening (deliver as 6.5d.1 + 6.5d.2).
 6. **6.5e** (optional) — Narrow receipt lookup; walkthrough extras; draft cleanup.
 
 ## Schema and services
@@ -285,22 +285,23 @@ Do not add speculative POS tables, statuses, or a parallel client-side cart mode
 
 Proven by focused request/system tests and a manual walkthrough unless noted:
 
-- [ ] Cashier-facing **presentation** states Ready / Transaction / Tender / Processing / Receipt / Recovery are documented and reflected in the POS UI without new persisted statuses
-- [ ] Ordinary path: Ready → scan-to-start → tender → complete → **Next transaction → Ready** (no empty transaction created)
-- [ ] Entry intents (Sale / Return / Stored value / Open ring) change scan/entry interpretation without separate transaction types or modules
-- [ ] Selected-line actions are available from one contextual panel; pending removed lines are not cashier-managed as CRUD records
-- [ ] Summary distinguishes warnings, approvals, and blockers; blockers disable Tender/Complete with a path to resolve; no client-side eligibility engine
-- [ ] Tender mode locks commercial line editing while unresolved tenders exist; remaining amount / refund due is prominent
-- [ ] Closed recovery list cases that are reachable in tests present an explicit message (completed? receipt? external approval? void required? next action?)
-- [ ] Receipt stage primary action is **Next transaction** → Ready; completed transactions do not expose ordinary edit/tender controls
-- [ ] Focus restoration follows the documented contract; all core actions are keyboard reachable; status is not communicated by color alone
-- [ ] Supported register viewport is documented; phone-width POS remains unsupported
-- [ ] No new deferred capability scaffolds (print, promotions, CRM, PWA, processor integration, presentation-only schema)
-- [ ] `bin/ci` green; system coverage for scan-to-start, ordinary sale → next, tender focus, and at least one recovery path
+- [x] Cashier-facing **presentation** states Ready / Transaction / Tender / Processing / Receipt / Recovery are documented and reflected in the POS UI without new persisted statuses
+- [x] Ordinary path: Ready → scan-to-start → tender → complete → **Next transaction → Ready** (no empty transaction created)
+- [x] Entry intents (Sale / Return / Stored value / Open ring) change scan/entry interpretation without separate transaction types or modules
+- [x] Selected-line actions are available from one contextual panel; pending removed lines are not cashier-managed as CRUD records
+- [x] Summary distinguishes warnings, approvals, and blockers; blockers disable Tender/Complete with a path to resolve; no client-side eligibility engine
+- [x] Tender mode locks commercial line editing while unresolved tenders exist; remaining amount / refund due is prominent
+- [x] Closed recovery list cases that are reachable in tests present an explicit message (completed? receipt? external approval? void required? next action?)
+- [x] Receipt stage primary action is **Next transaction** → Ready; completed transactions do not expose ordinary edit/tender controls
+- [x] Focus restoration follows the documented contract; all core actions are keyboard reachable; status is not communicated by color alone
+- [x] Supported register viewport is documented; phone-width POS remains unsupported
+- [x] No new deferred capability scaffolds (print, promotions, CRM, PWA, processor integration, presentation-only schema)
+- [x] `bin/ci` green; system coverage for scan-to-start, ordinary sale → next, tender focus, and at least one recovery path
+- [x] Manual register walkthrough accepted (operator, 2026-07-23) — layout/intent polish included before merge
 
 ### Stretch (6.5e — not required for ordinary-path gate)
 
-- [ ] Where existing completed-transaction lookup and corrective services support it, Ready receipt lookup opens the existing completed view and exposes existing linked-return and post-void entry actions. Eligibility and immutability remain server-enforced. This is **not** required for the ordinary cashier-path gate.
+- [x] Where existing completed-transaction lookup and corrective services support it, Ready receipt lookup opens the existing completed view and exposes existing linked-return and post-void entry actions. Eligibility and immutability remain server-enforced. This is **not** required for the ordinary cashier-path gate.
 
 ## Manual walkthrough
 

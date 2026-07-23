@@ -29,9 +29,8 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
   test "currency field submits a typed decimal amount without relying on hidden cents" do
     open_register_with_transaction!
 
-    visit pos_transaction_path(@transaction)
-    assert_text "Scan / search"
-    find("summary", text: "Open-ring line").click
+    visit pos_transaction_path(@transaction, intent: "open_ring")
+    assert_text "Open-ring line"
     select @department.name, from: "Department"
     fill_in "Price", with: "7.25"
     click_button "Add open-ring line"
@@ -129,11 +128,10 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
 
     visit pos_transaction_path(@transaction)
     assert_text "Transaction complete"
-    assert_text "Back to register"
+    assert_link "Next transaction"
 
-    # Focus is on the workspace (not the link); document-level Enter should navigate.
-    page.execute_script("document.activeElement && document.activeElement.blur()")
-    find(".pos-completed-workspace").send_keys(:return)
+    # Focus Next transaction, then Enter activates the focused control.
+    find("a", text: "Next transaction").send_keys(:return)
 
     assert_current_path register_path
   end

@@ -102,7 +102,7 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
       rate_bps: 500, actor: @admin
     ).pos_discount
 
-    get pos_transaction_path(@transaction)
+    get pos_transaction_path(@transaction, selected_line_id: @line.id, focus_target: "line_actions")
     assert_response :success
     assert_match(/Line discount/, response.body)
     assert_match(/Transaction discount/, response.body)

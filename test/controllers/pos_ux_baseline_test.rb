@@ -140,13 +140,14 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     get register_path
     assert_response :success
     assert_select ".workspace-primary"
-    assert_select ".workspace-primary .button-primary", text: "New transaction"
+    assert_select ".workspace-primary input.button-primary[value=?]", "Scan to start"
+    assert_select ".workspace-primary .button-outline", text: "New transaction"
     assert_select "a", text: "Main workspace"
     assert_select "a[href=?]", root_path, text: "Main workspace"
   end
 
   test "open-ring fields appear in department price quantity description order" do
-    get pos_transaction_path(@transaction)
+    get pos_transaction_path(@transaction, intent: "open_ring")
     assert_response :success
 
     start = response.body.index("Open-ring line")
@@ -164,7 +165,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
   end
 
   test "open-ring department options keep hierarchy order after filtering postable" do
-    get pos_transaction_path(@transaction)
+    get pos_transaction_path(@transaction, intent: "open_ring")
     assert_response :success
 
     start = response.body.index("Open-ring line")
@@ -198,7 +199,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".pos-completed-summary"
     assert_match "Change due", response.body
-    assert_select "a", text: "Back to register"
+    assert_select "a", text: "Next transaction"
     assert_no_match(/Print Receipt/i, response.body)
   end
 
@@ -218,9 +219,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     return_txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     post lookup_pos_transaction_pos_return_lines_path(return_txn), params: { receipt_number: receipt }
-    assert_redirected_to pos_transaction_path(return_txn)
+    assert_redirected_to pos_transaction_path(return_txn, intent: "return")
 
-    get pos_transaction_path(return_txn)
+    get pos_transaction_path(return_txn, intent: "return")
     assert_response :success
     assert_match(/Receipt #{Regexp.escape(receipt)}/, response.body)
     assert_select "input[name=original_pos_line_item_id]", count: 1

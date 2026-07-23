@@ -1,0 +1,31 @@
+<section class="pos-panel" aria-label="Primary action">
+  <% ws = @workspace %>
+  <% case ws.primary_action %>
+  <% when :tender, :issue_refund %>
+    <% if ws.ready_for_tender %>
+      <%= link_to ws.primary_label, tender_pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
+            class: "button button-primary button-large" %>
+    <% else %>
+      <p class="muted"><%= ws.primary_label %> unavailable until blockers are resolved.</p>
+    <% end %>
+  <% when :complete %>
+    <% if Current.user.can?("pos.transaction.complete", store: Current.store) && !@pos_transaction.void_required_tenders? %>
+      <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post,
+            data: { turbo: false, action: "submit->pos-register#startProcessing" } do |form| %>
+        <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
+        <%= form.submit ws.primary_label, class: "button button-primary button-large",
+              data: { "pos-register-target": "completeButton" } %>
+      <% end %>
+      <p class="field-hint">Tip: press Ctrl+Enter (⌘+Enter) to complete.</p>
+    <% end %>
+  <% when :add_payment, :add_refund %>
+    <p class="pos-balance" role="status"><%= ws.primary_label %></p>
+    <p class="field-hint">Use tender entry below.</p>
+  <% when :resolve_blockers %>
+    <p class="muted" role="status"><%= ws.primary_label %></p>
+  <% when :resolve_recovery %>
+    <p class="muted" role="status"><%= ws.primary_label %></p>
+  <% else %>
+    <p class="muted"><%= ws.primary_label %></p>
+  <% end %>
+</section>

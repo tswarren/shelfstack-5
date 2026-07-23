@@ -1,10 +1,14 @@
 <% if @pos_transaction.completed? %>
   <div class="pos-workspace pos-completed-workspace" data-controller="pos-register"
-       data-pos-register-completed-value="true">
-    <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
+       data-pos-register-completed-value="true"
+       data-turbo-cache="false">
+    <span hidden data-pos-register-target="announce">
+      <%= flash[:notice].presence || "Transaction complete. Receipt #{@pos_transaction.receipt_number}." %>
+    </span>
     <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
 
     <section class="pos-panel pos-completed-summary" aria-label="Completed transaction">
+      <p class="muted">State: Receipt</p>
       <h2>Transaction complete</h2>
       <p class="pos-receipt-number">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
       <p class="muted">Completed <%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></p>
@@ -38,14 +42,15 @@
       <% end %>
 
       <div class="form-actions">
-        <%= link_to "Back to register", register_path, class: "button button-primary button-large",
-              data: { "pos-register-target": "backToRegister" } %>
+        <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
+              data: { "pos-register-target": "backToRegister" },
+              autofocus: true %>
         <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
           <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
                 class: "button button-ghost button-large" %>
         <% end %>
       </div>
-      <p class="field-hint">Press Enter to return to the register.</p>
+      <p class="field-hint">Press Enter to start the next transaction from Ready.</p>
     </section>
 
     <details class="pos-panel">
@@ -55,27 +60,63 @@
     </details>
   </div>
 <% else %>
+  <% tender_mode = @presentation_state == "tender" || @presentation_state == "recovery" %>
   <%= render "session_context" %>
   <%= render "transaction_status" %>
   <%= render "recall_summary" %>
 
   <div class="pos-workspace" data-controller="pos-register"
-       data-pos-register-scan-outcome-value="<%= @scan_outcome %>">
+       data-pos-register-scan-outcome-value="<%= @scan_outcome %>"
+       data-pos-register-focus-target-value="<%= @focus_target %>"
+       data-turbo-cache="false">
     <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
     <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
 
-    <section class="pos-sale-panel" aria-label="Sale">
+    <div class="pos-workspace-banner">
+      <p class="muted" role="status">
+        State: <strong><%= @workspace.label %></strong>
+        · Intent: <strong><%= (@entry_intent || "sale").humanize %></strong>
+      </p>
+
+      <% if @presentation_state == "recovery" || @completion_outcome == "failed" %>
+        <%= render "recovery_panel" %>
+      <% end %>
+    </div>
+
+    <section class="pos-sale-panel" aria-label="Sale" <% if tender_mode && @pos_transaction.unresolved_tenders? %>hidden<% end %>>
+      <%= render "entry_intents" %>
       <%= render "scan_form" %>
       <%= render "line_items" %>
+      <%= render "selected_line_actions" %>
       <%= render "secondary_actions" %>
     </section>
 
     <aside class="pos-payment-panel" aria-label="Payment">
       <%= render "totals" %>
+      <%= render "readiness_summary" %>
+      <%= render "primary_cta" %>
       <%= render "void_required_tenders" %>
-      <%= render "tenders" %>
-      <%= render "tender_entry" %>
+      <%# Focused Tender (or forced unresolved/void recovery) shows tender chrome;
+          otherwise keep legacy details so every tender op remains reachable. %>
+      <% if tender_mode || !@pos_transaction.editable? || @pos_tenders.any? %>
+        <%= render "tenders" %>
+        <%= render "tender_entry" %>
+      <% else %>
+        <details class="pos-panel" open>
+          <summary>Tender entry</summary>
+          <%= render "tenders" %>
+          <%= render "tender_entry" %>
+        </details>
+      <% end %>
       <%= render "transaction_actions" %>
+      <% if tender_mode && @pos_transaction.editable? %>
+        <p>
+          <%= link_to "Return to editing",
+                pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
+                class: "button button-ghost button-small",
+                data: (@pos_transaction.unresolved_tenders? ? { turbo_confirm: "Leave tender with unresolved payment activity?" } : {}) %>
+        </p>
+      <% end %>
     </aside>
   </div>
 

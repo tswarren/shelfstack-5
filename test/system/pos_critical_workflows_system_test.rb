@@ -53,7 +53,9 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     visit register_path
     assert_text "Suspended transactions"
     within("details", text: /Suspended transactions/) do
-      click_button "Recall"
+      accept_confirm do
+        click_button "Recall"
+      end
     end
     assert_text "Transaction recalled"
     assert @transaction.reload.open?

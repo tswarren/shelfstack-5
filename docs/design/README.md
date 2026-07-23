@@ -35,6 +35,8 @@ Money in ShelfStack is integer cents. The UI may display formatted currency; sto
 - `interaction-patterns.md` — forms, drawers, shared validation display
 - `performance-and-recovery.md` — latency targets, completion failure/retry UI (needed by Phase 4c)
 
+Phase 6.5 cashier accessibility and interaction requirements live in [pos-register-ui.md](pos-register-ui.md) and [accessibility.md](accessibility.md).
+
 ## Roadmap position
 
 UI/UX is a cross-cutting responsibility. A short readiness gate precedes Phase 4a; POS UI and transaction semantics develop together through 4a–4c; broader app-wide consolidation is planned for Phase 5. After Phase 6, a thin **cashier workspace** gate (Phase 6.5) refines register interaction before preferred Phase 7 reporting start — see [../implementation/phases/phase-06.5-cashier-workspace.md](../implementation/phases/phase-06.5-cashier-workspace.md). Timing is tracked in [../implementation/roadmap.md](../implementation/roadmap.md) and [../implementation/current-phase.md](../implementation/current-phase.md).

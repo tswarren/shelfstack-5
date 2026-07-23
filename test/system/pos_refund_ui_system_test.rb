@@ -188,11 +188,13 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
   private
 
   def within_panel(summary_text, &block)
-    # Turbo stream updates can replace the details node between find and use.
+    # Prefer the innermost details whose summary matches — an outer "Tender entry"
+    # wrapper also contains nested panel text and must not win the match.
     attempts = 0
     begin
       attempts += 1
-      details = find("details", text: /#{Regexp.escape(summary_text)}/i, match: :first)
+      summary = find("details > summary", text: /#{Regexp.escape(summary_text)}/i, match: :first)
+      details = summary.find(:xpath, "..")
       page.execute_script("arguments[0].open = true", details.native)
       within(details, &block)
     rescue Selenium::WebDriver::Error::StaleElementReferenceError

@@ -1,0 +1,14 @@
+<% if @pos_transaction.editable? %>
+  <section class="pos-panel" aria-label="Entry intent">
+    <h2 class="sr-only">Entry intent</h2>
+    <div class="action-group" role="group" aria-label="Current entry intent">
+      <% %w[sale return stored_value open_ring].each do |intent| %>
+        <% active = (@entry_intent || "sale") == intent %>
+        <%= link_to intent.humanize,
+              pos_transaction_path(@pos_transaction, intent: intent, selected_line_id: @selected_line_id),
+              class: "button button-small #{active ? 'button-primary' : 'button-outline'}",
+              aria: { current: (active ? "true" : nil) } %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

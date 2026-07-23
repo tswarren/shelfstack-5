@@ -1,0 +1,36 @@
+<% if @pos_transaction.editable? %>
+  <section class="pos-panel" aria-label="Selected line actions"
+           data-pos-register-target="lineActions">
+    <h2>Line actions</h2>
+    <% if @selected_line.blank? %>
+      <p class="muted">Select a line to edit quantity, discounts, or overrides.</p>
+    <% else %>
+      <% line = @selected_line %>
+      <p>
+        Selected: <strong><%= line.effective_description %></strong>
+        · <%= pos_money(line.extended_price_cents - line.discount_amount_cents + line.tax_amount_cents) %>
+      </p>
+      <% if line.sale? && line.inventory_unit.blank? && line.line_kind != "stored_value" %>
+        <%= form_with url: pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch, class: "pos-inline-form" do |form| %>
+          <%= hidden_field_tag :intent, @entry_intent %>
+          <%= hidden_field_tag :selected_line_id, line.id %>
+          <%= hidden_field_tag :focus_target, "line_actions" %>
+          <div class="field">
+            <%= form.label :quantity, class: "field-label" %>
+            <%= form.number_field :quantity, value: line.quantity, min: 1, class: "input input-qty" %>
+          </div>
+          <%= form.submit "Update quantity", class: "button button-small button-outline" %>
+        <% end %>
+      <% end %>
+      <% if Current.user.can?("pos.line.remove", store: Current.store) %>
+        <%= button_to "Remove line", pos_transaction_pos_line_item_path(@pos_transaction, line),
+              method: :delete,
+              class: "button button-small button-danger",
+              params: { intent: @entry_intent, focus_target: "scan" } %>
+      <% end %>
+      <% if line.sale? && line.line_kind != "stored_value" %>
+        <%= render "line_actions", line: line %>
+      <% end %>
+    <% end %>
+  </section>
+<% end %>
