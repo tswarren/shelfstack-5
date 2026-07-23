@@ -132,7 +132,7 @@ Post-void (including mixed txn, dispositions, fulfilment, OD-014 blockers, in-fl
 ## Out of scope
 
 - Partial post-void; editing/deleting completed activity
-- Reconciliation adjustments (Phase 7 interfaces only)
+- Reconciliation comparisons, findings, and resolutions (Phase 7)
 - Processor settlement matching, chargebacks, disputes, and external discrepancy write-off (Phase 7 / integrated payments)
 - Stored-value replacement, multi-credential, transfer, expiration, escheatment, cash-out, customer portals
 - Buyback and ordinary trade-credit issuance

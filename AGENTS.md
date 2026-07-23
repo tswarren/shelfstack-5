@@ -150,7 +150,7 @@ Do not reserve merchandise that is not physically present. Do not represent on-o
 
 - Completed POS transactions and completed lines are immutable.
 - Do not edit, delete, void in place, or mark original sale lines as returned.
-- Corrections use new linked records, such as returns, refund tenders, post-voids, inventory reversals, stored-value reversals, and reconciliation adjustments.
+- Corrections use new linked records, such as returns, refund tenders, post-voids, inventory reversals, stored-value reversals, and reconciliation resolutions that link domain-owned corrections without mutating source balances.
 - Historical reports use completed snapshots rather than current master data.
 
 ### POS completion

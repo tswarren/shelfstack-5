@@ -180,7 +180,7 @@ Corrections use explicit linked records:
 * post-void transactions;
 * inventory reversals;
 * stored-value reversals;
-* reconciliation adjustments.
+* reconciliation resolutions (link domain-owned corrections; do not mutate source balances).
 
 POS completion is atomic and idempotent. Inventory, tender, tax, stored-value, cost, receipt-number, and transaction effects either complete together or do not complete.
 

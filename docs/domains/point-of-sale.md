@@ -75,7 +75,7 @@ closed
 reconciled
 ```
 
-Only one Business Day may be open per Store. The Business-Date assignment policy remains Open.
+Only one Business Day may be open per Store. Business / reporting-date assignment for v1 is accepted (OD-001): `reporting_date` is selected when the business day is opened.
 
 ## POS Session
 

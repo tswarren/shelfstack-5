@@ -26,16 +26,21 @@ SESSION CLOSE
   Count drawer (cash-enabled)
   Close session
   — no external card prompt —
+  → offer [Reconcile session now] or continue
+     (cash-enabled session recon remains required before day recon finalizes)
 
 BUSINESS-DAY CLOSE
   Confirm all sessions closed
   Enter one terminal/batch net total (+ optional reference)
   Close business day (+ persist Business-Day Z)
 
-RECONCILIATION
-  Expected versus observed
+DAY RECONCILIATION
+  Pending session recons (manager queue) if any remain
+  Day card/cash expected versus observed
   [Reconcile now] or [Review later]
 ```
+
+**Operator navigation:** hierarchy requires configured session reconciliation before business-day reconciliation finalizes. Gates 7b–7d must surface that clearly (post-session-close prompt and/or day-recon manager queue). This is UX navigation, not a separate product decision.
 
 Session-grain card reconciliation is an optional tighter-control mode for stores that maintain merchant slips by cashier, can isolate terminal activity by session, and want individual cashier card accountability. Most stores should never enable it.
 

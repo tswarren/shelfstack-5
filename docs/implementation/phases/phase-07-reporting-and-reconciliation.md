@@ -157,7 +157,7 @@ Use one shared section grammar across Session X, Session Z, Business-Day X, and 
 
 Standard cashier-facing X/Z omit COGS, gross margin, and unit costs. Manager views may add them under cost/margin permissions.
 
-### X-report cash visibility (settle before 7b)
+### X-report cash visibility (accepted)
 
 Respect blind-count configuration when present. A cashier-facing Session X may hide expected cash; users with cash-review authority may see it. Until blind-count configuration exists, default to showing expected cash on X for users who can view cash reports. **Z always retains** expected, counted, and variance regardless of X display restrictions.
 
@@ -231,10 +231,19 @@ Internal consistency remains distinct from reconciliation. An internal mismatch 
 New stores default to `card_reconciliation_grain = business_day`. The ordinary store experiences:
 
 ```text
-SESSION CLOSE     → count drawer → close (no card prompt)
-BUSINESS-DAY CLOSE → enter one terminal batch net total → close
-RECONCILIATION    → expected vs observed → Reconcile now | Review later
+SESSION CLOSE
+  Count drawer → close (no card prompt)
+  → offer [Reconcile session now] or continue (session cash recon still required before day recon finalizes)
+
+BUSINESS-DAY CLOSE
+  Enter one terminal batch net total → close (+ Business-Day Z)
+
+DAY RECONCILIATION
+  Manager queue: pending session recons (if any) → day card/cash expected vs observed
+  → [Reconcile now] | [Review later]
 ```
+
+**Operator navigation (7b–7d):** product rules require configured session reconciliation before business-day reconciliation can finalize. Implementation must make that pending step obvious — either a **Reconcile session now** prompt after each session close, a manager queue during day reconciliation, or both. This is navigation UX, not an open business rule.
 
 Session-grain card reconciliation, multi-terminal rows, and received/refunded detail are optional progressive capabilities — not the operator’s default vocabulary.
 
@@ -339,7 +348,7 @@ Close may persist nonzero variance without resolving it. Stores without configur
 | Reconciliation | Post-close session and business-day; review persisted cash and card variances |
 | Reconciliation records | Comparisons, findings, resolutions; link-only to domain corrections |
 | First report pack | Commercial activity; tender; tax by component; current stock + movements; open PO / on order; SV liability |
-| Permissions | Seed reporting view/export keys; resolve reconcile permission ownership in 7a |
+| Permissions | Seed accepted `reporting.*` keys from the permission catalog |
 | Presentation | On-screen reports; browser / `@media print` for all four X/Z; CSV for tabular pack |
 | Core hardening | Close-blocking tie-outs; reportable integrity surfaces; authz; audit of Z generation and reconciliation |
 
@@ -383,9 +392,9 @@ Gates may land as sequential short-lived PRs. Prefer finishing 7a before deep UI
 | Gate | Focus | Core? |
 | --- | --- | --- |
 | **7a** | **Contracts & schema locks** — accepted in [decision note](../decisions/phase-07-reporting-and-reconciliation-v1.md); schema sketches for Z, multi-row directional card evidence, `evidence_unavailable`, recon records; seed `reporting.*` permissions | Yes |
-| **7b** | **Session X / Z** — MVP: cash count only at session close; live Session X; extend `CloseSession` for atomic Session Z; merchant-slip path only when grain=`session`; enforce `pos.session.close`; settlement bridge | Yes |
+| **7b** | **Session X / Z** — MVP: cash count only at session close; live Session X; extend `CloseSession` for atomic Session Z; optional post-close **Reconcile session now**; merchant-slip path only when grain=`session`; enforce `pos.session.close`; settlement bridge | Yes |
 | **7c** | **Business-Day X / Z** — MVP: one machine/batch net total (+ optional ref) at day close; Day Z consolidates Session Zs; `evidence_unavailable` path; enforce `pos.business_day.close` | Yes |
-| **7d** | **Reconciliation** — never auto at close; Reconcile now / Review later; exact-match one-click finalize; authority-bounded variance accept; comparisons/findings/resolutions | Yes |
+| **7d** | **Reconciliation** — never auto at close; session then day hierarchy with manager queue for pending sessions; Reconcile now / Review later; exact-match one-click finalize; authority-bounded variance accept | Yes |
 | **7e** | **First report pack** — commercial activity; tender received/refunded; tax by component; current stock + ledger movements; open PO / on order; SV liability roll-forward; CSV export | Yes for full phase; may trail 7b–7d |
 
 ### Optional extensions (not a gate)
