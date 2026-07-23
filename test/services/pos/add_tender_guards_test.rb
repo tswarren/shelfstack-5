@@ -220,6 +220,83 @@ module Pos
       assert_equal 0, @transaction.pos_tenders.where(status: %w[authorized void_required]).count
     end
 
+    test "payment replay with changed amount is an idempotency conflict" do
+      key = SecureRandom.uuid
+      net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      first = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-CONFLICT", actor: @admin, recording_idempotency_key: key
+      )
+      assert first.success?, first.error
+
+      conflict = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: [ net - 100, 100 ].max,
+        authorization_code: "AUTH-CONFLICT", actor: @admin, recording_idempotency_key: key
+      )
+      refute conflict.success?
+      refute conflict.requires_void_confirmation?
+      assert_match(/already used with different details/, conflict.error)
+      assert_equal 1, @transaction.pos_tenders.where(status: "authorized").count
+    end
+
+    test "payment replay with changed references is an idempotency conflict" do
+      key = SecureRandom.uuid
+      net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      assert AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-A", actor: @admin, recording_idempotency_key: key
+      ).success?
+
+      conflict = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-B", actor: @admin, recording_idempotency_key: key
+      )
+      refute conflict.success?
+      assert_match(/already used with different details/, conflict.error)
+    end
+
+    test "payment replay with different card tender type is an idempotency conflict" do
+      key = SecureRandom.uuid
+      net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      other = @card.dup
+      other.code = "card_other_#{SecureRandom.hex(4)}"
+      other.name = "Other Card"
+      other.shortcut = nil
+      other.save!
+
+
+      assert AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-TYPE", actor: @admin, recording_idempotency_key: key
+      ).success?
+
+      conflict = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: other, amount_cents: net,
+        authorization_code: "AUTH-TYPE", actor: @admin, recording_idempotency_key: key
+      )
+      refute conflict.success?
+      assert_match(/already used with different details/, conflict.error)
+    end
+
+    test "identical payment replay succeeds after tender-type reference config tightens" do
+      key = SecureRandom.uuid
+      net = RecalculateTransaction.call(pos_transaction: @transaction).net_total_cents
+      first = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-DRIFT", actor: @admin, recording_idempotency_key: key
+      )
+      assert first.success?, first.error
+
+      @card.update!(reference_2_requirement: "required", reference_2_label: "Terminal ref")
+      replay = AddCardTender.call(
+        pos_transaction: @transaction, tender_type: @card, amount_cents: net,
+        authorization_code: "AUTH-DRIFT", actor: @admin, recording_idempotency_key: key
+        # no terminal_reference — would fail current validation, but replay matches stored request
+      )
+      assert replay.success?, replay.error
+      assert_equal first.pos_tender.id, replay.pos_tender.id
+    end
+
     test "void resolution succeeds when tender type is later deactivated" do
       mismatch = AddCardTender.call(
         pos_transaction: @transaction, tender_type: @card, amount_cents: 1500,

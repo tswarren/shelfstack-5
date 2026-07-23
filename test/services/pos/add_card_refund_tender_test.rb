@@ -164,6 +164,71 @@ module Pos
       assert_equal first.pos_tender.id, second.pos_tender.id
     end
 
+    test "same request UUID replays authorized card refund" do
+      sale, sale_card = complete_card_sale(key: "sale-rfnd-ok-idem")
+      ret, due = open_linked_return(sale, quantity: 1)
+      key = SecureRandom.uuid
+
+      first = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        authorization_code: "RFND-OK", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      )
+      assert first.success?, first.error
+      second = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        authorization_code: "RFND-OK", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      )
+      assert second.success?, second.error
+      assert_equal first.pos_tender.id, second.pos_tender.id
+    end
+
+    test "refund replay with changed amount is an idempotency conflict" do
+      sale, sale_card = complete_card_sale(key: "sale-rfnd-amt-conflict")
+      ret, due = open_linked_return(sale, quantity: 1)
+      key = SecureRandom.uuid
+
+      assert AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due, actor: @admin,
+        authorization_code: "RFND-AMT", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      ).success?
+
+      conflict = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: due + 50, actor: @admin,
+        authorization_code: "RFND-AMT", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      )
+      refute conflict.success?
+      refute conflict.requires_void_confirmation?
+      assert_match(/already used with different details/, conflict.error)
+      assert_equal 0, ret.pos_tenders.void_required.count
+    end
+
+    test "refund replay with different original tender is an idempotency conflict" do
+      sale, sale_card = complete_card_sale(key: "sale-rfnd-orig-a", quantity: 2)
+      _other_sale, other_card = complete_card_sale(key: "sale-rfnd-orig-b")
+      ret, due = open_linked_return(sale, quantity: 1)
+      key = SecureRandom.uuid
+      partial = due
+
+      assert AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: partial, actor: @admin,
+        authorization_code: "RFND-ORIG", original_pos_tender: sale_card,
+        recording_idempotency_key: key
+      ).success?
+
+      conflict = AddCardRefundTender.call(
+        pos_transaction: ret, tender_type: @card, amount_cents: partial, actor: @admin,
+        authorization_code: "RFND-ORIG", original_pos_tender: other_card,
+        recording_idempotency_key: key
+      )
+      refute conflict.success?
+      assert_match(/already used with different details/, conflict.error)
+    end
+
+
 
 
     private
