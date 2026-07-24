@@ -32,6 +32,7 @@ Rails.application.routes.draw do
   resources :product_formats, except: %i[destroy]
   resources :product_conditions, except: %i[destroy]
   resources :products, except: %i[destroy]
+  resources :creators, except: %i[show destroy]
   namespace :catalog do
     get "record_searches", to: "record_searches#index", as: :record_searches
     if Rails.env.test?

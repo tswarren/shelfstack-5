@@ -19,6 +19,8 @@ class Organization < ApplicationRecord
   has_many :tender_types, dependent: :restrict_with_exception
   has_many :cash_movement_types, dependent: :restrict_with_exception
   has_many :vendors, dependent: :restrict_with_exception
+  has_many :creators, dependent: :restrict_with_exception
+  has_many :catalog_enrichment_events, dependent: :restrict_with_exception
   has_many :stored_value_accounts, dependent: :restrict_with_exception
   has_many :stored_value_adjustment_reasons, dependent: :restrict_with_exception
   has_many :stored_value_accounts, dependent: :restrict_with_exception

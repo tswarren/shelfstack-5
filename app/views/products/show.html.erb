@@ -36,6 +36,32 @@
 </section>
 
 <section class="record-section">
+  <h2>Bibliographic detail</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Publication date", @product.publication_date_precision.present? ?
+        "#{@product.publication_date&.to_fs(:long)} (#{@product.publication_date_precision})" : "—" ],
+    [ "Language code", @product.language_code.presence || "—" ],
+    [ "Edition", @product.edition_statement.presence || "—" ]
+  ] %>
+  <% if @product.creators.any? %>
+    <ul class="creator-summary-list">
+      <% @product.product_creators.order(:position, :id).each do |product_creator| %>
+        <li>
+          <%= link_to product_creator.creator.display_name, edit_creator_path(product_creator.creator) if Current.user.can?("catalog.manage_creators", store: Current.store) %>
+          <%= product_creator.creator.display_name unless Current.user.can?("catalog.manage_creators", store: Current.store) %>
+          — <%= product_creator.role.titleize %>
+          <% if product_creator.credited_as.present? %>
+            (credited as <%= product_creator.credited_as %>)
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No creators linked.</p>
+  <% end %>
+</section>
+
+<section class="record-section">
   <h2>Classification</h2>
   <%= render "shared/record_summary", rows: [
     [ "Format", @product.product_format&.name || "—" ],

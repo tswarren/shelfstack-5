@@ -1,0 +1,52 @@
+<% content_for :title, "Creators" %>
+
+<%= render "shared/page_header", title: "Creators",
+      subtitle: "Authors, editors, illustrators, and other bibliographic contributors.",
+      actions: capture { concat link_to("New creator", new_creator_path, class: "button button-primary") } %>
+
+<form class="toolbar" role="search" action="<%= creators_path %>" method="get">
+  <div class="field">
+    <label class="field-label" for="q">Search by name</label>
+    <input type="search" name="q" id="q" value="<%= @query %>" class="input" placeholder="Display or sort name">
+  </div>
+  <div class="field">
+    <span class="field-label" aria-hidden="true">&nbsp;</span>
+    <div class="action-group">
+      <button type="submit" class="button button-primary">Search</button>
+      <% if @query.present? %>
+        <%= link_to "Clear", creators_path, class: "button button-outline" %>
+      <% end %>
+    </div>
+  </div>
+</form>
+
+<% if @creators.empty? %>
+  <%= render "shared/empty_state",
+        title: @query.present? ? "No creators match your search" : "No creators yet",
+        body: @query.present? ? "Try a different name." : "Create your first Creator to begin linking authors and illustrators to products.",
+        actions: capture { concat link_to("New creator", new_creator_path, class: "button button-primary") } %>
+<% else %>
+  <div class="table-container">
+    <table class="data-table">
+      <caption class="sr-only">Creators</caption>
+      <thead>
+        <tr>
+          <th scope="col">Display name</th>
+          <th scope="col">Sort name</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @creators.each do |creator| %>
+          <tr class="<%= "is-inactive" unless creator.active? %>">
+            <td><%= link_to creator.display_name, edit_creator_path(creator) %></td>
+            <td><%= creator.sort_name %></td>
+            <td><%= boolean_status creator.active? %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= render "shared/pagination", pagy: @pagy, item_name: "creator" %>
+<% end %>

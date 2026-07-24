@@ -746,3 +746,17 @@ reporting_reconcile_approve_self:
   name: Self-approve reconciliation variances
   permission_group: reporting
   active: true
+
+# Phase 8
+
+catalog_lookup_external:
+  code: catalog.lookup_external
+  name: Look up external metadata
+  permission_group: catalog
+  active: true
+
+catalog_manage_creators:
+  code: catalog.manage_creators
+  name: Manage creators
+  permission_group: catalog
+  active: true

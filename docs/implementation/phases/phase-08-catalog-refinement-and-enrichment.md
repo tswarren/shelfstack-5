@@ -1,6 +1,6 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** In progress — Gate 8a complete pending merge to `main` ([#95](https://github.com/tswarren/shelfstack-5/issues/95)); next Gate 8b ([#96](https://github.com/tswarren/shelfstack-5/issues/96))
+**Status:** In progress — Gate 8a merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102)); Gate 8b Slice 1 (schema + Creators) in progress on `feat/p8-96-biblio-creators-enrichment-schema` ([#96](https://github.com/tswarren/shelfstack-5/issues/96))
 **Date:** 2026-07-24
 **Depends on:** Phase 7 core complete
 **Roadmap position:** Active delivery phase after Phase 7
@@ -190,7 +190,7 @@ It must not rewrite completed:
 ### 8a — Catalog interaction foundation
 
 **Priority:** Must  
-**Status:** Complete pending merge (`phase/p8-catalog-refinement`; [#95](https://github.com/tswarren/shelfstack-5/issues/95))  
+**Status:** Complete — merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102), closes [#95](https://github.com/tswarren/shelfstack-5/issues/95))  
 **Purpose:** Establish shared controls used by the remaining Phase 8 workflows.
 
 #### Scope
@@ -237,6 +237,7 @@ PO/receipt nested line pickers remain a follow-on (DWR-020), not part of the 8a 
 ### 8b — Bibliographic representation and provider foundation
 
 **Priority:** Must
+**Status:** Slice 1 (schema + Creators) in progress on `feat/p8-96-biblio-creators-enrichment-schema`; Slice 2 (ISBNdb/Google Books adapters) not started — see [Gate 8b plan](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)
 **Purpose:** Establish a provider-neutral model before implementing product creation.
 
 #### Scope

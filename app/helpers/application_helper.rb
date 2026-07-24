@@ -295,8 +295,22 @@ module ApplicationHelper
       record.identifier.present? ? "#{record.name} · #{record.identifier}" : record.name.to_s
     when "vendor"
       record_option_label(record, code_attr: :code, name_attr: :name)
+    when "creator"
+      creator_option_label(record)
     else
       record_option_label(record)
+    end
+  end
+
+  # Jane Smith — Smith, Jane (sort_name differs) or Jane Smith — Creator 142
+  # when display and sort are identical (OD-P8-02 disambiguation rule).
+  def creator_option_label(creator)
+    return "—" if creator.blank?
+
+    if creator.sort_name.present? && creator.sort_name != creator.display_name
+      "#{creator.display_name} — #{creator.sort_name}"
+    else
+      "#{creator.display_name} — Creator #{creator.id}"
     end
   end
 

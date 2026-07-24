@@ -188,4 +188,102 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
     assert service.call
     assert_not_equal occupied, service.product.identifier
   end
+
+  test "creates ProductCreator links atomically with the product" do
+    creator = creators(:ray_bradbury)
+
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: {
+        name: "Book With Author",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: false
+      },
+      creator_assignments: [ { creator_id: creator.id, role: "author" } ]
+    )
+
+    assert service.call
+    assert_equal [ creator.id ], service.product.product_creators.reload.pluck(:creator_id)
+  end
+
+  test "rolls back the entire product creation when creator assignments are invalid" do
+    foreign = create_foreign_organization_catalog!
+
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: {
+        name: "Should Not Persist With Bad Creator",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: false
+      },
+      creator_assignments: [ { creator_id: foreign[:creator].id, role: "author" } ]
+    )
+
+    assert_no_difference [ "Product.count", "ProductVariant.count", "ProductCreator.count" ] do
+      assert_not service.call
+    end
+  end
+
+  test "omitting creator_assignments creates the product with no creators" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: {
+        name: "Book Without Creators",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: false
+      }
+    )
+
+    assert service.call
+    assert_empty service.product.product_creators.reload
+  end
+
+  test "persists bibliographic attributes on create" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      product_attrs: {
+        name: "Bibliographic Book",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id,
+        publication_date: Date.new(2020, 1, 1),
+        publication_date_precision: "year",
+        language_code: "EN",
+        edition_statement: "2nd ed."
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: false
+      }
+    )
+
+    assert service.call
+    assert_equal Date.new(2020, 1, 1), service.product.publication_date
+    assert_equal "year", service.product.publication_date_precision
+    assert_equal "en", service.product.language_code
+    assert_equal "2nd ed.", service.product.edition_statement
+  end
 end
