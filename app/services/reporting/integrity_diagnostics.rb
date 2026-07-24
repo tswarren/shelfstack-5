@@ -12,8 +12,7 @@ module Reporting
       [
         stock_ledger_mismatches,
         missing_session_z,
-        missing_line_cost,
-        sv_cache_mismatches
+        missing_line_cost
       ].compact
     end
 
@@ -61,16 +60,6 @@ module Reporting
       Finding.new(code: "missing_cost", severity: "info", count: ids.size, sample_ids: ids)
     end
 
-    def sv_cache_mismatches
-      report = StoredValueLiabilityReport.call(organization: @store.organization)
-      return if report.cache_ledger_mismatches.empty?
-
-      Finding.new(
-        code: "sv_cache_ledger_mismatch",
-        severity: "warning",
-        count: report.cache_ledger_mismatches.size,
-        sample_ids: report.cache_ledger_mismatches.first(10).map { |r| r["account_id"] }
-      )
-    end
   end
 end
+

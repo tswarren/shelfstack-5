@@ -101,7 +101,10 @@ class ReportsController < ApplicationController
   end
 
   def stored_value_liability
-    @report = Reporting::StoredValueLiabilityReport.call(organization: Current.store.organization)
+    @report = Reporting::StoredValueLiabilityReport.call(
+      organization: Current.store.organization,
+      store: Current.store
+    )
   end
 
   def integrity_diagnostics

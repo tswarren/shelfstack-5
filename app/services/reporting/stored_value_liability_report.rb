@@ -1,46 +1,47 @@
 # frozen_string_literal: true
 
 module Reporting
+  # Store-scoped activity / ledger effect — not organization-wide outstanding liability.
   class StoredValueLiabilityReport < ApplicationService
-    Result = Data.define(:by_type, :cache_ledger_mismatches)
+    Result = Data.define(:by_type, :net_ledger_effect_cents, :cache_ledger_mismatches)
 
-    def initialize(organization:, store: nil)
+    def initialize(organization:, store:)
       @organization = organization
       @store = store
     end
 
     def call
-      accounts = StoredValueAccount.where(organization_id: @organization.id)
-      by_type = accounts.group_by(&:account_type).map do |type, rows|
+      entries = StoredValueEntry.where(store_id: @store.id)
+        .joins(:stored_value_account)
+        .where(stored_value_accounts: { organization_id: @organization.id })
+        .includes(:stored_value_account)
+
+      by_type = entries.group_by { |e| e.stored_value_account.account_type }.map do |type, rows|
         {
           "account_type" => type,
-          "account_count" => rows.size,
-          "cached_balance_cents" => rows.sum(&:current_balance_cents),
-          "ledger_balance_cents" => rows.sum { |a| ledger_balance(a) }
+          "entry_count" => rows.size,
+          "account_count" => rows.map(&:stored_value_account_id).uniq.size,
+          "issued_cents" => sum_ops(rows, %w[issued]),
+          "reloaded_cents" => sum_ops(rows, %w[reloaded]),
+          "redeemed_cents" => sum_ops(rows, %w[redeemed]),
+          "refunded_cents" => sum_ops(rows, %w[refunded]),
+          "adjusted_cents" => sum_ops(rows, %w[manual_adjustment]),
+          "reversed_cents" => sum_ops(rows, %w[reversal]),
+          "net_ledger_effect_cents" => rows.sum(&:amount_cents)
         }
-      end
+      end.sort_by { |row| row["account_type"].to_s }
 
-      mismatches = accounts.filter_map do |account|
-        ledger = ledger_balance(account)
-        next if ledger == account.current_balance_cents
-
-        {
-          "account_id" => account.id,
-          "account_number" => account.account_number,
-          "cached_balance_cents" => account.current_balance_cents,
-          "ledger_balance_cents" => ledger
-        }
-      end
-
-      Result.new(by_type: by_type, cache_ledger_mismatches: mismatches)
+      Result.new(
+        by_type: by_type,
+        net_ledger_effect_cents: entries.sum(&:amount_cents),
+        cache_ledger_mismatches: [] # org-wide cache integrity is deferred
+      )
     end
 
     private
 
-    def ledger_balance(account)
-      scope = account.stored_value_entries
-      scope = scope.where(store_id: @store.id) if @store
-      scope.sum(:amount_cents)
+    def sum_ops(rows, operations)
+      rows.select { |r| operations.include?(r.entry_type.to_s) }.sum(&:amount_cents)
     end
   end
 end

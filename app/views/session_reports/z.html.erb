@@ -1,4 +1,5 @@
 <% content_for :title, "Session Z ##{@z_report.z_number}" %>
+<% identity = @payload.fetch("identity", {}) %>
 
 <article class="report-doc">
   <header class="report-masthead">
@@ -7,28 +8,22 @@
       <span class="report-badge report-badge--final">Final close report</span>
     </div>
     <p class="report-masthead__meta">
-      <%= Current.store.name %>
-      · <%= @session.pos_device.name %>
-      <% if @session.cash_drawer.present? %>
-        · Drawer <%= @session.cash_drawer.name %>
+      <%= identity["store_name"].presence || Current.store.name %>
+      · <%= identity["pos_device_name"].presence || @session.pos_device.name %>
+      <% drawer = identity["cash_drawer_name"].presence || @session.cash_drawer&.name %>
+      <% if drawer.present? %>
+        · Drawer <%= drawer %>
       <% else %>
         · Card-only
       <% end %>
       <br>
       Session #<%= @session.id %>
-      · Business date <%= @z_report.business_date %>
-      · Cashier <%= @session.cashier_user.username %>
+      · Business date <%= identity["business_date"].presence || @z_report.business_date %>
+      · Cashier <%= identity["cashier_username"].presence || @session.cashier_user.username %>
       <br>
-      Opened <%= formatted_datetime(@session.opened_at, format: :short) %>
-      · Closed <%= formatted_datetime(@session.closed_at, format: :short) %>
-      by <%= @session.closed_by_user&.username || "—" %>
-      <br>
-      Reconciliation:
-      <% if @session.reconciled_at? %>
-        finalized <%= formatted_datetime(@session.reconciled_at, format: :short) %>
-      <% else %>
-        not yet reconciled
-      <% end %>
+      Opened <%= identity["opened_at"].present? ? formatted_datetime(Time.iso8601(identity["opened_at"]), format: :short) : formatted_datetime(@session.opened_at, format: :short) %>
+      · Closed <%= identity["closed_at"].present? ? formatted_datetime(Time.iso8601(identity["closed_at"]), format: :short) : formatted_datetime(@session.closed_at, format: :short) %>
+      by <%= identity["closed_by_username"].presence || @session.closed_by_user&.username || "—" %>
       <br>
       Generated <%= formatted_datetime(@z_report.generated_at, format: :short) %>
       · Definition <%= @z_report.report_definition_version %>
@@ -41,17 +36,17 @@
         show_cost: @show_cost,
         show_margin: @show_margin %>
 
-  <section class="card workspace-card report-section" data-recon-cta="true">
-    <h2>Reconciliation</h2>
+  <section class="report-section report-live-status" data-recon-cta="true">
+    <h2>Live reconciliation status</h2>
+    <p class="muted">Not part of the immutable Session Z snapshot.</p>
     <% if @session.reconciled_at? %>
-      <p class="muted">Session reconciled at <%= l(@session.reconciled_at, format: :long) %>.</p>
+      <p>Session reconciled at <%= formatted_datetime(@session.reconciled_at, format: :short) %>.</p>
     <% elsif Current.user.can?("reporting.reconcile_session", store: Current.store) %>
       <div class="page-actions">
         <%= link_to "Reconcile session now", session_reconciliation_path(@session), class: "button" %>
-        <%= link_to "Review later", reconciliations_path, class: "button button-outline" %>
       </div>
     <% else %>
-      <p class="muted">Reconciliation requires reporting.reconcile_session.</p>
+      <p>not yet reconciled</p>
     <% end %>
   </section>
 
