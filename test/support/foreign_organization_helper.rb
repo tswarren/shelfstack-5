@@ -12,6 +12,7 @@ module ForeignOrganizationHelper
   SECRET_VENDOR_CODE = "FRGVND"
   SECRET_CLASS_NAME = "Foreign Class SECRET"
   SECRET_TAX_NAME = "Foreign Tax SECRET"
+  SECRET_CREATOR_NAME = "Foreign Creator SECRET"
 
   def create_foreign_organization_catalog!
     ActiveRecord::Base.connection.execute("DROP INDEX IF EXISTS index_organizations_singleton")
@@ -93,6 +94,12 @@ module ForeignOrganizationHelper
       name: SECRET_VENDOR_NAME,
       active: true
     )
+    creator = Creator.create!(
+      organization: organization,
+      display_name: SECRET_CREATOR_NAME,
+      sort_name: SECRET_CREATOR_NAME,
+      active: true
+    )
 
     {
       organization: organization,
@@ -102,7 +109,8 @@ module ForeignOrganizationHelper
       merchandise_class: merchandise_class,
       tax_category: tax_category,
       department: department,
-      product_format: product_format
+      product_format: product_format,
+      creator: creator
     }
   end
 end

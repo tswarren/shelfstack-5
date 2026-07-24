@@ -13,6 +13,7 @@ module Catalog
       product
       product_variant
       vendor
+      creator
     ].freeze
 
     LIMIT = 25
@@ -35,6 +36,9 @@ module Catalog
       "vendor" => %w[
         purchasing.vendor.view purchasing.vendor.manage
         purchasing.vendor_source.view purchasing.vendor_source.manage
+      ],
+      "creator" => %w[
+        catalog.product.view catalog.product.create catalog.product.edit catalog.manage_creators
       ]
     }.freeze
 
@@ -72,6 +76,7 @@ module Catalog
       when "product" then search_products
       when "product_variant" then search_product_variants
       when "vendor" then search_vendors
+      when "creator" then search_creators
       end
     end
 
@@ -168,6 +173,19 @@ module Catalog
       apply_name_or_code_filter(scope).limit(LIMIT)
     end
 
+    def search_creators
+      scope = @organization.creators.order(:sort_name)
+      scope = scope.where(active: true) unless @include_inactive
+      if @query.present?
+        pattern = "%#{sanitize_like(@query)}%"
+        scope = scope.where(
+          "display_name ILIKE :q OR sort_name ILIKE :q OR normalized_name ILIKE :q",
+          q: pattern
+        )
+      end
+      scope.limit(LIMIT)
+    end
+
     def apply_name_or_code_filter(scope)
       return scope if @query.blank?
 
@@ -236,6 +254,8 @@ module Catalog
         record.identifier.present? ? "#{name} · #{record.identifier}" : name
       when "vendor"
         [ record.name, record.code ].compact_blank.join(" — ")
+      when "creator"
+        creator_label(record)
       else
         name = record.name.to_s
         code = record.respond_to?(:code) ? record.code.to_s : ""
@@ -266,6 +286,16 @@ module Catalog
       product_name = record.product&.name.presence || "Product"
       variant_name = record.name.presence || "Standard"
       "#{product_name} — #{variant_name} · SKU #{record.sku}"
+    end
+
+    # Duplicate display names are acceptable in v1 (OD-P8-02); always pair a
+    # stable disambiguator so the picker never shows two indistinguishable rows.
+    def creator_label(record)
+      if record.sort_name.present? && record.sort_name != record.display_name
+        "#{record.display_name} — #{record.sort_name}"
+      else
+        "#{record.display_name} — Creator #{record.id}"
+      end
     end
   end
 end

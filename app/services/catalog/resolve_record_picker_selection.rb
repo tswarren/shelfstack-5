@@ -31,6 +31,10 @@ module Catalog
           .find_by(product_variants: { id: @id })
       when "vendor"
         @organization.vendors.find_by(id: @id)
+      when "creator"
+        # No active filter: inactive Creators already linked to a Product
+        # must remain visible on that Product's form (phase-08 §5).
+        @organization.creators.find_by(id: @id)
       end
     end
   end

@@ -1,3 +1,4 @@
+<% creator_rows = local_assigns[:creator_rows] || [] %>
 <%= form_with url: product.persisted? ? product_path(product) : products_path,
       method: product.persisted? ? :patch : :post, class: "form" do |form| %>
   <%= render "shared/form_errors", object: product, id: "form-errors-product" %>
@@ -55,6 +56,67 @@
         </div>
       </div>
     <% end %>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Bibliographic detail</h2>
+    <%= fields_for :product, product do |product_form| %>
+      <div class="form-grid">
+        <div class="field">
+          <%= product_form.label :edition_statement, "Edition", class: "field-label" %>
+          <%= product_form.text_field :edition_statement, class: "input" %>
+        </div>
+        <div class="field">
+          <%= product_form.label :language_code, "Language code", class: "field-label" %>
+          <%= product_form.text_field :language_code, class: "input", placeholder: "en" %>
+          <p class="field-hint">Free text (e.g. “en”, “fr”) — normalized to lowercase.</p>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="product_publication_date_precision">Publication date precision</label>
+          <select name="product[publication_date_precision]" id="product_publication_date_precision" class="input">
+            <option value="" <%= "selected" if product.publication_date_precision.blank? %>>Unknown</option>
+            <% Catalog::PartialPublicationDate::PRECISIONS.each do |precision| %>
+              <option value="<%= precision %>" <%= "selected" if product.publication_date_precision == precision %>><%= precision.titleize %></option>
+            <% end %>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label" for="product_publication_date_year">Year</label>
+          <input type="number" class="input" name="product[publication_date_year]" id="product_publication_date_year"
+                 value="<%= params.dig(:product, :publication_date_year).presence || product.publication_date&.year %>">
+        </div>
+        <div class="field">
+          <label class="field-label" for="product_publication_date_month">Month</label>
+          <input type="number" min="1" max="12" class="input" name="product[publication_date_month]" id="product_publication_date_month"
+                 value="<%= params.dig(:product, :publication_date_month).presence || product.publication_date&.month %>">
+          <p class="field-hint">Required for month/day precision.</p>
+        </div>
+        <div class="field">
+          <label class="field-label" for="product_publication_date_day">Day</label>
+          <input type="number" min="1" max="31" class="input" name="product[publication_date_day]" id="product_publication_date_day"
+                 value="<%= params.dig(:product, :publication_date_day).presence || product.publication_date&.day %>">
+          <p class="field-hint">Required for day precision only.</p>
+        </div>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="form-section" data-controller="creator-assignments">
+    <h2 class="form-section-title">Creators</h2>
+    <p class="muted">Add authors, editors, illustrators, and other contributors in credit order.</p>
+    <input type="hidden" name="product[creator_assignments_provided]" value="1">
+    <div data-creator-assignments-target="rows">
+      <% creator_rows.each do |row| %>
+        <%= render "products/creator_assignment_row", index: row[:creator]&.id || SecureRandom.hex(4),
+              creator: row[:creator], role: row[:role], credited_as: row[:credited_as] %>
+      <% end %>
+    </div>
+    <template data-creator-assignments-target="template">
+      <%= render "products/creator_assignment_row", index: "NEW_RECORD", creator: nil, role: nil, credited_as: nil %>
+    </template>
+    <button type="button" class="button button-secondary" data-action="creator-assignments#addRow">Add creator</button>
   </section>
 
   <%= fields_for :product, product do |product_form| %>

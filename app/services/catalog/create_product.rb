@@ -5,6 +5,7 @@ module Catalog
     PRODUCT_TRACKED_ATTRIBUTES = %w[
       identifier name subtitle description product_type product_format_id merchandise_class_id
       default_department_id default_tax_category_id status sellable list_price_cents
+      publication_date publication_date_precision language_code edition_statement
     ].freeze
 
     VARIANT_TRACKED_ATTRIBUTES = %w[
@@ -16,7 +17,8 @@ module Catalog
     MAX_COLLISION_RETRIES = 5
 
     def initialize(organization:, actor:, store:, product_attrs:, variant_attrs:,
-                   identifier: nil, accept_identifier_warning: false)
+                   identifier: nil, accept_identifier_warning: false,
+                   creator_assignments: Catalog::ReplaceProductCreators::OMIT)
       @organization = organization
       @actor = actor
       @store = store
@@ -24,6 +26,7 @@ module Catalog
       @variant_attrs = variant_attrs.to_h.symbolize_keys
       @identifier = identifier
       @accept_identifier_warning = accept_identifier_warning
+      @creator_assignments = creator_assignments
       @product = nil
       @variant = nil
       @generated_identifier = false
@@ -47,6 +50,13 @@ module Catalog
           create_product!(normalized)
           create_variant!
           apply_final_states!
+
+          unless Catalog::ReplaceProductCreators.call(
+            product: @product, assignments: @creator_assignments, actor: @actor, store: @store
+          )
+            raise ActiveRecord::Rollback
+          end
+
           audit!
         end
 

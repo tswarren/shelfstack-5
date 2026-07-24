@@ -38,4 +38,53 @@ class CatalogUpdateProductWithStandardVariantTest < ActiveSupport::TestCase
 
     assert_equal original_name, @product.reload.name
   end
+
+  test "replaces creator links inside the same transaction as the product/variant update" do
+    creator = creators(:ray_bradbury)
+
+    assert Catalog::UpdateProductWithStandardVariant.call(
+      product: @product,
+      variant: @variant,
+      product_attrs: { name: "Renamed With Author" },
+      variant_attrs: {},
+      creator_assignments: [ { creator_id: creator.id, role: "author" } ],
+      actor: @actor,
+      store: @store
+    )
+
+    assert_equal [ creator.id ], @product.product_creators.reload.pluck(:creator_id)
+  end
+
+  test "omitting creator_assignments leaves existing creator links untouched" do
+    creator = creators(:ray_bradbury)
+    ProductCreator.create!(product: @product, creator: creator, role: "author", position: 0)
+
+    assert Catalog::UpdateProductWithStandardVariant.call(
+      product: @product,
+      variant: @variant,
+      product_attrs: { name: "Renamed Without Touching Creators" },
+      variant_attrs: {},
+      actor: @actor,
+      store: @store
+    )
+
+    assert_equal [ creator.id ], @product.product_creators.reload.pluck(:creator_id)
+  end
+
+  test "rolls back the product and variant update when creator assignments are invalid" do
+    foreign = create_foreign_organization_catalog!
+    original_name = @product.name
+
+    assert_not Catalog::UpdateProductWithStandardVariant.call(
+      product: @product,
+      variant: @variant,
+      product_attrs: { name: "Should Not Persist" },
+      variant_attrs: {},
+      creator_assignments: [ { creator_id: foreign[:creator].id, role: "author" } ],
+      actor: @actor,
+      store: @store
+    )
+
+    assert_equal original_name, @product.reload.name
+  end
 end

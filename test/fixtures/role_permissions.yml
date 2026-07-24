@@ -531,3 +531,17 @@ admin_reporting_reconcile_approve:
 admin_reporting_reconcile_approve_self:
   role: administrator
   permission: reporting_reconcile_approve_self
+
+# Phase 8
+
+admin_catalog_lookup_external:
+  role: administrator
+  permission: catalog_lookup_external
+
+admin_catalog_manage_creators:
+  role: administrator
+  permission: catalog_manage_creators
+
+catalog_editor_manage_creators:
+  role: catalog_editor
+  permission: catalog_manage_creators

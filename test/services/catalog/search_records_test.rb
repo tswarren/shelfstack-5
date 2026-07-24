@@ -57,8 +57,37 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
 
   test "rejects unknown record type" do
     assert_raises(ArgumentError) do
-      Catalog::SearchRecords.call(organization: @organization, record_type: "creator", query: "x")
+      Catalog::SearchRecords.call(organization: @organization, record_type: "nope", query: "x")
     end
+  end
+
+  test "searches creators by display, sort, and normalized name" do
+    creator = Creator.create!(
+      organization: @organization, display_name: "Ursula K. Le Guin", sort_name: "Le Guin, Ursula K."
+    )
+
+    results = Catalog::SearchRecords.call(organization: @organization, record_type: "creator", query: "le guin")
+
+    assert_includes results.map(&:id), creator.id
+    match = results.find { |r| r.id == creator.id }
+    assert_equal "Ursula K. Le Guin — Le Guin, Ursula K.", match.label
+  end
+
+  test "excludes inactive creators by default and includes them with disambiguation when requested" do
+    creator = Creator.create!(
+      organization: @organization, display_name: "Same Name", sort_name: "Same Name", active: false
+    )
+
+    default_results = Catalog::SearchRecords.call(organization: @organization, record_type: "creator", query: "Same Name")
+    assert_not_includes default_results.map(&:id), creator.id
+
+    with_inactive = Catalog::SearchRecords.call(
+      organization: @organization, record_type: "creator", query: "Same Name", include_inactive: true
+    )
+    match = with_inactive.find { |r| r.id == creator.id }
+    assert match
+    assert match.inactive
+    assert_equal "Same Name — Creator #{creator.id}", match.label.split(" · ").first
   end
 
   test "authorized? checks permission codes" do

@@ -179,4 +179,151 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
     assert product.reload.sellable?
   end
+
+  test "creates a product with ordered creator assignments" do
+    bradbury = creators(:ray_bradbury)
+    le_guin = creators(:ursula_le_guin)
+
+    assert_difference "Product.count", 1 do
+      post products_path, params: {
+        identifier: "",
+        product: {
+          name: "Created With Creators",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          merchandise_class_id: merchandise_classes(:fiction_primary).id,
+          default_department_id: departments(:books_new).id,
+          default_tax_category_id: tax_categories(:physical_book).id,
+          status: "active",
+          sellable: true,
+          creator_assignments_provided: "1",
+          creator_assignments: [
+            { creator_id: le_guin.id, role: "author" },
+            { creator_id: bradbury.id, role: "illustrator" }
+          ]
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price_cents: 1599,
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    product = Product.order(:id).last
+    assert_redirected_to product_path(product)
+    assert_equal [ le_guin.id, bradbury.id ], product.product_creators.order(:position).pluck(:creator_id)
+  end
+
+  test "update without creator_assignments_provided leaves existing creator links untouched" do
+    product = products(:sample_book)
+    creator = creators(:ray_bradbury)
+    ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+    variant = product.product_variants.first
+
+    patch product_path(product), params: {
+      product: {
+        name: "Renamed Without Touching Creators",
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status,
+        sellable: product.sellable
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_redirected_to product_path(product)
+    assert_equal [ creator.id ], product.product_creators.reload.pluck(:creator_id)
+  end
+
+  test "update with an explicit empty creator_assignments array clears existing links" do
+    product = products(:sample_book)
+    creator = creators(:ray_bradbury)
+    ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+    variant = product.product_variants.first
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status,
+        sellable: product.sellable,
+        creator_assignments_provided: "1",
+        creator_assignments: []
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_redirected_to product_path(product)
+    assert_empty product.product_creators.reload
+  end
+
+  test "validation rerender does not disclose a foreign-organization creator label" do
+    foreign = create_foreign_organization_catalog!
+    product = products(:sample_book)
+    variant = product.product_variants.first
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status,
+        sellable: product.sellable,
+        creator_assignments_provided: "1",
+        creator_assignments: [ { creator_id: foreign[:creator].id, role: "author" } ]
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_CREATOR_NAME)}/, response.body)
+  end
+
+  test "persists partial publication date entered as separate year/month parts" do
+    product = products(:sample_book)
+    variant = product.product_variants.first
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status,
+        sellable: product.sellable,
+        publication_date_precision: "month",
+        publication_date_year: "2020",
+        publication_date_month: "5",
+        publication_date_day: ""
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_redirected_to product_path(product)
+    product.reload
+    assert_equal Date.new(2020, 5, 1), product.publication_date
+    assert_equal "month", product.publication_date_precision
+  end
 end

@@ -1,0 +1,31 @@
+<%= form_with model: creator, class: "form" do |form| %>
+  <%= render "shared/form_errors", object: creator %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :display_name, class: "field-label" %>
+        <%= form.text_field :display_name, class: "input", required: true %>
+      </div>
+      <div class="field">
+        <%= form.label :sort_name, "Sort name", class: "field-label" %>
+        <%= form.text_field :sort_name, class: "input" %>
+        <p class="field-hint">Defaults to the display name (e.g. “Le Guin, Ursula K.”). No automatic inversion.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Status</h2>
+    <div class="checkbox-group">
+      <label><%= form.check_box :active %> Creator is active</label>
+      <p class="field-hint">Deactivating hides this Creator from new searches without removing existing product links.</p>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <%= form.submit creator.persisted? ? "Update creator" : "Create creator", class: "button button-primary" %>
+    <%= link_to "Cancel", creators_path, class: "button button-outline" %>
+  </div>
+<% end %>

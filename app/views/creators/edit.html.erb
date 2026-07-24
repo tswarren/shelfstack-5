@@ -1,0 +1,6 @@
+<% content_for :title, @creator.display_name %>
+
+<%= render "shared/page_header", title: @creator.display_name,
+      breadcrumbs: [ { label: "Creators", path: creators_path }, { label: @creator.display_name } ] %>
+
+<%= render "form", creator: @creator %>

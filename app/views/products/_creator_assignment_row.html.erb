@@ -1,0 +1,41 @@
+<%#
+  One ordered Creator-assignment row on the product form (Gate 8b).
+
+  Locals:
+    index:       unique token used to build distinct DOM ids per row
+                 ("NEW_RECORD" inside the client-side <template>)
+    creator:     currently selected Creator (or nil)
+    role:        currently selected role string (or nil)
+    credited_as: currently entered credited-as string (or nil)
+%>
+<div class="creator-assignment-row" data-creator-assignments-target="row">
+  <%= render "shared/record_picker",
+        name: "product[creator_assignments][][creator_id]",
+        id: "product_creator_assignment_#{index}_creator_id",
+        record_type: "creator",
+        selected_id: creator&.id,
+        label: "Creator",
+        required: true %>
+  <div class="field">
+    <label class="field-label" for="product_creator_assignment_<%= index %>_role">Role</label>
+    <select name="product[creator_assignments][][role]"
+            id="product_creator_assignment_<%= index %>_role" class="input">
+      <% ProductCreator::ROLES.each do |role_option| %>
+        <option value="<%= role_option %>" <%= "selected" if role_option == role %>><%= role_option.titleize %></option>
+      <% end %>
+    </select>
+  </div>
+  <div class="field">
+    <label class="field-label" for="product_creator_assignment_<%= index %>_credited_as">Credited as</label>
+    <input type="text" class="input"
+           name="product[creator_assignments][][credited_as]"
+           id="product_creator_assignment_<%= index %>_credited_as"
+           value="<%= credited_as %>"
+           placeholder="Optional edition-specific credit">
+  </div>
+  <div class="creator-assignment-row-actions">
+    <button type="button" class="button button-ghost" data-action="creator-assignments#moveUp">Move up</button>
+    <button type="button" class="button button-ghost" data-action="creator-assignments#moveDown">Move down</button>
+    <button type="button" class="button button-ghost" data-action="creator-assignments#removeRow">Remove</button>
+  </div>
+</div>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_24_140300) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -91,6 +91,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
     t.datetime "updated_at", null: false
     t.index ["organization_id", "code"], name: "index_cash_movement_types_on_organization_id_and_code", unique: true
     t.index ["organization_id"], name: "index_cash_movement_types_on_organization_id"
+  end
+
+  create_table "catalog_enrichment_events", force: :cascade do |t|
+    t.jsonb "accepted_warnings", default: [], null: false
+    t.string "action", null: false
+    t.bigint "actor_user_id", null: false
+    t.jsonb "applied_fields", default: {}, null: false
+    t.string "canonical_identifier", null: false
+    t.datetime "created_at", null: false
+    t.bigint "organization_id", null: false
+    t.bigint "product_id", null: false
+    t.string "provider", null: false
+    t.string "provider_record_id"
+    t.string "requested_identifier", null: false
+    t.datetime "retrieved_at", null: false
+    t.index ["actor_user_id"], name: "index_catalog_enrichment_events_on_actor_user_id"
+    t.index ["canonical_identifier"], name: "index_catalog_enrichment_events_on_canonical_identifier"
+    t.index ["organization_id", "created_at"], name: "idx_on_organization_id_created_at_a1d7bb8110"
+    t.index ["organization_id"], name: "index_catalog_enrichment_events_on_organization_id"
+    t.index ["product_id", "created_at"], name: "index_catalog_enrichment_events_on_product_id_and_created_at"
+    t.index ["product_id"], name: "index_catalog_enrichment_events_on_product_id"
+    t.index ["provider", "provider_record_id"], name: "idx_on_provider_provider_record_id_bafd6789fb"
+    t.check_constraint "action::text = ANY (ARRAY['create'::character varying, 'fill_empty'::character varying, 'selected_apply'::character varying]::text[])", name: "catalog_enrichment_events_action_allowed"
+  end
+
+  create_table "creators", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.string "display_name", null: false
+    t.string "normalized_name", null: false
+    t.bigint "organization_id", null: false
+    t.string "sort_name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "active", "sort_name"], name: "index_creators_on_organization_id_and_active_and_sort_name"
+    t.index ["organization_id", "normalized_name"], name: "index_creators_on_organization_id_and_normalized_name"
+    t.index ["organization_id"], name: "index_creators_on_organization_id"
   end
 
   create_table "departments", force: :cascade do |t|
@@ -817,6 +853,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
     t.index ["organization_id"], name: "index_product_conditions_on_organization_id"
   end
 
+  create_table "product_creators", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "creator_id", null: false
+    t.string "credited_as"
+    t.integer "position", null: false
+    t.bigint "product_id", null: false
+    t.string "role", null: false
+    t.datetime "updated_at", null: false
+    t.index ["creator_id"], name: "index_product_creators_on_creator_id"
+    t.index ["product_id", "position", "id"], name: "index_product_creators_on_product_position_id"
+    t.index ["product_id"], name: "index_product_creators_on_product_id"
+    t.check_constraint "\"position\" >= 0", name: "product_creators_position_non_negative"
+    t.check_constraint "role::text = ANY (ARRAY['author'::character varying, 'editor'::character varying, 'illustrator'::character varying, 'translator'::character varying, 'narrator'::character varying, 'photographer'::character varying, 'contributor'::character varying]::text[])", name: "product_creators_role_allowed"
+  end
+
   create_table "product_formats", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
@@ -961,17 +1012,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
     t.bigint "default_department_id"
     t.bigint "default_tax_category_id"
     t.text "description"
+    t.string "edition_statement"
     t.string "identifier", null: false
     t.boolean "identifier_generated", default: false, null: false
     t.string "identifier_validation_status", default: "valid", null: false
     t.text "identifier_warning"
     t.string "imprint_or_brand_name"
+    t.string "language_code", limit: 16
     t.integer "list_price_cents"
     t.bigint "merchandise_class_id"
     t.string "name", null: false
     t.bigint "organization_id", null: false
     t.bigint "product_format_id", null: false
     t.string "product_type", null: false
+    t.date "publication_date"
+    t.string "publication_date_precision", limit: 8
     t.string "publisher_or_manufacturer_name"
     t.boolean "sellable", default: false, null: false
     t.string "status", default: "active", null: false
@@ -985,10 +1040,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
     t.index ["organization_id", "identifier"], name: "index_products_on_organization_id_and_identifier", unique: true
     t.index ["organization_id"], name: "index_products_on_organization_id"
     t.index ["product_format_id"], name: "index_products_on_product_format_id"
+    t.check_constraint "(publication_date IS NULL) = (publication_date_precision IS NULL)", name: "products_publication_date_both_or_neither"
     t.check_constraint "available_from IS NULL OR available_until IS NULL OR available_from <= available_until", name: "products_availability_window_order"
     t.check_constraint "identifier_validation_status::text = ANY (ARRAY['valid'::character varying::text, 'warning'::character varying::text, 'invalid'::character varying::text, 'not_applicable'::character varying::text])", name: "products_identifier_validation_status_check"
     t.check_constraint "list_price_cents IS NULL OR list_price_cents >= 0", name: "products_list_price_cents_non_negative"
     t.check_constraint "product_type::text = ANY (ARRAY['book'::character varying::text, 'recorded_music'::character varying::text, 'video'::character varying::text, 'periodical'::character varying::text, 'game'::character varying::text, 'stationery'::character varying::text, 'gift'::character varying::text, 'cafe'::character varying::text, 'service'::character varying::text, 'other'::character varying::text])", name: "products_product_type_check"
+    t.check_constraint "publication_date_precision IS NULL OR (publication_date_precision::text = ANY (ARRAY['year'::character varying, 'month'::character varying, 'day'::character varying]::text[]))", name: "products_publication_date_precision_allowed"
     t.check_constraint "status::text = ANY (ARRAY['active'::character varying::text, 'inactive'::character varying::text, 'discontinued'::character varying::text])", name: "products_status_check"
     t.check_constraint "variant_structure::text = 'single'::text", name: "products_variant_structure_single"
   end
@@ -1582,6 +1639,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
   add_foreign_key "business_days", "users", column: "reconciled_by_user_id"
   add_foreign_key "cash_drawers", "stores", on_delete: :restrict
   add_foreign_key "cash_movement_types", "organizations", on_delete: :restrict
+  add_foreign_key "catalog_enrichment_events", "organizations", on_delete: :restrict
+  add_foreign_key "catalog_enrichment_events", "products", on_delete: :restrict
+  add_foreign_key "catalog_enrichment_events", "users", column: "actor_user_id", on_delete: :restrict
+  add_foreign_key "creators", "organizations", on_delete: :restrict
   add_foreign_key "departments", "departments", column: "parent_department_id", on_delete: :restrict
   add_foreign_key "departments", "organizations", on_delete: :restrict
   add_foreign_key "departments", "return_policies", column: "default_return_policy_id", on_delete: :restrict
@@ -1694,6 +1755,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
   add_foreign_key "pos_transactions", "users", column: "cashier_user_id", on_delete: :restrict
   add_foreign_key "pos_transactions", "users", column: "completed_by_user_id", on_delete: :restrict
   add_foreign_key "product_conditions", "organizations", on_delete: :restrict
+  add_foreign_key "product_creators", "creators", on_delete: :restrict
+  add_foreign_key "product_creators", "products", on_delete: :restrict
   add_foreign_key "product_formats", "organizations", on_delete: :restrict
   add_foreign_key "product_request_fulfillments", "inventory_reservations", on_delete: :restrict
   add_foreign_key "product_request_fulfillments", "pos_line_items", on_delete: :restrict

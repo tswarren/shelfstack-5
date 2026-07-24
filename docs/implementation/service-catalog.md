@@ -395,13 +395,19 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`) |
-| `Catalog::ResolveRecordPickerSelection` | Catalog and Products | 8a | No | Yes | None | Organization, record type, id | In-org record or `nil` (prevents foreign-org label disclosure on validation rerender) |
+| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`); Gate 8b adds the `creator` type |
+| `Catalog::ResolveRecordPickerSelection` | Catalog and Products | 8a | No | Yes | None | Organization, record type, id | In-org record or `nil` (prevents foreign-org label disclosure on validation rerender); Gate 8b adds the `creator` type (no active filter — inactive Creators already linked stay visible) |
+| `Catalog::PartialPublicationDate` | Catalog and Products | 8b | No | Yes | None | `validate(date:, precision:)` or `parse_parts(precision:, year:, month:, day:)` | `Result` (date, precision, errors); enforces year→Jan1 / month→day1 / both-or-neither |
+| `Catalog::NormalizeCreatorName` | Catalog and Products | 8b | No | Yes | None | Raw Creator display name | Unicode-normalized, whitespace-collapsed, lowercased match key (punctuation/diacritics retained) |
+| `Catalog::ReplaceProductCreators` | Catalog and Products | 8b | Yes (runs inside caller's Product transaction) | No (each call fully replaces the collection) | None (org-scoped `find_by`) | Product, assignments (`OMIT`/`nil` / `[]` / ordered array), actor, store | Atomic ProductCreator replacement; contiguous positions from array order; rejects foreign-org creator ids without disclosing names; ordinary `AdministrativeAuditEvent` on change |
+| `Catalog::CreateProduct` | Catalog and Products | 2 (8b: `creator_assignments` + biblio attrs) | Yes | No* | Sequence + product uniqueness | + optional `creator_assignments` | Product + Standard variant + ProductCreators, all-or-nothing |
+| `Catalog::UpdateProductWithStandardVariant` | Catalog and Products | 2 (8b: `creator_assignments`) | Yes | No | Product + variant | + optional `creator_assignments` | Atomic product+variant+creator-link update inside one transaction |
 
 ### Phase 8 notes
 
 - Gate 8a shared picker: `GET /catalog/record_searches` + `shared/record_picker` partial + Stimulus `record-picker` / `linked-record-pickers`. Design: [interaction-patterns.md](../design/interaction-patterns.md).
-- Gate 8b+ (Creators, enrichment adapters, create-from-ISBN) add services when implemented.
+- Gate 8b Slice 1 (schema + Creators): `creators` / `product_creators` / `catalog_enrichment_events` tables; `Creator`, `ProductCreator`, `CatalogEnrichmentEvent` models (`CatalogEnrichmentEvent` is append-only like `AdministrativeAuditEvent` — table + immutability ship in 8b, writers arrive in 8c/8f); `CreatorsController` under the Catalog nav submenu.
+- Gate 8b Slice 2 (provider adapters: ISBNdb/Google Books, `NormalizedResult`, `LookupExternalMetadata`, `MapProductFormat`) not yet implemented.
 
 ## Later phases (add when implemented)
 

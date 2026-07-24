@@ -3,4 +3,4 @@
 <%= render "shared/page_header", title: "New product",
       breadcrumbs: [ { label: "Products", path: products_path }, { label: "New product" } ] %>
 
-<%= render "form", product: @product, variant: @variant %>
+<%= render "form", product: @product, variant: @variant, creator_rows: @creator_rows %>

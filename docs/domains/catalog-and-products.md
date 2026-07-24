@@ -87,9 +87,10 @@ Suggested attributes:
 - Format;
 - publisher or manufacturer;
 - imprint or brand;
-- release date;
-- language;
-- edition;
+- release date (`publication_date`, with `publication_date_precision` of `year` | `month` | `day` — Gate 8b / OD-P8-10; see [`Catalog::PartialPublicationDate`](../implementation/service-catalog.md));
+- language (`language_code`, free text, normalized whitespace/case — Gate 8b);
+- edition (`edition_statement` — Gate 8b);
+- ordered Creators (Gate 8b / OD-P8-02 — see below);
 - external list price;
 - default Merchandise Class;
 - optional Department and Tax-Category overrides;
@@ -98,6 +99,17 @@ Suggested attributes:
 - availability dates.
 
 A Product is not sold directly.
+
+## Creator (Gate 8b / OD-P8-02)
+
+An organization-owned bibliographic Creator master (authors, editors, illustrators, translators, narrators, photographers, contributors) and an ordered Product-Creator join.
+
+- `Creator`: `display_name`, `normalized_name` (match key via `Catalog::NormalizeCreatorName`; indexed, not unique), `sort_name` (defaults to `display_name` — no inverted "Last, First" guessing), `active`.
+- `ProductCreator`: `product_id`, `creator_id`, `role` (allowlist `author editor illustrator translator narrator photographer contributor`), `position` (service-authoritative — see `Catalog::ReplaceProductCreators`), `credited_as` (nullable edition-specific credit).
+- Duplicate Creators and duplicate normalized names are acceptable in v1; name matching is advisory and never triggers automatic merges.
+- Same Creator + role on one Product is a soft (model-level) uniqueness rule, not a database constraint.
+- Deactivating a Creator hides it from new searches but never removes existing Product links.
+- Creator search-to-link uses the shared record-picker foundation (Gate 8a); Creator-master mutations require `catalog.manage_creators`, while linking Creators to a Product uses ordinary product create/edit permissions.
 
 ## Product Variant
 
@@ -281,7 +293,11 @@ catalog.manage_formats
 catalog.manage_conditions
 catalog.review_data_quality
 catalog.print_labels
+catalog.lookup_external
+catalog.manage_creators
 ```
+
+See [authorization-permissions.md](authorization-permissions.md) for the canonical key spellings (e.g. `catalog.product.view`); this list uses shorthand prose names.
 
 ## Audit requirements
 

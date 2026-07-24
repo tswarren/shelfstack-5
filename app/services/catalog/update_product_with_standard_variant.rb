@@ -2,13 +2,15 @@
 
 module Catalog
   class UpdateProductWithStandardVariant < ApplicationService
-    def initialize(product:, variant:, product_attrs:, variant_attrs:, actor:, store:)
+    def initialize(product:, variant:, product_attrs:, variant_attrs:, actor:, store:,
+                   creator_assignments: Catalog::ReplaceProductCreators::OMIT)
       @product = product
       @variant = variant
       @product_attrs = product_attrs.to_h.stringify_keys
       @variant_attrs = variant_attrs.to_h.stringify_keys
       @actor = actor
       @store = store
+      @creator_assignments = creator_assignments
     end
 
     attr_reader :product, :variant
@@ -36,6 +38,12 @@ module Catalog
           )
             raise ActiveRecord::Rollback
           end
+        end
+
+        unless Catalog::ReplaceProductCreators.call(
+          product: @product, assignments: @creator_assignments, actor: @actor, store: @store
+        )
+          raise ActiveRecord::Rollback
         end
       end
 

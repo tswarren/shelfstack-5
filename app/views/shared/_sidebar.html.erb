@@ -7,6 +7,7 @@
 
     <%= nav_section "Catalog" do %>
       <%= nav_item "Products", products_path, permission_key: "catalog.product.view" %>
+      <%= nav_item "Creators", creators_path, permission_key: "catalog.manage_creators" %>
     <% end %>
 
     <%= nav_section "Requests" do %>

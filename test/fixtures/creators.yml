@@ -1,0 +1,20 @@
+ray_bradbury:
+  organization: acme
+  display_name: Ray Bradbury
+  normalized_name: ray bradbury
+  sort_name: Bradbury, Ray
+  active: true
+
+ursula_le_guin:
+  organization: acme
+  display_name: Ursula K. Le Guin
+  normalized_name: ursula k. le guin
+  sort_name: Le Guin, Ursula K.
+  active: true
+
+inactive_creator:
+  organization: acme
+  display_name: Old Contributor
+  normalized_name: old contributor
+  sort_name: Old Contributor
+  active: false

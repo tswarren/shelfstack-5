@@ -42,18 +42,20 @@ class ProductsController < ApplicationController
       inventory_tracking_mode: "quantity",
       sellable: true
     )
+    @creator_rows = []
   end
 
   def create
     @product = Current.organization.products.new
     @variant = ProductVariant.new
-    product_attrs = product_params
+    product_attrs = product_params.except(:creator_assignments)
     variant_attrs = variant_params
 
     if human_readable_params_invalid?
       @product.assign_attributes(product_attrs)
       @variant.assign_attributes(variant_attrs)
       copy_human_readable_param_errors_for_product!
+      @creator_rows = submitted_creator_rows
       render :new, status: :unprocessable_entity
       return
     end
@@ -65,7 +67,8 @@ class ProductsController < ApplicationController
       product_attrs: product_attrs,
       variant_attrs: variant_attrs,
       identifier: params[:identifier],
-      accept_identifier_warning: ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning])
+      accept_identifier_warning: ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning]),
+      creator_assignments: creator_assignments_param
     )
 
     if service.call
@@ -73,6 +76,7 @@ class ProductsController < ApplicationController
     else
       @product = service.product || Current.organization.products.new(product_attrs)
       @variant = service.variant || ProductVariant.new(variant_attrs)
+      @creator_rows = submitted_creator_rows
       if @product.errors.empty? && @variant.errors.empty?
         @product.errors.add(:base, "Could not create product.")
       end
@@ -82,17 +86,19 @@ class ProductsController < ApplicationController
 
   def edit
     @variant = @product.product_variants.first
+    @creator_rows = current_creator_rows
   end
 
   def update
     @variant = @product.product_variants.first
-    product_attrs = product_params
+    product_attrs = product_params.except(:creator_assignments)
     variant_attrs = variant_params
 
     if human_readable_params_invalid?
       @product.assign_attributes(product_attrs)
       @variant.assign_attributes(variant_attrs) if @variant
       copy_human_readable_param_errors_for_product!
+      @creator_rows = submitted_creator_rows
       render :edit, status: :unprocessable_entity
       return
     end
@@ -103,11 +109,13 @@ class ProductsController < ApplicationController
       product_attrs: product_attrs,
       variant_attrs: variant_attrs,
       actor: Current.user,
-      store: Current.store
+      store: Current.store,
+      creator_assignments: creator_assignments_param
     )
       redirect_to @product, notice: "Product updated."
     else
       @variant ||= @product.product_variants.build
+      @creator_rows = submitted_creator_rows
       render :edit, status: :unprocessable_entity
     end
   end
@@ -189,7 +197,10 @@ class ProductsController < ApplicationController
       :name, :subtitle, :description, :product_type, :product_format_id, :merchandise_class_id,
       :default_department_id, :default_tax_category_id, :list_price_cents, :status, :sellable,
       :available_from, :available_until, :publisher_or_manufacturer_name, :imprint_or_brand_name,
-      :alternate_identifier
+      :alternate_identifier, :edition_statement, :language_code,
+      :publication_date, :publication_date_precision,
+      :publication_date_year, :publication_date_month, :publication_date_day,
+      creator_assignments: [ :creator_id, :role, :credited_as ]
     )
     # Prices are entered as decimal dollars (`12.95`) in the UI and converted
     # to integer cents before the service contract sees them. Direct `_cents`
@@ -203,7 +214,64 @@ class ProductsController < ApplicationController
         (@product_money_errors ||= []) << [ :list_price, parsed.error || "is not a valid amount" ]
       end
     end
+    apply_publication_date_parts!(attrs)
     @product_params = attrs
+  end
+
+  # The product form always submits separate year/month/day inputs (never a
+  # lone HTML date input) so partial-precision entry stays explicit. Direct
+  # `publication_date` + `publication_date_precision` input (API/tests)
+  # still works when the part fields are absent.
+  def apply_publication_date_parts!(attrs)
+    return unless params[:product].key?(:publication_date_year) ||
+                  params[:product].key?(:publication_date_month) ||
+                  params[:product].key?(:publication_date_day)
+
+    parsed = Catalog::PartialPublicationDate.parse_parts(
+      precision: attrs[:publication_date_precision],
+      year: attrs.delete(:publication_date_year),
+      month: attrs.delete(:publication_date_month),
+      day: attrs.delete(:publication_date_day)
+    )
+
+    if parsed.errors.any?
+      (@product_money_errors ||= []) << [ :publication_date, parsed.errors.join("; ") ]
+    else
+      attrs[:publication_date] = parsed.date
+      attrs[:publication_date_precision] = parsed.precision
+    end
+  end
+
+  def creator_assignments_provided?
+    params[:product]&.key?(:creator_assignments_provided) || false
+  end
+
+  def creator_assignments_param
+    return Catalog::ReplaceProductCreators::OMIT unless creator_assignments_provided?
+
+    Array(product_params[:creator_assignments]).map { |row| row.to_h.symbolize_keys }
+  end
+
+  def current_creator_rows
+    @product.product_creators.order(:position, :id).map do |product_creator|
+      { creator: product_creator.creator, role: product_creator.role, credited_as: product_creator.credited_as }
+    end
+  end
+
+  # Redisplay submitted (unpersisted) creator assignments after a validation
+  # failure, resolving each id back through the current organization so a
+  # foreign-organization id never discloses its label (matches the classification
+  # picker redisplay pattern).
+  def submitted_creator_rows
+    return [] unless creator_assignments_provided?
+
+    Array(product_params[:creator_assignments]).map do |row|
+      hash = row.to_h.symbolize_keys
+      creator = Catalog::ResolveRecordPickerSelection.call(
+        organization: Current.organization, record_type: "creator", id: hash[:creator_id]
+      )
+      { creator: creator, role: hash[:role], credited_as: hash[:credited_as] }
+    end
   end
 
   def variant_params
