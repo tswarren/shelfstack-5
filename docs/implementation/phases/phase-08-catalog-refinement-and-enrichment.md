@@ -249,6 +249,15 @@ Controls should support, as appropriate:
 * explicit operator-selected secondary-provider lookup (Google Books optional);
 * provider-independent tests.
 
+#### Resources
+
+* ISBNdb API documentation:
+  * [API Documentation](https://isbndb.com/isbndb-api-documentation-v2)
+  * [FAQs](https://isbndb.com/faq)
+* Google Books API:
+  * [API Documentation](https://developers.google.com/books)
+  * [API Documentation](https://developers.google.com/books/docs/v1/using)
+
 #### Normalized provider result
 
 Provider adapters should map their results into a common internal representation before controllers or forms use them.
