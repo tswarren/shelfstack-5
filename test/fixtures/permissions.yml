@@ -755,6 +755,12 @@ catalog_lookup_external:
   permission_group: catalog
   active: true
 
+catalog_create_from_enrichment:
+  code: catalog.create_from_enrichment
+  name: Create from enrichment
+  permission_group: catalog
+  active: true
+
 catalog_manage_creators:
   code: catalog.manage_creators
   name: Manage creators

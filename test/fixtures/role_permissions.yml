@@ -538,6 +538,10 @@ admin_catalog_lookup_external:
   role: administrator
   permission: catalog_lookup_external
 
+admin_catalog_create_from_enrichment:
+  role: administrator
+  permission: catalog_create_from_enrichment
+
 admin_catalog_manage_creators:
   role: administrator
   permission: catalog_manage_creators
