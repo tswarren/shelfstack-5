@@ -71,7 +71,9 @@ module Catalog
     def adapter_args
       args = {}
       transport = @transport || Catalog::Providers.transport_override
-      args[:transport] = transport if transport
+      # Only inject a real transport. config.x leftovers / OrderedOptions must
+      # never win over the adapter's NetHttpTransport default.
+      args[:transport] = transport if transport.is_a?(Catalog::Providers::HttpTransport)
       args[:api_key] = @api_key if @api_key
       args
     end
