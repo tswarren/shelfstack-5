@@ -20,7 +20,8 @@
     <h2>Create from ISBN</h2>
     <p class="muted">ShelfStack searches the local catalog first. If no product exists, external metadata is previewed before anything is saved.</p>
 
-    <%= form_with url: preview_product_imports_path, method: :post, class: "form" do %>
+    <%= form_with url: preview_product_imports_path, method: :post, class: "form",
+          data: { turbo: false } do %>
       <%= hidden_field_tag :return_to, @return_to %>
       <div class="form-grid">
         <div class="field">
