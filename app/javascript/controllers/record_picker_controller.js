@@ -15,6 +15,7 @@ export default class extends Controller {
     this.results = []
     this.activeIndex = -1
     this.debounceTimer = null
+    this.blurTimer = null
     this.abortController = null
     this.requestToken = 0
     this.committedId = this.hasHiddenTarget ? this.hiddenTarget.value : ""
@@ -26,18 +27,23 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this.clearBlurTimer()
     this.invalidatePendingSearch()
   }
 
   onInput() {
     if (this.disabledValue) return
+    this.clearBlurTimer()
     this.invalidatePendingSearch()
+    this.clearResultsAndStatus()
+    this.closeListbox()
     this.syncValidity()
     this.scheduleSearch()
   }
 
   onFocus() {
     if (this.disabledValue) return
+    this.clearBlurTimer()
     if (this.results.length > 0) {
       this.openListbox()
     }
@@ -45,7 +51,9 @@ export default class extends Controller {
 
   onBlur() {
     // Delay so option mousedown/click can run first.
-    window.setTimeout(() => {
+    this.clearBlurTimer()
+    this.blurTimer = window.setTimeout(() => {
+      this.blurTimer = null
       this.restoreCommittedIfUnmatched()
       this.closeListbox()
     }, 150)
@@ -82,6 +90,7 @@ export default class extends Controller {
   clear(event) {
     event?.preventDefault()
     if (this.disabledValue) return
+    this.clearBlurTimer()
     this.invalidatePendingSearch()
     this.committedId = ""
     this.committedLabel = ""
@@ -120,6 +129,13 @@ export default class extends Controller {
     if (this.debounceTimer) {
       window.clearTimeout(this.debounceTimer)
       this.debounceTimer = null
+    }
+  }
+
+  clearBlurTimer() {
+    if (this.blurTimer) {
+      window.clearTimeout(this.blurTimer)
+      this.blurTimer = null
     }
   }
 
@@ -219,6 +235,7 @@ export default class extends Controller {
   }
 
   selectResult(result) {
+    this.clearBlurTimer()
     this.committedId = String(result.id)
     this.committedLabel = result.label
     this.hiddenTarget.value = this.committedId

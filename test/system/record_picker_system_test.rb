@@ -44,6 +44,32 @@ class RecordPickerSystemTest < ApplicationSystemTestCase
     assert_equal stationery.id.to_s, find("#product_default_tax_category_id", visible: :all).value
   end
 
+  test "changing query clears prior options so Enter cannot commit a stale result" do
+    product = products(:sample_book)
+    stationery = tax_categories(:stationery)
+    original_tax_id = product.default_tax_category_id
+    assert_not_equal stationery.id, original_tax_id
+
+    visit edit_product_path(product)
+    input = find("#product_default_tax_category_id_query")
+    input.click
+    input.set("Station")
+    assert_selector ".record-picker-option", text: /Stationery/, wait: 5
+
+    # Replace the query during the debounce window; prior options must vanish immediately.
+    page.execute_script(<<~JS, input.native)
+      const el = arguments[0]
+      el.value = "Books"
+      el.dispatchEvent(new Event("input", { bubbles: true }))
+    JS
+    assert_no_selector ".record-picker-option", text: /Stationery/
+    assert_no_selector ".record-picker-option"
+
+    input.send_keys(:enter)
+    assert_equal original_tax_id.to_s, find("#product_default_tax_category_id", visible: :all).value
+    assert_not_equal stationery.id.to_s, find("#product_default_tax_category_id", visible: :all).value
+  end
+
   test "unmatched text restores committed optional association and blocks submit" do
     product = products(:sample_book)
     original_tax_id = product.default_tax_category_id

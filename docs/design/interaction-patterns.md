@@ -34,6 +34,7 @@ The control submits a hidden id field with the correct param name for ordinary R
 
 * Typeahead search with keyboard navigation (↑ ↓ Enter Esc).
 * Clear control when blank selection is allowed. Only **Clear** intentionally blanks an optional association; unmatched typed text (including deleting a committed label without Clear) restores the last committed selection on blur/Escape and blocks submit via `setCustomValidity`.
+* Changing the query clears rendered options immediately (before the debounced search) so Enter/click cannot commit a stale prior result.
 * Displayed selections are resolved through `Catalog::ResolveRecordPickerSelection` against `Current.organization` so validation rerenders never disclose foreign-organization labels.
 * Loading, empty, and error status text via `aria-live`.
 * Combobox semantics: `role="combobox"` on the text input, `role="listbox"` / `option` on results.
