@@ -3,7 +3,7 @@
 **Status:** accepted  
 **Date:** 2026-07-24  
 **Applies to:** Phase 8 — Catalog Refinement and Enrichment  
-**Related:** [ADR-0001](../../adr/0001-product-variant-inventory-unit.md); [ADR-0002](../../adr/0002-canonical-identifiers-and-namespaces.md); [ADR-0003](../../adr/0003-merchandise-classes-and-departments.md); [catalog-and-products](../../domains/catalog-and-products.md); [phase-8 draft](../../temp_draft/phase-8-catalog-refinement-ideas.md); [deferred-work-register](../deferred-work-register.md) DWR-020–DWR-027; [open-decisions](../open-decisions.md)
+**Related:** [ADR-0001](../../adr/0001-product-variant-inventory-unit.md); [ADR-0002](../../adr/0002-canonical-identifiers-and-namespaces.md); [ADR-0003](../../adr/0003-merchandise-classes-and-departments.md); [catalog-and-products](../../domains/catalog-and-products.md); [phase-08 plan](../phases/phase-08-catalog-refinement-and-enrichment.md); [deferred-work-register](../deferred-work-register.md) DWR-020–DWR-027; [open-decisions](../open-decisions.md)
 
 ## Decision summary
 

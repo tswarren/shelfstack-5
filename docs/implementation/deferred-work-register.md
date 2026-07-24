@@ -119,7 +119,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-019 | Organization / store settings UI gap (address, SAN, receipt header/footer, card grain, org defaults) | 1 / 7 | delivery_debt | Store schema + `StoresController` strong params; no org UI | DWR-001 for behavioral settings home | unscheduled | — |
 | DWR-020 | Searchable record-picker / nested combobox (shared linking UX) | 4f | delivery_debt | Phase 8 gate 8a; [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Design-system Stimulus/Turbo pattern | Phase 8 | — |
 | DWR-021 | Multi-variant unlock (`single` / `named`) | 2 | catalog_candidate | OD-P8-07 accepted direction; delivery deferred — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Phase 8.5 cross-domain packet before schema unlock | Phase 8.5 | — |
-| DWR-022 | Bibliographic enrichment (ISBNdb / Google Books create + enrich-existing) | — | delivery_debt | OD-P8-01, 04, 09, 10 accepted — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); draft [phase-8…](../temp_draft/phase-8-catalog-refinement-ideas.md) | Provider credentials; Gates 8b–8c / 8f | Phase 8 | — |
+| DWR-022 | Bibliographic enrichment (ISBNdb / Google Books create + enrich-existing) | — | delivery_debt | OD-P8-01, 04, 09, 10 accepted — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); plan [phase-08…](phases/phase-08-catalog-refinement-and-enrichment.md) | Provider credentials; Gates 8b–8c / 8f | Phase 8 | — |
 | DWR-023 | Creators (core) + product images (8g) | — | delivery_debt | Creators OD-P8-02; images OD-P8-03 — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Creators before create-from-ISBN; images only when `remote_display_permitted`+ | Phase 8 | — |
 | DWR-024 | Publisher/manufacturer party model vs string field | proforma | deferred_decision | OD-P8-06 deferred — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | ONIX / publisher feeds / multi-role party need | later_extensions | — |
 | DWR-025 | Product merge / canonical identifier correction workflows | 2 | catalog_candidate | Catalog permissions foreshadow; out of Phase 8 core | Controlled process design | unscheduled | — |
@@ -168,7 +168,7 @@ Doc hygiene:                   DWR-060 … DWR-063
 
 ## Phase 8 naming
 
-Delivery Phase 8 is **Catalog refinement & enrichment** ([roadmap.md](roadmap.md); [temp draft](../temp_draft/phase-8-catalog-refinement-ideas.md)). [deferred-capabilities.md](deferred-capabilities.md) is **later extensions** (not Phase 8).
+Delivery Phase 8 is **Catalog refinement & enrichment** ([roadmap.md](roadmap.md); [phase plan](phases/phase-08-catalog-refinement-and-enrichment.md)). [deferred-capabilities.md](deferred-capabilities.md) is **later extensions** (not Phase 8).
 
 - treat catalog rows (`catalog_candidate`) as Phase 8 scope candidates;
 - treat `deferred_capability` rows as `later_extensions`;

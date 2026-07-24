@@ -49,4 +49,4 @@ Do **not** open GitHub issues for these rows until a design packet promotes them
 - [System Overview §1.9](../architecture/system-overview.md)
 - [AGENTS.md §3](../../AGENTS.md)
 - [roadmap.md](roadmap.md)
-- Catalog Phase 8 candidate (non-governing): [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md)
+- Catalog Phase 8 plan: [phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md)

@@ -68,7 +68,7 @@ flowchart TD
 | 6 | Corrections and stored value | Complete — merged to `main` at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed) | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 6.5 | Cashier workspace | Complete — merged to `main` at `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)) | [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) |
 | 7 | Reporting and reconciliation | Complete — core 7a–7d merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)) | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
-| 8 | Catalog refinement & enrichment | Planning — next delivery phase; draft [temp draft](../temp_draft/phase-8-catalog-refinement-ideas.md); decisions [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); later extensions [deferred-capabilities.md](deferred-capabilities.md) | [deferred-work-register.md](deferred-work-register.md), [deferred-capabilities.md](deferred-capabilities.md) |
+| 8 | Catalog refinement & enrichment | Planning — next delivery phase; plan [phase-08…](phases/phase-08-catalog-refinement-and-enrichment.md); decisions [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); later extensions [deferred-capabilities.md](deferred-capabilities.md) | [deferred-work-register.md](deferred-work-register.md), [deferred-capabilities.md](deferred-capabilities.md) |
 
 ## Mapping to system-overview §1.8
 
@@ -101,7 +101,7 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–7 core delivery. Phase 7 Reporting and Reconciliation merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
 
-**Next:** Phase 8 — Catalog refinement & enrichment (planning). Draft: [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md). See [current-phase.md](current-phase.md).
+**Next:** Phase 8 — Catalog refinement & enrichment (planning). Plan: [phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md). See [current-phase.md](current-phase.md).
 
 **Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), catalog Phase 8 candidates, later extensions).
 

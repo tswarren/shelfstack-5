@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 8 — Catalog refinement & enrichment (planning)  
-**Status:** Phase 7 complete on `main`; Phase 8 not yet implementing — promote [temp draft](../temp_draft/phase-8-catalog-refinement-ideas.md) when ready  
+**Status:** Phase 7 complete on `main`; Phase 8 plan promoted; implementation not started — first target Gate 8a  
 **Phase 7 merge:** `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d accepted; **7e partial** ([#94](https://github.com/tswarren/shelfstack-5/issues/94))  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
 **Phase 6 merge:** `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed)  
@@ -11,8 +11,9 @@
 **Design docs:** [../design/README.md](../design/README.md)  
 **Phase 7 plan (complete core):** [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md)  
 **Decision note (Phase 7):** [phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md)  
-**Phase 8 draft (non-governing):** [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md)  
+**Phase 8 plan:** [phases/phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md)  
 **Decision note (Phase 8):** [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) (OD-P8-01…10 accepted / deferred as noted)  
+**Source draft (superseded):** [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md)  
 
 **Phase 6.5 plan (complete):** [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md)  
 **Phase 6 plan (complete):** [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md)  
@@ -20,7 +21,7 @@
 
 ## Immediate next work
 
-1. Promote Phase 8 plan from temp draft to `docs/implementation/phases/phase-08-catalog-refinement-and-enrichment.md` (OD-P8 decisions accepted); start Gate 8a linking controls; keep enrichment ahead of multi-variant (Phase 8.5).
+1. Start Phase 8 Gate 8a (shared linking controls); then 8b–8c bibliographic/provider foundation and create-from-ISBN; keep enrichment ahead of multi-variant (Phase 8.5).
 2. Optional short ops-hardening before or beside Phase 8 start: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md):
    - Linked domain correction resolutions — [#89](https://github.com/tswarren/shelfstack-5/issues/89)
