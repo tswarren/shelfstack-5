@@ -15,6 +15,10 @@ class ReconciliationComparison < ApplicationRecord
   validates :position, uniqueness: { scope: :reconciliation_id }
   validate :unavailable_shape
 
+  before_create :reject_when_reconciliation_finalized!
+  before_update :reject_when_reconciliation_finalized!
+  before_destroy :reject_when_reconciliation_finalized!
+
   private
 
   def unavailable_shape
@@ -23,4 +27,11 @@ class ReconciliationComparison < ApplicationRecord
     errors.add(:observed_cents, "must be blank when unavailable") if observed_cents.present?
     errors.add(:variance_cents, "must be blank when unavailable") if variance_cents.present?
   end
+
+  def reject_when_reconciliation_finalized!
+    return unless Reconciliation.where(id: reconciliation_id, status: "finalized").exists?
+
+    raise ActiveRecord::ReadOnlyRecord, "cannot modify comparisons on a finalized reconciliation"
+  end
 end
+

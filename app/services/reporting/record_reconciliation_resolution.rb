@@ -19,15 +19,34 @@ module Reporting
       unless @actor.can?("reporting.record_reconciliation_resolution", store: @reconciliation.store)
         return Result.new(resolution: nil, success?: false, error: "missing permission reporting.record_reconciliation_resolution")
       end
-      raise Error, "cannot resolve a finalized reconciliation without supersede" if @reconciliation.finalized? && @supersedes.nil?
 
       ActiveRecord::Base.transaction do
+        recon = Reconciliation.lock.find(@reconciliation.id)
+        raise Error, "cannot change a finalized reconciliation" if recon.finalized?
+
+        if @comparison
+          unless @comparison.reconciliation_id == recon.id
+            raise Error, "comparison does not belong to this reconciliation"
+          end
+        end
+
         if @supersedes
+          unless @supersedes.reconciliation_id == recon.id
+            raise Error, "superseded resolution does not belong to this reconciliation"
+          end
+          if @comparison && @supersedes.reconciliation_comparison_id.present? &&
+              @supersedes.reconciliation_comparison_id != @comparison.id
+            raise Error, "superseded resolution does not apply to this comparison"
+          end
           @supersedes.update!(superseded: true)
         end
 
+        if @explanation.blank?
+          raise Error, "explanation is required"
+        end
+
         resolution = ReconciliationResolution.create!(
-          reconciliation: @reconciliation,
+          reconciliation: recon,
           reconciliation_comparison: @comparison,
           resolution_type: @resolution_type,
           explanation: @explanation,
@@ -38,13 +57,14 @@ module Reporting
 
         Administration::RecordAuditEvent.call(
           actor: @actor,
-          organization: @reconciliation.store.organization,
-          store: @reconciliation.store,
+          organization: recon.store.organization,
+          store: recon.store,
           action: "reconciliation.resolution_recorded",
           subject: resolution,
           metadata: {
             "resolution_type" => resolution.resolution_type,
-            "reconciliation_id" => @reconciliation.id
+            "reconciliation_id" => recon.id,
+            "comparison_id" => @comparison&.id
           }
         )
 

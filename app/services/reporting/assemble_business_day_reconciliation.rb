@@ -59,47 +59,56 @@ module Reporting
       Result.new(reconciliation: nil, success?: false, error: e.message)
     end
 
-    private
-
     def pending_required_session_recons
       sessions = @business_day.pos_sessions.where(status: "closed")
       sessions.reject do |session|
-        next true unless session.cash_enabled? || session.store.card_reconciliation_grain == "session"
+        next true unless SessionReconciliationRequirement.required?(session)
 
         session.reconciliation&.finalized?
       end
     end
 
+    private
+
     def ensure_comparisons!(recon)
       return if recon.reconciliation_comparisons.exists?
 
-      position = 1
-      @business_day.pos_close_card_evidences.order(:id).each do |evidence|
-        if evidence.status == "unavailable"
-          recon.reconciliation_comparisons.create!(
-            comparison_type: "day_machine_batch",
-            observed_unavailable: true,
-            pos_close_card_evidence: evidence,
-            external_reference: evidence.batch_reference,
-            position: position
-          )
-        else
-          expected = day_card_expected_net_cents
-          observed = evidence.net_cents.to_i
-          recon.reconciliation_comparisons.create!(
-            comparison_type: "day_machine_batch",
-            precision: evidence.precision,
-            expected_cents: expected,
-            observed_cents: observed,
-            variance_cents: observed - expected,
-            observed_unavailable: false,
-            pos_close_card_evidence: evidence,
-            external_reference: evidence.batch_reference,
-            position: position
-          )
-        end
-        position += 1
+      evidences = @business_day.pos_close_card_evidences.order(:id).to_a
+      return if evidences.empty?
+
+      create_aggregated_card_comparison!(recon, evidences)
+    end
+
+    def create_aggregated_card_comparison!(recon, evidences)
+      statuses = evidences.map(&:status).uniq
+      raise Error, "cannot mix recorded and unavailable card evidence in one scope" if statuses.size > 1
+
+      if statuses == [ "unavailable" ]
+        recon.reconciliation_comparisons.create!(
+          comparison_type: "day_machine_batch",
+          observed_unavailable: true,
+          external_reference: evidences.filter_map(&:batch_reference).join(", ").presence,
+          position: 1
+        )
+        return
       end
+
+      precisions = evidences.map { |e| e.precision.presence || "net_only" }.uniq
+      raise Error, "cannot mix card evidence precisions in one scope" if precisions.size > 1
+      raise Error, "received_and_refunded card evidence is not operable until its close workflow exists" if precisions.first == "received_and_refunded"
+
+      expected = day_card_expected_net_cents
+      observed = evidences.sum { |e| e.net_cents.to_i }
+      recon.reconciliation_comparisons.create!(
+        comparison_type: "day_machine_batch",
+        precision: "net_only",
+        expected_cents: expected,
+        observed_cents: observed,
+        variance_cents: observed - expected,
+        observed_unavailable: false,
+        external_reference: evidences.filter_map(&:batch_reference).join(", ").presence,
+        position: 1
+      )
     end
 
     def day_card_expected_net_cents

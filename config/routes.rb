@@ -91,6 +91,7 @@ Rails.application.routes.draw do
   get "reconciliations/business_days/:business_day_id", to: "reconciliations#business_day_show", as: :business_day_reconciliation
   post "reconciliations/:id/finalize", to: "reconciliations#finalize", as: :finalize_reconciliation
   post "reconciliations/:id/comparisons/:comparison_id/accept_unavailable", to: "reconciliations#accept_unavailable", as: :accept_unavailable_comparison
+  post "reconciliations/:id/comparisons/:comparison_id/resolutions", to: "reconciliations#record_resolution", as: :record_reconciliation_resolution
 
   get "reports", to: "reports#index", as: :reports
   get "reports/open_purchase_orders", to: "reports#open_purchase_orders", as: :open_purchase_orders_report

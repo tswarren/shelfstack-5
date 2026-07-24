@@ -71,37 +71,41 @@ module Reporting
       end
 
       if @pos_session.store.card_reconciliation_grain == "session"
-        @pos_session.pos_close_card_evidences.order(:id).each do |evidence|
-          create_card_comparison!(recon, evidence, "session_merchant_slip", position)
-          position += 1
-        end
+        evidences = @pos_session.pos_close_card_evidences.order(:id).to_a
+        create_aggregated_card_comparison!(recon, evidences, "session_merchant_slip", position) if evidences.any?
       end
     end
 
-    def create_card_comparison!(recon, evidence, type, position)
-      if evidence.status == "unavailable"
+    def create_aggregated_card_comparison!(recon, evidences, type, position)
+      statuses = evidences.map(&:status).uniq
+      raise Error, "cannot mix recorded and unavailable card evidence in one scope" if statuses.size > 1
+
+      if statuses == [ "unavailable" ]
         recon.reconciliation_comparisons.create!(
           comparison_type: type,
           observed_unavailable: true,
-          pos_close_card_evidence: evidence,
-          external_reference: evidence.terminal_reference || evidence.batch_reference,
+          external_reference: evidences.filter_map { |e| e.terminal_reference || e.batch_reference }.join(", ").presence,
           position: position
         )
-      else
-        expected = card_expected_net_cents
-        observed = evidence.net_cents.to_i
-        recon.reconciliation_comparisons.create!(
-          comparison_type: type,
-          precision: evidence.precision,
-          expected_cents: expected,
-          observed_cents: observed,
-          variance_cents: observed - expected,
-          observed_unavailable: false,
-          pos_close_card_evidence: evidence,
-          external_reference: evidence.terminal_reference || evidence.batch_reference,
-          position: position
-        )
+        return
       end
+
+      precisions = evidences.map { |e| e.precision.presence || "net_only" }.uniq
+      raise Error, "cannot mix card evidence precisions in one scope" if precisions.size > 1
+      raise Error, "received_and_refunded card evidence is not operable until its close workflow exists" if precisions.first == "received_and_refunded"
+
+      expected = card_expected_net_cents
+      observed = evidences.sum { |e| e.net_cents.to_i }
+      recon.reconciliation_comparisons.create!(
+        comparison_type: type,
+        precision: "net_only",
+        expected_cents: expected,
+        observed_cents: observed,
+        variance_cents: observed - expected,
+        observed_unavailable: false,
+        external_reference: evidences.filter_map { |e| e.terminal_reference || e.batch_reference }.join(", ").presence,
+        position: position
+      )
     end
 
     def card_expected_net_cents

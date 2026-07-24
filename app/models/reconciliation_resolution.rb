@@ -19,4 +19,29 @@ class ReconciliationResolution < ApplicationRecord
 
   validates :resolution_type, presence: true, inclusion: { in: RESOLUTION_TYPES }
   validates :recorded_at, presence: true
+
+  before_create :reject_create_when_reconciliation_finalized!
+  before_update :reject_mutation_when_reconciliation_finalized!
+  before_destroy :reject_destroy_when_reconciliation_finalized!
+
+  private
+
+  def reject_create_when_reconciliation_finalized!
+    return unless Reconciliation.where(id: reconciliation_id, status: "finalized").exists?
+
+    raise ActiveRecord::ReadOnlyRecord, "cannot add resolutions to a finalized reconciliation"
+  end
+
+  def reject_mutation_when_reconciliation_finalized!
+    return unless Reconciliation.where(id: reconciliation_id, status: "finalized").exists?
+
+    raise ActiveRecord::ReadOnlyRecord, "cannot modify resolutions on a finalized reconciliation"
+  end
+
+  def reject_destroy_when_reconciliation_finalized!
+    return unless Reconciliation.where(id: reconciliation_id, status: "finalized").exists?
+
+    raise ActiveRecord::ReadOnlyRecord, "cannot delete resolutions on a finalized reconciliation"
+  end
 end
+

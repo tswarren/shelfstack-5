@@ -5,6 +5,12 @@ module Reporting
     Error = Class.new(StandardError)
     Result = Data.define(:reconciliation, :success?, :error)
 
+    FINAL_RESOLUTION_TYPES = %w[
+      accepted_variance
+      explained_no_correction
+      linked_domain_correction
+    ].freeze
+
     def initialize(reconciliation:, actor:, approver: nil, approver_pin: nil, reason: nil)
       @reconciliation = reconciliation
       @actor = actor
@@ -28,20 +34,16 @@ module Reporting
 
         if recon.scope_type == "business_day"
           pending = AssembleBusinessDayReconciliation.new(business_day: scope, actor: @actor)
-            .send(:pending_required_session_recons)
+            .pending_required_session_recons
           raise Error, "resolve pending session reconciliations first" if pending.any?
         end
 
-        comparisons = recon.reconciliation_comparisons.to_a
+        comparisons = recon.reconciliation_comparisons.includes(:reconciliation_resolutions).to_a
         if comparisons.empty? && recon.scope_type == "session"
           raise Error, "reconciliation has no comparisons"
         end
 
-        comparisons.select(&:observed_unavailable).each do |comparison|
-          unless accepted_unavailable?(comparison)
-            raise Error, "unavailable evidence must be accepted before finalize"
-          end
-        end
+        comparisons.each { |comparison| validate_comparison_ready!(comparison) }
 
         numeric = comparisons.reject(&:observed_unavailable)
         max_abs_variance = numeric.map { |c| c.variance_cents.to_i.abs }.max || 0
@@ -84,10 +86,25 @@ module Reporting
       @reconciliation.scope_type == "session" ? "reporting.reconcile_session" : "reporting.reconcile_business_day"
     end
 
-    def accepted_unavailable?(comparison)
-      comparison.reconciliation_resolutions
-        .where(superseded: false, resolution_type: "accept_evidence_unavailable")
-        .exists?
+    def validate_comparison_ready!(comparison)
+      active = comparison.reconciliation_resolutions.reject(&:superseded)
+
+      if comparison.observed_unavailable
+        unless active.any? { |r| r.resolution_type == "accept_evidence_unavailable" }
+          raise Error, "unavailable evidence must be accepted before finalize"
+        end
+        return
+      end
+
+      return if comparison.variance_cents.to_i.zero?
+
+      if active.any? { |r| r.resolution_type == "unresolved" }
+        raise Error, "unresolved comparisons cannot be finalized"
+      end
+
+      final = active.find { |r| FINAL_RESOLUTION_TYPES.include?(r.resolution_type) }
+      raise Error, "nonzero variance requires an explained final resolution" if final.nil?
+      raise Error, "final resolution requires an explanation" if final.explanation.blank?
     end
 
     def authorize_variance!(recon, abs_variance, permission)
@@ -101,13 +118,9 @@ module Reporting
         requested_value: abs_variance,
         approver: @approver,
         approver_pin: @approver_pin,
-        approver_permission_key: "reporting.reconcile.approve",
-        self_approver_permission_key: "reporting.reconcile.approve_self",
         pos_session: recon.pos_session
       )
-      return if auth.allowed?
-
-      raise Error, auth.error || "variance approval required"
+      raise Error, auth.error || "variance authorization failed" unless auth.allowed?
     end
   end
 end
