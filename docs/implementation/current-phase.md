@@ -1,7 +1,7 @@
 # Current Phase
 
-**Active delivery phase:** Phase 8 — Catalog refinement & enrichment (planning)  
-**Status:** Phase 7 complete on `main`; Phase 8 plan promoted; implementation not started — first target Gate 8a  
+**Active delivery phase:** Phase 8 — Catalog refinement & enrichment  
+**Status:** Phase 7 complete on `main`; Phase 8 ready for implementation — not started; first target Gate 8a  
 **Phase 7 merge:** `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d accepted; **7e partial** ([#94](https://github.com/tswarren/shelfstack-5/issues/94))  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
 **Phase 6 merge:** `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed)  

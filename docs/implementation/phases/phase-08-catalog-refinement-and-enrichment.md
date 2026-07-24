@@ -1,17 +1,18 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** Planning — decisions accepted; implementation not started
+**Status:** Ready for implementation — not started
 **Date:** 2026-07-24
 **Depends on:** Phase 7 core complete
 **Roadmap position:** Next delivery phase after Phase 7
 **Governing documents:** ADR-0001, ADR-0002, ADR-0003; [catalog-and-products](../../domains/catalog-and-products.md); [architectural-locks](../architectural-locks.md)
 **Carry-forward register:** [deferred-work-register.md](../deferred-work-register.md)
-**Decision note (accepted):** [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)  
-**Open decisions queue:** [open-decisions.md](../open-decisions.md) (OD-P8-01…10)  
+**Decision note:** [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)  
+**Decision register:** [open-decisions.md](../open-decisions.md) (OD-P8-01…10 dispositioned; other open items in that file remain open)
 
 **Source draft (superseded as planning home):** [phase-8-catalog-refinement-ideas.md](../../temp_draft/phase-8-catalog-refinement-ideas.md)
 
-Operating decisions OD-P8-01…10 are accepted — see decision note.
+Operating decisions OD-P8-01 through OD-P8-10 have been dispositioned.
+See the decision note for binding implementation rules.
 
 ---
 
@@ -85,7 +86,7 @@ existing Product + one standard Product Variant
 → streamlined vendor-source linking
 → enrich-existing suggest/apply
 → optional subject and image enrichment
-→ separate multi-variant phase when accepted
+→ separate Phase 8.5 named-variant implementation
 ```
 
 ### Should deliver
@@ -186,12 +187,12 @@ It must not rewrite completed:
 
 ## 6. Phase gates
 
-## 8a — Catalog interaction foundation
+### 8a — Catalog interaction foundation
 
 **Priority:** Must
 **Purpose:** Establish shared controls used by the remaining Phase 8 workflows.
 
-### Scope
+#### Scope
 
 Create reusable controls for:
 
@@ -202,8 +203,10 @@ Create reusable controls for:
 * product search-to-link;
 * product-variant search-to-link;
 * vendor search-to-link;
-* creator search-to-link;
+* a reusable record-picker foundation capable of supporting later Creator lookup;
 * optional create-from-picker actions where authorized.
+
+Creator search-to-link is delivered in Gate 8b after the Creator model exists.
 
 Controls should support, as appropriate:
 
@@ -218,7 +221,7 @@ Controls should support, as appropriate:
 * server-side authorization;
 * accessible labels and focus behavior.
 
-### Exit criteria
+#### Exit criteria
 
 * Product and variant forms no longer depend on unwieldy unfiltered lists for high-volume linking fields.
 * One shared implementation pattern is documented.
@@ -228,23 +231,25 @@ Controls should support, as appropriate:
 
 ---
 
-## 8b — Bibliographic representation and provider foundation
+### 8b — Bibliographic representation and provider foundation
 
 **Priority:** Must
 **Purpose:** Establish a provider-neutral model before implementing product creation.
 
-### Scope
+#### Scope
 
-* provider-neutral lookup adapter;
+* provider-neutral lookup adapter with ISBNdb as the primary production provider;
 * normalized enrichment result;
-* lean creator model;
-* bibliographic field review;
+* Creator model and ordered Product-Creator join;
+* Creator search-to-link using the shared record-picker foundation;
+* accepted minimum bibliographic Product fields (`publication_date`, `publication_date_precision`, `language_code`, `edition_statement`);
 * provider credentials and error handling;
-* import provenance and audit contract;
+* append-only `catalog_enrichment_events` provenance contract;
 * format-mapping boundary;
+* explicit operator-selected secondary-provider lookup (Google Books optional);
 * provider-independent tests.
 
-### Normalized provider result
+#### Normalized provider result
 
 Provider adapters should map their results into a common internal representation before controllers or forms use them.
 
@@ -278,7 +283,7 @@ Not every provider must populate every field.
 
 Application forms and persistence services must not depend directly on ISBNdb- or Google-Books-specific response keys.
 
-### Provider behavior
+#### Provider behavior
 
 The provider boundary must define:
 
@@ -291,27 +296,31 @@ The provider boundary must define:
 * incomplete-result behavior;
 * safe logging;
 * credential redaction;
-* optional provider fallback;
-* optional short-lived lookup caching.
+* explicit operator-selected secondary-provider lookup;
+* no automatic multi-provider fallback in v1;
+* optional short-lived lookup caching for preview-and-accept only.
+
+One user action calls one provider. The operator may intentionally try another enabled provider after no result, incomplete result, error, or a rejected primary result.
 
 A provider failure must not create or partially update a ShelfStack product.
 
-### Exit criteria
+#### Exit criteria
 
-* At least one provider adapter produces a normalized result.
-* Provider calls can be replaced or supplemented without rewriting product persistence.
+* The ISBNdb adapter produces the normalized provider-neutral result.
+* Google Books may be wired as an optional secondary provider without rewriting product persistence.
+* Creator search-to-link uses the shared record-picker foundation.
 * Creator and format mappings can be represented.
 * Provider credentials are not stored in ordinary database fields or logs.
 * Failure behavior is tested.
 
 ---
 
-## 8c — Create from ISBN
+### 8c — Create from ISBN
 
 **Priority:** Must
 **Purpose:** Create a Product and one standard Product Variant from reviewed bibliographic metadata.
 
-### Workflow
+#### Workflow
 
 ```text
 operator enters or scans identifier
@@ -329,7 +338,7 @@ operator enters or scans identifier
 → open product summary
 ```
 
-### Identifier rules
+#### Identifier rules
 
 * ISBN-10 is validated and normalized to ISBN-13 before lookup.
 * An invalid ISBN-10-shaped value must not be converted into a valid-looking ISBN-13.
@@ -338,7 +347,7 @@ operator enters or scans identifier
 * The database uniqueness constraint remains the final duplicate-creation guard.
 * A provider response containing a conflicting identifier must require operator review.
 
-### Preview
+#### Preview
 
 The preview should show:
 
@@ -358,21 +367,21 @@ The preview should show:
 * fields that remain unresolved;
 * provider or mapping warnings.
 
-### Creation policy
+#### Creation policy
 
 On acceptance, ShelfStack creates:
 
 * one Product;
 * one standard Product Variant;
 * creator records or creator links as permitted;
-* optional image and subject-source records if included in the accepted scope;
-* an audit or provenance event.
+* optional image and subject-source records only when Gate 8g policy permits;
+* one `catalog_enrichment_events` row for the successful create.
 
-Creation must occur in one database transaction.
+Creation must occur in one database transaction. The enrichment event commits in that same transaction. A preview or rejected result creates no business provenance event.
 
 The external provider call occurs before the database transaction.
 
-### Operational-field policy
+#### Operational-field policy
 
 External metadata may suggest but must not silently determine:
 
@@ -390,7 +399,7 @@ External metadata may suggest but must not silently determine:
 
 Store defaults and operator confirmation remain authoritative.
 
-### Default safety
+#### Default safety
 
 A newly imported product should not become ordinarily sellable until all required sale-eligibility values resolve.
 
@@ -401,7 +410,7 @@ The creation workflow may use existing configured defaults, but must visibly sho
 * which required values remain missing;
 * whether the standard variant is currently sale eligible.
 
-### Exit criteria
+#### Exit criteria
 
 * A valid ISBN can create one complete Product and standard Variant.
 * An existing canonical product is detected before creation.
@@ -414,16 +423,16 @@ The creation workflow may use existing configured defaults, but must visibly sho
 
 ---
 
-## 8d — Product summary hub
+### 8d — Product summary hub
 
 **Priority:** Must
 **Purpose:** Provide one staff-shaped view of a product without collapsing domain ownership.
 
 The product summary should be a navigable operational surface, not a dump of database fields.
 
-### Summary sections
+#### Summary sections
 
-#### Identity
+##### Identity
 
 * title;
 * subtitle;
@@ -441,7 +450,7 @@ The product summary should be a navigable operational surface, not a dump of dat
 * image or thumbnail;
 * identifier warnings.
 
-#### Standard item
+##### Standard item
 
 * SKU;
 * item name;
@@ -456,7 +465,7 @@ The product summary should be a navigable operational surface, not a dump of dat
 * return and discount settings;
 * sale-eligibility result.
 
-#### Stock
+##### Stock
 
 For the selected store:
 
@@ -470,7 +479,7 @@ For the selected store:
 * link to inventory detail;
 * units by status when individually tracked.
 
-#### Purchasing and demand
+##### Purchasing and demand
 
 * active vendor sources;
 * preferred vendor;
@@ -482,20 +491,19 @@ For the selected store:
 * customer-request commitments;
 * links to the owning workflows.
 
-### Store context
+#### Store context
 
 Product identity is organization-wide, but inventory, demand, purchase orders, receipts, and some sourcing information are store-specific.
 
 The summary must therefore display an explicit store context.
 
-It should support either:
+The primary operational view uses the selected Store.
 
-1. a selected-store operational view; or
-2. an all-store summary with clear store-level breakdowns.
+An optional all-accessible-Stores table may supplement the selected-Store view, but it does not replace it. Any aggregate or cross-Store quantity must be explicitly labeled, and inaccessible Stores must not appear.
 
 The interface must not display an unlabeled organization-wide stock number as though it belonged to one store.
 
-### Effective values
+#### Effective values
 
 The summary should show the effective value and its source.
 
@@ -512,7 +520,7 @@ Tracking mode: Quantity
 Source: Standard item
 ```
 
-Suggested source labels:
+Source labels:
 
 * Item override;
 * Product override;
@@ -525,7 +533,7 @@ The summary must use the same application-level resolvers used by sale eligibili
 
 It must not independently reproduce inheritance logic in view helpers.
 
-### Exit criteria
+#### Exit criteria
 
 * Staff can understand the product’s current operational state from one screen.
 * Store-specific values are clearly scoped.
@@ -536,12 +544,12 @@ It must not independently reproduce inheritance logic in view helpers.
 
 ---
 
-## 8e — Vendor-source linking workflow
+### 8e — Vendor-source linking workflow
 
 **Priority:** Should
 **Purpose:** Make an existing item orderable without navigating several unrelated screens.
 
-### Scope
+#### Scope
 
 From the product or item workflow, authorized users should be able to:
 
@@ -559,7 +567,7 @@ From the product or item workflow, authorized users should be able to:
 * see last ordered and last received dates;
 * deactivate a source.
 
-### Rules
+#### Rules
 
 * The source must link to the Product Variant used for purchasing.
 * Duplicate active links for the same variant and vendor are not allowed.
@@ -568,7 +576,7 @@ From the product or item workflow, authorized users should be able to:
 * Imported publisher metadata may help search for a vendor but does not establish that the publisher is the supplying vendor.
 * Product setup must not require a vendor source unless the item is being made purchasable through a workflow that requires one.
 
-### Exit criteria
+#### Exit criteria
 
 * A standard item can be linked to an existing vendor from the product workflow.
 * Duplicate source links are prevented.
@@ -578,12 +586,12 @@ From the product or item workflow, authorized users should be able to:
 
 ---
 
-## 8f — Enrich existing product
+### 8f — Enrich existing product
 
 **Priority:** Should
 **Purpose:** Apply selected bibliographic improvements without overwriting ShelfStack operational decisions.
 
-### Workflow
+#### Workflow
 
 ```text
 open existing product
@@ -595,10 +603,12 @@ open existing product
 → choose apply mode
 → validate protected fields
 → apply selected changes
-→ record provenance and audit
+→ record catalog_enrichment_events in the same transaction
 ```
 
-### Apply modes
+A preview or rejected result creates no business provenance event.
+
+#### Apply modes
 
 Initial modes:
 
@@ -607,9 +617,9 @@ Initial modes:
 
 A broad “replace all” action should not be included in v1.
 
-### Field categories
+#### Field categories
 
-#### ShelfStack identity fields
+##### ShelfStack identity fields
 
 Never provider-managed:
 
@@ -618,13 +628,13 @@ Never provider-managed:
 * internal record IDs;
 * generated sequence information.
 
-#### Canonical product identifier
+##### Canonical product identifier
 
 * Used for lookup and matching.
 * Not replaced through ordinary enrichment after operational use.
 * Correction requires a separate controlled identifier-correction workflow.
 
-#### Operational controls
+##### Operational controls
 
 Protected from automatic import:
 
@@ -641,7 +651,7 @@ Protected from automatic import:
 * return policy;
 * availability dates unless explicitly selected and supported.
 
-#### Bibliographic metadata
+##### Bibliographic metadata
 
 May be suggested and selectively applied:
 
@@ -658,17 +668,16 @@ May be suggested and selectively applied:
 * external subjects;
 * external list price.
 
-### External list price
+#### External list price
 
 External list price:
 
 * remains product-level bibliographic or manufacturer metadata;
 * retains currency context where available;
 * does not replace Variant regular selling price;
-* must not be assumed to be valid for the store’s market or currency;
-* may be omitted when provider currency semantics are unclear.
+* may apply when currency matches the organization currency, or when currency is null (null treated as assume organization currency, shown in preview).
 
-### Operational-use protection
+#### Operational-use protection
 
 Whether a product identifier is operationally used must be determined by an application service.
 
@@ -683,7 +692,7 @@ Relevant use may include references from:
 
 The user interface must not determine operational use through an incomplete ad hoc query.
 
-### Exit criteria
+#### Exit criteria
 
 * Current and proposed values are shown side by side.
 * No field changes merely because the provider was queried.
@@ -695,69 +704,64 @@ The user interface must not determine operational use through an incomplete ad h
 
 ---
 
-## 8g — Optional catalog enrichment extensions
+### 8g — Optional catalog enrichment extensions
 
 **Priority:** Nice
 **Purpose:** Add useful enrichment that can ship independently after the core gates.
 
-### 8g.1 Images and thumbnails
+#### 8g.1 Images and thumbnails
 
-Potential support:
+Initial external-image support stores source references and attribution metadata. It does not permanently copy provider image binaries unless the applicable provider policy expressly permits local storage.
+
+Persist `product_images` source rows only when the adapter image-use policy is `remote_display_permitted` or `local_storage_permitted`. Policies `preview_only`, `unsupported`, or uncertain rights create no image row.
+
+Supported metadata:
 
 * source provider;
 * source URL;
 * external record identifier;
 * attribution;
 * retrieved timestamp;
-* image position;
-* optional locally stored attachment.
+* image position.
 
-Before storing provider images locally, confirm:
+Do not copy externally sourced binaries into Active Storage by default. Local storage of provider binaries requires provider-specific confirmation that policy is `local_storage_permitted`. Staff-uploaded images are a separate source type and are not introduced by default in Gate 8g.
 
-* provider caching terms;
-* attribution requirements;
-* source URL stability;
-* allowed transformations;
-* deletion obligations.
+Google Books images must not be copied permanently in Phase 8.
 
 Image failure must not block product creation.
 
-### 8g.2 External subjects
+#### 8g.2 External subjects
 
-External provider subjects should be retained separately from ShelfStack merchandise-class assignment.
-
-Potential fields:
+External provider subjects are retained separately from ShelfStack merchandise-class assignment as descriptive source metadata, not operational classification.
 
 ```text
-taxonomy
-external_code
-external_label
-provider
-product
-position
+product_external_subjects
+- id, product_id, taxonomy, external_code, external_label, provider, position, timestamps
 ```
 
-External subjects are descriptive source metadata, not ShelfStack operational classification.
+#### 8g.3 BISAC-to-merchandise-class mapping
 
-### 8g.3 BISAC-to-merchandise-class mapping
-
-A mapping may connect:
+External subject mappings connect an organization-scoped taxonomy and external code to one existing Merchandise Class:
 
 ```text
-taxonomy + external code
-→ existing merchandise class
+external_subject_mappings
+- id, organization_id, taxonomy, external_code, merchandise_class_id, active, timestamps
 ```
+
+Unique active mapping per `(organization_id, taxonomy, external_code)`.
 
 Rules:
 
 * mappings suggest an existing merchandise class;
+* applying a mapped class requires operator acceptance;
+* adding or changing a mapping does not automatically reclassify existing Products;
 * unmapped subjects remain unresolved;
 * the system does not automatically create merchandise classes;
 * several subject matches may require operator selection;
 * the mapping does not create a parallel display hierarchy;
 * manual ShelfStack classification remains authoritative.
 
-### 8g.4 Catalog data-quality views
+#### 8g.4 Catalog data-quality views
 
 Potential views:
 
@@ -775,13 +779,13 @@ These views may ship incrementally and are not required for the core 8a–8d exi
 
 ---
 
-## 7. Creators
+## 7. Creator implementation contract
 
-## 7.1 Decision direction
+Phase 8 introduces an organization-owned `Creator` master and an ordered `ProductCreator` join.
 
-Use a creator master with a Product-to-Creator join.
+Binding detail and rationale: [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md) (OD-P8-02).
 
-Suggested minimum model:
+### Schema
 
 ```text
 creators
@@ -807,29 +811,25 @@ product_creators
 - updated_at
 ```
 
+`normalized_name` is indexed but not unique. Different Creators may share a normalized name.
+
 ### Initial roles
 
-A controlled initial list may include:
+Controlled string allowlist (no admin control-master table in Phase 8):
 
-* author;
-* editor;
-* illustrator;
-* translator;
-* narrator;
-* photographer;
-* contributor.
-
-The list may expand through a controlled master or application enum according to the accepted implementation approach.
+```text
+author editor illustrator translator narrator photographer contributor
+```
 
 ### Matching behavior
 
 * Normalize names for search and match suggestions.
-* Do not require `normalized_name` to be globally unique.
-* Identical names may represent different people.
-* A confident exact match may be suggested.
-* Ambiguous matches require operator selection.
-* When no acceptable match exists, an authorized import may create a new creator.
-* Duplicate creators are acceptable in v1.
+* Exact normalized-name match → suggest that Creator.
+* Several exact matches or other ambiguity → require operator selection.
+* When no acceptable match exists, an authorized import may create a new Creator.
+* Name matching is advisory; do not merge Creators solely because normalized names match.
+* Duplicate Creators are acceptable in v1.
+* Same Creator and role on one Product uses soft validation (not a hard unique database constraint).
 * Perfect identity reconciliation is not a Phase 8 requirement.
 
 ### Ordering and credit
@@ -839,11 +839,21 @@ The list may expand through a controlled master or application enum according to
 * `credited_as` may retain edition-specific presentation.
 * Do not introduce a general `primary` Boolean unless a concrete workflow requires it.
 
-A later data-quality workflow may merge duplicate creator records.
+Authorized create-from-ISBN may create missing Creator rows in the same transaction as Product and Variant. Any failure rolls back the complete creation.
+
+Creator merging remains deferred data-quality work.
 
 ---
 
 ## 8. Import provenance and audit
+
+Phase 8 uses a dedicated append-only `catalog_enrichment_events` table (OD-P8-09). Ordinary application logs alone are not sufficient business provenance.
+
+Actions:
+
+```text
+create | fill_empty | selected_apply
+```
 
 ShelfStack must retain enough evidence to answer:
 
@@ -852,20 +862,15 @@ ShelfStack must retain enough evidence to answer:
 * when the data was retrieved;
 * which user applied it;
 * which Product was affected;
-* whether the action created, filled, or replaced data;
+* which action was performed;
 * which fields were applied;
 * which warnings were accepted.
 
-A provenance record or existing audit-event structure may be used.
+The event is committed atomically with the associated Product / Variant / Creator / subject / image changes. A preview or rejected result creates no business provenance event.
 
-The implementation does not need to retain complete raw provider payloads indefinitely unless required for:
+Events are immutable. Later edits create new enrichment events or ordinary catalog audit records.
 
-* provider compliance;
-* debugging;
-* replay;
-* data lineage.
-
-Raw payload storage must not expose credentials or unnecessary personal data.
+Do not retain complete raw provider payloads as permanent business evidence. Short-lived debugging retention, if any, must not expose credentials or unnecessary personal data.
 
 ---
 
@@ -933,30 +938,30 @@ Names are illustrative rather than prescriptive.
 
 ---
 
-## 11. Data and schema review
+## 11. Required data and schema changes
 
-Before implementation, review whether the existing Product schema needs additional fields for:
+Phase 8b adds the accepted minimum bibliographic Product fields (OD-P8-10):
 
-* publication or release date;
-* language code;
-* edition statement;
-* normalized descriptions;
-* enrichment provenance;
-* image relationships;
-* external subjects.
+* `publication_date`;
+* `publication_date_precision` (`year` | `month` | `day` when present);
+* `language_code`;
+* `edition_statement`.
 
-Do not add fields merely because one provider returns them.
+Phase 8 also introduces:
 
-Each persisted field should satisfy at least one of:
+* `creators`;
+* `product_creators`;
+* `catalog_enrichment_events`.
 
-* staff need it for identifying the product;
-* it is operationally useful;
-* it is valuable for search;
-* it supports a planned report;
-* it is needed to reproduce provider attribution;
-* it prevents repeated manual entry.
+Optional Gate 8g may introduce:
 
-Provider-specific fields should remain in adapters or source records rather than becoming first-class Product columns without broader meaning.
+* `product_images`;
+* `product_external_subjects`;
+* `external_subject_mappings`.
+
+Do not add fields merely because one provider returns them. Do not create first-class Product columns for page count, dimensions, series, Dewey/LCC, reviews, provider IDs, or similar provider-specific attributes without a concrete new requirement.
+
+Provider-specific fields remain in adapters or related source tables rather than becoming Product columns without broader meaning. UI may label `name` as **Title**; do not rename the column.
 
 ---
 
@@ -992,7 +997,7 @@ It should not attempt to reproduce every historical transaction on the Product p
 
 ## 13. Testing requirements
 
-## 13.1 Identifier and duplicate behavior
+### 13.1 Identifier and duplicate behavior
 
 Test:
 
@@ -1005,7 +1010,7 @@ Test:
 * concurrent create attempts;
 * provider response with conflicting identifier.
 
-## 13.2 Provider behavior
+### 13.2 Provider behavior
 
 Test:
 
@@ -1016,11 +1021,12 @@ Test:
 * timeout;
 * rate limiting;
 * malformed provider response;
-* fallback provider when implemented;
+* operator-selected secondary provider when enabled;
+* no automatic multi-provider fallback;
 * safe credential handling;
 * no partial records after failure.
 
-## 13.3 Create-from-ISBN
+### 13.3 Create-from-ISBN
 
 Test:
 
@@ -1034,7 +1040,7 @@ Test:
 * no inventory ledger entry;
 * effective-value warnings shown.
 
-## 13.4 Enrich existing
+### 13.4 Enrich existing
 
 Test:
 
@@ -1043,17 +1049,20 @@ Test:
 * selected apply changes only selected fields;
 * protected fields remain unchanged;
 * operational identifier remains protected;
-* provider and user provenance retained;
+* provider and user provenance retained on `catalog_enrichment_events`;
+* preview creates no enrichment event;
 * creator additions retain role and order;
-* failed apply rolls back all changes;
+* failed apply rolls back all changes including provenance;
 * enrichment creates no inventory movement.
 
-## 13.5 Product hub
+### 13.5 Product hub
 
 Test:
 
-* selected-store stock isolation;
-* all-store totals, if supported;
+* selected-Store stock isolation;
+* all-accessible-Stores breakdown when implemented;
+* no unauthorized Stores in cross-store views;
+* unlabeled cross-store aggregates rejected;
 * effective values match central resolver;
 * authorization of cost display;
 * Product Request and PO links are correctly scoped;
@@ -1061,7 +1070,7 @@ Test:
 * inactive or missing configuration warnings are visible;
 * completed historical facts are not recalculated.
 
-## 13.6 Shared controls
+### 13.6 Shared controls
 
 Test:
 
@@ -1077,31 +1086,35 @@ Test:
 
 ## 14. Phase exit criteria
 
-## 14.1 Core Phase 8 exit
+### 14.1 Core Phase 8 exit
 
-Phase 8 core is complete when Gates 8a–8d are accepted.
+Phase 8 core is complete when Gates 8a–8d are implemented, their exit criteria are satisfied, and the resulting work is accepted.
 
 Required outcomes:
 
 * shared linking controls are available;
-* provider-neutral enrichment infrastructure exists;
-* lean creators are represented;
+* provider-neutral enrichment infrastructure exists with ISBNdb as the primary adapter;
+* Creators are represented and linkable through the shared picker;
 * a valid ISBN can create one reviewed Product and standard Variant;
 * existing products are detected before create;
 * provider failure creates no partial records;
 * operational fields are protected;
-* the product hub provides explicit store context;
+* successful creates and applies write `catalog_enrichment_events` atomically;
+* the product hub provides selected-Store context as the primary view;
 * effective values and their sources are visible;
 * catalog changes create no inventory effects;
 * tests cover provider failure, duplicates, protected fields, and store isolation.
 
-## 14.2 Follow-on exit
+### 14.2 Phase closure
 
-Gates 8e and 8f should be completed before Phase 8 is considered fully closed unless explicitly moved to delivery debt.
+Phase 8 is closed when Gates 8e and 8f are either:
 
-Optional Gate 8g work may be:
+* implemented and accepted; or
+* explicitly moved to the Deferred Work Register with a named future target.
 
-* completed;
+Optional Gate 8g never blocks Phase 8 closure. Unimplemented 8g items may be:
+
+* completed later;
 * moved to the Deferred Work Register;
 * assigned to a later catalog-hardening phase.
 
@@ -1109,36 +1122,28 @@ No optional gate should keep the core phase indefinitely open.
 
 ---
 
-## 15. Multi-variant follow-on
+## 15. Multi-variant follow-on (Phase 8.5)
 
 Multi-variant support is desirable but is not part of the Phase 8 core.
 
-Treat it as:
+Treat it as a separate Phase 8.5 named-variant implementation:
 
 ```text
 Phase 8.5 — Minimal Multi-Variant Enablement
 ```
 
-or another explicitly named follow-on phase.
+### Accepted direction
 
-### Required decision
+OD-P8-07 accepts the following direction for Phase 8.5:
 
-OD-P8-07 must establish:
+* `single` and `named` variant structures;
+* several staff-named Variants under one Product;
+* no option dimensions or variant matrices;
+* exact Variant resolution from Variant SKU;
+* operator selection when a Product identifier resolves several eligible Variants;
+* no silent default Variant selection.
 
-* allowed variant structures;
-* whether v1 supports named variants only or structured options;
-* variant naming;
-* default variant behavior;
-* product scan behavior;
-* POS selection behavior;
-* vendor-source behavior;
-* Product Request behavior;
-* stock-summary behavior;
-* receiving behavior;
-* migration of current products;
-* interaction between new and used variants;
-* tracking-mode defaults;
-* whether a product may contain both quantity- and individually tracked variants.
+Phase 8.5 still requires a short cross-domain implementation packet before schema unlock or code. That packet must cover POS selection, vendor-source, Product Request, stock-summary, receiving, migration of current products, tracking-mode defaults, and related cross-domain behavior.
 
 ### Minimum migration concept
 
@@ -1149,19 +1154,19 @@ existing Product
 └── existing standard Product Variant
 ```
 
-The implementation may later:
+Phase 8.5 may later:
 
 * remove the unique index on `product_variants.product_id`;
 * relax the `variant_structure = single` constraint;
 * permit several named variants.
 
-Those schema changes must not occur until the cross-domain behavior is accepted.
+Those schema changes must not occur until the Phase 8.5 cross-domain packet is accepted.
 
 ---
 
-## 16. Open decisions
+## 16. Decision disposition
 
-**Disposition:** OD-P8-01 through OD-P8-10 are recorded in [open-decisions.md](../open-decisions.md). Full text: [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md).
+**Disposition:** OD-P8-01 through OD-P8-10 are dispositioned in [open-decisions.md](../open-decisions.md). Binding rules: [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md).
 
 | ID | Decision | Status | Needed for |
 | --- | --- | --- | --- |
@@ -1178,7 +1183,7 @@ Those schema changes must not occur until the cross-domain behavior is accepted.
 
 ### Before Gate 8b
 
-Required decisions are **accepted** (01, 02, 04, 08, 09, 10). Optional 8g decisions (03, 05) are also accepted early. OD-P8-06 remains deferred. OD-P8-07 does not block Phase 8 core.
+Required decisions for core gates are accepted (01, 02, 04, 08, 09, 10). Optional 8g decisions (03, 05) are also accepted early. OD-P8-06 remains deferred. OD-P8-07 is accepted directionally with delivery in Phase 8.5 and does not block Phase 8 core.
 
 ---
 
@@ -1240,10 +1245,13 @@ rather than remaining only in the phase plan.
 
 ---
 
-## 19. Next steps
+## 19. Implementation sequence
 
-1. ~~Review and accept Phase 8 core boundaries / OD-P8-01…10~~ — done.
-2. ~~Promote this draft to `phases/phase-08-…`~~ — done.
-3. Keep DWR-021 multi-variant targeted to Phase 8.5; DWR-024 publisher party deferred.
-4. Create GitHub issues only for accepted, branch-sized gate work.
-5. Begin implementation with shared linking controls (8a), then bibliographic/provider foundation and create-from-ISBN (8b–8c).
+1. Deliver Gate 8a shared record-picker infrastructure.
+2. Deliver Gate 8b schema and provider foundation (including Creator model and Creator search-to-link).
+3. Deliver Gate 8c create-from-ISBN.
+4. Deliver Gate 8d Product summary hub.
+5. Evaluate and schedule Gates 8e and 8f (or move them to the Deferred Work Register with a named target).
+6. Record unimplemented Gate 8g items in the Deferred Work Register as needed.
+7. Keep DWR-021 multi-variant targeted to Phase 8.5 (cross-domain packet before code); DWR-024 publisher party deferred.
+8. Create GitHub issues only for accepted, branch-sized gate work.
