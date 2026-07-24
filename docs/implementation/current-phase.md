@@ -13,6 +13,7 @@
 **Decision note (Phase 7):** [phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md)  
 **Phase 8 plan:** [phases/phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md)  
 **Decision note (Phase 8):** [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) (OD-P8-01…10 accepted / deferred as noted)  
+**Phase 8 issues:** Gate 8a [#95](https://github.com/tswarren/shelfstack-5/issues/95); 8b [#96](https://github.com/tswarren/shelfstack-5/issues/96); 8c [#97](https://github.com/tswarren/shelfstack-5/issues/97); 8d [#98](https://github.com/tswarren/shelfstack-5/issues/98); 8e [#99](https://github.com/tswarren/shelfstack-5/issues/99); 8f [#100](https://github.com/tswarren/shelfstack-5/issues/100); 8g optional [#101](https://github.com/tswarren/shelfstack-5/issues/101)  
 **Source draft (superseded):** [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md)  
 
 **Phase 6.5 plan (complete):** [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md)  
@@ -21,7 +22,7 @@
 
 ## Immediate next work
 
-1. Start Phase 8 Gate 8a (shared linking controls); then 8b–8c bibliographic/provider foundation and create-from-ISBN; keep enrichment ahead of multi-variant (Phase 8.5).
+1. Start Phase 8 Gate 8a ([#95](https://github.com/tswarren/shelfstack-5/issues/95)); then 8b–8c ([#96](https://github.com/tswarren/shelfstack-5/issues/96), [#97](https://github.com/tswarren/shelfstack-5/issues/97)); keep enrichment ahead of multi-variant (Phase 8.5).
 2. Optional short ops-hardening before or beside Phase 8 start: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md):
    - Linked domain correction resolutions — [#89](https://github.com/tswarren/shelfstack-5/issues/89)
