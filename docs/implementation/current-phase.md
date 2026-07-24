@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 8 — Catalog refinement & enrichment  
-**Status:** Phase 8 in progress — Gate 8a merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102), closes [#95](https://github.com/tswarren/shelfstack-5/issues/95)); Gate 8b Slice 1 (schema + Creators) complete on `feat/p8-96-biblio-creators-enrichment-schema`, not yet merged; Slice 2 (ISBNdb/Google Books adapters) complete on `feat/p8-96-external-metadata-adapters` ([#96](https://github.com/tswarren/shelfstack-5/issues/96)), not yet merged  
+**Status:** Phase 8 in progress — Gates 8a–8b merged to `main` (PRs [#102](https://github.com/tswarren/shelfstack-5/pull/102), [#103](https://github.com/tswarren/shelfstack-5/pull/103), [#104](https://github.com/tswarren/shelfstack-5/pull/104)); Gate 8c create-from-ISBN landing ([#97](https://github.com/tswarren/shelfstack-5/issues/97)); next Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))  
 
 **Phase 7 merge:** `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d accepted; **7e partial** ([#94](https://github.com/tswarren/shelfstack-5/issues/94))  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
@@ -23,8 +23,8 @@
 
 ## Immediate next work
 
-1. Merge Gate 8b Slice 1 then Slice 2 (provider-neutral ISBNdb/Google Books adapters; [#96](https://github.com/tswarren/shelfstack-5/issues/96)), then start Gate 8c ([#97](https://github.com/tswarren/shelfstack-5/issues/97)); keep enrichment ahead of multi-variant (Phase 8.5). PO/receipt nested line pickers remain a follow-on after 8a (DWR-020).
-2. Optional short ops-hardening before or beside Phase 8 start: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
+1. Merge Gate 8c create-from-ISBN ([#97](https://github.com/tswarren/shelfstack-5/issues/97)), then deliver Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98)); keep enrichment ahead of multi-variant (Phase 8.5). PO/receipt nested line pickers remain a follow-on after 8a (DWR-020).
+2. Optional short ops-hardening beside Phase 8: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md):
    - Linked domain correction resolutions — [#89](https://github.com/tswarren/shelfstack-5/issues/89)
    - Resolution superseding / post-finalization policy — [#90](https://github.com/tswarren/shelfstack-5/issues/90)
@@ -40,6 +40,7 @@
 
 ## Completed recently
 
+- Gate 8b bibliographic schema, Creators, and ISBNdb/Google Books adapters merged to `main` (PRs [#103](https://github.com/tswarren/shelfstack-5/pull/103), [#104](https://github.com/tswarren/shelfstack-5/pull/104); closes [#96](https://github.com/tswarren/shelfstack-5/issues/96)).
 - Gate 8a shared record-picker merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102), closes [#95](https://github.com/tswarren/shelfstack-5/issues/95)).
 - Phase 7 — Reporting and Reconciliation merged to `main` at `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d complete; 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)).
 - Deferred work organization: [deferred-work-register.md](deferred-work-register.md) + GitHub follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94).

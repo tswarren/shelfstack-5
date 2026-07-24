@@ -1,0 +1,243 @@
+<% product_attrs = @preview.proposed_product_attrs || {} %>
+<% variant_attrs = @preview.proposed_variant_attrs || {} %>
+<% list_price = @preview.list_price_proposal %>
+<% normalized = @preview.normalized_result %>
+
+<%= render "shared/page_header", title: "Preview product import",
+      subtitle: "Review bibliographic metadata before creating a Product and standard Variant. Nothing is saved until you accept." %>
+
+<% if @error.present? %>
+  <div class="ss-alert ss-alert-danger" role="alert"><%= @error %></div>
+<% end %>
+
+<% if @preview.warnings.present? %>
+  <div class="ss-alert ss-alert-warning" role="alert">
+    <p><strong>Warnings</strong></p>
+    <ul>
+      <% @preview.warnings.each do |warning| %>
+        <li><%= warning.is_a?(Hash) ? "#{warning["code"]}: #{warning["message"]}" : warning %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<section class="record-section">
+  <h2>Lookup</h2>
+  <dl class="detail-list">
+    <div><dt>Requested identifier</dt><dd><%= @preview.requested_identifier %></dd></div>
+    <div><dt>Canonical identifier</dt><dd><%= @preview.canonical_identifier %></dd></div>
+    <div><dt>Provider</dt><dd><%= @preview.provider %></dd></div>
+    <% if normalized&.provider_record_id.present? %>
+      <div><dt>Provider record</dt><dd><%= normalized.provider_record_id %></dd></div>
+    <% end %>
+  </dl>
+</section>
+
+<%= form_with url: accept_product_imports_path, method: :post, class: "form" do %>
+  <%= hidden_field_tag :return_to, @return_to %>
+  <%= hidden_field_tag :identifier, @preview.canonical_identifier.presence || @preview.requested_identifier %>
+  <%= hidden_field_tag :provider, @preview.provider %>
+  <%= hidden_field_tag :provider_record_id, normalized&.provider_record_id %>
+  <%= hidden_field_tag :retrieved_at, normalized&.retrieved_at&.iso8601 %>
+  <%= hidden_field_tag :list_price_currency_code, list_price&.currency_code %>
+
+  <% Array(@preview.warnings).each_with_index do |warning, index| %>
+    <% hash = warning.is_a?(Hash) ? warning : { "code" => warning.try(:code), "message" => warning.try(:message) } %>
+    <%= hidden_field_tag "accepted_warnings[#{index}][code]", hash["code"] %>
+    <%= hidden_field_tag "accepted_warnings[#{index}][message]", hash["message"] %>
+  <% end %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Bibliographic fields</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= label_tag :name, "Title" %>
+        <%= text_field_tag :name, product_attrs[:name], class: "input", required: true %>
+      </div>
+      <div class="field">
+        <%= label_tag :subtitle, "Subtitle" %>
+        <%= text_field_tag :subtitle, product_attrs[:subtitle], class: "input" %>
+      </div>
+      <div class="field field-span-2">
+        <%= label_tag :description, "Description" %>
+        <%= text_area_tag :description, product_attrs[:description], class: "input", rows: 4 %>
+      </div>
+      <div class="field">
+        <%= label_tag :publisher_or_manufacturer_name, "Publisher" %>
+        <%= text_field_tag :publisher_or_manufacturer_name, product_attrs[:publisher_or_manufacturer_name], class: "input" %>
+      </div>
+      <div class="field">
+        <%= label_tag :imprint_or_brand_name, "Imprint" %>
+        <%= text_field_tag :imprint_or_brand_name, product_attrs[:imprint_or_brand_name], class: "input" %>
+      </div>
+      <div class="field">
+        <%= label_tag :publication_date, "Publication date" %>
+        <%= text_field_tag :publication_date, product_attrs[:publication_date], class: "input" %>
+        <%= hidden_field_tag :publication_date_precision, product_attrs[:publication_date_precision] %>
+      </div>
+      <div class="field">
+        <%= label_tag :language_code, "Language" %>
+        <%= text_field_tag :language_code, product_attrs[:language_code], class: "input" %>
+      </div>
+      <div class="field">
+        <%= label_tag :edition_statement, "Edition" %>
+        <%= text_field_tag :edition_statement, product_attrs[:edition_statement], class: "input" %>
+      </div>
+      <div class="field">
+        <%= label_tag :product_type, "Product type" %>
+        <%= text_field_tag :product_type, product_attrs[:product_type] || "book", class: "input" %>
+      </div>
+      <div class="field">
+        <%= label_tag :product_format_id, "Product format" %>
+        <%= select_tag :product_format_id,
+              options_from_collection_for_select(@product_formats, :id, :name, product_attrs[:product_format_id]),
+              include_blank: "Select format…", class: "input", required: true %>
+        <% if @preview.format_proposal&.provider_format.present? %>
+          <p class="field-hint">Provider format: <%= @preview.format_proposal.provider_format %></p>
+        <% end %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Creators</h2>
+    <% if @preview.creator_suggestions.blank? %>
+      <p class="muted">No creators were returned by the provider.</p>
+    <% else %>
+      <div class="table-container">
+        <table class="data-table">
+          <caption class="sr-only">Creator assignment suggestions</caption>
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Role</th>
+              <th scope="col">Resolution</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @preview.creator_suggestions.each_with_index do |suggestion, index| %>
+              <tr>
+                <td><%= suggestion.display_name %></td>
+                <td><%= suggestion.role %></td>
+                <td>
+                  <%= hidden_field_tag "creators[#{index}][role]", suggestion.role %>
+                  <%= hidden_field_tag "creators[#{index}][credited_as]", suggestion.credited_as %>
+                  <%= hidden_field_tag "creators[#{index}][display_name]", suggestion.display_name %>
+                  <% case suggestion.resolution %>
+                  <% when :suggest_existing %>
+                    <%= hidden_field_tag "creators[#{index}][action]", "use_existing" %>
+                    <%= hidden_field_tag "creators[#{index}][creator_id]", suggestion.matched_creator_id %>
+                    Use existing creator #<%= suggestion.matched_creator_id %>
+                  <% when :require_selection %>
+                    <%= hidden_field_tag "creators[#{index}][action]", "use_existing" %>
+                    <%= select_tag "creators[#{index}][creator_id]",
+                          options_from_collection_for_select(
+                            Current.organization.creators.where(id: suggestion.candidate_creator_ids).order(:display_name),
+                            :id, :display_name, suggestion.matched_creator_id
+                          ),
+                          include_blank: "Select creator…", class: "input", required: true %>
+                  <% else %>
+                    <%= hidden_field_tag "creators[#{index}][action]", "create" %>
+                    Create “<%= suggestion.display_name %>”
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">External list price</h2>
+    <% if list_price&.amount_cents.present? %>
+      <p>
+        <%= format_money(list_price.amount_cents, currency_code: list_price.currency_code) %>
+        <span class="muted">(external list price — not the store selling price)</span>
+      </p>
+      <% if list_price.assumed_organization_currency? %>
+        <p class="field-hint">Provider omitted currency; ShelfStack assumes <%= Current.organization.default_currency_code %>.</p>
+      <% end %>
+      <% if list_price.persistable? %>
+        <%= hidden_field_tag :list_price_cents, list_price.amount_cents %>
+        <p class="field-hint">This list price will be stored on the Product. It will not set Variant regular price.</p>
+      <% else %>
+        <p class="field-hint">Currency does not match the organization currency, so list price will not be persisted.</p>
+      <% end %>
+    <% else %>
+      <p class="muted">No external list price provided.</p>
+    <% end %>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Operational defaults</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= label_tag :inventory_tracking_mode, "Inventory tracking" %>
+        <%= select_tag :inventory_tracking_mode,
+              options_for_select([ %w[Quantity quantity], %w[Individual individual], %w[None none] ],
+                                 variant_attrs[:inventory_tracking_mode] || "quantity"),
+              class: "input" %>
+        <p class="field-hint">Provider metadata never sets tracking mode, sellable, or selling price.</p>
+      </div>
+    </div>
+
+    <% if @preview.eligibility_fields.present? || @preview.sale_eligibility_blockers.present? %>
+      <h3>Sale eligibility</h3>
+      <p class="muted">Newly imported products stay unsellable until required values are resolved.</p>
+      <% if @preview.sale_eligibility_blockers.present? %>
+        <ul>
+          <% @preview.sale_eligibility_blockers.each do |blocker| %>
+            <li><code><%= blocker %></code></li>
+          <% end %>
+        </ul>
+      <% end %>
+      <% if @preview.eligibility_fields.present? %>
+        <div class="table-container">
+          <table class="data-table compact">
+            <caption class="sr-only">Sale eligibility field status</caption>
+            <thead>
+              <tr>
+                <th scope="col">Field</th>
+                <th scope="col">Status</th>
+                <th scope="col">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @preview.eligibility_fields.each do |field| %>
+                <tr>
+                  <td><%= field.field %></td>
+                  <td><%= field.status %></td>
+                  <td><%= field.source %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+
+  <% if @preview.unresolved_fields.present? %>
+    <section class="record-section">
+      <h2>Unresolved</h2>
+      <ul>
+        <% @preview.unresolved_fields.each do |field| %>
+          <li><%= field %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="form-actions">
+    <% if Current.user&.can?("catalog.create_from_enrichment", store: Current.store) &&
+          Current.user&.can?("catalog.product.create", store: Current.store) %>
+      <%= submit_tag "Create product", class: "button button-primary" %>
+    <% else %>
+      <p class="muted">You can preview this import but are not permitted to create the product.</p>
+    <% end %>
+    <%= link_to "Back", new_product_import_path(identifier: @preview.requested_identifier, provider: @preview.provider, return_to: @return_to),
+          class: "button button-outline" %>
+  </div>
+<% end %>

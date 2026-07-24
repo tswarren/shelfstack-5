@@ -70,9 +70,11 @@ module Catalog
 
     def adapter_args
       args = {}
-      args[:transport] = @transport if @transport
+      transport = @transport || Catalog::Providers.transport_override
+      args[:transport] = transport if transport
       args[:api_key] = @api_key if @api_key
       args
     end
   end
 end
+
