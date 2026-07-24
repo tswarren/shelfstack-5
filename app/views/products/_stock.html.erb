@@ -1,0 +1,88 @@
+<%# locals: summary: %>
+<% stock = summary.stock %>
+<% caps = summary.capabilities %>
+<% store_name = summary.store.name %>
+<section class="record-section">
+  <h2>Stock — <%= store_name %></h2>
+  <% if !caps.stock_view %>
+    <p class="muted">Stock details are not available with your permissions.</p>
+  <% elsif stock.nil? %>
+    <%= render "shared/empty_state",
+          title: "No stock projection",
+          body: "Stock is unavailable for this product at #{store_name}." %>
+  <% elsif stock.tracking_mode == "quantity" %>
+    <div class="summary-strip">
+      <div class="metric">
+        <span class="metric-label">On hand</span>
+        <span class="metric-value"><%= stock.on_hand %></span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Reserved</span>
+        <span class="metric-value"><%= stock.reserved %></span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Unavailable</span>
+        <span class="metric-value"><%= stock.unavailable %></span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Available</span>
+        <span class="metric-value"><%= stock.available %></span>
+      </div>
+      <% unless stock.on_order.nil? %>
+        <div class="metric">
+          <span class="metric-label">On order</span>
+          <span class="metric-value"><%= stock.on_order %></span>
+        </div>
+      <% end %>
+    </div>
+    <% stock_rows = [
+      [ "Last received", stock.last_received_at ? formatted_datetime(stock.last_received_at, format: :short) : "—" ]
+    ] %>
+    <% if caps.inventory_cost_view && !stock.moving_average_cost_cents.nil? %>
+      <% stock_rows << [ "Moving average cost", inventory_money(stock.moving_average_cost_cents, quality: stock.cost_quality) ] %>
+      <% if stock.cost_quality.present? %>
+        <% stock_rows << [ "Cost quality", status_badge(stock.cost_quality.titleize, variant: cost_quality_variant(stock.cost_quality)) ] %>
+      <% end %>
+    <% end %>
+    <%= render "shared/record_summary", rows: stock_rows %>
+    <% if stock.stock_balance_id %>
+      <p>
+        <%= link_to "View stock balance", stock_balance_path(stock.stock_balance_id) %>
+        <% if summary.standard_item %>
+          · <%= link_to "Find in stock list", stock_balances_path(q: summary.standard_item.sku) %>
+        <% end %>
+      </p>
+    <% end %>
+  <% elsif stock.tracking_mode == "individual" %>
+    <% unless stock.on_order.nil? %>
+      <p>On order: <strong><%= stock.on_order %></strong></p>
+    <% end %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Inventory unit status counts for <%= store_name %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% stock.unit_status_counts.each do |status, count| %>
+            <tr>
+              <td><%= status.to_s.titleize %></td>
+              <td class="num"><%= count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "shared/record_summary", rows: [
+      [ "Last received", stock.last_received_at ? formatted_datetime(stock.last_received_at, format: :short) : "—" ]
+    ] %>
+  <% elsif stock.tracking_mode == "none" %>
+    <p class="muted">This item is not inventory-tracked.</p>
+    <%= render "shared/record_summary", rows: [
+      [ "Last received", stock.last_received_at ? formatted_datetime(stock.last_received_at, format: :short) : "—" ]
+    ] %>
+  <% end %>
+</section>

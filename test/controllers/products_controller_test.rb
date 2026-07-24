@@ -14,6 +14,64 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Illustrated Man", response.body
   end
 
+  test "product summary hub frames selected-store ops and organization-wide vendors" do
+    product = products(:sample_book)
+
+    get product_path(product)
+    assert_response :success
+    assert_match "Ops for Main Street", response.body
+    assert_match "Stock — Main Street", response.body
+    assert_match "Orders, receipts, and requests — Main Street", response.body
+    assert_match "Vendor sources — Organization-wide", response.body
+    assert_no_match(/Stock — Organization/i, response.body)
+    assert_match "Standard item", response.body
+    assert_match product.product_variants.first.sku, response.body
+  end
+
+  test "product summary hub omits unauthorized stock section content" do
+    product = products(:sample_book)
+    RolePermission.where(
+      role: roles(:administrator),
+      permission: permissions(:inventory_stock_view)
+    ).delete_all
+
+    get product_path(product)
+    assert_response :success
+    assert_match "Stock details are not available with your permissions", response.body
+    assert_no_match(/View stock balance/, response.body)
+  end
+
+  test "product summary hub omits cost fields without inventory.cost.view" do
+    product = products(:sample_book)
+    RolePermission.where(
+      role: roles(:administrator),
+      permission: permissions(:inventory_cost_view)
+    ).delete_all
+
+    get product_path(product)
+    assert_response :success
+    assert_no_match(/Moving average cost/, response.body)
+  end
+
+  test "product summary hub GET show does not mutate records" do
+    product = products(:sample_book)
+    variant = product.product_variants.first
+
+    assert_no_difference -> { Product.count } do
+      assert_no_difference -> { ProductVariant.count } do
+        assert_no_difference -> { StockBalance.count } do
+          assert_no_difference -> { ProductVariantVendor.count } do
+            get product_path(product)
+          end
+        end
+      end
+    end
+
+    assert_response :success
+    assert_equal product.updated_at.to_i, product.reload.updated_at.to_i
+    assert_equal variant.updated_at.to_i, variant.reload.updated_at.to_i
+  end
+
   test "edit form uses shared record pickers for classification links" do
     product = products(:sample_book)
     get edit_product_path(product)

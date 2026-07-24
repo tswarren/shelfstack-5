@@ -1,7 +1,8 @@
 # Current Phase
 
 **Active delivery phase:** Phase 8 — Catalog refinement & enrichment  
-**Status:** Phase 8 in progress — Gates 8a–8c merged to `main` (PRs [#102](https://github.com/tswarren/shelfstack-5/pull/102)–[#106](https://github.com/tswarren/shelfstack-5/pull/106); [#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#97](https://github.com/tswarren/shelfstack-5/issues/97) closed); Gate 8c review hardening (signed preview provenance, adapter/creator guards) landing before Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))  
+**Status:** Phase 8 in progress — Gates 8a–8d delivered ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#98](https://github.com/tswarren/shelfstack-5/issues/98); Gate 8c hardening [#112](https://github.com/tswarren/shelfstack-5/pull/112); DWR-028 registered [#117](https://github.com/tswarren/shelfstack-5/pull/117)); next Gate 8e vendor-source linking ([#99](https://github.com/tswarren/shelfstack-5/issues/99))  
+
 
 **Phase 7 merge:** `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d accepted; **7e partial** ([#94](https://github.com/tswarren/shelfstack-5/issues/94))  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
@@ -23,7 +24,7 @@
 
 ## Immediate next work
 
-1. Deliver Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98)); keep enrichment ahead of multi-variant (Phase 8.5). PO/receipt nested line pickers remain a follow-on after 8a (DWR-020).
+1. Deliver Gate 8e vendor-source linking ([#99](https://github.com/tswarren/shelfstack-5/issues/99)); keep enrichment ahead of multi-variant (Phase 8.5). PO/receipt nested line pickers remain a follow-on after 8a (DWR-020).
 2. Optional short ops-hardening beside Phase 8: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md):
    - Linked domain correction resolutions — [#89](https://github.com/tswarren/shelfstack-5/issues/89)
@@ -40,7 +41,8 @@
 
 ## Completed recently
 
-- Gate 8c create-from-ISBN merged to `main` (PRs [#105](https://github.com/tswarren/shelfstack-5/pull/105), [#106](https://github.com/tswarren/shelfstack-5/pull/106); closes [#97](https://github.com/tswarren/shelfstack-5/issues/97)). Review hardening: accept binds immutable provenance via signed `Catalog::ProductImportPreviewToken` (30m TTL, org+actor binding); variant regular price never persisted from this path; ISBN accept/existing honor Product Request `return_to`.
+- Gate 8d product summary hub: selected-store ops framing, tracking-mode stock, permission-gated datasets, org-wide vendor sources (`Catalog::BuildProductSummary` / `Catalog::ResolveEffectiveValues`) — [#98](https://github.com/tswarren/shelfstack-5/issues/98).
+- Gate 8c create-from-ISBN merged to `main` (PRs [#105](https://github.com/tswarren/shelfstack-5/pull/105), [#106](https://github.com/tswarren/shelfstack-5/pull/106); closes [#97](https://github.com/tswarren/shelfstack-5/issues/97)). Review hardening: accept binds immutable provenance via signed `Catalog::ProductImportPreviewToken` (30m TTL, org+actor binding); variant regular price never persisted from this path; ISBN accept/existing honor Product Request `return_to` ([#112](https://github.com/tswarren/shelfstack-5/pull/112)).
 - Gate 8b bibliographic schema, Creators, and ISBNdb/Google Books adapters merged to `main` (PRs [#103](https://github.com/tswarren/shelfstack-5/pull/103), [#104](https://github.com/tswarren/shelfstack-5/pull/104); closes [#96](https://github.com/tswarren/shelfstack-5/issues/96)).
 - Gate 8a shared record-picker merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102), closes [#95](https://github.com/tswarren/shelfstack-5/issues/95)).
 - Phase 7 — Reporting and Reconciliation merged to `main` at `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d complete; 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)).

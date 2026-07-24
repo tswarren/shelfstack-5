@@ -1,0 +1,44 @@
+<%# locals: summary: %>
+<% identity = summary.identity %>
+<section class="record-section">
+  <h2>Identity</h2>
+  <%= render "shared/record_summary", rows: [
+    [ "Identifier", tag.code(identity.identifier) ],
+    [ "Alternate identifier", identity.alternate_identifier.presence || "—" ],
+    [ "Product type", identity.product_type&.titleize || "—" ],
+    [ "Format", identity.product_format_name.presence || "—" ],
+    [ "Status", status_badge(identity.status.titleize, variant: product_status_variant(identity.status)) ],
+    [ "Sellable", boolean_status(identity.sellable, true_label: "Sellable", false_label: "Not sellable") ],
+    [ "Publisher / manufacturer", identity.publisher_or_manufacturer_name.presence || "—" ],
+    [ "Imprint / brand", identity.imprint_or_brand_name.presence || "—" ],
+    [ "Publication date", publication_date_label(identity) || "—" ],
+    [ "Language", identity.language_code.presence || "—" ],
+    [ "Edition", identity.edition_statement.presence || "—" ]
+  ] %>
+
+  <% if identity.creators.any? %>
+    <h3 class="record-subsection-title">Creators</h3>
+    <ul class="creator-summary-list">
+      <% identity.creators.each do |creator| %>
+        <li>
+          <% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
+            <%= link_to creator.display_name, edit_creator_path(creator.id) %>
+          <% else %>
+            <%= creator.display_name %>
+          <% end %>
+          — <%= creator.role.to_s.titleize %>
+          <% if creator.credited_as.present? %>
+            (credited as <%= creator.credited_as %>)
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No creators linked.</p>
+  <% end %>
+
+  <% if identity.description.present? %>
+    <h3 class="record-subsection-title">Description</h3>
+    <p><%= simple_format(identity.description) %></p>
+  <% end %>
+</section>

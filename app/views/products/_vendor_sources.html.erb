@@ -1,0 +1,51 @@
+<%# locals: summary: %>
+<% caps = summary.capabilities %>
+<section class="record-section">
+  <h2>Vendor sources — Organization-wide</h2>
+  <% if !caps.vendor_source_view %>
+    <p class="muted">Vendor-source details are not available with your permissions.</p>
+  <% elsif summary.vendor_sources.empty? %>
+    <p class="muted">No active vendor sources for this item.</p>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Organization-wide vendor sources</caption>
+        <thead>
+          <tr>
+            <th scope="col">Vendor</th>
+            <th scope="col">Vendor item code</th>
+            <th scope="col">Preferred</th>
+            <% if caps.purchasing_cost_view %>
+              <th scope="col" class="num">Expected cost</th>
+            <% end %>
+            <th scope="col" class="num">MOQ</th>
+            <th scope="col" class="num">Multiple</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% summary.vendor_sources.each do |source| %>
+            <tr>
+              <td>
+                <%= link_to source.vendor_name, product_variant_vendor_path(source.id) %>
+                <% if caps.vendor_view %>
+                  <span class="muted">
+                    (<%= link_to "Vendor", vendor_path(source.vendor_id) %>)
+                  </span>
+                <% end %>
+              </td>
+              <td><%= source.vendor_item_code.presence || "—" %></td>
+              <td><%= source.preferred ? "Preferred" : "—" %></td>
+              <% if caps.purchasing_cost_view %>
+                <td class="num">
+                  <%= source.expected_unit_cost_cents ? format_money(source.expected_unit_cost_cents) : "—" %>
+                </td>
+              <% end %>
+              <td class="num"><%= source.minimum_order_quantity || "—" %></td>
+              <td class="num"><%= source.order_multiple || "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

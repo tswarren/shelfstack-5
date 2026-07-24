@@ -1,0 +1,108 @@
+<%# locals: summary: %>
+<% ops = summary.store_operations %>
+<% caps = summary.capabilities %>
+<% store_name = summary.store.name %>
+<section class="record-section">
+  <h2>Orders, receipts, and requests — <%= store_name %></h2>
+
+  <h3 class="record-subsection-title">Open purchase orders</h3>
+  <% if !caps.purchase_order_view %>
+    <p class="muted">Purchase-order details are not available with your permissions.</p>
+  <% elsif ops.open_po_lines.empty? %>
+    <p class="muted">No open purchase-order lines for this item at <%= store_name %>.</p>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Open purchase orders for <%= store_name %></caption>
+        <thead>
+          <tr>
+            <th scope="col">PO</th>
+            <th scope="col" class="num">Open qty</th>
+            <th scope="col" class="num">Ordered qty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% ops.open_po_lines.each do |line| %>
+            <tr>
+              <td><%= link_to line.purchase_order_number, purchase_order_path(line.purchase_order_id) %></td>
+              <td class="num"><%= line.open_quantity %></td>
+              <td class="num"><%= line.ordered_quantity %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <h3 class="record-subsection-title">Recent receipts</h3>
+  <% if !caps.receipt_view %>
+    <p class="muted">Receipt details are not available with your permissions.</p>
+  <% elsif ops.recent_receipt_lines.empty? %>
+    <p class="muted">No recent posted receipts for this item at <%= store_name %>.</p>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Recent receipts for <%= store_name %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Receipt</th>
+            <th scope="col">Posted</th>
+            <th scope="col" class="num">Accepted</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% ops.recent_receipt_lines.each do |line| %>
+            <tr>
+              <td><%= link_to line.receipt_number, receipt_path(line.receipt_id) %></td>
+              <td><%= line.posted_at ? formatted_datetime(line.posted_at, format: :short) : "—" %></td>
+              <td class="num"><%= line.accepted_quantity %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <h3 class="record-subsection-title">Open product requests</h3>
+  <% if !caps.request_view %>
+    <p class="muted">Product-request details are not available with your permissions.</p>
+  <% elsif ops.open_requests.empty? %>
+    <p class="muted">No open product requests for this product at <%= store_name %>.</p>
+  <% else %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Open product requests for <%= store_name %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Request</th>
+            <th scope="col">Type</th>
+            <th scope="col">Coverage / detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% ops.open_requests.each do |request| %>
+            <tr>
+              <td><%= link_to "##{request.id}", product_request_path(request.id) %></td>
+              <td><%= request.request_type.to_s.titleize %></td>
+              <td>
+                <% if request.customer_request %>
+                  Requested <%= request.requested_quantity %>
+                  · Fulfilled <%= request.fulfilled_quantity %>
+                  · Reserved <%= request.active_reserved_quantity %>
+                  · On order <%= request.remaining_allocated_quantity %>
+                  · Uncovered <%= request.uncovered_quantity %>
+                <% else %>
+                  Requested <%= request.requested_quantity %>
+                  <% if request.priority.present? %> · Priority <%= request.priority %><% end %>
+                  <% if request.assigned_buyer_name.present? %> · Buyer <%= request.assigned_buyer_name %><% end %>
+                  <% if request.resolution.present? %> · <%= request.resolution.to_s.titleize %><% end %>
+                  · <%= request.status.to_s.titleize %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

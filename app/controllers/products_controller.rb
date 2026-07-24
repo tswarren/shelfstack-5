@@ -24,10 +24,11 @@ class ProductsController < ApplicationController
   end
 
   def show
-    @variants = @product.product_variants.order(:name)
-    @stock_balances = Current.store.stock_balances
-      .where(product_variant_id: @variants.map(&:id))
-      .index_by(&:product_variant_id)
+    @summary = Catalog::BuildProductSummary.call(
+      product: @product,
+      store: Current.store,
+      actor: Current.user
+    )
   end
 
   def new
