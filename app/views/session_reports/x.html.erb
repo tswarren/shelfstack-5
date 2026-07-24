@@ -1,0 +1,47 @@
+<% content_for :title, "Session X" %>
+
+<article class="report-doc">
+  <header class="report-masthead">
+    <div class="report-masthead__title-row">
+      <h1 class="report-masthead__title">Session X</h1>
+      <span class="report-badge report-badge--live">Live · Session <%= @session.status %></span>
+    </div>
+    <p class="report-masthead__meta">
+      <%= Current.store.name %>
+      · <%= @session.pos_device.name %>
+      <% if @session.cash_drawer.present? %>
+        · Drawer <%= @session.cash_drawer.name %>
+      <% else %>
+        · Card-only
+      <% end %>
+      <br>
+      Session #<%= @session.id %>
+      · Business date <%= @session.business_day.reporting_date %>
+      · Cashier <%= @session.cashier_user.username %>
+      <br>
+      Opened <%= formatted_datetime(@session.opened_at, format: :short) %>
+      by <%= @session.opened_by_user.username %>
+      <br>
+      Source cutoff <%= formatted_datetime(@totals.source_cutoff_at, format: :short) %>
+      · Definition <%= @totals.report_definition_version %>
+    </p>
+  </header>
+
+  <div class="report-banner" role="note">
+    <p>Live report — session is still <%= @session.status %>.</p>
+    <p class="muted">
+      Totals may change. This is not a Session Z. Generating this report does not close or reconcile the session.
+    </p>
+  </div>
+
+  <%= render "reporting/session_sections",
+        payload: @totals.to_payload,
+        show_cash: @show_cash,
+        show_cost: @show_cost,
+        show_margin: @show_margin %>
+
+  <div class="report-actions page-actions">
+    <%= link_to "Back to register", register_path, class: "button button-outline" %>
+    <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
+  </div>
+</article>

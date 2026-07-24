@@ -1,0 +1,361 @@
+/* X/Z and close-control report presentation */
+
+.report-doc {
+  max-width: 52rem;
+  margin: 0 auto;
+}
+
+.report-masthead {
+  border: 1px solid var(--border, #d8d4cc);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  background: var(--surface, #fff);
+}
+
+.report-masthead__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.report-masthead__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.report-badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+
+.report-badge--live {
+  color: #0b5f2a;
+  background: #e8f7ee;
+}
+
+.report-badge--final {
+  color: #1c2a4a;
+  background: #e8eef8;
+}
+
+.report-masthead__meta {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.report-banner {
+  border-left: 4px solid #b45309;
+  background: #fff7ed;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.report-banner p {
+  margin: 0.25rem 0 0;
+}
+
+.report-banner p:first-child {
+  margin-top: 0;
+  font-weight: 600;
+}
+
+.report-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.report-kpi {
+  border: 1px solid var(--border, #d8d4cc);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface, #fff);
+}
+
+.report-kpi__label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #6b6560);
+  margin-bottom: 0.25rem;
+}
+
+.report-kpi__value {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-kpi__hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--muted, #6b6560);
+}
+
+.report-section {
+  margin-bottom: 1.25rem;
+  break-inside: avoid;
+}
+
+.report-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  border-bottom: 1px solid var(--border, #d8d4cc);
+  padding-bottom: 0.35rem;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-table th,
+.report-table td {
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--border-subtle, #ebe7e0);
+  vertical-align: top;
+}
+
+.report-table th {
+  text-align: left;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted, #6b6560);
+  font-weight: 600;
+}
+
+.report-table .num,
+.report-table td.num,
+.report-table th.num {
+  text-align: right;
+}
+
+.report-table tr.is-total th,
+.report-table tr.is-total td {
+  font-weight: 700;
+  border-top: 1px solid var(--border, #d8d4cc);
+  border-bottom: 2px solid var(--border, #d8d4cc);
+}
+
+.report-table tr.is-bridge td {
+  font-weight: 600;
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+@media print {
+  .app-header,
+  .app-sidebar,
+  .sidebar-backdrop,
+  .skip-link,
+  .report-actions,
+  .flash,
+  .button,
+  details:not(.report-print-keep) > summary {
+    display: none !important;
+  }
+
+  .app-shell {
+    display: block;
+    min-height: 0;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+  }
+
+  .report-doc {
+    max-width: none;
+    margin: 0;
+    font-size: 10pt;
+    line-height: 1.25;
+  }
+
+  .report-masthead,
+  .report-section,
+  .report-banner {
+    border-color: #000;
+    background: #fff;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .report-masthead {
+    border: 0;
+    border-bottom: 1px solid #000;
+    padding: 0 0 0.35rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .report-masthead__title-row {
+    gap: 0.15rem 0.5rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .report-masthead__title {
+    font-size: 12pt;
+    letter-spacing: 0;
+  }
+
+  .report-badge {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 9pt;
+    letter-spacing: 0;
+  }
+
+  .report-masthead__meta {
+    font-size: 9pt;
+    line-height: 1.25;
+  }
+
+  .report-banner {
+    border: 0;
+    border-bottom: 1px solid #000;
+    border-left-width: 0;
+    padding: 0.2rem 0;
+    margin-bottom: 0.4rem;
+    font-size: 9pt;
+  }
+
+  .report-banner p {
+    margin: 0;
+  }
+
+  /* Receipt-friendly summary: label/value rows, not dashboard cards */
+  .report-kpis {
+    display: block;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid #000;
+    padding-bottom: 0.25rem;
+  }
+
+  .report-kpi {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0 0.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding: 0.05rem 0;
+    box-shadow: none;
+  }
+
+  .report-kpi__label {
+    margin: 0;
+    font-size: 10pt;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #000;
+  }
+
+  .report-kpi__value {
+    font-size: 10pt;
+    font-weight: 700;
+  }
+
+  .report-kpi__hint {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 9pt;
+    color: #000;
+  }
+
+  .report-section {
+    margin-bottom: 0.45rem;
+    break-inside: avoid;
+  }
+
+  .report-section h2 {
+    margin: 0 0 0.1rem;
+    font-size: 10pt;
+    font-weight: 700;
+    border-bottom: 1px solid #000;
+    padding-bottom: 0.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .report-section > .muted,
+  .report-section > p {
+    margin: 0.1rem 0 0;
+    font-size: 9pt;
+    line-height: 1.2;
+  }
+
+  .report-table {
+    font-size: 10pt;
+    line-height: 1.2;
+  }
+
+  .report-table th,
+  .report-table td {
+    padding: 0.05rem 0;
+    border-color: transparent;
+    border-bottom: 0;
+    font-size: 10pt;
+    vertical-align: baseline;
+  }
+
+  .report-table th {
+    text-transform: none;
+    letter-spacing: 0;
+    color: #000;
+    font-size: 9pt;
+    font-weight: 700;
+    padding-bottom: 0.05rem;
+    border-bottom: 1px solid #999;
+  }
+
+  .report-table tr.is-total th,
+  .report-table tr.is-total td {
+    border-top: 1px solid #000;
+    border-bottom: 1px solid #000;
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+  }
+
+  .report-table tr.is-bridge td {
+    border-top: 1px dotted #666;
+    padding-top: 0.1rem;
+  }
+
+  body {
+    color: #000;
+    background: #fff;
+  }
+
+  a {
+    color: #000;
+    text-decoration: none;
+  }
+}

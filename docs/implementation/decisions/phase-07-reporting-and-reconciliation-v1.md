@@ -26,16 +26,21 @@ SESSION CLOSE
   Count drawer (cash-enabled)
   Close session
   — no external card prompt —
+  → offer [Reconcile session now] or continue
+     (cash-enabled session recon remains required before day recon finalizes)
 
 BUSINESS-DAY CLOSE
   Confirm all sessions closed
   Enter one terminal/batch net total (+ optional reference)
   Close business day (+ persist Business-Day Z)
 
-RECONCILIATION
-  Expected versus observed
+DAY RECONCILIATION
+  Pending session recons (manager queue) if any remain
+  Day card/cash expected versus observed
   [Reconcile now] or [Review later]
 ```
+
+**Operator navigation:** hierarchy requires configured session reconciliation before business-day reconciliation finalizes. Gates 7b–7d must surface that clearly (post-session-close prompt and/or day-recon manager queue). This is UX navigation, not a separate product decision.
 
 Session-grain card reconciliation is an optional tighter-control mode for stores that maintain merchant slips by cashier, can isolate terminal activity by session, and want individual cashier card accountability. Most stores should never enable it.
 
@@ -161,17 +166,20 @@ Structured snapshot is authoritative (definition version, historical labels, sou
 - UI may offer one-action “Reconcile now” / “reconcile exact matches” after close; it remains a separate audited finalize action.
 - Draft assembly, then finalize with `reconciled_at` / `reconciled_by`.
 - After finalization: immutable or append-only superseding corrections only.
+- **MVP delivery note:** finalization is fully immutable (header + children); append-only superseding and linked domain-correction resolutions are deferred ([#57](https://github.com/tswarren/shelfstack-5/issues/57), [#56](https://github.com/tswarren/shelfstack-5/issues/56)). Operable resolutions are Explain / Accept variance / accept unavailable, matched to comparison state.
 
 ### 16 — Variance acceptance authority
 
 | Result | MVP behavior |
 | --- | --- |
 | Exact match (zero variance) | User with reconcile permission may finalize (one-click allowed) |
-| Nonzero variance within user’s configured authority | Same user may explain and accept (reuse cash-style numeric authority; card uses analogous threshold when configured) |
+| Nonzero variance within user’s configured authority | Same user may explain and accept |
 | Variance above authority | Requires another authorized user (ADR-0011 pattern) |
 | Evidence unavailable | Reason required; remains unresolved or accepted via authorized exception resolution — do not invent $0 observed |
 
-Close may persist nonzero variance without resolving it. Accepting variance is a reconciliation act. Self-acceptance of over-threshold variance requires distinct elevated self-approval permission, reauthentication, reason, and audit (same pattern as other ADR-0011 self-approvals). Stores without configured thresholds fail closed for accepting differences while still allowing close with proper evidence or `evidence_unavailable`.
+**Shared threshold:** membership `cash_variance_review_threshold_cents` is the single Phase 7 limit for accepting both cash and card reconciliation differences. Fail closed when null. Exact-match finalize needs no threshold.
+
+Close may persist nonzero variance without resolving it. Accepting variance is a reconciliation act. Self-acceptance of over-threshold variance requires distinct elevated self-approval permission, reauthentication, reason, and audit (same pattern as other ADR-0011 self-approvals).
 
 ### 17 — Pre-Phase-7 closed records
 

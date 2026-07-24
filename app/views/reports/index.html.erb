@@ -1,9 +1,79 @@
 <% content_for :title, "Reports" %>
 
 <%= render "shared/page_header", title: "Reports",
-      subtitle: "Read-only operational views over posted purchasing, receiving, and request facts." %>
+      subtitle: "Read-only operational views and Phase 7 report pack over posted facts." %>
 
 <div class="workspace-landing">
+  <% if @can_reconcile %>
+    <section class="card workspace-card">
+      <h2>Reconciliations</h2>
+      <p class="muted">Pending session and business-day reconciliation queue.</p>
+      <div class="page-actions">
+        <%= link_to "Open queue", reconciliations_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_sales %>
+    <section class="card workspace-card">
+      <h2>Commercial activity</h2>
+      <p class="muted">Gross, discounts, returns, net sales by business-day reporting date.</p>
+      <div class="page-actions">
+        <%= link_to "View", commercial_activity_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_tenders %>
+    <section class="card workspace-card">
+      <h2>Tender activity</h2>
+      <p class="muted">Received, refunded, and net by tender category.</p>
+      <div class="page-actions">
+        <%= link_to "View", tender_activity_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_tax %>
+    <section class="card workspace-card">
+      <h2>Tax activity</h2>
+      <p class="muted">Completed tax components by receipt code.</p>
+      <div class="page-actions">
+        <%= link_to "View", tax_activity_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_inventory %>
+    <section class="card workspace-card">
+      <h2>Current stock</h2>
+      <p class="muted">On-hand, reserved, unavailable, available, and on-order as-of now.</p>
+      <div class="page-actions">
+        <%= link_to "View", stock_snapshot_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_stored_value %>
+    <section class="card workspace-card">
+      <h2>Stored-value activity</h2>
+      <p class="muted">Store-scoped issued, reloaded, redeemed, and refunded activity from completed POS.</p>
+      <div class="page-actions">
+        <%= link_to "View", stored_value_liability_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @can_view_audit %>
+    <section class="card workspace-card">
+      <h2>Integrity diagnostics</h2>
+      <p class="muted">Non-blocking stock, snapshot, cost, and stored-value checks.</p>
+      <div class="page-actions">
+        <%= link_to "View", integrity_diagnostics_report_path, class: "button button-outline" %>
+      </div>
+    </section>
+  <% end %>
+
   <% if @can_view_purchase_orders %>
     <section class="card workspace-card">
       <h2>Open purchase orders</h2>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_23_205630) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,18 +30,39 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.index ["subject_type", "subject_id"], name: "idx_on_subject_type_subject_id_1fe0fde46f"
   end
 
+  create_table "business_day_z_reports", force: :cascade do |t|
+    t.date "business_date", null: false
+    t.bigint "business_day_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "generated_at", null: false
+    t.bigint "generated_by_user_id", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.string "report_definition_version", null: false
+    t.datetime "source_cutoff_at", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "z_number", null: false
+    t.index ["business_day_id"], name: "index_business_day_z_reports_on_business_day_id", unique: true
+    t.index ["generated_by_user_id"], name: "index_business_day_z_reports_on_generated_by_user_id"
+    t.index ["store_id", "z_number"], name: "index_business_day_z_reports_on_store_id_and_z_number", unique: true
+    t.index ["store_id"], name: "index_business_day_z_reports_on_store_id"
+  end
+
   create_table "business_days", force: :cascade do |t|
     t.datetime "closed_at"
     t.bigint "closed_by_user_id"
     t.datetime "created_at", null: false
     t.datetime "opened_at", null: false
     t.bigint "opened_by_user_id", null: false
+    t.datetime "reconciled_at"
+    t.bigint "reconciled_by_user_id"
     t.date "reporting_date", null: false
     t.string "status", default: "open", null: false
     t.bigint "store_id", null: false
     t.datetime "updated_at", null: false
     t.index ["closed_by_user_id"], name: "index_business_days_on_closed_by_user_id"
     t.index ["opened_by_user_id"], name: "index_business_days_on_opened_by_user_id"
+    t.index ["reconciled_by_user_id"], name: "index_business_days_on_reconciled_by_user_id"
     t.index ["store_id"], name: "index_business_days_on_store_id"
     t.index ["store_id"], name: "index_business_days_one_open_per_store", unique: true, where: "((status)::text = 'open'::text)"
     t.check_constraint "status::text = ANY (ARRAY['open'::character varying::text, 'closed'::character varying::text])", name: "business_days_status_check"
@@ -396,7 +417,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.index ["pos_transaction_id"], name: "index_pos_approvals_on_pos_transaction_id"
     t.index ["requested_by_user_id"], name: "index_pos_approvals_on_requested_by_user_id"
     t.index ["store_id"], name: "index_pos_approvals_on_store_id"
-    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying::text, 'discount_apply'::character varying::text, 'tax_exemption'::character varying::text, 'tax_category_override'::character varying::text, 'cash_movement'::character varying::text, 'post_void'::character varying::text, 'stored_value_adjustment'::character varying::text, 'stored_value_refund_exception'::character varying::text, 'card_refund_reconciliation'::character varying::text])", name: "pos_approvals_action_type_check"
+    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying, 'discount_apply'::character varying, 'tax_exemption'::character varying, 'tax_category_override'::character varying, 'cash_movement'::character varying, 'post_void'::character varying, 'stored_value_adjustment'::character varying, 'stored_value_refund_exception'::character varying, 'card_refund_reconciliation'::character varying, 'reconciliation_variance'::character varying]::text[])", name: "pos_approvals_action_type_check"
   end
 
   create_table "pos_cash_movements", force: :cascade do |t|
@@ -417,6 +438,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.index ["pos_session_id"], name: "index_pos_cash_movements_on_pos_session_id"
     t.index ["store_id"], name: "index_pos_cash_movements_on_store_id"
     t.check_constraint "amount_cents > 0", name: "pos_cash_movements_amount_positive"
+  end
+
+  create_table "pos_close_card_evidences", force: :cascade do |t|
+    t.string "batch_reference"
+    t.bigint "business_day_id"
+    t.datetime "created_at", null: false
+    t.datetime "entered_at", null: false
+    t.bigint "entered_by_user_id", null: false
+    t.string "kind", null: false
+    t.integer "net_cents"
+    t.bigint "pos_session_id"
+    t.string "precision"
+    t.integer "received_cents"
+    t.integer "received_count"
+    t.integer "refunded_cents"
+    t.integer "refunded_count"
+    t.string "status", null: false
+    t.bigint "store_id", null: false
+    t.string "terminal_reference"
+    t.text "unavailable_reason"
+    t.datetime "updated_at", null: false
+    t.index ["business_day_id"], name: "index_pos_close_card_evidences_on_business_day_id"
+    t.index ["entered_by_user_id"], name: "index_pos_close_card_evidences_on_entered_by_user_id"
+    t.index ["pos_session_id"], name: "index_pos_close_card_evidences_on_pos_session_id"
+    t.index ["store_id"], name: "index_pos_close_card_evidences_on_store_id"
+    t.check_constraint "\"precision\" IS NULL OR (\"precision\"::text = ANY (ARRAY['net_only'::character varying, 'received_and_refunded'::character varying]::text[]))", name: "pos_close_card_evidences_precision_check"
+    t.check_constraint "kind::text = ANY (ARRAY['merchant_slip'::character varying, 'machine_batch'::character varying]::text[])", name: "pos_close_card_evidences_kind_check"
+    t.check_constraint "pos_session_id IS NOT NULL AND business_day_id IS NULL OR pos_session_id IS NULL AND business_day_id IS NOT NULL", name: "pos_close_card_evidences_exactly_one_scope"
+    t.check_constraint "status::text <> 'recorded'::text OR \"precision\"::text = 'net_only'::text AND net_cents IS NOT NULL OR \"precision\"::text = 'received_and_refunded'::text AND received_cents IS NOT NULL AND refunded_cents IS NOT NULL AND net_cents IS NOT NULL", name: "pos_close_card_evidences_recorded_amounts"
+    t.check_constraint "status::text = 'unavailable'::text AND \"precision\" IS NULL AND received_cents IS NULL AND refunded_cents IS NULL AND net_cents IS NULL AND unavailable_reason IS NOT NULL OR status::text = 'recorded'::text AND \"precision\" IS NOT NULL AND unavailable_reason IS NULL", name: "pos_close_card_evidences_status_shape"
+    t.check_constraint "status::text = ANY (ARRAY['recorded'::character varying, 'unavailable'::character varying]::text[])", name: "pos_close_card_evidences_status_check"
   end
 
   create_table "pos_devices", force: :cascade do |t|
@@ -585,6 +637,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.check_constraint "total_cents >= 0", name: "pos_session_cash_counts_total_non_negative"
   end
 
+  create_table "pos_session_z_reports", force: :cascade do |t|
+    t.date "business_date", null: false
+    t.integer "cash_variance_cents"
+    t.integer "counted_cash_cents"
+    t.datetime "created_at", null: false
+    t.integer "expected_cash_cents"
+    t.datetime "generated_at", null: false
+    t.bigint "generated_by_user_id", null: false
+    t.jsonb "payload", default: {}, null: false
+    t.bigint "pos_session_id", null: false
+    t.string "report_definition_version", null: false
+    t.datetime "source_cutoff_at", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "z_number", null: false
+    t.index ["generated_by_user_id"], name: "index_pos_session_z_reports_on_generated_by_user_id"
+    t.index ["pos_session_id"], name: "index_pos_session_z_reports_on_pos_session_id", unique: true
+    t.index ["store_id", "z_number"], name: "index_pos_session_z_reports_on_store_id_and_z_number", unique: true
+    t.index ["store_id"], name: "index_pos_session_z_reports_on_store_id"
+  end
+
   create_table "pos_sessions", force: :cascade do |t|
     t.bigint "business_day_id", null: false
     t.bigint "cash_drawer_id"
@@ -599,6 +672,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.bigint "opened_by_user_id", null: false
     t.integer "opening_cash_cents"
     t.bigint "pos_device_id", null: false
+    t.datetime "reconciled_at"
+    t.bigint "reconciled_by_user_id"
     t.string "status", default: "open", null: false
     t.bigint "store_id", null: false
     t.datetime "updated_at", null: false
@@ -610,6 +685,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.index ["opened_by_user_id"], name: "index_pos_sessions_on_opened_by_user_id"
     t.index ["pos_device_id"], name: "index_pos_sessions_on_pos_device_id"
     t.index ["pos_device_id"], name: "index_pos_sessions_one_open_per_device", unique: true, where: "((status)::text = 'open'::text)"
+    t.index ["reconciled_by_user_id"], name: "index_pos_sessions_on_reconciled_by_user_id"
     t.index ["store_id"], name: "index_pos_sessions_on_store_id"
     t.check_constraint "counted_cash_cents IS NULL OR counted_cash_cents >= 0", name: "pos_sessions_counted_cash_non_negative"
     t.check_constraint "opening_cash_cents IS NULL OR opening_cash_cents >= 0", name: "pos_sessions_opening_cash_non_negative"
@@ -1078,6 +1154,86 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.check_constraint "status::text = ANY (ARRAY['draft'::character varying::text, 'posted'::character varying::text, 'cancelled'::character varying::text])", name: "receipts_status_check"
   end
 
+  create_table "reconciliation_comparisons", force: :cascade do |t|
+    t.string "comparison_type", null: false
+    t.datetime "created_at", null: false
+    t.integer "expected_cents"
+    t.integer "expected_received_cents"
+    t.integer "expected_refunded_cents"
+    t.string "external_reference"
+    t.integer "observed_cents"
+    t.integer "observed_received_cents"
+    t.integer "observed_refunded_cents"
+    t.boolean "observed_unavailable", default: false, null: false
+    t.bigint "pos_close_card_evidence_id"
+    t.integer "position", default: 1, null: false
+    t.string "precision"
+    t.bigint "reconciliation_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "variance_cents"
+    t.index ["pos_close_card_evidence_id"], name: "index_reconciliation_comparisons_on_pos_close_card_evidence_id"
+    t.index ["reconciliation_id", "position"], name: "index_recon_comparisons_on_recon_and_position", unique: true
+    t.index ["reconciliation_id"], name: "index_reconciliation_comparisons_on_reconciliation_id"
+    t.check_constraint "\"precision\" IS NULL OR (\"precision\"::text = ANY (ARRAY['net_only'::character varying, 'received_and_refunded'::character varying]::text[]))", name: "reconciliation_comparisons_precision_check"
+    t.check_constraint "comparison_type::text = ANY (ARRAY['session_cash'::character varying, 'session_merchant_slip'::character varying, 'day_machine_batch'::character varying]::text[])", name: "reconciliation_comparisons_type_check"
+    t.check_constraint "observed_unavailable = true AND observed_cents IS NULL AND observed_received_cents IS NULL AND observed_refunded_cents IS NULL AND variance_cents IS NULL OR observed_unavailable = false", name: "reconciliation_comparisons_unavailable_shape"
+  end
+
+  create_table "reconciliation_findings", force: :cascade do |t|
+    t.string "category", null: false
+    t.datetime "created_at", null: false
+    t.text "explanation", null: false
+    t.bigint "reconciliation_comparison_id", null: false
+    t.datetime "recorded_at", null: false
+    t.bigint "recorded_by_user_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reconciliation_comparison_id"], name: "index_reconciliation_findings_on_reconciliation_comparison_id"
+    t.index ["recorded_by_user_id"], name: "index_reconciliation_findings_on_recorded_by_user_id"
+  end
+
+  create_table "reconciliation_resolutions", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "explanation"
+    t.bigint "linked_correction_id"
+    t.string "linked_correction_type"
+    t.bigint "reconciliation_comparison_id"
+    t.bigint "reconciliation_id", null: false
+    t.datetime "recorded_at", null: false
+    t.bigint "recorded_by_user_id", null: false
+    t.string "resolution_type", null: false
+    t.boolean "superseded", default: false, null: false
+    t.bigint "supersedes_resolution_id"
+    t.datetime "updated_at", null: false
+    t.index ["reconciliation_comparison_id"], name: "idx_on_reconciliation_comparison_id_e02554670c"
+    t.index ["reconciliation_id"], name: "index_reconciliation_resolutions_on_reconciliation_id"
+    t.index ["recorded_by_user_id"], name: "index_reconciliation_resolutions_on_recorded_by_user_id"
+    t.index ["supersedes_resolution_id"], name: "index_reconciliation_resolutions_on_supersedes_resolution_id"
+    t.check_constraint "resolution_type::text = ANY (ARRAY['explained_no_correction'::character varying, 'accepted_variance'::character varying, 'linked_domain_correction'::character varying, 'unresolved'::character varying, 'accept_evidence_unavailable'::character varying]::text[])", name: "reconciliation_resolutions_type_check"
+  end
+
+  create_table "reconciliations", force: :cascade do |t|
+    t.bigint "business_day_id"
+    t.datetime "created_at", null: false
+    t.datetime "opened_at", null: false
+    t.bigint "opened_by_user_id", null: false
+    t.bigint "pos_session_id"
+    t.datetime "reconciled_at"
+    t.bigint "reconciled_by_user_id"
+    t.string "scope_type", null: false
+    t.string "status", default: "draft", null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["business_day_id"], name: "index_reconciliations_on_business_day_id", unique: true
+    t.index ["opened_by_user_id"], name: "index_reconciliations_on_opened_by_user_id"
+    t.index ["pos_session_id"], name: "index_reconciliations_on_pos_session_id", unique: true
+    t.index ["reconciled_by_user_id"], name: "index_reconciliations_on_reconciled_by_user_id"
+    t.index ["store_id"], name: "index_reconciliations_on_store_id"
+    t.check_constraint "scope_type::text = 'session'::text AND pos_session_id IS NOT NULL AND business_day_id IS NULL OR scope_type::text = 'business_day'::text AND business_day_id IS NOT NULL AND pos_session_id IS NULL", name: "reconciliations_scope_shape"
+    t.check_constraint "scope_type::text = ANY (ARRAY['session'::character varying, 'business_day'::character varying]::text[])", name: "reconciliations_scope_type_check"
+    t.check_constraint "status::text = 'draft'::text AND reconciled_at IS NULL AND reconciled_by_user_id IS NULL OR status::text = 'finalized'::text AND reconciled_at IS NOT NULL AND reconciled_by_user_id IS NOT NULL", name: "reconciliations_finalize_shape"
+    t.check_constraint "status::text = ANY (ARRAY['draft'::character varying, 'finalized'::character varying]::text[])", name: "reconciliations_status_check"
+  end
+
   create_table "return_policies", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.string "code", null: false
@@ -1303,6 +1459,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.boolean "active", default: true, null: false
     t.string "address_line_1"
     t.string "address_line_2"
+    t.string "card_reconciliation_grain", default: "business_day", null: false
     t.string "city"
     t.string "code", null: false
     t.string "country_code", limit: 2
@@ -1311,9 +1468,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.string "email"
     t.string "legal_name"
     t.string "name", null: false
+    t.bigint "next_business_day_z_number", default: 1, null: false
     t.bigint "next_purchase_order_number", default: 1, null: false
     t.bigint "next_receipt_number", default: 1, null: false
     t.bigint "next_receipt_sequence", default: 1, null: false
+    t.bigint "next_session_z_number", default: 1, null: false
     t.bigint "organization_id", null: false
     t.string "phone", limit: 30
     t.string "postal_code", limit: 12
@@ -1327,9 +1486,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
     t.index ["organization_id", "code"], name: "index_stores_on_organization_id_and_code", unique: true
     t.index ["organization_id", "store_number"], name: "index_stores_on_organization_id_and_store_number", unique: true, where: "(store_number IS NOT NULL)"
     t.index ["organization_id"], name: "index_stores_on_organization_id"
+    t.check_constraint "card_reconciliation_grain::text = ANY (ARRAY['business_day'::character varying, 'session'::character varying]::text[])", name: "stores_card_reconciliation_grain_check"
+    t.check_constraint "next_business_day_z_number >= 1", name: "stores_next_business_day_z_number_positive"
     t.check_constraint "next_purchase_order_number >= 1", name: "stores_next_purchase_order_number_positive"
     t.check_constraint "next_receipt_number >= 1", name: "stores_next_receipt_number_positive"
     t.check_constraint "next_receipt_sequence >= 1", name: "stores_next_receipt_sequence_positive"
+    t.check_constraint "next_session_z_number >= 1", name: "stores_next_session_z_number_positive"
   end
 
   create_table "tax_categories", force: :cascade do |t|
@@ -1411,9 +1573,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   add_foreign_key "administrative_audit_events", "organizations", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "stores", on_delete: :restrict
   add_foreign_key "administrative_audit_events", "users", column: "actor_user_id", on_delete: :restrict
+  add_foreign_key "business_day_z_reports", "business_days"
+  add_foreign_key "business_day_z_reports", "stores"
+  add_foreign_key "business_day_z_reports", "users", column: "generated_by_user_id"
   add_foreign_key "business_days", "stores", on_delete: :restrict
   add_foreign_key "business_days", "users", column: "closed_by_user_id", on_delete: :restrict
   add_foreign_key "business_days", "users", column: "opened_by_user_id", on_delete: :restrict
+  add_foreign_key "business_days", "users", column: "reconciled_by_user_id"
   add_foreign_key "cash_drawers", "stores", on_delete: :restrict
   add_foreign_key "cash_movement_types", "organizations", on_delete: :restrict
   add_foreign_key "departments", "departments", column: "parent_department_id", on_delete: :restrict
@@ -1462,6 +1628,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   add_foreign_key "pos_cash_movements", "stores", on_delete: :restrict
   add_foreign_key "pos_cash_movements", "users", column: "approved_by_user_id", on_delete: :restrict
   add_foreign_key "pos_cash_movements", "users", column: "created_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_close_card_evidences", "business_days"
+  add_foreign_key "pos_close_card_evidences", "pos_sessions"
+  add_foreign_key "pos_close_card_evidences", "stores"
+  add_foreign_key "pos_close_card_evidences", "users", column: "entered_by_user_id"
   add_foreign_key "pos_devices", "stores", on_delete: :restrict
   add_foreign_key "pos_discount_allocations", "pos_discounts", on_delete: :restrict
   add_foreign_key "pos_discount_allocations", "pos_line_items", on_delete: :restrict
@@ -1490,6 +1660,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   add_foreign_key "pos_line_items", "users", column: "tax_category_overridden_by_user_id", on_delete: :restrict
   add_foreign_key "pos_session_cash_counts", "pos_sessions", on_delete: :restrict
   add_foreign_key "pos_session_cash_counts", "users", column: "counted_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_session_z_reports", "pos_sessions"
+  add_foreign_key "pos_session_z_reports", "stores"
+  add_foreign_key "pos_session_z_reports", "users", column: "generated_by_user_id"
   add_foreign_key "pos_sessions", "business_days", on_delete: :restrict
   add_foreign_key "pos_sessions", "cash_drawers", on_delete: :restrict
   add_foreign_key "pos_sessions", "pos_devices", on_delete: :restrict
@@ -1497,6 +1670,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   add_foreign_key "pos_sessions", "users", column: "cashier_user_id", on_delete: :restrict
   add_foreign_key "pos_sessions", "users", column: "closed_by_user_id", on_delete: :restrict
   add_foreign_key "pos_sessions", "users", column: "opened_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_sessions", "users", column: "reconciled_by_user_id"
   add_foreign_key "pos_tax_exemptions", "pos_transactions", on_delete: :restrict
   add_foreign_key "pos_tax_exemptions", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_tenders", "pos_approvals", on_delete: :restrict
@@ -1570,6 +1744,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_22_230000) do
   add_foreign_key "receipts", "users", column: "posted_by_user_id", on_delete: :restrict
   add_foreign_key "receipts", "users", column: "received_by_user_id", on_delete: :restrict
   add_foreign_key "receipts", "vendors", on_delete: :restrict
+  add_foreign_key "reconciliation_comparisons", "pos_close_card_evidences"
+  add_foreign_key "reconciliation_comparisons", "reconciliations"
+  add_foreign_key "reconciliation_findings", "reconciliation_comparisons"
+  add_foreign_key "reconciliation_findings", "users", column: "recorded_by_user_id"
+  add_foreign_key "reconciliation_resolutions", "reconciliation_comparisons"
+  add_foreign_key "reconciliation_resolutions", "reconciliation_resolutions", column: "supersedes_resolution_id"
+  add_foreign_key "reconciliation_resolutions", "reconciliations"
+  add_foreign_key "reconciliation_resolutions", "users", column: "recorded_by_user_id"
+  add_foreign_key "reconciliations", "business_days"
+  add_foreign_key "reconciliations", "pos_sessions"
+  add_foreign_key "reconciliations", "stores"
+  add_foreign_key "reconciliations", "users", column: "opened_by_user_id"
+  add_foreign_key "reconciliations", "users", column: "reconciled_by_user_id"
   add_foreign_key "return_policies", "organizations", on_delete: :restrict
   add_foreign_key "return_reasons", "organizations", on_delete: :restrict
   add_foreign_key "role_permissions", "permissions", on_delete: :restrict

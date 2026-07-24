@@ -1,0 +1,207 @@
+# frozen_string_literal: true
+
+module Reporting
+  class BuildBusinessDayTotals < ApplicationService
+    # mode:
+    #   :live — prefer Session Z for closed sessions; rebuild open
+    #   :final — consolidate Session Z snapshots only
+    #   :activity_rebuild — always rebuild from completed activity (ignore Session Z)
+    def initialize(business_day:, mode: :live, source_cutoff_at: Time.current)
+      @business_day = business_day
+      @mode = mode.to_sym
+      @source_cutoff_at = source_cutoff_at
+    end
+
+    def call
+      sessions = @business_day.pos_sessions.includes(:pos_session_z_report).order(:id)
+      session_totals = sessions.map { |session| totals_for_session(session) }.compact
+
+      commercial = sum_hashes(session_totals.map { |t| t.commercial })
+      tax = merge_tax(session_totals.map(&:tax))
+      stored_value = sum_hashes(session_totals.map(&:stored_value))
+      tenders = merge_tenders(session_totals.map(&:tenders))
+      settlement = merge_settlement(commercial, tax, stored_value, tenders)
+      departments = merge_departments(session_totals.map(&:departments))
+      activity = sum_hashes(session_totals.map(&:activity_counts))
+      cash_summary = build_cash_summary(session_totals)
+      breakdown = session_totals.map { |t| session_row(t) }
+
+      BusinessDayTotals.new(
+        report_definition_version: ReportDefinition::VERSION,
+        business_day_id: @business_day.id,
+        store_id: @business_day.store_id,
+        business_date: @business_day.reporting_date,
+        source_cutoff_at: @source_cutoff_at,
+        mode: @mode.to_s,
+        identity: build_identity,
+        commercial: commercial,
+        tax: tax,
+        stored_value: stored_value,
+        settlement: settlement,
+        tenders: tenders,
+        cash_summary: cash_summary,
+        departments: departments,
+        activity_counts: activity,
+        session_breakdown: breakdown,
+        exceptions: []
+      )
+    end
+
+    private
+
+    def totals_for_session(session)
+      case @mode
+      when :activity_rebuild
+        BuildSessionTotals.call(
+          pos_session: session,
+          source_cutoff_at: @source_cutoff_at,
+          recompute_cash: true
+        )
+      when :final
+        return nil unless session.closed? && session.pos_session_z_report.present?
+
+        payload_to_session_totals(session.pos_session_z_report.payload)
+      else # :live
+        if session.closed? && session.pos_session_z_report.present?
+          payload_to_session_totals(session.pos_session_z_report.payload)
+        else
+          BuildSessionTotals.call(pos_session: session, source_cutoff_at: @source_cutoff_at)
+        end
+      end
+    end
+
+    def payload_to_session_totals(payload)
+      SessionTotals.new(
+        report_definition_version: payload.fetch("report_definition_version"),
+        pos_session_id: payload.fetch("pos_session_id"),
+        store_id: payload.fetch("store_id"),
+        business_day_id: payload.fetch("business_day_id"),
+        business_date: Date.iso8601(payload.fetch("business_date")),
+        source_cutoff_at: Time.iso8601(payload.fetch("source_cutoff_at")),
+        identity: payload["identity"] || {},
+        commercial: payload.fetch("commercial"),
+        tax: payload.fetch("tax"),
+        stored_value: payload.fetch("stored_value"),
+        settlement: payload.fetch("settlement"),
+        tenders: payload.fetch("tenders"),
+        cash: payload.fetch("cash"),
+        departments: payload.fetch("departments"),
+        activity_counts: payload.fetch("activity_counts"),
+        exceptions: payload.fetch("exceptions", [])
+      )
+    end
+
+    def build_identity
+      day = @business_day
+      {
+        "store_name" => day.store.name,
+        "business_date" => day.reporting_date.iso8601,
+        "opened_by_username" => day.opened_by_user.username,
+        "closed_by_username" => day.closed_by_user&.username,
+        "opened_at" => day.opened_at&.iso8601(6),
+        "closed_at" => day.closed_at&.iso8601(6)
+      }
+    end
+
+    def session_row(totals)
+      identity = totals.identity || {}
+      z = @business_day.pos_sessions.find { |s| s.id == totals.pos_session_id }&.pos_session_z_report
+      {
+        "pos_session_id" => totals.pos_session_id,
+        "session_z_number" => z&.z_number || identity["session_z_number"],
+        "pos_device_name" => identity["pos_device_name"],
+        "cash_drawer_name" => identity["cash_drawer_name"],
+        "cashier_username" => identity["cashier_username"],
+        "opened_at" => identity["opened_at"],
+        "closed_at" => identity["closed_at"],
+        "closed_by_username" => identity["closed_by_username"],
+        "net_sales_cents" => totals.commercial["net_sales_cents"],
+        "net_tenders_cents" => totals.settlement["net_tenders_cents"],
+        "cash_variance_cents" => totals.cash["cash_variance_cents"],
+        "completed_transactions" => totals.activity_counts["completed_transactions"]
+      }
+    end
+
+    def sum_hashes(hashes)
+      return {} if hashes.empty?
+
+      hashes.reduce({}) do |acc, hash|
+        hash.each_with_object(acc) do |(key, value), memo|
+          memo[key] = memo.fetch(key, 0) + value.to_i if value.is_a?(Numeric) || value.is_a?(String)
+        end
+      end
+    end
+
+    def merge_tax(taxes)
+      components = taxes.flat_map { |t| t["components"] || [] }
+        .group_by { |c| c["store_tax_rate_id"] || c["receipt_code"] }
+        .map do |_key, rows|
+          sample = rows.find { |r| r["name"].present? } || rows.first
+          {
+            "store_tax_rate_id" => sample["store_tax_rate_id"],
+            "name" => sample["name"].presence || sample["receipt_code"].presence || "Tax",
+            "receipt_code" => sample["receipt_code"],
+            "amount_cents" => rows.sum { |r| r["amount_cents"].to_i }
+          }
+        end
+        .sort_by { |row| row["name"].to_s }
+      {
+        "tax_total_cents" => taxes.sum { |t| t["tax_total_cents"].to_i },
+        "components" => components
+      }
+    end
+
+    def merge_tenders(tender_lists)
+      rows = tender_lists.flatten
+      rows.group_by { |r| r["tender_category"] }.map do |category, group|
+        received = group.sum { |r| r["received_cents"].to_i }
+        refunded = group.sum { |r| r["refunded_cents"].to_i }
+        {
+          "tender_category" => category,
+          "received_cents" => received,
+          "refunded_cents" => refunded,
+          "net_cents" => received - refunded
+        }
+      end.sort_by { |row| row["tender_category"] }
+    end
+
+    def merge_settlement(commercial, tax, stored_value, tenders)
+      net_sales = commercial["net_sales_cents"].to_i
+      tax_total = tax["tax_total_cents"].to_i
+      sv_liability = stored_value["issued_cents"].to_i + stored_value["reloaded_cents"].to_i
+      transaction_total = net_sales + tax_total + sv_liability
+      net_tenders = tenders.sum { |t| t["net_cents"].to_i }
+      {
+        "net_sales_cents" => net_sales,
+        "net_tax_cents" => tax_total,
+        "stored_value_issued_reloaded_cents" => sv_liability,
+        "transaction_total_cents" => transaction_total,
+        "net_tenders_cents" => net_tenders,
+        "balanced" => transaction_total == net_tenders
+      }
+    end
+
+    def merge_departments(lists)
+      lists.flatten.group_by { |d| d["department_id"] }.map do |department_id, rows|
+        sample = rows.find { |r| r["department_name"].present? } || rows.first
+        {
+          "department_id" => department_id,
+          "department_name" => sample["department_name"].presence || "Unassigned",
+          "department_number" => sample["department_number"],
+          "gross_sales_cents" => rows.sum { |r| r["gross_sales_cents"].to_i },
+          "return_total_cents" => rows.sum { |r| r["return_total_cents"].to_i },
+          "units_sold" => rows.sum { |r| r["units_sold"].to_i }
+        }
+      end.sort_by { |row| row["department_number"].presence || "~" }
+    end
+
+    def build_cash_summary(session_totals)
+      {
+        "sessions_with_cash" => session_totals.count { |t| t.cash["cash_enabled"] },
+        "expected_cash_cents" => session_totals.sum { |t| t.cash["expected_cash_cents"].to_i },
+        "counted_cash_cents" => session_totals.sum { |t| t.cash["counted_cash_cents"].to_i },
+        "cash_variance_cents" => session_totals.sum { |t| t.cash["cash_variance_cents"].to_i }
+      }
+    end
+  end
+end

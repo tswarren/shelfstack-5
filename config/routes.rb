@@ -86,12 +86,26 @@ Rails.application.routes.draw do
   get "buyer_review", to: "buyer_review#index", as: :buyer_review_index
   post "buyer_review/:id/add_to_purchase_order", to: "buyer_review#add_to_purchase_order", as: :add_to_purchase_order
 
+  get "reconciliations", to: "reconciliations#index", as: :reconciliations
+  get "reconciliations/sessions/:pos_session_id", to: "reconciliations#session_show", as: :session_reconciliation
+  get "reconciliations/business_days/:business_day_id", to: "reconciliations#business_day_show", as: :business_day_reconciliation
+  post "reconciliations/:id/finalize", to: "reconciliations#finalize", as: :finalize_reconciliation
+  post "reconciliations/:id/comparisons/:comparison_id/accept_unavailable", to: "reconciliations#accept_unavailable", as: :accept_unavailable_comparison
+  post "reconciliations/:id/comparisons/:comparison_id/resolutions", to: "reconciliations#record_resolution", as: :record_reconciliation_resolution
+
   get "reports", to: "reports#index", as: :reports
   get "reports/open_purchase_orders", to: "reports#open_purchase_orders", as: :open_purchase_orders_report
   get "reports/on_order", to: "reports#on_order", as: :on_order_report
   get "reports/receiving_history", to: "reports#receiving_history", as: :receiving_history_report
   get "reports/customer_requests", to: "reports#customer_requests", as: :customer_requests_report
   get "reports/allocation_events", to: "reports#allocation_events", as: :allocation_events_report
+  get "reports/commercial_activity", to: "reports#commercial_activity", as: :commercial_activity_report
+  get "reports/tender_activity", to: "reports#tender_activity", as: :tender_activity_report
+  get "reports/tax_activity", to: "reports#tax_activity", as: :tax_activity_report
+  get "reports/stock_snapshot", to: "reports#stock_snapshot", as: :stock_snapshot_report
+  get "reports/stored_value_liability", to: "reports#stored_value_liability", as: :stored_value_liability_report
+  get "reports/integrity_diagnostics", to: "reports#integrity_diagnostics", as: :integrity_diagnostics_report
+  get "reports/export", to: "reports#export", as: :export_report
 
   get "register", to: "register#show", as: :register
   post "register/scan_to_start", to: "register#scan_to_start", as: :register_scan_to_start
@@ -99,13 +113,18 @@ Rails.application.routes.draw do
 
   resources :business_days, only: %i[index new create] do
     member do
+      get :close_form
       post :close
+      get :x_report, to: "business_day_reports#x", as: :business_day_x_report
+      get :z_report, to: "business_day_reports#z", as: :business_day_z_report
     end
   end
   resources :pos_sessions, only: %i[new create] do
     member do
       get :close_form
       post :close
+      get :x_report, to: "session_reports#x", as: :session_x_report
+      get :z_report, to: "session_reports#z", as: :session_z_report
     end
     resources :pos_cash_movements, only: %i[create]
   end

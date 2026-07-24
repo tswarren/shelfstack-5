@@ -1,0 +1,16 @@
+<% content_for :title, "Tax activity" %>
+
+<%= render "shared/page_header", title: "Tax by component",
+      subtitle: "#{@from_date} to #{@to_date}." %>
+
+<table class="data-table">
+  <thead><tr><th>Receipt code</th><th>Amount</th></tr></thead>
+  <tbody>
+    <% @rows.each do |row| %>
+      <tr>
+        <td><%= row.receipt_code %></td>
+        <td><%= number_to_currency(row.amount_cents / 100.0) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

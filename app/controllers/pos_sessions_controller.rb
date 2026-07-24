@@ -65,14 +65,19 @@ class PosSessionsController < ApplicationController
       counted_cash_cents: counted
     )
     if result.success?
+      @session.reload
       notice = if result.replayed
         "Session already closed."
-      elsif @session.reload.cash_enabled?
+      elsif @session.cash_enabled?
         "Session closed. Variance: #{helpers.pos_money(@session.cash_variance_cents)}."
       else
         "Session closed."
       end
-      redirect_to register_path, notice: notice
+      if result.pos_session_z_report && Current.user.can?("reporting.view_session_z", store: Current.store)
+        redirect_to session_z_report_pos_session_path(@session), notice: notice
+      else
+        redirect_to register_path, notice: notice
+      end
     else
       target = @session.cash_enabled? ? close_form_pos_session_path(@session) : register_path
       redirect_to target, alert: result.error

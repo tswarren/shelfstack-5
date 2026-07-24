@@ -1,0 +1,40 @@
+<% content_for :title, "Business-Day X" %>
+
+<article class="report-doc">
+  <header class="report-masthead">
+    <div class="report-masthead__title-row">
+      <h1 class="report-masthead__title">Business-Day X</h1>
+      <span class="report-badge report-badge--live">Live · Day <%= @business_day.status %></span>
+    </div>
+    <p class="report-masthead__meta">
+      <%= Current.store.name %>
+      · Business date <%= @business_day.reporting_date %>
+      <br>
+      Opened <%= formatted_datetime(@business_day.opened_at, format: :short) %>
+      by <%= @business_day.opened_by_user.username %>
+      <br>
+      Source cutoff <%= formatted_datetime(@totals.source_cutoff_at, format: :short) %>
+      · Definition <%= @totals.report_definition_version %>
+      · Mode <%= @totals.mode %>
+    </p>
+  </header>
+
+  <div class="report-banner" role="note">
+    <p>Live report — business day is still <%= @business_day.status %>.</p>
+    <p class="muted">
+      Totals may change as sessions continue. This is not a Business-Day Z. Generating this report does not close or reconcile the day.
+    </p>
+  </div>
+
+  <%= render "reporting/day_sections",
+        payload: @totals.to_payload,
+        show_cash: @show_cash,
+        show_cost: @show_cost,
+        show_margin: @show_margin,
+        sessions_by_id: @sessions_by_id %>
+
+  <div class="report-actions page-actions">
+    <%= link_to "Back to register", register_path, class: "button button-outline" %>
+    <%= link_to "Print", "#", onclick: "window.print(); return false;", class: "button" %>
+  </div>
+</article>

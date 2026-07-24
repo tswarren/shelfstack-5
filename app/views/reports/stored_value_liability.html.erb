@@ -1,0 +1,44 @@
+<% content_for :title, "Stored-value store activity" %>
+
+<%= render "shared/page_header",
+      title: "Stored-value activity and ledger effect for this store",
+      subtitle: "Issuance, redemption, and other ledger activity posted by this store. Not organization-wide outstanding liability." %>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Accounts touched</th>
+      <th>Entries</th>
+      <th>Issued</th>
+      <th>Reloaded</th>
+      <th>Redeemed</th>
+      <th>Refunded</th>
+      <th>Adjusted</th>
+      <th>Reversed</th>
+      <th>Net ledger effect</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @report.by_type.each do |row| %>
+      <tr>
+        <td><%= row["account_type"] %></td>
+        <td><%= row["account_count"] %></td>
+        <td><%= row["entry_count"] %></td>
+        <td><%= number_to_currency(row["issued_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["reloaded_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["redeemed_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["refunded_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["adjusted_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["reversed_cents"] / 100.0) %></td>
+        <td><%= number_to_currency(row["net_ledger_effect_cents"] / 100.0) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p class="muted">
+  Net store ledger effect:
+  <%= number_to_currency(@report.net_ledger_effect_cents.to_i / 100.0) %>.
+  Organization-wide cache-to-ledger integrity is reported separately under an organization-scoped permission.
+</p>

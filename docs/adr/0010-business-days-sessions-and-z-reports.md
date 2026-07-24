@@ -1,6 +1,7 @@
 # ADR-0010: Distinguish Business Days, Sessions, Devices, Drawers, and Z Reports
 
-**Status:** Accepted with open reporting-date policy
+**Status:** Accepted  
+**Reporting-date policy:** v1 accepted in OD-001 / [architectural-locks](../implementation/architectural-locks.md#business--reporting-date-v1-choice) — store `reporting_date` explicitly; assignment = operating date selected when the business day is opened (defaults to store-local calendar date at open). Later policy refinements remain possible without rewriting history.
 
 ## Context
 
@@ -64,18 +65,11 @@ A business day cannot close while any session remains open.
 
 ## Reporting date
 
-The reporting date is stored explicitly.
+The reporting date is stored explicitly on the business day.
 
-The exact policy for assigning it remains unresolved.
+**v1 assignment (accepted):** the operating date selected when the business day is opened (defaults to the store-local calendar date at open). See OD-001 and architectural locks.
 
-Possible policies include:
-
-* the date the business day opened;  
-* the operating date selected by an authorized user;  
-* the date the business day closed;  
-* a store-configured rule.
-
-ShelfStack will not derive the reporting date later solely from timestamps.
+ShelfStack will not derive the reporting date later solely from timestamps. A later store-configured rule may refine assignment without rewriting historical business days that already store `reporting_date`.
 
 ## Business-day Z number
 
@@ -177,7 +171,6 @@ A session or business day may close with a documented variance and be reconciled
 
 * More operational records are required.  
 * Reporting must understand both session and business-day attribution.  
-* The reporting-date assignment policy must still be finalized.  
 * Sequential numbering requires safe store-level generation.
 
 ## Alternatives considered
@@ -205,9 +198,9 @@ Rejected because they have different lifecycles and accountability meanings.
 * Closing and reconciliation remain separate.  
 * Both reporting date and sequential Z number are retained.
 
-## Open decision
+## Related decisions
 
-The policy used to assign `business_date` must be decided before final POS close implementation.
+Reporting-date assignment for v1 is accepted (OD-001). Session/Business-Day Z persistence and reconciliation delivery are Phase 7 — see [phase-07-reporting-and-reconciliation-v1.md](../implementation/decisions/phase-07-reporting-and-reconciliation-v1.md).
 
 ## Related domains
 

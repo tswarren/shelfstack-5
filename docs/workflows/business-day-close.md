@@ -1,6 +1,6 @@
 # Workflow: Business Day and Session Close
 
-**Status:** Phase 4a/4c service boundaries delivered; Z numbering and reconciliation deferred to Phase 7
+**Status:** Phase 4a/4c open/close service boundaries delivered; Phase 7 adds Z persistence, close-time card evidence, and reconciliation records ([v1 decisions](../implementation/decisions/phase-07-reporting-and-reconciliation-v1.md))
 **Type:** Record-level workflow
 **Governing:** [ADR-0009](../adr/0009-atomic-idempotent-pos-completion.md), [ADR-0010](../adr/0010-business-days-sessions-and-z-reports.md), [ADR-0011](../adr/0011-permissions-authority-and-approvals.md), [point-of-sale domain](../domains/point-of-sale.md), [reporting-and-reconciliation domain](../domains/reporting-and-reconciliation.md), [service-catalog](../implementation/service-catalog.md)
 
@@ -72,7 +72,7 @@ No reopen workflow is implemented for closed Sessions or closed Business Days.
 - Session close records closing cash-count snapshots and expected/count/variance values for cash-enabled Sessions.
 - Expected cash is calculated as opening cash plus cash received, minus change and cash refunds, plus/minus cash movements.
 - Close does not rewrite POS Transactions, Tenders, inventory movements, stored-value ledger entries, or reports.
-- Session Z numbering, Business-Day Z numbering, and reconciliation adjustment effects remain deferred.
+- Session Z numbering, Business-Day Z numbering, close-time card evidence, and reconciliation records (comparisons, findings, resolutions) are Phase 7 — see [phase-07-reporting-and-reconciliation-v1.md](../implementation/decisions/phase-07-reporting-and-reconciliation-v1.md).
 
 ## Permissions and approvals
 

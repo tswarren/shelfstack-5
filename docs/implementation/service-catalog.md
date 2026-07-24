@@ -90,9 +90,9 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 7–8 cl
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `Pos::OpenBusinessDay` | Point of Sale | 4a | Yes | No | `business_days` (lock query) | Store, actor, optional reporting date | Open Business Day; rejects a second open day per store |
-| `Pos::CloseBusinessDay` | Point of Sale | 4a | Yes | Yes | Business Day (`lock`) | Business Day, actor | Closed Business Day; blocks while a Session is open |
+| `Pos::CloseBusinessDay` | Point of Sale | 7c | Yes | Yes | Business Day / Store Z sequence (`lock`) | Business Day, actor, optional card evidence | Closed Business Day + Day Z; requires Session Z for every closed session; machine/batch evidence or `evidence_unavailable` when card tenders exist |
 | `Pos::OpenSession` | Point of Sale | 4a | Yes | No | Business Day (`lock`), then device/drawer open-session checks | Business Day, store, device, cashier, optional drawer, `opening_cash_cents` when drawer present | Open Session; day status rechecked under lock; opening cash count for cash-enabled sessions |
-| `Pos::CloseSession` | Point of Sale | 4a | Yes | Yes | Session (`lock`) | Session, actor | Closed Session; cash-enabled sessions require a closing cash count and snapshot expected/counted/variance; blocks while controlling an open Transaction; leaves Suspended Transactions untouched |
+| `Pos::CloseSession` | Point of Sale | 7b | Yes | Yes | Session / Store Z sequence (`lock`) | Session, actor, counted cash, optional card evidence | Closed Session + Session Z; enforces `pos.session.close`; cash-enabled sessions require closing count; MVP no session card prompt when grain=`business_day` |
 | `Pos::OpenTransaction` | Point of Sale | 4a | Yes | No | Session (`lock`) | Session, actor, optional cashier | Open Transaction with generated `public_id`; Session status rechecked under lock; origin/active session set |
 | `Pos::ResolveScan` | Point of Sale | 4a | No | Yes | None | Organization, scan/search query, store | `Pos::ResolveScanResult` (variant, ambiguity, blockers/warnings via `Catalog::SaleEligibility`) |
 | `Pos::AddLine` | Point of Sale | 4a | Yes | No | Reservation via `Inventory::Reserve` | Transaction, variant, quantity, actor | Pending product line; reserves only `quantity`-tracked variants |
@@ -375,6 +375,21 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 - Presentation state is URL/record-derived (`?presentation=tender`, `/tender`, void-required → recovery). Processing is client-ephemeral only.
 - GET show/tender must not call `ValidateCompletionReadiness`, `RecalculateTransaction`, or `FinalizeReturnFinancials`. Mutation paths still recalculate and completion still validates under locks.
 - Narrow Ready receipt lookup is a controller adapter over existing completed-transaction find-by-receipt-number (no new search subsystem).
+
+## Phase 7 — Reporting and reconciliation
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Reporting::BuildSessionTotals` | Reporting | 7a.4 | No | Yes | None | Session, cutoff | `Reporting::SessionTotals` (live X / Z payload input) |
+| `Reporting::BuildBusinessDayTotals` | Reporting | 7a.4 | No | Yes | None | Business Day, mode (`live`/`final`) | `Reporting::BusinessDayTotals` |
+| `Reporting::SessionReconciliationRequirement` | Reporting | 7d | No | Yes | None | Closed session | Whether session recon is required (cash or session-grain card activity) |
+| `Reporting::AssembleSessionReconciliation` | Reporting | 7d | Yes | Yes | None | Closed session, actor | Draft/finalized session reconciliation + comparisons |
+| `Reporting::AssembleBusinessDayReconciliation` | Reporting | 7d | Yes | Yes | None | Closed day, actor | Draft day reconciliation; blocked by pending required session recons |
+| `Reporting::FinalizeReconciliation` | Reporting | 7d | Yes | Yes | Reconciliation (`lock`) | Reconciliation, actor, optional approver/PIN | Finalized header + denormalized `reconciled_*`; variance via `reporting.reconcile.approve` / `approve_self`; audit includes `pos_approval_id` |
+| `Reporting::RecordReconciliationResolution` | Reporting | 7d | Yes | No | Reconciliation (`lock`) | Reconciliation, comparison, resolution type | MVP Explain/Accept/accept-unavailable only; rejects mismatched types, `unresolved`, linked correction, and superseding |
+| `Reporting::CommercialActivityReport` / `TenderActivityReport` / `TaxActivityReport` / `StockSnapshotReport` / `StoredValueLiabilityReport` / `IntegrityDiagnostics` / `ExportCsv` | Reporting | 7e (partial) | No | Yes | None | Store / reporting_date range | Read-only pack projections; SV is store activity/ledger effect (not org liability); CSV subset |
+
+Shared variance authority for recon accept: membership `cash_variance_review_threshold_cents` via `Authorization::EvaluateAuthority` / `Pos::AuthorizeAction` (`reconciliation_variance`).
 
 ## Later phases (add when implemented)
 

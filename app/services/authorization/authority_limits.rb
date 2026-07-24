@@ -9,6 +9,7 @@ module Authorization
       maximum_cash_refund_cents: { column: :maximum_cash_refund_cents, type: :money },
       maximum_no_receipt_return_cents: { column: :maximum_no_receipt_return_cents, type: :money },
       maximum_paid_out_cents: { column: :maximum_paid_out_cents, type: :money },
+      # Phase 7: also the shared threshold for accepting cash and card reconciliation differences.
       cash_variance_review_threshold_cents: { column: :cash_variance_review_threshold_cents, type: :money }
     }.freeze
 
@@ -22,7 +23,8 @@ module Authorization
       maximum_price_override_rate: BigDecimal("1"),
       maximum_cash_refund_cents: 2_147_483_647,
       maximum_no_receipt_return_cents: 2_147_483_647,
-      maximum_paid_out_cents: 2_147_483_647
+      maximum_paid_out_cents: 2_147_483_647,
+      cash_variance_review_threshold_cents: 2_147_483_647
     }.freeze
 
     module_function

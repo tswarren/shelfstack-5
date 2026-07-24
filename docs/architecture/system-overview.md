@@ -990,7 +990,7 @@ Corrections use new linked records:
 * post-void transactions;  
 * stored-value reversals;  
 * inventory reversals;  
-* reconciliation adjustments.
+* reconciliation resolutions (link domain-owned corrections; do not mutate source balances).
 
 The original completed record remains available for audit and reporting.
 
@@ -1377,7 +1377,7 @@ Completed POS snapshots
 + Stored-value ledger
 + Purchase orders and receipts
 + Session and drawer records
-+ Approvals and reconciliation adjustments
++ Approvals and reconciliation records (comparisons, findings, resolutions)
 → Operational and financial reporting
 ```
 
@@ -1546,7 +1546,7 @@ Establish:
 * margin reporting;  
 * purchasing and receiving reporting;  
 * stored-value liability reporting;  
-* reconciliation adjustments;  
+* reconciliation comparisons, findings, and resolutions;
 * audit and exception reporting.
 
 ## Phase 10 — Later operational extensions

@@ -270,8 +270,8 @@ Canonical keys for Reporting and Reconciliation. Accepted v1 policy: [phase-07-r
 | `reporting.view_business_day_x` | View Business-Day X | store | 7 | — | no | no |
 | `reporting.view_business_day_z` | View Business-Day Z | store | 7 | — | no | no |
 | `reporting.export` | Export tabular reports (e.g. CSV) | store | 7 | — | no | yes |
-| `reporting.reconcile_session` | Draft and finalize session reconciliation | store | 7 | cash/card variance thresholds when accepting differences | conditional | yes |
-| `reporting.reconcile_business_day` | Draft and finalize business-day reconciliation | store | 7 | cash/card variance thresholds when accepting differences | conditional | yes |
+| `reporting.reconcile_session` | Draft and finalize session reconciliation | store | 7 | `cash_variance_review_threshold_cents` (shared cash+card) | conditional | yes |
+| `reporting.reconcile_business_day` | Draft and finalize business-day reconciliation | store | 7 | `cash_variance_review_threshold_cents` (shared cash+card) | conditional | yes |
 | `reporting.record_reconciliation_resolution` | Record reconciliation resolutions (including accept-exception) | store | 7 | per resolution type | conditional | yes |
 | `reporting.close_evidence_unavailable` | Record `evidence_unavailable` at close without fabricating observed amounts | store | 7 | — | conditional | yes |
 | `reporting.reconcile.approve` | Independently approve over-threshold variance acceptance | store | 7 | approver’s variance authority | — | yes |

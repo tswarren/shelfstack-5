@@ -210,7 +210,9 @@ Phase 7 does not introduce a generic balance-changing reconciliation adjustment.
 
 - comparisons (expected, observed or unavailable, variance when numeric, external reference);
 - findings (reason/category, explanation);
-- resolutions (`explained_no_correction`, `accepted_variance`, `linked_domain_correction`, `unresolved`).
+- resolutions — schema may include `explained_no_correction`, `accepted_variance`, `accept_evidence_unavailable`, `linked_domain_correction`, `unresolved`.
+
+**MVP operable set:** `explained_no_correction` / `accepted_variance` (nonzero numeric only), and `accept_evidence_unavailable` (unavailable observed only). Exact matches need no resolution. Leave drafts open via Review later rather than recording `unresolved`. Linked domain corrections and superseding are deferred.
 
 Operational balance corrections use the owning domain’s correction mechanism and may be linked from a resolution. Card close evidence may be multi-row with precision `net_only` or `received_and_refunded`. Missing evidence uses `evidence_unavailable` rather than a fabricated observed amount.
 

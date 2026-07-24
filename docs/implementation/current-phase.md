@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 7 — Reporting and Reconciliation  
-**Status:** 7a decisions accepted; implementation not started (next: 7b Session X/Z)  
+**Status:** Implementing on `phase/p7-reporting-and-reconciliation` — **7a–7d ready for operator walkthrough; 7e partially delivered**  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
 **Phase 6 merge:** `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed)  
 **Phase 5 merge:** `2e3e1196ec923b20a667f52b8ae79bd86c0b5c8b` (PR #34)  
@@ -17,16 +17,25 @@
 
 ## Immediate next work
 
-1. Implement Phase 7 gate **7b** — Session X/Z on `CloseSession` (MVP: cash count only; enforce `pos.session.close`); schema for Z + card evidence ready for 7c.
-2. Then **7c** (Business-Day X/Z + one machine/batch net total or `evidence_unavailable`) and **7d** (Reconcile now / Review later).
-3. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
-4. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
-5. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
-6. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.
-7. Do not pull customer-receipt product design or hardware printing into Phase 7 core gates (parked draft only).
+1. Operator walkthrough on `phase/p7-reporting-and-reconciliation` for close control: session close → Session Z → day close with batch/unavailable → recon queue (resolve nonzero variances with Explain / Accept variance; approve / approve_self over threshold) → finalize.
+2. Session `card_reconciliation_grain` remains schema-supported but not selectable/operable until merchant-slip session close exists; MVP is `business_day` only — see [#58](https://github.com/tswarren/shelfstack-5/issues/58).
+3. Deferred Phase 7 follow-ups (labels `phase-7` + `deferred`):
+   - Linked domain correction resolutions — [#56](https://github.com/tswarren/shelfstack-5/issues/56)
+   - Resolution superseding / post-finalization policy — [#57](https://github.com/tswarren/shelfstack-5/issues/57)
+   - Session card grain / merchant-slip close — [#58](https://github.com/tswarren/shelfstack-5/issues/58)
+   - Directional / multi-terminal card evidence — [#59](https://github.com/tswarren/shelfstack-5/issues/59)
+   - Org-scoped stored-value liability & cache integrity — [#60](https://github.com/tswarren/shelfstack-5/issues/60)
+   - Complete Phase 7e report pack — [#61](https://github.com/tswarren/shelfstack-5/issues/61)
+4. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+5. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
+6. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
+7. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.
+8. Do not pull customer-receipt product design or hardware printing into Phase 7 core gates (parked draft only).
 
 ## Completed recently
 
+- Phase 7 walkthrough-blocker remediation on `phase/p7-reporting-and-reconciliation`: SV issue/reload post-void settlement; `reporting.reconcile.approve` / `approve_self`; MVP resolution vocabulary (Explain / Accept / accept unavailable); finalized recon + denormalized marker freeze; day-only recon navigation; finalize audit `pos_approval_id`; deferred follow-ups [#56](https://github.com/tswarren/shelfstack-5/issues/56)–[#61](https://github.com/tswarren/shelfstack-5/issues/61).
+- Phase 7a–7d close-control path implemented (Session/Day X·Z, recon queue, first report pack partial); session card grain not selectable until [#58](https://github.com/tswarren/shelfstack-5/issues/58).
 - Phase 7a accepted: MVP `business_day` card grain; multi-row directional card evidence with `net_only` default; `evidence_unavailable`; no auto-reconcile at close; cash-style variance authority; concrete `reporting.*` permission rows; decision note [phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md).
 - Phase 7 plan revised with gates 7a–7e and close-control model.
 - Phase 6.5 cashier workspace merged to `main` at `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23.

@@ -1,0 +1,34 @@
+<% content_for :title, "Current stock" %>
+
+<%= render "shared/page_header", title: "Current stock",
+      subtitle: "As-of current balances (not a historical valuation)." %>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Variant</th>
+      <th>On hand</th>
+      <th>Reserved</th>
+      <th>Unavailable</th>
+      <th>Available</th>
+      <th>On order</th>
+      <% if @show_cost %><th>Inventory value</th><th>Cost quality</th><% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @rows.each do |row| %>
+      <tr>
+        <td><%= row.product_variant.product.name %> (<%= row.product_variant.sku %>)</td>
+        <td><%= row.on_hand %></td>
+        <td><%= row.reserved %></td>
+        <td><%= row.unavailable %></td>
+        <td><%= row.available %></td>
+        <td><%= row.on_order %></td>
+        <% if @show_cost %>
+          <td><%= number_to_currency(row.inventory_value_cents.to_i / 100.0) %></td>
+          <td><%= row.cost_quality %></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

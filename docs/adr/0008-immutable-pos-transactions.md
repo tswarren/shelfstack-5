@@ -118,11 +118,11 @@ Examples include:
 * an exact inventory unit has subsequently been sold;  
 * the transaction has already been post-voided.
 
-## Reconciliation adjustments
+## Reconciliation records
 
-A reconciliation adjustment acknowledges a difference.
+Reconciliation documents differences between ShelfStack expected totals and counted or external evidence through comparisons, findings, and resolutions (Phase 7).
 
-It does not rewrite the original completed transaction or tender.
+Those records do not rewrite the original completed transaction or tender, and they do not act as a generic balance-changing ledger. Operational corrections use owning-domain reversing or adjusting records and may be linked from a reconciliation resolution.
 
 ## Consequences
 

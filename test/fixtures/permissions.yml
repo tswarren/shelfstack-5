@@ -612,3 +612,137 @@ inventory_receipt_over_receive:
   name: Over-receive
   permission_group: inventory
   active: true
+
+# Phase 7
+
+reporting_view_sales:
+  code: reporting.view_sales
+  name: View sales reports
+  permission_group: reporting
+  active: true
+
+reporting_view_tax:
+  code: reporting.view_tax
+  name: View tax reports
+  permission_group: reporting
+  active: true
+
+reporting_view_tenders:
+  code: reporting.view_tenders
+  name: View tender reports
+  permission_group: reporting
+  active: true
+
+reporting_view_cash:
+  code: reporting.view_cash
+  name: View cash reports
+  permission_group: reporting
+  active: true
+
+reporting_view_inventory:
+  code: reporting.view_inventory
+  name: View inventory reports
+  permission_group: reporting
+  active: true
+
+reporting_view_purchasing:
+  code: reporting.view_purchasing
+  name: View purchasing reports
+  permission_group: reporting
+  active: true
+
+reporting_view_requests:
+  code: reporting.view_requests
+  name: View request reports
+  permission_group: reporting
+  active: true
+
+reporting_view_cost:
+  code: reporting.view_cost
+  name: View cost on reports
+  permission_group: reporting
+  active: true
+
+reporting_view_margin:
+  code: reporting.view_margin
+  name: View margin on reports
+  permission_group: reporting
+  active: true
+
+reporting_view_stored_value:
+  code: reporting.view_stored_value
+  name: View stored-value reports
+  permission_group: reporting
+  active: true
+
+reporting_view_audit:
+  code: reporting.view_audit
+  name: View audit reports
+  permission_group: reporting
+  active: true
+
+reporting_view_session_x:
+  code: reporting.view_session_x
+  name: View Session X
+  permission_group: reporting
+  active: true
+
+reporting_view_session_z:
+  code: reporting.view_session_z
+  name: View Session Z
+  permission_group: reporting
+  active: true
+
+reporting_view_business_day_x:
+  code: reporting.view_business_day_x
+  name: View Business-Day X
+  permission_group: reporting
+  active: true
+
+reporting_view_business_day_z:
+  code: reporting.view_business_day_z
+  name: View Business-Day Z
+  permission_group: reporting
+  active: true
+
+reporting_export:
+  code: reporting.export
+  name: Export reports
+  permission_group: reporting
+  active: true
+
+reporting_reconcile_session:
+  code: reporting.reconcile_session
+  name: Reconcile POS sessions
+  permission_group: reporting
+  active: true
+
+reporting_reconcile_business_day:
+  code: reporting.reconcile_business_day
+  name: Reconcile business days
+  permission_group: reporting
+  active: true
+
+reporting_record_reconciliation_resolution:
+  code: reporting.record_reconciliation_resolution
+  name: Record reconciliation resolutions
+  permission_group: reporting
+  active: true
+
+reporting_close_evidence_unavailable:
+  code: reporting.close_evidence_unavailable
+  name: Record unavailable close evidence
+  permission_group: reporting
+  active: true
+
+reporting_reconcile_approve:
+  code: reporting.reconcile.approve
+  name: Approve reconciliation variances
+  permission_group: reporting
+  active: true
+
+reporting_reconcile_approve_self:
+  code: reporting.reconcile.approve_self
+  name: Self-approve reconciliation variances
+  permission_group: reporting
+  active: true

@@ -302,7 +302,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     post close_pos_session_path(@session), params: { counted_cash_cents: "1.00" }
 
-    assert_redirected_to register_path
+    z = @session.reload.pos_session_z_report
+    assert z.present?
+    assert_redirected_to session_z_report_pos_session_path(@session)
     assert_match(/Session closed\. Variance:/, flash[:notice].to_s)
     assert_match(/\$/, flash[:notice].to_s)
   end

@@ -187,6 +187,7 @@ Accepted detail: [decisions/phase-07-reporting-and-reconciliation-v1.md](decisio
 - Close never auto-reconciles; finalize is a separate audited action (one-click Reconcile now allowed).
 - Reconciliation uses comparisons / findings / resolutions — not a generic balance-changing adjustment.
 - Reporting reconcile/view keys under `reporting.*`; close remains `pos.*.close`.
+- Phase 7 reuses membership `cash_variance_review_threshold_cents` as the **shared** threshold for accepting both cash and card reconciliation differences (fail-closed when null). Exact-match finalize needs no threshold.
 
 Phase 7 delivery detail: [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md).
 

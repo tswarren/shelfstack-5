@@ -1,0 +1,46 @@
+<section class="card workspace-card">
+  <h2>Comparisons</h2>
+  <ul class="stack-list">
+    <% reconciliation.reconciliation_comparisons.includes(:reconciliation_resolutions).order(:position).each do |comparison| %>
+      <% active = comparison.reconciliation_resolutions.reject(&:superseded) %>
+      <li>
+        <strong><%= comparison.comparison_type.humanize %></strong>
+        <% if comparison.observed_unavailable %>
+          · observed unavailable
+          <% if active.any? { |r| r.resolution_type == "accept_evidence_unavailable" } %>
+            · accepted
+          <% elsif !reconciliation.finalized? %>
+            <%= form_with url: accept_unavailable_comparison_path(reconciliation, comparison), method: :post, class: "form-inline" do %>
+              <label>
+                Explanation
+                <input type="text" name="explanation" class="input" required value="Accepted unavailable evidence">
+              </label>
+              <%= submit_tag "Accept unavailable", class: "button button-outline" %>
+            <% end %>
+          <% end %>
+        <% else %>
+          · expected <%= number_to_currency(comparison.expected_cents.to_i / 100.0) %>
+          · observed <%= number_to_currency(comparison.observed_cents.to_i / 100.0) %>
+          · variance <%= number_to_currency(comparison.variance_cents.to_i / 100.0) %>
+          <% if comparison.variance_cents.to_i.nonzero? %>
+            <% final = active.find { |r| %w[accepted_variance explained_no_correction].include?(r.resolution_type) } %>
+            <% if final %>
+              · <%= final.resolution_type.humanize %>: <%= final.explanation %>
+            <% elsif !reconciliation.finalized? && Current.user.can?("reporting.record_reconciliation_resolution", store: Current.store) %>
+              <%= form_with url: record_reconciliation_resolution_path(reconciliation, comparison), method: :post, class: "form-stack" do %>
+                <label class="field-label" for="resolution_type_<%= comparison.id %>">Resolution</label>
+                <select name="resolution_type" id="resolution_type_<%= comparison.id %>" class="input" required>
+                  <option value="explained_no_correction">Explain — no correction</option>
+                  <option value="accepted_variance">Accept variance</option>
+                </select>
+                <label class="field-label" for="explanation_<%= comparison.id %>">Explanation</label>
+                <textarea name="explanation" id="explanation_<%= comparison.id %>" class="input" required rows="2"></textarea>
+                <%= submit_tag "Record resolution", class: "button button-outline" %>
+              <% end %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+</section>

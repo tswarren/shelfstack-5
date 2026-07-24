@@ -11,6 +11,28 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     @variant = product_variants(:sample_book_standard)
   end
 
+  test "register day and session details link to X reports with live totals" do
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+    session = PosSession.order(:id).last
+
+    get register_path
+    assert_response :success
+    assert_select "a[href=?]", business_day_x_report_business_day_path(business_day), text: "Day X"
+    assert_select "a[href=?]", session_x_report_pos_session_path(session), text: "Session X"
+    assert_select "a[href=?]", close_form_business_day_path(business_day), text: "Close business day"
+    assert_match(/Net sales/, response.body)
+  end
+
   test "admin can open day/session, add lines, suspend, and recall" do
     post session_path, params: { username: "admin", password: "password123" }
 

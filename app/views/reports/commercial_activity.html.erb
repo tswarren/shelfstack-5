@@ -1,0 +1,49 @@
+<% content_for :title, "Commercial activity" %>
+
+<%= render "shared/page_header", title: "Commercial activity",
+      subtitle: "#{@from_date} to #{@to_date}. Completed snapshots only; corrections attribute to their completion period." %>
+
+<%= form_with url: commercial_activity_report_path, method: :get, local: true do %>
+  <div class="form-row">
+    <label>From <input type="date" name="from_date" value="<%= @from_date %>"></label>
+    <label>To <input type="date" name="to_date" value="<%= @to_date %>"></label>
+    <%= submit_tag "Apply", class: "button button-outline" %>
+    <% if Current.user.can?("reporting.export", store: Current.store) %>
+      <%= link_to "CSV", export_report_path(report: "commercial_activity", from_date: @from_date, to_date: @to_date), class: "button" %>
+    <% end %>
+  </div>
+<% end %>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Gross</th>
+      <th>Discounts</th>
+      <th>Returns</th>
+      <th>Net sales</th>
+      <th>Units</th>
+      <% if @show_cost %><th>Cost</th><th>Missing cost</th><% end %>
+      <% if @show_margin && @show_cost %><th>Margin</th><% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <% @rows.each do |row| %>
+      <tr>
+        <td><%= row.completed_on %></td>
+        <td><%= number_to_currency(row.gross_sales_cents / 100.0) %></td>
+        <td><%= number_to_currency(row.discount_total_cents / 100.0) %></td>
+        <td><%= number_to_currency(row.return_total_cents / 100.0) %></td>
+        <td><%= number_to_currency(row.net_sales_cents / 100.0) %></td>
+        <td><%= row.units_sold %></td>
+        <% if @show_cost %>
+          <td><%= number_to_currency(row.cost_extended_cents / 100.0) %></td>
+          <td><%= row.missing_cost_line_count %></td>
+        <% end %>
+        <% if @show_margin && @show_cost %>
+          <td><%= number_to_currency((row.net_sales_cents - row.cost_extended_cents) / 100.0) %></td>
+        <% end %>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

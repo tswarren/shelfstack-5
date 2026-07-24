@@ -129,7 +129,7 @@ ShelfStack uses append-only history for areas such as:
 * inventory movements;
 * Stored-Value Entries;
 * completed POS corrections;
-* reconciliation adjustments.
+* reconciliation comparisons, findings, and resolutions.
 
 ## Approval
 

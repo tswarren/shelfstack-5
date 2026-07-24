@@ -70,4 +70,45 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
     get allocation_events_report_path
     assert_redirected_to root_path
   end
+
+  test "day-only reconciler reaches reports and queue without session reconcile links" do
+    role = Role.create!(
+      organization: @store.organization,
+      code: "day_only_#{SecureRandom.hex(3)}",
+      name: "Day Reconciler",
+      system_template: false,
+      active: true
+    )
+    RolePermission.create!(role: role, permission: permissions(:reporting_reconcile_business_day))
+    user = User.create!(
+      username: "dayrecon_#{SecureRandom.hex(3)}",
+      user_number: rand(10_000..99_999),
+      first_name: "Day",
+      last_name: "Only",
+      password: "password123",
+      active: true,
+      default_store: @store
+    )
+    StoreMembership.create!(user: user, store: @store, role: role, active: true)
+
+    day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+    session = Pos::OpenSession.call(
+      business_day: day, store: @store, pos_device: pos_devices(:register_1),
+      cash_drawer: cash_drawers(:drawer_1), opening_cash_cents: 0, cashier: @admin, actor: @admin
+    ).pos_session
+    assert Pos::CloseSession.call(pos_session: session, actor: @admin, counted_cash_cents: 0).success?
+    assert Pos::CloseBusinessDay.call(business_day: day, actor: @admin).success?
+
+    delete session_path
+    post session_path, params: { username: user.username, password: "password123" }
+
+    get reports_path
+    assert_response :success
+    assert_select "a", text: "Open queue"
+
+    get reconciliations_path
+    assert_response :success
+    assert_select "a", text: "Reconcile", count: 1 # day only
+    assert_select "body", text: /Required session reconciliation/
+  end
 end

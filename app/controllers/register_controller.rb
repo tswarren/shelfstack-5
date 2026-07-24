@@ -10,6 +10,7 @@ class RegisterController < ApplicationController
 
   def show
     load_register_context!
+    load_register_reporting!
     @scan_query = flash[:scan_query]
     @scan_quantity = flash[:scan_quantity].presence || 1
     @scan_outcome = flash[:scan_outcome]
@@ -80,5 +81,25 @@ class RegisterController < ApplicationController
     @open_transaction = @open_session && PosTransaction.open_transactions.find_by(active_pos_session: @open_session)
     @suspended_transactions = @business_day ? Current.store.pos_transactions.suspended.order(suspended_at: :desc) : PosTransaction.none
     @cash_movement_types = Current.organization.cash_movement_types.where(active: true).order(:name)
+  end
+
+  def load_register_reporting!
+    @can_view_day_x = Current.user.can?("reporting.view_business_day_x", store: Current.store)
+    @can_view_day_z = Current.user.can?("reporting.view_business_day_z", store: Current.store)
+    @can_view_session_x = Current.user.can?("reporting.view_session_x", store: Current.store)
+    @can_view_session_z = Current.user.can?("reporting.view_session_z", store: Current.store)
+    @can_view_cash = Current.user.can?("reporting.view_cash", store: Current.store)
+    @day_sessions = []
+    @day_totals = nil
+    @session_totals_by_id = {}
+    return if @business_day.blank?
+
+    @day_sessions = @business_day.pos_sessions.includes(:pos_device, :cashier_user, :pos_session_z_report).order(:id)
+    return unless @can_view_day_x || @can_view_session_x
+
+    @day_totals = Reporting::BuildBusinessDayTotals.call(business_day: @business_day, mode: :live)
+    @day_totals.session_breakdown.each do |row|
+      @session_totals_by_id[row["pos_session_id"]] = row
+    end
   end
 end
