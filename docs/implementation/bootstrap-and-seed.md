@@ -131,7 +131,13 @@ The sync is additive and audited: it grants every catalog permission that is mis
 
 Set both in a repo-root `.env` file (already covered by the `/.env*` gitignore pattern — never commit it). `docker compose up` loads it into the `web` service via `env_file: .env` in [`compose.yml`](../../compose.yml) (`required: false`, so a missing `.env` does not break Compose). ShelfStack does **not** use the `dotenv` / `dotenv-rails` gems; this is Compose's own `.env`-loading behavior, and adapters simply read `ENV[...]` afterward.
 
-If you add or change these variables while the `web` container is already running, restart it (`docker compose up -d web` or `docker compose restart web`) — `env_file` is only read when the container starts.
+If you add or change these variables while the `web` container is already running, **recreate** it — `docker compose restart web` keeps the old environment; use:
+
+```bash
+docker compose up -d --force-recreate --no-deps web
+```
+
+`env_file` is applied when the container is created, not on a plain restart.
 
 Test suites never require either variable: `Catalog::Providers::Isbndb` / `GoogleBooks` accept an injected fake `transport:` and make no live network calls.
 
