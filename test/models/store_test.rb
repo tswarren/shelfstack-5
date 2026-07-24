@@ -39,6 +39,24 @@ class StoreTest < ActiveSupport::TestCase
     assert_includes store.errors[:card_reconciliation_grain], "is not included in the list"
   end
 
+  test "rejects selecting session card grain while not yet operable" do
+    store = stores(:main_street)
+    store.card_reconciliation_grain = "session"
+    assert_not store.valid?
+    assert_match(/not available/, store.errors[:card_reconciliation_grain].join)
+  end
+
+  test "allows remediating legacy session grain back to business_day" do
+    store = stores(:main_street)
+    store.update_columns(card_reconciliation_grain: "session")
+    store.reload
+    store.name = "#{store.name} updated"
+    assert store.valid?, store.errors.full_messages.join(", ")
+    store.card_reconciliation_grain = "business_day"
+    assert store.valid?, store.errors.full_messages.join(", ")
+    assert store.save
+  end
+
   test "requires positive z number sequences" do
     store = stores(:main_street)
     store.next_session_z_number = 0

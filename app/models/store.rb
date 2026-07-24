@@ -50,4 +50,16 @@ class Store < ApplicationRecord
   validates :card_reconciliation_grain, presence: true, inclusion: { in: CARD_RECONCILIATION_GRAINS }
   validates :next_session_z_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
   validates :next_business_day_z_number, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 1 }
+  validate :session_card_grain_not_yet_operable,
+           if: -> { card_reconciliation_grain == "session" && will_save_change_to_card_reconciliation_grain? }
+
+  private
+
+  def session_card_grain_not_yet_operable
+    errors.add(
+      :card_reconciliation_grain,
+      "session grain is not available until merchant-slip session close is implemented"
+    )
+  end
 end
+
