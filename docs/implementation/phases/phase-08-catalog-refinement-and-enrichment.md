@@ -1,9 +1,9 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** Ready for implementation — not started
+**Status:** In progress — Gate 8a complete pending merge to `main` ([#95](https://github.com/tswarren/shelfstack-5/issues/95)); next Gate 8b ([#96](https://github.com/tswarren/shelfstack-5/issues/96))
 **Date:** 2026-07-24
 **Depends on:** Phase 7 core complete
-**Roadmap position:** Next delivery phase after Phase 7
+**Roadmap position:** Active delivery phase after Phase 7
 **Governing documents:** ADR-0001, ADR-0002, ADR-0003; [catalog-and-products](../../domains/catalog-and-products.md); [architectural-locks](../architectural-locks.md)
 **Carry-forward register:** [deferred-work-register.md](../deferred-work-register.md)
 **Decision note:** [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)  
@@ -189,7 +189,8 @@ It must not rewrite completed:
 
 ### 8a — Catalog interaction foundation
 
-**Priority:** Must
+**Priority:** Must  
+**Status:** Complete pending merge (`phase/p8-catalog-refinement`; [#95](https://github.com/tswarren/shelfstack-5/issues/95))  
 **Purpose:** Establish shared controls used by the remaining Phase 8 workflows.
 
 #### Scope
@@ -223,11 +224,13 @@ Controls should support, as appropriate:
 
 #### Exit criteria
 
-* Product and variant forms no longer depend on unwieldy unfiltered lists for high-volume linking fields.
-* One shared implementation pattern is documented.
-* Search results remain scoped to the current organization or store as appropriate.
-* Inactive records are excluded by default but may be intentionally shown where a correction workflow requires them.
-* Controls work without requiring a single-page application.
+* [x] Product and variant forms no longer depend on unwieldy unfiltered lists for high-volume linking fields.
+* [x] One shared implementation pattern is documented ([interaction-patterns.md](../../design/interaction-patterns.md)).
+* [x] Search results remain scoped to the current organization or store as appropriate.
+* [x] Inactive records are excluded by default but may be intentionally shown where a correction workflow requires them.
+* [x] Controls work without requiring a single-page application.
+
+PO/receipt nested line pickers remain a follow-on (DWR-020), not part of the 8a exit.
 
 ---
 
@@ -1256,7 +1259,7 @@ rather than remaining only in the phase plan.
 
 ## 19. Implementation sequence
 
-1. Deliver Gate 8a shared record-picker infrastructure.
+1. Deliver Gate 8a shared record-picker infrastructure — **done pending merge** ([#95](https://github.com/tswarren/shelfstack-5/issues/95)).
 2. Deliver Gate 8b schema and provider foundation (including Creator model and Creator search-to-link).
 3. Deliver Gate 8c create-from-ISBN.
 4. Deliver Gate 8d Product summary hub.
