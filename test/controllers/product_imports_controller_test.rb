@@ -58,14 +58,16 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference [ "Product.count", "CatalogEnrichmentEvent.count" ] do
       post preview_product_imports_path, params: {
         identifier: CANONICAL_ISBN13, provider: "isbndb"
-      }
+      }, as: :turbo_stream
     end
 
     assert_response :success
+    assert_equal "text/html", response.media_type
     assert_match(/Preview product import/i, response.body)
     assert_match(/Test Harbor/, response.body)
     assert_match(/external list price/i, response.body)
   end
+
 
   test "existing ISBN redirects to the product show page" do
     existing = products(:sample_book)

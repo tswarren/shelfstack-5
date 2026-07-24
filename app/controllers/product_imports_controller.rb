@@ -47,16 +47,18 @@ class ProductImportsController < ApplicationController
     when :failure
       @attrs = {}
       flash.now[:alert] = result.message.presence || "External lookup failed (#{result.code})."
-      render :new, status: :unprocessable_entity
+      render_html :new, status: :unprocessable_entity
     else
       @preview = result
       @product_formats = Current.organization.product_formats.where(active: true).order(:name)
-      render :preview
+      # Full HTML page — Turbo form posts negotiate as turbo_stream; a 200 with
+      # turbo-stream Content-Type and no <turbo-stream> tags leaves the UI unchanged.
+      render_html :preview
     end
   rescue Catalog::PreviewProductImport::Error, Catalog::LookupExternalMetadata::Error => error
     @attrs = {}
     flash.now[:alert] = error.message
-    render :new, status: :forbidden
+    render_html :new, status: :forbidden
   end
 
   def accept
@@ -87,13 +89,13 @@ class ProductImportsController < ApplicationController
       rebuild_preview_for_rerender
       @error = result.message
       @product_formats = Current.organization.product_formats.where(active: true).order(:name)
-      render :preview, status: :unprocessable_entity
+      render_html :preview, status: :unprocessable_entity
     end
   rescue Catalog::CreateFromEnrichment::Error => error
     rebuild_preview_for_rerender
     @error = error.message
     @product_formats = Current.organization.product_formats.where(active: true).order(:name)
-    render :preview, status: :forbidden
+    render_html :preview, status: :forbidden
   end
 
   def create
@@ -117,17 +119,22 @@ class ProductImportsController < ApplicationController
       @warnings = result.warnings
       @identifier = params[:identifier]
       @provider = params[:provider].presence || "isbndb"
-      render :new, status: :unprocessable_entity
+      render_html :new, status: :unprocessable_entity
     else
       @attrs = attrs
       @error = result.error
       @identifier = params[:identifier]
       @provider = params[:provider].presence || "isbndb"
-      render :new, status: :unprocessable_entity
+      render_html :new, status: :unprocessable_entity
     end
   end
 
   private
+
+  # Force text/html so Turbo Drive replaces the page after a form POST.
+  def render_html(template, status: :ok)
+    render template, formats: [ :html ], status: status
+  end
 
   def require_import_entry!
     return if Current.user&.can?("catalog.lookup_external", store: Current.store)
