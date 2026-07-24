@@ -3,6 +3,7 @@ require_relative "../config/environment"
 require "rails/test_help"
 require_relative "support/pos_setup_helper"
 require_relative "support/foreign_organization_helper"
+require_relative "support/fake_http_transport"
 
 module ActiveSupport
   class TestCase

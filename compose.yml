@@ -12,6 +12,14 @@ services:
       - "3000:3000"
     # Chromium in Docker needs more than the default 64MB /dev/shm.
     shm_size: "256mb"
+    # Gate 8b Slice 2: loads operator-provided provider API keys
+    # (SHELFSTACK_ISBNDB_API_KEY, optional SHELFSTACK_GOOGLE_BOOKS_API_KEY)
+    # from a gitignored repo-root .env into the container as plain ENV --
+    # no dotenv gem. `required: false` means a missing .env does not break
+    # `docker compose up` (see docs/implementation/bootstrap-and-seed.md).
+    env_file:
+      - path: .env
+        required: false
     environment:
       RAILS_ENV: development
       DATABASE_HOST: db

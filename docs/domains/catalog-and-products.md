@@ -111,6 +111,22 @@ An organization-owned bibliographic Creator master (authors, editors, illustrato
 - Deactivating a Creator hides it from new searches but never removes existing Product links.
 - Creator search-to-link uses the shared record-picker foundation (Gate 8a); Creator-master mutations require `catalog.manage_creators`, while linking Creators to a Product uses ordinary product create/edit permissions.
 
+## External metadata lookup (Gate 8b Slice 2 / OD-P8-04)
+
+Service-only in 8b — no lookup HTTP endpoint or result cache ships until Gate 8c's preview workflow. `Catalog::LookupExternalMetadata.call(actor:, store:, identifier:, provider:)` is the sole authorization-checking layer (requires `catalog.lookup_external`); provider adapters (`Catalog::Providers::Isbndb`, `Catalog::Providers::GoogleBooks`) and the injectable `Catalog::Providers::HttpTransport` boundary stay authorization-free and independently testable.
+
+- Only a valid ISBN-13 or Bookland EAN-13 (978/979) proceeds to a provider call (ISBN-10 is canonicalized first, per `Identifiers::Normalize`); UPC, ShelfStack-generated `21`/`27`/`28`/`29` identifiers, other EAN-13 ranges, and malformed input return `unsupported_identifier` with **zero** transport calls.
+- An unrecognized `provider:` symbol raises `ArgumentError` at the facade (programmer misuse) — Gate 8c's controller is responsible for turning an invalid user-selected provider into an ordinary validation response.
+- Provider order remains ISBNdb (primary) → Google Books (operator-selected secondary, never automatic fallback) → manual entry. Google Books defaults to keyless public lookup; an optional API key is used only when keyless fails.
+- Adapters map every response into `Catalog::Enrichment::NormalizedResult` — an immutable, deep-frozen, provider-neutral shape (title, creators, publisher, `Catalog::Enrichment::NormalizedPublicationDate`, list price as `Catalog::Enrichment::NormalizedMoney`, external subjects, images, warnings). Application code never depends on ISBNdb- or Google-Books-specific response keys.
+- Provider creator names normalize into the Slice 1 `ProductCreator` role allowlist; a missing or unrecognized role becomes `contributor` plus a `Catalog::Enrichment::NormalizedWarning` — arbitrary provider role strings are never persisted.
+- List price parses with `BigDecimal` (never `Float`), rejects negative/non-numeric amounts, rounds half-up to integer cents, and uppercases the currency code (or keeps it null) — whether a null/mismatched currency may apply remains the later create/enrich workflow's decision (OD-P8-01 §5), not this lookup layer's.
+- Normalized adapter failures: `not_found`, `ambiguous_result`, `authentication_failed`, `rate_limited`, `timeout`, `provider_unavailable`, `invalid_response`, `unsupported_identifier`. Google Books distinguishes a missing exact-ISBN match (`not_found`) from more than one exact match, including duplicate hits (`ambiguous_result`) — it never accepts the first relevance-ranked hit.
+- Transport policy: HTTPS-only fixed provider base URLs, explicit connect/read timeouts, a bounded response body, and at most one retry (connection reset / temporary network failure / HTTP 502/503/504 only — never on authentication failure or a malformed body). HTTP 429 always maps to `rate_limited` without sleeping; a parsed `Retry-After` is preserved in failure metadata when present.
+- Credentials (`SHELFSTACK_ISBNDB_API_KEY`, optional `SHELFSTACK_GOOGLE_BOOKS_API_KEY`) are read from `ENV` only — never stored on a Product/org/store row, logged, or included in a failure message (see [bootstrap-and-seed.md](../implementation/bootstrap-and-seed.md#external-metadata-provider-credentials-gate-8b-slice-2)).
+- A lookup creates **no** Product, Variant, Creator, ProductCreator, or `catalog_enrichment_events` row — persistence and provenance-event writing are Gate 8c/8f work.
+- `Catalog::MapProductFormat` is a read-only suggestion boundary: an exact active-`ProductFormat` code/name match, or a small explicit provider-token map, resolves to at most one suggestion; several matches return no suggestion plus a warning. It never creates, updates, or auto-applies a `ProductFormat`.
+
 ## Product Variant
 
 A Product Variant represents the exact operational configuration.

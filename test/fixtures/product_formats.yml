@@ -15,3 +15,49 @@ other:
   format_family: other
   default_inventory_tracking_mode: quantity
   active: true
+
+paperback:
+  organization: acme
+  code: paperback
+  name: Paperback
+  short_code: PB
+  format_family: book
+  default_inventory_tracking_mode: quantity
+  active: true
+
+# Deliberately duplicate `name` values (different `code`/`short_code`) so
+# Catalog::MapProductFormat has a genuine multi-match ambiguity to map
+# against, without a hard DB uniqueness constraint on name.
+trade_paperback_a:
+  organization: acme
+  code: trade_paperback_a
+  name: Trade Paperback
+  # Short codes ZZ/ZY/ZX are deliberately outside docs/exports/product_formats.csv's
+  # real two-letter codes (AU..VY) -- Classification::Import::ReferenceData upserts
+  # that CSV into this same fixture organization, so a collision with a real code
+  # (e.g. reusing TA, already "Tableware") would break unrelated import tests.
+  short_code: ZZ
+  format_family: book
+  default_inventory_tracking_mode: quantity
+  active: true
+
+trade_paperback_b:
+  organization: acme
+  code: trade_paperback_b
+  name: Trade Paperback
+  short_code: ZY
+  format_family: book
+  default_inventory_tracking_mode: quantity
+  active: true
+
+# Inactive duplicate of `hardcover`'s name -- proves MapProductFormat only
+# considers active formats (otherwise "Hardcover" would ambiguously match
+# both this and `hardcover`).
+retired_hardcover:
+  organization: acme
+  code: retired_hardcover
+  name: Hardcover
+  short_code: ZX
+  format_family: book
+  default_inventory_tracking_mode: quantity
+  active: false

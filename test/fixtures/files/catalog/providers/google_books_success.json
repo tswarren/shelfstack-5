@@ -1,0 +1,28 @@
+{
+  "kind": "books#volumes",
+  "totalItems": 1,
+  "items": [
+    {
+      "id": "fixture-vol-1",
+      "volumeInfo": {
+        "title": "Test Harbor",
+        "subtitle": "A Fixture Novel",
+        "authors": [ "Jordan Fixture" ],
+        "publisher": "Fixture House",
+        "publishedDate": "2014-02-11",
+        "description": "A deterministic fixture book used only for adapter tests.",
+        "industryIdentifiers": [
+          { "type": "ISBN_10", "identifier": "0316769487" },
+          { "type": "ISBN_13", "identifier": "9780316769488" }
+        ],
+        "categories": [ "Fiction" ],
+        "printType": "BOOK",
+        "language": "en",
+        "imageLinks": { "thumbnail": "https://books.example.test/thumb.jpg" }
+      },
+      "saleInfo": {
+        "listPrice": { "amount": 16.99, "currencyCode": "USD" }
+      }
+    }
+  ]
+}

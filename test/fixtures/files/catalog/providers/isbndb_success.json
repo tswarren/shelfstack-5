@@ -1,0 +1,18 @@
+{
+  "book": {
+    "title": "Test Harbor",
+    "isbn13": "9780316769488",
+    "isbn": "0316769487",
+    "authors": [ "Jordan Fixture", "Alex Sample" ],
+    "publisher": "Fixture House",
+    "language": "en",
+    "date_published": "2014-02-11",
+    "edition": "1st",
+    "binding": "Paperback",
+    "subjects": [ "Fiction", "Testing" ],
+    "synopsis": "A deterministic fixture book used only for adapter tests.",
+    "image": "https://images.example.test/covers/test-harbor.jpg",
+    "msrp": "16.99",
+    "msrp_currency": "usd"
+  }
+}

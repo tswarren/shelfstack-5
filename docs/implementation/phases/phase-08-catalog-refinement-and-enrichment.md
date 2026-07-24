@@ -237,7 +237,7 @@ PO/receipt nested line pickers remain a follow-on (DWR-020), not part of the 8a 
 ### 8b — Bibliographic representation and provider foundation
 
 **Priority:** Must
-**Status:** Slice 1 (schema + Creators) in progress on `feat/p8-96-biblio-creators-enrichment-schema`; Slice 2 (ISBNdb/Google Books adapters) not started — see [Gate 8b plan](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)
+**Status:** Slice 1 (schema + Creators) complete on `feat/p8-96-biblio-creators-enrichment-schema`; Slice 2 (ISBNdb/Google Books adapters) complete on `feat/p8-96-external-metadata-adapters`; both pending merge — see [Gate 8b plan](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)
 **Purpose:** Establish a provider-neutral model before implementing product creation.
 
 #### Scope

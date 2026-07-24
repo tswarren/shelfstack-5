@@ -120,6 +120,21 @@ Requirements:
 
 The sync is additive and audited: it grants every catalog permission that is missing, and does not remove existing role-permission assignments.
 
+## External metadata provider credentials (Gate 8b Slice 2)
+
+`Catalog::LookupExternalMetadata` and its adapters (`Catalog::Providers::Isbndb`, `Catalog::Providers::GoogleBooks`) read installation secrets from `ENV` only — never from Product/org/store tables, HTML, logs, or provenance records (OD-P8-04):
+
+| Variable | Purpose | Required? |
+| --- | --- | --- |
+| `SHELFSTACK_ISBNDB_API_KEY` | ISBNdb API key (primary production provider) | Required for live ISBNdb lookups; unset → `authentication_failed` without a network call |
+| `SHELFSTACK_GOOGLE_BOOKS_API_KEY` | Google Books API key | Optional — Google Books defaults to keyless public lookup; set only if keyless fails (quota/auth) |
+
+Set both in a repo-root `.env` file (already covered by the `/.env*` gitignore pattern — never commit it). `docker compose up` loads it into the `web` service via `env_file: .env` in [`compose.yml`](../../compose.yml) (`required: false`, so a missing `.env` does not break Compose). ShelfStack does **not** use the `dotenv` / `dotenv-rails` gems; this is Compose's own `.env`-loading behavior, and adapters simply read `ENV[...]` afterward.
+
+If you add or change these variables while the `web` container is already running, restart it (`docker compose up -d web` or `docker compose restart web`) — `env_file` is only read when the container starts.
+
+Test suites never require either variable: `Catalog::Providers::Isbndb` / `GoogleBooks` accept an injected fake `transport:` and make no live network calls.
+
 ### Permissions vs numeric authority
 
 Permissions and numeric authority are separate (ADR-0011). Holding `pos.discount.apply` is not enough when the action also checks a membership limit such as `maximum_discount_rate`.
