@@ -34,4 +34,3 @@ class ReconciliationComparison < ApplicationRecord
     raise ActiveRecord::ReadOnlyRecord, "cannot modify comparisons on a finalized reconciliation"
   end
 end
-

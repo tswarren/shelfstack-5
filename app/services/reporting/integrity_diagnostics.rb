@@ -59,7 +59,5 @@ module Reporting
 
       Finding.new(code: "missing_cost", severity: "info", count: ids.size, sample_ids: ids)
     end
-
   end
 end
-

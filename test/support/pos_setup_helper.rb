@@ -141,4 +141,16 @@ module PosSetupHelper
       card_confirmations: plan[:card_confirmations]
     )
   end
+
+  # Non-transactional concurrency tests must clear Phase 7 close-control rows
+  # before PosSession/BusinessDay.delete_all (Z reports, card evidence, recon).
+  def purge_phase7_close_control_rows!
+    ReconciliationFinding.delete_all
+    ReconciliationResolution.delete_all
+    ReconciliationComparison.delete_all
+    Reconciliation.delete_all
+    PosSessionZReport.delete_all
+    BusinessDayZReport.delete_all
+    PosCloseCardEvidence.delete_all
+  end
 end

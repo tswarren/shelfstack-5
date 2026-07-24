@@ -44,4 +44,3 @@ class ReconciliationResolution < ApplicationRecord
     raise ActiveRecord::ReadOnlyRecord, "cannot delete resolutions on a finalized reconciliation"
   end
 end
-

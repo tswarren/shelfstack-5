@@ -18,4 +18,3 @@ class ReconciliationFinding < ApplicationRecord
     raise ActiveRecord::ReadOnlyRecord, "cannot modify findings on a finalized reconciliation"
   end
 end
-

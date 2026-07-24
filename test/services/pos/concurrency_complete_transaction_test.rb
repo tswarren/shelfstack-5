@@ -83,6 +83,7 @@ module Pos
       PosLineItem.delete_all
       PosTransaction.delete_all
       PosSessionCashCount.delete_all
+      purge_phase7_close_control_rows!
       PosSession.delete_all
       BusinessDay.delete_all
       InventoryLedgerEntry.delete_all

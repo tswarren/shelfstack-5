@@ -62,4 +62,3 @@ class Store < ApplicationRecord
     )
   end
 end
-
