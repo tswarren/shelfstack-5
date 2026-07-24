@@ -7,7 +7,7 @@ export default class extends Controller {
     dependentParam: { type: String, default: "productId" }
   }
 
-  parentSelected(event) {
+  parentChanged(event) {
     const id = event.detail?.id
     this.dependentTargets.forEach((element) => {
       const picker = this.application.getControllerForElementAndIdentifier(element, "record-picker")

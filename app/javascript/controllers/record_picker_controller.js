@@ -26,21 +26,19 @@ export default class extends Controller {
   }
 
   disconnect() {
-    this.clearDebounce()
-    this.abortInFlight()
+    this.invalidatePendingSearch()
   }
 
   onInput() {
     if (this.disabledValue) return
-    this.clearDebounce()
-    this.abortInFlight()
+    this.invalidatePendingSearch()
     this.syncValidity()
     this.scheduleSearch()
   }
 
   onFocus() {
     if (this.disabledValue) return
-    if (this.inputTarget.value.trim() !== "" || this.results.length) {
+    if (this.results.length > 0) {
       this.openListbox()
     }
   }
@@ -59,12 +57,12 @@ export default class extends Controller {
     switch (event.key) {
       case "ArrowDown":
         event.preventDefault()
-        this.openListbox()
+        if (this.results.length) this.openListbox()
         this.moveActive(1)
         break
       case "ArrowUp":
         event.preventDefault()
-        this.openListbox()
+        if (this.results.length) this.openListbox()
         this.moveActive(-1)
         break
       case "Enter":
@@ -84,19 +82,16 @@ export default class extends Controller {
   clear(event) {
     event?.preventDefault()
     if (this.disabledValue) return
-    this.clearDebounce()
-    this.abortInFlight()
+    this.invalidatePendingSearch()
     this.committedId = ""
     this.committedLabel = ""
     this.hiddenTarget.value = ""
     this.inputTarget.value = ""
-    this.results = []
-    this.activeIndex = -1
-    this.renderResults()
-    this.setStatus("")
+    this.clearResultsAndStatus()
     this.syncValidity()
     this.toggleClear()
     this.closeListbox()
+    this.dispatchChanged()
     this.inputTarget.focus()
   }
 
@@ -105,13 +100,15 @@ export default class extends Controller {
   }
 
   resetForScopeChange() {
-    this.clearDebounce()
-    this.abortInFlight()
-    this.results = []
-    this.activeIndex = -1
-    this.renderResults()
-    this.setStatus("")
+    this.invalidatePendingSearch()
+    this.clearResultsAndStatus()
     this.closeListbox()
+  }
+
+  invalidatePendingSearch() {
+    this.requestToken += 1
+    this.abortInFlight()
+    this.clearDebounce()
   }
 
   scheduleSearch() {
@@ -137,9 +134,9 @@ export default class extends Controller {
     const query = this.inputTarget.value.trim()
     const recordType = this.recordTypeValue
     const productId = this.productIdValue || ""
-    const token = ++this.requestToken
 
     this.abortInFlight()
+    const token = ++this.requestToken
     this.abortController = new AbortController()
     this.setStatus("Searching…")
     this.openListbox()
@@ -226,14 +223,11 @@ export default class extends Controller {
     this.committedLabel = result.label
     this.hiddenTarget.value = this.committedId
     this.inputTarget.value = this.committedLabel
-    this.results = []
-    this.activeIndex = -1
-    this.renderResults()
+    this.clearResultsAndStatus()
     this.syncValidity()
     this.toggleClear()
     this.closeListbox()
-    this.setStatus("")
-    this.dispatch("selected", { detail: { id: result.id, label: result.label, recordType: this.recordTypeValue } })
+    this.dispatchChanged()
   }
 
   restoreCommittedIfUnmatched() {
@@ -247,22 +241,39 @@ export default class extends Controller {
       this.syncValidity()
       return
     }
-    // Non-empty unmatched text (or emptied while a commit existed): restore commit.
-    // Emptying without Clear is treated as unmatched when a prior selection exists.
     this.hiddenTarget.value = this.committedId
     this.inputTarget.value = this.committedLabel
+    this.clearResultsAndStatus()
     this.syncValidity()
     this.toggleClear()
+  }
+
+  clearResultsAndStatus() {
+    this.results = []
+    this.activeIndex = -1
+    this.renderResults()
+    this.setStatus("")
   }
 
   syncValidity() {
     if (!this.hasInputTarget) return
     const current = this.inputTarget.value
-    const unmatched = current !== this.committedLabel && current.trim() !== ""
+    const unmatched = current !== this.committedLabel && (current.trim() !== "" || this.committedId !== "")
     if (unmatched) {
       this.inputTarget.setCustomValidity("Select a result or clear the field")
     } else {
       this.inputTarget.setCustomValidity("")
+    }
+  }
+
+  dispatchChanged() {
+    const id = this.committedId ? this.committedId : null
+    this.dispatch("changed", {
+      detail: { id, label: this.committedLabel, recordType: this.recordTypeValue }
+    })
+    // Keep legacy selected for any listeners that still expect it on choose.
+    if (id) {
+      this.dispatch("selected", { detail: { id, label: this.committedLabel, recordType: this.recordTypeValue } })
     }
   }
 

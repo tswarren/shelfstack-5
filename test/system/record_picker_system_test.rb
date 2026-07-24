@@ -65,6 +65,27 @@ class RecordPickerSystemTest < ApplicationSystemTestCase
     assert_equal original_tax_id.to_s, find("#product_default_tax_category_id", visible: :all).value
   end
 
+  test "blanking committed optional label without Clear blocks immediate submit" do
+    product = products(:sample_book)
+    original_tax_id = product.default_tax_category_id
+    assert_predicate original_tax_id, :present?
+
+    visit edit_product_path(product)
+    input = find("#product_default_tax_category_id_query")
+    # Empty the visible field without Clear; keep focus so blur restore does not run first.
+    page.execute_script(<<~JS, input.native)
+      const el = arguments[0]
+      el.focus()
+      el.value = ""
+      el.dispatchEvent(new Event("input", { bubbles: true }))
+    JS
+    assert_equal original_tax_id.to_s, find("#product_default_tax_category_id", visible: :all).value
+
+    click_button "Update product"
+    assert_current_path edit_product_path(product)
+    assert_equal original_tax_id, product.reload.default_tax_category_id
+  end
+
   test "explicit clear blanks optional tax category on save" do
     product = products(:sample_book)
     assert_predicate product.default_tax_category_id, :present?
@@ -100,6 +121,29 @@ class RecordPickerSystemTest < ApplicationSystemTestCase
       query: "UPC Sample",
       result_text: /UPC Sample/
     )
+    assert_equal "", find("#product_request_product_variant_id", visible: :all).value
+    assert_equal "", find("#product_request_product_variant_id_query").value
+  end
+
+  test "clearing parent product clears dependent variant selection" do
+    visit new_product_request_path
+    select_picker_result(
+      query_id: "product_request_product_id_query",
+      query: "Illustrated",
+      result_text: /Illustrated/
+    )
+    sample_variant = product_variants(:sample_book_standard)
+    select_picker_result(
+      query_id: "product_request_product_variant_id_query",
+      query: "Standard",
+      result_text: /SKU #{sample_variant.sku}/
+    )
+    assert_equal sample_variant.id.to_s, find("#product_request_product_variant_id", visible: :all).value
+
+    within find("#product_request_product_id_query").ancestor(".record-picker") do
+      click_button "Clear"
+    end
+    assert_equal "", find("#product_request_product_id", visible: :all).value
     assert_equal "", find("#product_request_product_variant_id", visible: :all).value
     assert_equal "", find("#product_request_product_variant_id_query").value
   end
@@ -140,6 +184,28 @@ class RecordPickerSystemTest < ApplicationSystemTestCase
     input = find("#product_default_tax_category_id_query")
     input.click
     input.set("delay")
+    sleep 0.25
+    within(picker) { click_button "Clear" }
+    sleep 0.8
+    assert_no_selector ".record-picker-option", text: /STALE RESULT/
+  end
+
+  test "blank-query stale response is rejected after clear invalidates token" do
+    visit edit_product_path(products(:sample_book))
+    picker = find("#product_default_tax_category_id_query").ancestor(".record-picker")
+    page.execute_script(
+      "const el = arguments[0]; const c = window.Stimulus.getControllerForElementAndIdentifier(el, 'record-picker'); c.searchUrlValue = arguments[1]; c.committedId = ''; c.committedLabel = ''; c.hiddenTarget.value = ''; c.inputTarget.value = '';",
+      picker.native,
+      catalog_slow_record_searches_path
+    )
+
+    input = find("#product_default_tax_category_id_query")
+    input.click
+    # Kick a blank-query search against the delayed endpoint.
+    page.execute_script(<<~JS, input.native)
+      const el = arguments[0]
+      el.dispatchEvent(new Event("input", { bubbles: true }))
+    JS
     sleep 0.25
     within(picker) { click_button "Clear" }
     sleep 0.8

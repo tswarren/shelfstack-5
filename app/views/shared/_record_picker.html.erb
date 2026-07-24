@@ -35,8 +35,15 @@
     local_assigns.fetch(:name)
   end
   field_id = local_assigns[:id].presence || (field_name || "#{form&.object_name}_#{method_name}").to_s.gsub(/[\[\]]+/, "_").gsub(/_+\z/, "")
-  selected_label = selected.present? ? record_picker_label(selected, record_type) : ""
-  selected_id = selected&.id
+  # Never trust an attached association for display — resolve within Current.organization.
+  candidate_id = local_assigns[:selected_id].presence || selected&.id
+  resolved = Catalog::ResolveRecordPickerSelection.call(
+    organization: Current.organization,
+    record_type: record_type,
+    id: candidate_id
+  )
+  selected_label = resolved.present? ? record_picker_label(resolved, record_type) : ""
+  selected_id = resolved&.id
   search_url = catalog_record_searches_path
   listbox_id = "#{field_id}_listbox"
   input_id = "#{field_id}_query"

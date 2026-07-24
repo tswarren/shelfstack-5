@@ -93,6 +93,37 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  test "validation rerender does not disclose foreign-organization classification labels" do
+    foreign = create_foreign_organization_catalog!
+    product = products(:sample_book)
+    variant = product.product_variants.first
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        merchandise_class_id: foreign[:merchandise_class].id,
+        default_department_id: foreign[:department].id,
+        default_tax_category_id: foreign[:tax_category].id,
+        status: product.status,
+        sellable: product.sellable
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_CLASS_NAME)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_TAX_NAME)}/, response.body)
+    assert_no_match(/Foreign Department SECRET/, response.body)
+    assert_match(/must belong to the same organization/, response.body)
+  end
+
   test "editor without deactivate can edit an already nonsellable product" do
     product = products(:sample_book)
     product.update!(sellable: false)

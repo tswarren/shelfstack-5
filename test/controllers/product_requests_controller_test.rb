@@ -50,6 +50,29 @@ class ProductRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "validation rerender does not disclose foreign-organization product or variant labels" do
+    foreign = create_foreign_organization_catalog!
+
+    assert_no_difference "ProductRequest.count" do
+      post product_requests_path, params: {
+        product_request: {
+          request_type: "staff_suggestion",
+          product_id: foreign[:product].id,
+          product_variant_id: foreign[:variant].id,
+          requested_quantity: 1,
+          priority: "normal"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_PRODUCT_NAME)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_PRODUCT_IDENTIFIER)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_VARIANT_SKU)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_VARIANT_NAME)}/, response.body)
+    assert_match(/must belong to the same organization/, response.body)
+  end
+
   test "resolves an open non-customer request" do
     request = product_requests(:open_staff_suggestion)
 

@@ -2,6 +2,7 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 require_relative "support/pos_setup_helper"
+require_relative "support/foreign_organization_helper"
 
 module ActiveSupport
   class TestCase
@@ -12,5 +13,6 @@ module ActiveSupport
     fixtures :all
 
     include PosSetupHelper
+    include ForeignOrganizationHelper
   end
 end

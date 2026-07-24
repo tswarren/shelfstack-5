@@ -33,7 +33,8 @@ The control submits a hidden id field with the correct param name for ordinary R
 ### Behavior
 
 * Typeahead search with keyboard navigation (↑ ↓ Enter Esc).
-* Clear control when blank selection is allowed. Only **Clear** intentionally blanks an optional association; unmatched typed text restores the last committed selection on blur/Escape and blocks submit via `setCustomValidity`.
+* Clear control when blank selection is allowed. Only **Clear** intentionally blanks an optional association; unmatched typed text (including deleting a committed label without Clear) restores the last committed selection on blur/Escape and blocks submit via `setCustomValidity`.
+* Displayed selections are resolved through `Catalog::ResolveRecordPickerSelection` against `Current.organization` so validation rerenders never disclose foreign-organization labels.
 * Loading, empty, and error status text via `aria-live`.
 * Combobox semantics: `role="combobox"` on the text input, `role="listbox"` / `option` on results.
 * Keyboard-active option uses a leading marker and inset border in addition to background (not color alone). Hover is distinct from the active state.

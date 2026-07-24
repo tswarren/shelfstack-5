@@ -17,7 +17,7 @@
             required: true,
             disabled: product_request.persisted?,
             picker_targets: "parent",
-            data_actions: "record-picker:selected->linked-record-pickers#parentSelected",
+            data_actions: "record-picker:changed->linked-record-pickers#parentChanged",
             hint: safe_join([
               "Can't find the product? ".html_safe,
               link_to("Search or create it", new_product_import_path(return_to: request.fullpath))
