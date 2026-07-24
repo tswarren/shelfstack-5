@@ -187,11 +187,6 @@ class ProductRequestsController < ApplicationController
     @buyers = User.joins(:store_memberships)
       .where(store_memberships: { store_id: Current.store.id })
       .distinct.order(:username)
-    @products = Current.organization.products.order(:name).limit(200)
-    @product_variants = ProductVariant.joins(:product)
-      .where(products: { organization_id: Current.organization.id })
-      .includes(:product)
-      .order("products.name", :name)
   end
 
   def product_request_params

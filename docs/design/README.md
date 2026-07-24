@@ -29,10 +29,10 @@ Money in ShelfStack is integer cents. The UI may display formatted currency; sto
 | [pos-register-ui.md](pos-register-ui.md) | POS layout, session context, state model, warnings/blockers |
 | [scanner-and-hotkeys.md](scanner-and-hotkeys.md) | Scan field, focus, progressive hotkeys |
 | [accessibility.md](accessibility.md) | Keyboard, focus, contrast, status beyond color |
+| [interaction-patterns.md](interaction-patterns.md) | Shared forms/controls (record picker); drawers and validation patterns as added |
 
-## Future design docs (not required for Phase 4a gate)
+## Future design docs
 
-- `interaction-patterns.md` — forms, drawers, shared validation display
 - `performance-and-recovery.md` — latency targets, completion failure/retry UI (needed by Phase 4c)
 
 Phase 6.5 cashier accessibility and interaction requirements live in [pos-register-ui.md](pos-register-ui.md) and [accessibility.md](accessibility.md).

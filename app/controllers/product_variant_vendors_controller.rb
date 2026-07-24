@@ -67,11 +67,7 @@ class ProductVariantVendorsController < ApplicationController
   end
 
   def load_form_collections
-    @vendors = Current.organization.vendors.where(active: true).order(:code)
-    @product_variants = ProductVariant.joins(:product)
-      .where(products: { organization_id: Current.organization.id })
-      .includes(:product)
-      .order("products.name", :name)
+    # Collections loaded via shared record pickers (Gate 8a).
   end
 
   def product_variant_vendor_params

@@ -32,6 +32,9 @@ Rails.application.routes.draw do
   resources :product_formats, except: %i[destroy]
   resources :product_conditions, except: %i[destroy]
   resources :products, except: %i[destroy]
+  namespace :catalog do
+    get "record_searches", to: "record_searches#index", as: :record_searches
+  end
   resources :vendors, except: %i[destroy]
   resources :product_variant_vendors, except: %i[destroy], path: "vendor_sources"
   resources :purchase_orders, except: %i[destroy] do

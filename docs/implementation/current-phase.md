@@ -22,7 +22,7 @@
 
 ## Immediate next work
 
-1. Start Phase 8 Gate 8a ([#95](https://github.com/tswarren/shelfstack-5/issues/95)); then 8b–8c ([#96](https://github.com/tswarren/shelfstack-5/issues/96), [#97](https://github.com/tswarren/shelfstack-5/issues/97)); keep enrichment ahead of multi-variant (Phase 8.5).
+1. Merge Gate 8a record-picker ([#95](https://github.com/tswarren/shelfstack-5/issues/95)); then 8b–8c ([#96](https://github.com/tswarren/shelfstack-5/issues/96), [#97](https://github.com/tswarren/shelfstack-5/issues/97)); keep enrichment ahead of multi-variant (Phase 8.5). PO/receipt nested line pickers remain a follow-on after 8a.
 2. Optional short ops-hardening before or beside Phase 8 start: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md):
    - Linked domain correction resolutions — [#89](https://github.com/tswarren/shelfstack-5/issues/89)

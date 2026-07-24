@@ -282,6 +282,24 @@ module ApplicationHelper
     )
   end
 
+  # Label for shared record-picker options (Gate 8a).
+  def record_picker_label(record, record_type)
+    return "—" if record.blank?
+
+    case record_type.to_s
+    when "merchandise_class", "department"
+      hierarchy_path_label(record)
+    when "product_variant"
+      variant_option_label(record)
+    when "product"
+      record.identifier.present? ? "#{record.name} · #{record.identifier}" : record.name.to_s
+    when "vendor"
+      record_option_label(record, code_attr: :code, name_attr: :name)
+    else
+      record_option_label(record)
+    end
+  end
+
   # Product — Variant · SKU … (+ tracking mode when useful)
   def variant_option_label(variant, include_tracking: false)
     return "—" if variant.blank?

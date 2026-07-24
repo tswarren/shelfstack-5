@@ -14,6 +14,18 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Illustrated Man", response.body
   end
 
+  test "edit form uses shared record pickers for classification links" do
+    product = products(:sample_book)
+    get edit_product_path(product)
+    assert_response :success
+    assert_match "data-controller=\"record-picker\"", response.body
+    assert_match "data-record-picker-record-type-value=\"merchandise_class\"", response.body
+    assert_match "data-record-picker-record-type-value=\"department\"", response.body
+    assert_match "data-record-picker-record-type-value=\"product_format\"", response.body
+    assert_match "data-record-picker-record-type-value=\"tax_category\"", response.body
+    assert_no_match(/name="product\[merchandise_class_id\]"[^>]*<option/m, response.body)
+  end
+
   test "searches by normalized ISBN-10 input" do
     get products_path, params: { q: "0-306-40615-2" }
     assert_response :success

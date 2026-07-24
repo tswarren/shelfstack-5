@@ -1,0 +1,111 @@
+<%#
+  Shared search-to-link record picker (Gate 8a).
+
+  Locals:
+    name:            param name for the hidden id field (required unless form+method)
+    id:              DOM id base (defaults from name)
+    record_type:     Catalog::SearchRecords type string
+    selected:        currently selected record (or nil)
+    label:           visible field label
+    required:        boolean (default false)
+    disabled:        boolean — shows selected label read-only (default false)
+    include_blank:   allow clearing selection (default true)
+    include_inactive: pass include_inactive=1 to search (default false)
+    product_id:      optional scope for product_variant searches
+    hint:            optional hint text
+    form:            optional form builder; used with method:
+    method:          optional symbol for form.hidden_field
+%>
+<%
+  record_type = local_assigns.fetch(:record_type)
+  selected = local_assigns[:selected]
+  label_text = local_assigns.fetch(:label)
+  required = local_assigns.fetch(:required, false)
+  disabled = local_assigns.fetch(:disabled, false)
+  include_blank = local_assigns.fetch(:include_blank, true)
+  include_inactive = local_assigns.fetch(:include_inactive, false)
+  product_id = local_assigns[:product_id]
+  hint = local_assigns[:hint]
+  form = local_assigns[:form]
+  method_name = local_assigns[:method]
+
+  field_name = if form && method_name
+    nil
+  else
+    local_assigns.fetch(:name)
+  end
+  field_id = local_assigns[:id].presence || (field_name || "#{form&.object_name}_#{method_name}").to_s.gsub(/[\[\]]+/, "_").gsub(/_+\z/, "")
+  selected_label = selected.present? ? record_picker_label(selected, record_type) : ""
+  selected_id = selected&.id
+  search_url = catalog_record_searches_path
+  listbox_id = "#{field_id}_listbox"
+  input_id = "#{field_id}_query"
+  data_actions = local_assigns[:data_actions]
+  picker_targets = local_assigns[:picker_targets]
+%>
+
+<div class="field record-picker"
+     data-controller="record-picker"
+     data-record-picker-search-url-value="<%= search_url %>"
+     data-record-picker-record-type-value="<%= record_type %>"
+     data-record-picker-include-inactive-value="<%= include_inactive %>"
+     <% if product_id.present? %>data-record-picker-product-id-value="<%= product_id %>"<% end %>
+     data-record-picker-disabled-value="<%= disabled %>"
+     <% if data_actions.present? %>data-action="<%= data_actions %>"<% end %>
+     <% if picker_targets.present? %>data-linked-record-pickers-target="<%= picker_targets %>"<% end %>>
+  <label class="field-label" for="<%= input_id %>"><%= label_text %><%= " *" if required %></label>
+
+  <% if form && method_name %>
+    <%= form.hidden_field method_name,
+          value: selected_id,
+          id: field_id,
+          required: required && !disabled,
+          disabled: disabled,
+          data: { record_picker_target: "hidden" } %>
+  <% else %>
+    <input type="hidden"
+           name="<%= field_name %>"
+           id="<%= field_id %>"
+           value="<%= selected_id %>"
+           <%= "required" if required && !disabled %>
+           <%= "disabled" if disabled %>
+           data-record-picker-target="hidden">
+  <% end %>
+
+  <div class="record-picker-control">
+    <input type="text"
+           id="<%= input_id %>"
+           class="input record-picker-input"
+           value="<%= selected_label %>"
+           autocomplete="off"
+           role="combobox"
+           aria-autocomplete="list"
+           aria-expanded="false"
+           aria-controls="<%= listbox_id %>"
+           aria-haspopup="listbox"
+           <%= "required" if required && !disabled %>
+           <%= "readonly disabled" if disabled %>
+           placeholder="Type to search…"
+           data-record-picker-target="input"
+           data-action="input->record-picker#onInput keydown->record-picker#onKeydown focus->record-picker#onFocus blur->record-picker#onBlur">
+    <% if include_blank && !disabled %>
+      <button type="button"
+              class="record-picker-clear button button-ghost"
+              aria-label="Clear selection"
+              data-record-picker-target="clear"
+              data-action="record-picker#clear"
+              <%= "hidden" if selected_id.blank? %>>Clear</button>
+    <% end %>
+  </div>
+
+  <ul id="<%= listbox_id %>"
+      class="record-picker-listbox"
+      role="listbox"
+      hidden
+      data-record-picker-target="listbox"></ul>
+
+  <p class="field-hint record-picker-status" data-record-picker-target="status" role="status" aria-live="polite"></p>
+  <% if hint.present? %>
+    <p class="field-hint"><%= hint %></p>
+  <% end %>
+</div>

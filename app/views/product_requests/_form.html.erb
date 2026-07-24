@@ -1,29 +1,36 @@
 <%= form_with model: product_request, url: form_url, class: "form" do |form| %>
   <%= render "shared/form_errors", object: product_request %>
 
-  <section class="form-section">
+  <section class="form-section" data-controller="linked-record-pickers">
     <div class="form-grid">
       <div class="field">
         <%= form.label :request_type, "Request type", class: "field-label" %>
         <%= form.select :request_type, ProductRequest::REQUEST_TYPES.map { |t| [ t.titleize, t ] },
               {}, required: true, class: "input", disabled: product_request.persisted? %>
       </div>
-      <div class="field">
-        <%= form.label :product_id, "Product", class: "field-label" %>
-        <%= form.collection_select :product_id, @products, :id, :name,
-              { include_blank: true }, required: true, class: "input", disabled: product_request.persisted? %>
-        <p class="field-hint">
-          Can't find the product?
-          <%= link_to "Search or create it", new_product_import_path(return_to: request.fullpath) %>.
-        </p>
-      </div>
-      <div class="field">
-        <%= form.label :product_variant_id, "Product variant (optional)", class: "field-label" %>
-        <%= form.collection_select :product_variant_id,
-              @product_variants.select { |v| product_request.product_id.blank? || v.product_id == product_request.product_id },
-              :id, ->(v) { variant_option_label(v) }, { include_blank: true }, class: "input" %>
-        <p class="field-hint">Resolve the exact variant before this request is added to a purchase order.</p>
-      </div>
+      <%= render "shared/record_picker",
+            form: form,
+            method: :product_id,
+            record_type: "product",
+            selected: product_request.product,
+            label: "Product",
+            required: true,
+            disabled: product_request.persisted?,
+            picker_targets: "parent",
+            data_actions: "record-picker:selected->linked-record-pickers#parentSelected",
+            hint: safe_join([
+              "Can't find the product? ".html_safe,
+              link_to("Search or create it", new_product_import_path(return_to: request.fullpath))
+            ]) %>
+      <%= render "shared/record_picker",
+            form: form,
+            method: :product_variant_id,
+            record_type: "product_variant",
+            selected: product_request.product_variant,
+            label: "Product variant (optional)",
+            product_id: product_request.product_id,
+            picker_targets: "dependent",
+            hint: "Resolve the exact variant before this request is added to a purchase order." %>
       <div class="field">
         <%= form.label :requested_quantity, "Requested quantity", class: "field-label" %>
         <%= form.number_field :requested_quantity, min: 1, required: true, class: "input" %>
