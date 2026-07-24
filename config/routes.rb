@@ -34,6 +34,9 @@ Rails.application.routes.draw do
   resources :products, except: %i[destroy]
   namespace :catalog do
     get "record_searches", to: "record_searches#index", as: :record_searches
+    if Rails.env.test?
+      get "slow_record_searches", to: "slow_record_searches#index", as: :slow_record_searches
+    end
   end
   resources :vendors, except: %i[destroy]
   resources :product_variant_vendors, except: %i[destroy], path: "vendor_sources"

@@ -17,11 +17,17 @@ export default class extends Controller {
         picker.productIdValue = id ? String(id) : ""
       }
 
-      // Clear dependent selection when parent changes.
+      picker.committedId = ""
+      picker.committedLabel = ""
       picker.hiddenTarget.value = ""
       picker.inputTarget.value = ""
+      picker.syncValidity()
       picker.toggleClear()
-      picker.closeListbox()
+      if (typeof picker.resetForScopeChange === "function") {
+        picker.resetForScopeChange()
+      } else {
+        picker.closeListbox()
+      }
     })
   }
 }

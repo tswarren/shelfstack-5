@@ -16,7 +16,10 @@ export default class extends Controller {
     this.activeIndex = -1
     this.debounceTimer = null
     this.abortController = null
-    this.selectedLabel = this.hasInputTarget ? this.inputTarget.value : ""
+    this.requestToken = 0
+    this.committedId = this.hasHiddenTarget ? this.hiddenTarget.value : ""
+    this.committedLabel = this.hasInputTarget ? this.inputTarget.value : ""
+    this.syncValidity()
     if (this.disabledValue) {
       this.inputTarget.setAttribute("aria-disabled", "true")
     }
@@ -29,6 +32,9 @@ export default class extends Controller {
 
   onInput() {
     if (this.disabledValue) return
+    this.clearDebounce()
+    this.abortInFlight()
+    this.syncValidity()
     this.scheduleSearch()
   }
 
@@ -41,7 +47,10 @@ export default class extends Controller {
 
   onBlur() {
     // Delay so option mousedown/click can run first.
-    window.setTimeout(() => this.closeListbox(), 150)
+    window.setTimeout(() => {
+      this.restoreCommittedIfUnmatched()
+      this.closeListbox()
+    }, 150)
   }
 
   onKeydown(event) {
@@ -66,6 +75,7 @@ export default class extends Controller {
         break
       case "Escape":
         event.preventDefault()
+        this.restoreCommittedIfUnmatched()
         this.closeListbox()
         break
     }
@@ -74,14 +84,34 @@ export default class extends Controller {
   clear(event) {
     event?.preventDefault()
     if (this.disabledValue) return
+    this.clearDebounce()
+    this.abortInFlight()
+    this.committedId = ""
+    this.committedLabel = ""
     this.hiddenTarget.value = ""
     this.inputTarget.value = ""
     this.results = []
     this.activeIndex = -1
+    this.renderResults()
     this.setStatus("")
+    this.syncValidity()
     this.toggleClear()
     this.closeListbox()
     this.inputTarget.focus()
+  }
+
+  productIdValueChanged() {
+    this.resetForScopeChange()
+  }
+
+  resetForScopeChange() {
+    this.clearDebounce()
+    this.abortInFlight()
+    this.results = []
+    this.activeIndex = -1
+    this.renderResults()
+    this.setStatus("")
+    this.closeListbox()
   }
 
   scheduleSearch() {
@@ -105,11 +135,9 @@ export default class extends Controller {
 
   async search() {
     const query = this.inputTarget.value.trim()
-    // Typing after a selection clears the hidden id until a new choice is made.
-    if (this.hiddenTarget.value && this.inputTarget.value !== this.selectedLabel) {
-      this.hiddenTarget.value = ""
-      this.toggleClear()
-    }
+    const recordType = this.recordTypeValue
+    const productId = this.productIdValue || ""
+    const token = ++this.requestToken
 
     this.abortInFlight()
     this.abortController = new AbortController()
@@ -117,10 +145,10 @@ export default class extends Controller {
     this.openListbox()
 
     const url = new URL(this.searchUrlValue, window.location.origin)
-    url.searchParams.set("type", this.recordTypeValue)
+    url.searchParams.set("type", recordType)
     url.searchParams.set("q", query)
     if (this.includeInactiveValue) url.searchParams.set("include_inactive", "1")
-    if (this.productIdValue) url.searchParams.set("product_id", this.productIdValue)
+    if (productId) url.searchParams.set("product_id", productId)
 
     try {
       const response = await fetch(url.toString(), {
@@ -128,6 +156,8 @@ export default class extends Controller {
         credentials: "same-origin",
         signal: this.abortController.signal
       })
+
+      if (!this.isCurrentRequest(token, query, recordType, productId)) return
 
       if (!response.ok) {
         this.results = []
@@ -137,16 +167,28 @@ export default class extends Controller {
       }
 
       const payload = await response.json()
+      if (!this.isCurrentRequest(token, query, recordType, productId)) return
+
       this.results = Array.isArray(payload.results) ? payload.results : []
       this.activeIndex = this.results.length ? 0 : -1
       this.renderResults()
       this.setStatus(this.results.length ? `${this.results.length} result${this.results.length === 1 ? "" : "s"}` : "No matches.")
     } catch (error) {
       if (error.name === "AbortError") return
+      if (!this.isCurrentRequest(token, query, recordType, productId)) return
       this.results = []
       this.renderResults()
       this.setStatus("Search failed.")
     }
+  }
+
+  isCurrentRequest(token, query, recordType, productId) {
+    return (
+      token === this.requestToken &&
+      query === this.inputTarget.value.trim() &&
+      recordType === this.recordTypeValue &&
+      productId === (this.productIdValue || "")
+    )
   }
 
   renderResults() {
@@ -154,11 +196,22 @@ export default class extends Controller {
     this.results.forEach((result, index) => {
       const option = document.createElement("li")
       option.className = "record-picker-option"
+      if (result.inactive) option.classList.add("record-picker-option--inactive")
       option.setAttribute("role", "option")
       option.id = `${this.listboxTarget.id}_opt_${index}`
       option.dataset.index = String(index)
       option.setAttribute("aria-selected", index === this.activeIndex ? "true" : "false")
-      option.textContent = result.label
+
+      const marker = document.createElement("span")
+      marker.className = "record-picker-option-marker"
+      marker.setAttribute("aria-hidden", "true")
+      marker.textContent = "›"
+
+      const label = document.createElement("span")
+      label.className = "record-picker-option-label"
+      label.textContent = result.label
+
+      option.append(marker, label)
       option.addEventListener("mousedown", (event) => {
         event.preventDefault()
         this.selectResult(result)
@@ -169,15 +222,48 @@ export default class extends Controller {
   }
 
   selectResult(result) {
-    this.hiddenTarget.value = result.id
-    this.inputTarget.value = result.label
-    this.selectedLabel = result.label
+    this.committedId = String(result.id)
+    this.committedLabel = result.label
+    this.hiddenTarget.value = this.committedId
+    this.inputTarget.value = this.committedLabel
     this.results = []
     this.activeIndex = -1
+    this.renderResults()
+    this.syncValidity()
     this.toggleClear()
     this.closeListbox()
     this.setStatus("")
     this.dispatch("selected", { detail: { id: result.id, label: result.label, recordType: this.recordTypeValue } })
+  }
+
+  restoreCommittedIfUnmatched() {
+    if (this.disabledValue) return
+    const current = this.inputTarget.value
+    if (current === this.committedLabel) {
+      this.syncValidity()
+      return
+    }
+    if (current.trim() === "" && this.committedId === "") {
+      this.syncValidity()
+      return
+    }
+    // Non-empty unmatched text (or emptied while a commit existed): restore commit.
+    // Emptying without Clear is treated as unmatched when a prior selection exists.
+    this.hiddenTarget.value = this.committedId
+    this.inputTarget.value = this.committedLabel
+    this.syncValidity()
+    this.toggleClear()
+  }
+
+  syncValidity() {
+    if (!this.hasInputTarget) return
+    const current = this.inputTarget.value
+    const unmatched = current !== this.committedLabel && current.trim() !== ""
+    if (unmatched) {
+      this.inputTarget.setCustomValidity("Select a result or clear the field")
+    } else {
+      this.inputTarget.setCustomValidity("")
+    }
   }
 
   moveActive(delta) {

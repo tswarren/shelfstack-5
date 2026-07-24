@@ -33,11 +33,13 @@ The control submits a hidden id field with the correct param name for ordinary R
 ### Behavior
 
 * Typeahead search with keyboard navigation (↑ ↓ Enter Esc).
-* Clear control when blank selection is allowed.
+* Clear control when blank selection is allowed. Only **Clear** intentionally blanks an optional association; unmatched typed text restores the last committed selection on blur/Escape and blocks submit via `setCustomValidity`.
 * Loading, empty, and error status text via `aria-live`.
 * Combobox semantics: `role="combobox"` on the text input, `role="listbox"` / `option` on results.
-* Inactive records are **excluded by default**. Pass `include_inactive: true` only for intentional correction workflows.
-* Results are scoped to `Current.organization`. Variant search may further scope with `product_id`.
+* Keyboard-active option uses a leading marker and inset border in addition to background (not color alone). Hover is distinct from the active state.
+* Inactive records are **excluded by default**. Product Variant default search also requires the parent Product to be active. Pass `include_inactive: true` only for intentional correction workflows; inactive results then include a status suffix (`· Inactive` / `· Discontinued`) and an inactive option class.
+* Results are scoped to `Current.organization`. Variant search may further scope with `product_id`, and matches product identifier / alternate identifier as well as name/SKU.
+* In-flight searches use abort + request tokens so stale responses cannot repopulate the listbox after clear, query change, or Product rescope.
 * Server-side authorization is required per record type; the UI must not be the only gate.
 
 ### Labels

@@ -22,7 +22,14 @@ module Catalog
       )
 
       render json: {
-        results: results.map { |r| { id: r.id, label: r.label } }
+        results: results.map { |r|
+          {
+            id: r.id,
+            label: r.label,
+            status: r.status,
+            inactive: r.inactive
+          }
+        }
       }
     end
   end

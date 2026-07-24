@@ -3,7 +3,7 @@
 module Catalog
   # Org-scoped typeahead search for shared record pickers (Gate 8a).
   class SearchRecords < ApplicationService
-    Result = Data.define(:id, :label)
+    Result = Data.define(:id, :label, :status, :inactive)
 
     RECORD_TYPES = %w[
       merchandise_class
@@ -51,8 +51,7 @@ module Catalog
       raise ArgumentError, "unknown record type: #{@record_type}" unless RECORD_TYPES.include?(@record_type)
       raise ArgumentError, "organization required" if @organization.blank?
 
-      records = search_records
-      records.map { |record| Result.new(id: record.id, label: label_for(record)) }
+      search_records.map { |record| build_result(record) }
     end
 
     def self.authorized?(user:, store:, record_type:)
@@ -125,20 +124,42 @@ module Catalog
     end
 
     def search_product_variants
-      scope = ProductVariant.joins(:product)
-        .where(products: { organization_id: @organization.id })
-        .includes(:product)
-        .order("products.name", "product_variants.name")
-      scope = scope.where(status: "active") unless @include_inactive
-      scope = scope.where(product_id: @product_id) if @product_id.present?
+      scope = base_variant_scope
       if @query.present?
+        lookup_variants = variants_from_product_lookup
+        return lookup_variants if lookup_variants.any?
+
         pattern = "%#{sanitize_like(@query)}%"
         scope = scope.where(
-          "product_variants.name ILIKE :q OR product_variants.sku ILIKE :q OR products.name ILIKE :q",
+          "product_variants.name ILIKE :q OR product_variants.sku ILIKE :q OR products.name ILIKE :q " \
+          "OR products.identifier ILIKE :q OR COALESCE(products.alternate_identifier, '') ILIKE :q",
           q: pattern
         )
       end
       scope.limit(LIMIT)
+    end
+
+    def base_variant_scope
+      scope = ProductVariant.joins(:product)
+        .where(products: { organization_id: @organization.id })
+        .includes(:product)
+        .order("products.name", "product_variants.name")
+      unless @include_inactive
+        scope = scope.where(status: "active").where(products: { status: "active" })
+      end
+      scope = scope.where(product_id: @product_id) if @product_id.present?
+      scope
+    end
+
+    def variants_from_product_lookup
+      lookup = Catalog::Lookup.call(organization: @organization, query: @query)
+      return [] if lookup.empty?
+
+      product_ids = lookup.products.map(&:id)
+      product_ids &= [ @product_id.to_i ] if @product_id.present?
+      return [] if product_ids.empty?
+
+      base_variant_scope.where(product_id: product_ids).limit(LIMIT).to_a
     end
 
     def search_vendors
@@ -158,9 +179,49 @@ module Catalog
       ActiveRecord::Base.sanitize_sql_like(value)
     end
 
-    def label_for(record)
-      return @labeler.call(record, @record_type) if @labeler
+    def build_result(record)
+      status = status_for(record)
+      inactive = inactive?(record, status)
+      base_label = @labeler ? @labeler.call(record, @record_type) : label_for(record)
+      label = inactive && @include_inactive ? "#{base_label} · #{status_suffix(status)}" : base_label
+      Result.new(id: record.id, label: label, status: status, inactive: inactive)
+    end
 
+    def status_for(record)
+      case @record_type
+      when "product_variant"
+        product_status = record.product&.status.to_s
+        return product_status if product_status.present? && product_status != "active"
+        record.status.to_s
+      when "product"
+        record.status.to_s
+      else
+        if record.respond_to?(:active)
+          record.active? ? "active" : "inactive"
+        else
+          "active"
+        end
+      end
+    end
+
+    def inactive?(record, status)
+      case @record_type
+      when "product", "product_variant"
+        status != "active"
+      else
+        record.respond_to?(:active) ? !record.active? : false
+      end
+    end
+
+    def status_suffix(status)
+      case status.to_s
+      when "discontinued" then "Discontinued"
+      when "inactive" then "Inactive"
+      else status.to_s.titleize.presence || "Inactive"
+      end
+    end
+
+    def label_for(record)
       case @record_type
       when "merchandise_class", "department"
         path_label(record)

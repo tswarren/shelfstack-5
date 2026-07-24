@@ -30,7 +30,22 @@ class Catalog::RecordSearchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     body = JSON.parse(response.body)
-    assert body["results"].any? { |r| r["id"] == vendors(:inactive_vendor).id }
+    row = body["results"].find { |r| r["id"] == vendors(:inactive_vendor).id }
+    assert row
+    assert row["inactive"]
+    assert_match(/Inactive/, row["label"])
+  end
+
+  test "excludes variants of inactive products by default" do
+    product = products(:sample_book)
+    variant = product_variants(:sample_book_standard)
+    product.update!(status: "inactive")
+
+    get catalog_record_searches_path, params: { type: "product_variant", q: variant.sku }, as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert body["results"].none? { |r| r["id"] == variant.id }
   end
 
   test "rejects unknown type" do

@@ -96,13 +96,36 @@
 }
 
 .record-picker-option {
+  display: grid;
+  grid-template-columns: 1.1rem 1fr;
+  gap: 0.35rem;
+  align-items: baseline;
   padding: 0.45rem 0.65rem;
   cursor: pointer;
+  border-left: 3px solid transparent;
 }
 
-.record-picker-option.is-active,
+.record-picker-option-marker {
+  opacity: 0;
+  font-weight: 700;
+}
+
 .record-picker-option:hover {
   background: var(--surface-muted, var(--surface-secondary, #f3f4f6));
+}
+
+.record-picker-option.is-active {
+  background: var(--surface-muted, var(--surface-secondary, #f3f4f6));
+  border-left-color: var(--text-primary, #111);
+  font-weight: 650;
+}
+
+.record-picker-option.is-active .record-picker-option-marker {
+  opacity: 1;
+}
+
+.record-picker-option--inactive .record-picker-option-label {
+  font-style: italic;
 }
 
 .record-picker-clear {
