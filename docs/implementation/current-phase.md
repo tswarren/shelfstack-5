@@ -12,13 +12,15 @@
 **Phase 7 plan (complete core):** [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md)  
 **Decision note (Phase 7):** [phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md)  
 **Phase 8 draft (non-governing):** [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md)  
+**Decision note (Phase 8):** [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) (OD-P8-01…10 accepted / deferred as noted)  
+
 **Phase 6.5 plan (complete):** [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md)  
 **Phase 6 plan (complete):** [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md)  
 **Decision notes (Phase 6):** [post-void eligibility](decisions/phase-06-post-void-eligibility-and-cross-domain-reversal.md); [inventory correction / OD-014](decisions/phase-06-inventory-correction-and-od-014.md); [stored-value v1 policy](decisions/phase-06-stored-value-v1-operating-policy.md)
 
 ## Immediate next work
 
-1. Promote Phase 8 catalog refinement from temp draft to `docs/implementation/phases/phase-08-…` when scoping is accepted; keep enrichment ahead of multi-variant.
+1. Promote Phase 8 plan from temp draft to `docs/implementation/phases/phase-08-catalog-refinement-and-enrichment.md` (OD-P8 decisions accepted); start Gate 8a linking controls; keep enrichment ahead of multi-variant (Phase 8.5).
 2. Optional short ops-hardening before or beside Phase 8 start: keyboard/scanner [#51](https://github.com/tswarren/shelfstack-5/issues/51); control-master admin CRUD / store settings UI (DWR-018/019).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md):
    - Linked domain correction resolutions — [#89](https://github.com/tswarren/shelfstack-5/issues/89)

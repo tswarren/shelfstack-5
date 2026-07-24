@@ -117,14 +117,14 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-017 | Customer receipt product (templates, gift receipts, ESC/POS / printer queues) | 7 park | delivery_debt | [phase-7-optional-receipt-printing.md](../temp_draft/phase-7-optional-receipt-printing.md) (non-governing) | Explicit product design; not Phase 7 core | later_extensions | — |
 | DWR-018 | Admin CRUD for seed-only control masters (`tender_types`, `cash_movement_types`, `stored_value_adjustment_reasons`) | 4f / 6 | delivery_debt | [phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md) Deferred UX | Classification manage permissions pattern | unscheduled | — |
 | DWR-019 | Organization / store settings UI gap (address, SAN, receipt header/footer, card grain, org defaults) | 1 / 7 | delivery_debt | Store schema + `StoresController` strong params; no org UI | DWR-001 for behavioral settings home | unscheduled | — |
-| DWR-020 | Searchable record-picker / nested combobox (shared linking UX) | 4f | delivery_debt | [phase-04f-ux-baseline.md](phases/phase-04f-ux-baseline.md); proposed Phase 8 gate 8a | Design-system Stimulus/Turbo pattern | Phase 8 candidate | — |
-| DWR-021 | Multi-variant unlock (`variant_structure` beyond `single`) | 2 | catalog_candidate | [catalog-and-products.md](../domains/catalog-and-products.md); ADR-0001 | Schema unique index / check relaxation | Phase 8 candidate (after enrichment) | — |
-| DWR-022 | Bibliographic enrichment (ISBNdb / Google Books create + enrich-existing) | — | catalog_candidate | [phase-8-catalog-refinement-ideas.md](../temp_draft/phase-8-catalog-refinement-ideas.md) (non-governing) | Provider credentials; overwrite policy OD | Phase 8 candidate | — |
-| DWR-023 | Creators model + product images/thumbnails | — | catalog_candidate | Phase 8 temp draft; catalog open questions | Enrichment mapping decisions | Phase 8 candidate | — |
-| DWR-024 | Publisher/manufacturer party model vs string field | proforma | catalog_candidate | Proforma open decisions; `publisher_or_manufacturer_name` | Avoid auto-creating vendors for every publisher | unscheduled | — |
-| DWR-025 | Product merge / canonical identifier correction workflows | 2 | catalog_candidate | Catalog permissions foreshadow; domain open questions | Controlled process design | unscheduled | — |
+| DWR-020 | Searchable record-picker / nested combobox (shared linking UX) | 4f | delivery_debt | Phase 8 gate 8a; [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Design-system Stimulus/Turbo pattern | Phase 8 | — |
+| DWR-021 | Multi-variant unlock (`single` / `named`) | 2 | catalog_candidate | OD-P8-07 accepted direction; delivery deferred — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Phase 8.5 cross-domain packet before schema unlock | Phase 8.5 | — |
+| DWR-022 | Bibliographic enrichment (ISBNdb / Google Books create + enrich-existing) | — | delivery_debt | OD-P8-01, 04, 09, 10 accepted — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); draft [phase-8…](../temp_draft/phase-8-catalog-refinement-ideas.md) | Provider credentials; Gates 8b–8c / 8f | Phase 8 | — |
+| DWR-023 | Creators (core) + product images (8g) | — | delivery_debt | Creators OD-P8-02; images OD-P8-03 — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Creators before create-from-ISBN; images only when `remote_display_permitted`+ | Phase 8 | — |
+| DWR-024 | Publisher/manufacturer party model vs string field | proforma | deferred_decision | OD-P8-06 deferred — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | ONIX / publisher feeds / multi-role party need | later_extensions | — |
+| DWR-025 | Product merge / canonical identifier correction workflows | 2 | catalog_candidate | Catalog permissions foreshadow; out of Phase 8 core | Controlled process design | unscheduled | — |
 | DWR-026 | Store-specific pricing | catalog | catalog_candidate | [catalog-and-products.md](../domains/catalog-and-products.md) open questions | Price-resolution service boundary | later_extensions | — |
-| DWR-027 | BISAC / external subject → merchandise class mapping | — | catalog_candidate | ADR-0003 (no display-category hierarchy) | Existing class tree only | Phase 8 candidate (nice) | — |
+| DWR-027 | BISAC / external subject → merchandise class mapping | — | delivery_debt | OD-P8-05 accepted — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Optional Gate 8g | Phase 8 | — |
 | DWR-030 | Detailed buyback | — | deferred_capability | [deferred-capabilities.md](deferred-capabilities.md) | Dedicated acquisition design | later_extensions | — |
 | DWR-031 | Inventory counts | — | deferred_capability | deferred-capabilities | Count document design | later_extensions | — |
 | DWR-032 | Inter-store transfers | — | deferred_capability | deferred-capabilities | Transfer ownership workflow | later_extensions | — |
@@ -161,7 +161,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 Open / deferred decisions:     DWR-001 … DWR-003 (+ DWR-007 near OD-009)
 Interim correction blocks:     DWR-004 … DWR-006
 Phase 6.5 / 7 carry-forward:   DWR-010 … DWR-019
-Catalog / enrichment candidate: DWR-020 … DWR-027
+Catalog / Phase 8:            DWR-020 … DWR-027 (021 → 8.5; 024 deferred)
 Later extensions:              DWR-030 … DWR-052  (= deferred-capabilities.md)
 Doc hygiene:                   DWR-060 … DWR-063
 ```

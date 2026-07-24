@@ -39,6 +39,16 @@ superseded
 | OD-012 | Parent/reporting-only departments (`postable = false`) in first release | accepted | Phase 2 | Classification | Hierarchical departments with `postable`; reporting-only parents in scope |
 | OD-013 | Storage and precedence of role and store authority defaults | deferred | Phase 4b | Organization / Authorization | See [OD-013 notes](#od-013-role-and-store-authority-defaults) |
 | OD-014 | Negative-inventory deficit allocation and settlement representation | accepted | Phase 4c / Phase 5 | Inventory / Reporting | [Phase 4c interim](#od-014-negative-inventory-deficit-allocation); Phase 5 settlement accepted in [decisions/od-014-negative-inventory-settlement.md](decisions/od-014-negative-inventory-settlement.md) |
+| OD-P8-01 | Enrichment overwrite and protected-field policy | accepted | Phase 8 | Catalog | [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-02 | Creator master and Product-Creator join | accepted | Phase 8 | Catalog | [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-03 | Product-image storage and provider rights | accepted | Phase 8g | Catalog | [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) — remote refs; no Active Storage by default |
+| OD-P8-04 | Provider order, credentials, fallback, and failure policy | accepted | Phase 8 | Catalog | [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) — ISBNdb primary |
+| OD-P8-05 | BISAC and external-subject mapping | accepted | Phase 8g | Catalog / Classification | [phase-08-catalog-refinement-and-enrichment-v1.md](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-06 | Publisher/manufacturer party model | deferred | Phase 8 | Catalog / Vendors | Retain name strings; [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); DWR-024 |
+| OD-P8-07 | Minimal multi-variant structure (`single` / `named`) | accepted | Phase 8.5 | Catalog | Direction accepted; delivery deferred — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-08 | Product-summary store context | accepted | Phase 8 | Catalog | Selected-store primary + optional all-stores — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-09 | Import provenance representation | accepted | Phase 8 | Catalog | Dedicated `catalog_enrichment_events` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-10 | Minimum persisted bibliographic fields | accepted | Phase 8 | Catalog | publication_date (+ precision), language_code, edition_statement — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 
 ## OD-013 role and store authority defaults
 
@@ -139,6 +149,10 @@ These are not open decisions. They live in decision notes and [architectural-loc
 
 - [Reporting and reconciliation v1](decisions/phase-07-reporting-and-reconciliation-v1.md) — MVP `business_day` card grain; multi-row directional card evidence; `evidence_unavailable`; no auto-reconcile at close; `reporting.*` permissions; comparisons/findings/resolutions
 
+## Phase 8 delivery decisions (accepted / deferred; not open)
+
+- [Catalog refinement and enrichment v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) — OD-P8-01…10; publisher party model deferred (OD-P8-06); multi-variant delivery deferred to Phase 8.5 (OD-P8-07)
+
 ## Already settled (do not reopen here)
 
 See [architectural-locks.md](architectural-locks.md):
@@ -152,7 +166,8 @@ See [architectural-locks.md](architectural-locks.md):
 - reporting source rules;
 - no display categories (ADR-0003);
 - Phase 6 post-void / unavailable ledger / stored-value v1 locks (above);
-- Phase 7 reporting / close-control / reconciliation v1 locks (above).
+- Phase 7 reporting / close-control / reconciliation v1 locks (above);
+- Phase 8 catalog enrichment v1 locks (above).
 
 ## Sources
 
