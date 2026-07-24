@@ -389,6 +389,8 @@ The following remain outside Phase 7 and must not be pulled into its PRs:
 
 Gates may land as sequential short-lived PRs. Prefer finishing 7a before deep UI polish. **7e may trail 7b–7d** once shared definitions exist. Optional extensions are not numbered gates.
 
+**Implementation status (branch):** 7a–7d implemented and corrected for operator walkthrough; **7e partially delivered** (commercial/tender/tax/stock/open-PO/SV store activity and limited CSV). Session card grain is deferred/not selectable; post-finalization superseding and operable `received_and_refunded` evidence entry are deferred.
+
 | Gate | Focus | Core? |
 | --- | --- | --- |
 | **7a** | **Contracts & schema locks** — accepted in [decision note](../decisions/phase-07-reporting-and-reconciliation-v1.md); schema sketches for Z, multi-row directional card evidence, `evidence_unavailable`, recon records; seed `reporting.*` permissions | Yes |

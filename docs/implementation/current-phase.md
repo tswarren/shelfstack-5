@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 7 — Reporting and Reconciliation  
-**Status:** Implementing on `phase/p7-reporting-and-reconciliation` (gates 7a–7e code path ready for operator walkthrough)  
+**Status:** Implementing on `phase/p7-reporting-and-reconciliation` — **7a–7d ready for operator walkthrough; 7e partially delivered**  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
 **Phase 6 merge:** `853ae3b7a31b03960935bb14d8761b3fd19a0258` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed)  
 **Phase 5 merge:** `2e3e1196ec923b20a667f52b8ae79bd86c0b5c8b` (PR #34)  
@@ -17,12 +17,14 @@
 
 ## Immediate next work
 
-1. Operator walkthrough on `phase/p7-reporting-and-reconciliation`: session close → Session Z → day close with batch/unavailable → recon queue → report pack.
-2. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
-4. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
-5. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
-6. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.
-7. Do not pull customer-receipt product design or hardware printing into Phase 7 core gates (parked draft only).
+1. Operator walkthrough on `phase/p7-reporting-and-reconciliation` for close control: session close → Session Z → day close with batch/unavailable → recon queue (resolve nonzero variances) → finalize. Treat 7e report-pack breadth as follow-up.
+2. Session `card_reconciliation_grain` remains schema-supported but not selectable/operable until merchant-slip session close exists; MVP is `business_day` only.
+3. Post-finalization reconciliation superseding and directional (`received_and_refunded`) card evidence entry are deferred.
+4. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+5. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
+6. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.
+7. Keep [architectural-locks.md](architectural-locks.md) binding; track remaining open items in [open-decisions.md](open-decisions.md) (OD-009, OD-010, OD-013 remain open/deferred). Do not close OD-010 when adding aggregate `unavailable_delta`.
+8. Do not pull customer-receipt product design or hardware printing into Phase 7 core gates (parked draft only).
 
 ## Completed recently
 
