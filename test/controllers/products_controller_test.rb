@@ -297,6 +297,35 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_CREATOR_NAME)}/, response.body)
   end
 
+  test "update with credited_as over 255 characters returns unprocessable and leaves links unchanged" do
+    product = products(:sample_book)
+    creator = creators(:ray_bradbury)
+    ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+    variant = product.product_variants.first
+    le_guin = creators(:ursula_le_guin)
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        status: product.status,
+        sellable: product.sellable,
+        creator_assignments_provided: "1",
+        creator_assignments: [ { creator_id: le_guin.id, role: "author", credited_as: "x" * 256 } ]
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_equal [ creator.id ], product.product_creators.reload.pluck(:creator_id)
+  end
+
   test "persists partial publication date entered as separate year/month parts" do
     product = products(:sample_book)
     variant = product.product_variants.first

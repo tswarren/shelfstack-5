@@ -60,11 +60,17 @@ module Catalog
 
       def build_success(response, requested_identifier, canonical_identifier)
         payload = JSON.parse(response.body)
+        unless payload.is_a?(Hash)
+          return Catalog::Providers::AdapterResult.failure(:invalid_response, "ISBNdb returned a response that could not be parsed.")
+        end
+
         book = payload["book"]
-        return Catalog::Providers::AdapterResult.failure(:invalid_response, "ISBNdb response was missing book data.") if book.blank?
+        unless book.is_a?(Hash)
+          return Catalog::Providers::AdapterResult.failure(:invalid_response, "ISBNdb response was missing book data.")
+        end
 
         Catalog::Providers::AdapterResult.success(map(book, requested_identifier, canonical_identifier))
-      rescue JSON::ParserError
+      rescue JSON::ParserError, TypeError, NoMethodError
         Catalog::Providers::AdapterResult.failure(:invalid_response, "ISBNdb returned a response that could not be parsed.")
       end
 

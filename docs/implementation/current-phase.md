@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 8 — Catalog refinement & enrichment  
-**Status:** Phase 8 in progress — Gates 8a–8c merged to `main` (PRs [#102](https://github.com/tswarren/shelfstack-5/pull/102)–[#106](https://github.com/tswarren/shelfstack-5/pull/106); [#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#97](https://github.com/tswarren/shelfstack-5/issues/97) closed); next Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))  
+**Status:** Phase 8 in progress — Gates 8a–8c merged to `main` (PRs [#102](https://github.com/tswarren/shelfstack-5/pull/102)–[#106](https://github.com/tswarren/shelfstack-5/pull/106); [#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#97](https://github.com/tswarren/shelfstack-5/issues/97) closed); Gate 8c review hardening (signed preview provenance, adapter/creator guards) landing before Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))  
 
 **Phase 7 merge:** `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d accepted; **7e partial** ([#94](https://github.com/tswarren/shelfstack-5/issues/94))  
 **Phase 6.5 merge:** `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23  
@@ -40,7 +40,7 @@
 
 ## Completed recently
 
-- Gate 8c create-from-ISBN merged to `main` (PRs [#105](https://github.com/tswarren/shelfstack-5/pull/105), [#106](https://github.com/tswarren/shelfstack-5/pull/106); closes [#97](https://github.com/tswarren/shelfstack-5/issues/97)).
+- Gate 8c create-from-ISBN merged to `main` (PRs [#105](https://github.com/tswarren/shelfstack-5/pull/105), [#106](https://github.com/tswarren/shelfstack-5/pull/106); closes [#97](https://github.com/tswarren/shelfstack-5/issues/97)). Review hardening: accept binds immutable provenance via signed `Catalog::ProductImportPreviewToken` (30m TTL, org+actor binding); variant regular price never persisted from this path; ISBN accept/existing honor Product Request `return_to`.
 - Gate 8b bibliographic schema, Creators, and ISBNdb/Google Books adapters merged to `main` (PRs [#103](https://github.com/tswarren/shelfstack-5/pull/103), [#104](https://github.com/tswarren/shelfstack-5/pull/104); closes [#96](https://github.com/tswarren/shelfstack-5/issues/96)).
 - Gate 8a shared record-picker merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102), closes [#95](https://github.com/tswarren/shelfstack-5/issues/95)).
 - Phase 7 — Reporting and Reconciliation merged to `main` at `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); core gate 7a–7d complete; 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)).

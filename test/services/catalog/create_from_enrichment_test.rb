@@ -48,6 +48,20 @@ class CatalogCreateFromEnrichmentTest < ActiveSupport::TestCase
     assert_nil result.variant.regular_price_cents
   end
 
+  test "differing submitted regular price is stripped and never persisted on the variant" do
+    result = create_from_enrichment!(
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        sellable: false,
+        regular_price_cents: 1999
+      }
+    )
+
+    assert result.success?
+    assert_equal 1699, result.product.list_price_cents
+    assert_nil result.variant.regular_price_cents
+  end
+
   test "existing product short-circuits without creating rows" do
     existing = products(:sample_book)
 

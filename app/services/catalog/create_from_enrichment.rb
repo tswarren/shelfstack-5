@@ -5,9 +5,11 @@ module Catalog
   # row from an accepted create-from-ISBN preview (Gate 8c).
   #
   # Requires both `catalog.create_from_enrichment` and `catalog.product.create`.
-  # The provider call must already be complete: pass accepted fields / provider
-  # provenance in. Creates nothing on authorization failure, local duplicate,
-  # or any in-transaction error (full rollback).
+  # The provider call must already be complete. Callers must pass
+  # provider provenance from a verified ProductImportPreviewToken (or
+  # equivalent trusted source) — never from untrusted browser fields alone.
+  # Creates nothing on authorization failure, local duplicate, or any
+  # in-transaction error (full rollback).
   class CreateFromEnrichment < ApplicationService
     Error = Class.new(StandardError)
 
@@ -146,20 +148,12 @@ module Catalog
     end
 
     def enforce_operational_safety!
-      # OD-P8-01: never become sellable or copy list price into regular price
-      # from enrichment. Operator may pass sellable only if they also supply
-      # eligibility — still force false here for create-from-enrichment.
+      # OD-P8-01: never become sellable; never persist a store regular price
+      # from create-from-enrichment (list price is bibliographic only).
       @product_attrs[:sellable] = false
       @variant_attrs[:sellable] = false
-      @variant_attrs[:regular_price_cents] = nil if enrichment_would_copy_list_price?
-      @variant_attrs.delete(:regular_price_cents) if @variant_attrs[:regular_price_cents].blank?
+      @variant_attrs.delete(:regular_price_cents)
       @product_attrs[:list_price_cents] = persistable_list_price_cents
-    end
-
-    def enrichment_would_copy_list_price?
-      list = @product_attrs[:list_price_cents]
-      regular = @variant_attrs[:regular_price_cents]
-      list.present? && regular.present? && list.to_i == regular.to_i
     end
 
     def persistable_list_price_cents
@@ -183,7 +177,7 @@ module Catalog
       attrs[:name] ||= "Standard"
       attrs[:status] ||= "active"
       attrs[:purchasable] = true unless attrs.key?(:purchasable)
-      attrs.delete(:regular_price_cents) if attrs[:regular_price_cents].blank?
+      attrs.delete(:regular_price_cents)
       attrs
     end
 

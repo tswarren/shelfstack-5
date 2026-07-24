@@ -36,17 +36,7 @@
 <%= form_with url: accept_product_imports_path, method: :post, class: "form",
       data: { turbo: false } do %>
   <%= hidden_field_tag :return_to, @return_to %>
-  <%= hidden_field_tag :identifier, @preview.canonical_identifier.presence || @preview.requested_identifier %>
-  <%= hidden_field_tag :provider, @preview.provider %>
-  <%= hidden_field_tag :provider_record_id, normalized&.provider_record_id %>
-  <%= hidden_field_tag :retrieved_at, normalized&.retrieved_at&.iso8601 %>
-  <%= hidden_field_tag :list_price_currency_code, list_price&.currency_code %>
-
-  <% Array(@preview.warnings).each_with_index do |warning, index| %>
-    <% hash = warning.is_a?(Hash) ? warning : { "code" => warning.try(:code), "message" => warning.try(:message) } %>
-    <%= hidden_field_tag "accepted_warnings[#{index}][code]", hash["code"] %>
-    <%= hidden_field_tag "accepted_warnings[#{index}][message]", hash["message"] %>
-  <% end %>
+  <%= hidden_field_tag :preview_token, @preview_token %>
 
   <section class="form-section">
     <h2 class="form-section-title">Bibliographic fields</h2>
@@ -161,8 +151,7 @@
         <p class="field-hint">Provider omitted currency; ShelfStack assumes <%= Current.organization.default_currency_code %>.</p>
       <% end %>
       <% if list_price.persistable? %>
-        <%= hidden_field_tag :list_price_cents, list_price.amount_cents %>
-        <p class="field-hint">This list price will be stored on the Product. It will not set Variant regular price.</p>
+        <p class="field-hint">This list price will be stored on the Product from the signed preview. It will not set Variant regular price.</p>
       <% else %>
         <p class="field-hint">Currency does not match the organization currency, so list price will not be persisted.</p>
       <% end %>

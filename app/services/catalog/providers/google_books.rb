@@ -57,7 +57,21 @@ module Catalog
 
       def build_result(response, requested_identifier, canonical_identifier)
         payload = JSON.parse(response.body)
-        items = Array(payload["items"])
+        unless payload.is_a?(Hash)
+          return Catalog::Providers::AdapterResult.failure(:invalid_response, "Google Books returned a response that could not be parsed.")
+        end
+
+        raw_items = payload["items"]
+        items = case raw_items
+        when nil then []
+        when Array then raw_items
+        else
+          return Catalog::Providers::AdapterResult.failure(:invalid_response, "Google Books returned a response that could not be parsed.")
+        end
+        unless items.all? { |item| item.is_a?(Hash) }
+          return Catalog::Providers::AdapterResult.failure(:invalid_response, "Google Books returned a response that could not be parsed.")
+        end
+
         exact_matches = items.select { |item| exact_isbn_match?(item, canonical_identifier) }
 
         case exact_matches.size
@@ -72,19 +86,32 @@ module Catalog
             metadata: { candidate_count: exact_matches.size }
           )
         end
-      rescue JSON::ParserError
+      rescue JSON::ParserError, TypeError, NoMethodError
         Catalog::Providers::AdapterResult.failure(:invalid_response, "Google Books returned a response that could not be parsed.")
       end
 
       def exact_isbn_match?(item, canonical_identifier)
-        identifiers = item.dig("volumeInfo", "industryIdentifiers") || []
-        identifiers.any? do |entry|
+        return false unless item.is_a?(Hash)
+
+        info = item["volumeInfo"]
+        return false unless info.is_a?(Hash)
+
+        identifiers = info["industryIdentifiers"]
+        return false unless identifiers.nil? || identifiers.is_a?(Array)
+
+        Array(identifiers).any? do |entry|
+          next false unless entry.is_a?(Hash)
+
           Identifiers::Normalize.call(entry["identifier"]).canonical == canonical_identifier
         end
       end
 
       def map(item, requested_identifier, canonical_identifier)
-        info = item["volumeInfo"] || {}
+        raise TypeError, "volume item must be a Hash" unless item.is_a?(Hash)
+
+        info = item["volumeInfo"]
+        raise TypeError, "volumeInfo must be a Hash" unless info.is_a?(Hash)
+
         date, precision = Catalog::Providers::ParseProviderDate.call(info["publishedDate"])
 
         Catalog::Enrichment::BuildNormalizedResult.call(
@@ -108,14 +135,20 @@ module Catalog
       end
 
       def money_input(item)
-        list_price = item.dig("saleInfo", "listPrice")
-        return nil if list_price.blank?
+        sale_info = item["saleInfo"]
+        return nil unless sale_info.is_a?(Hash)
+
+        list_price = sale_info["listPrice"]
+        return nil unless list_price.is_a?(Hash)
 
         { amount: list_price["amount"], currency_code: list_price["currencyCode"] }
       end
 
       def image_input(info)
-        thumbnail = info.dig("imageLinks", "thumbnail")
+        links = info["imageLinks"]
+        return [] unless links.is_a?(Hash)
+
+        thumbnail = links["thumbnail"]
         thumbnail.present? ? [ { source_url: thumbnail } ] : []
       end
 

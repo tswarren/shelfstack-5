@@ -52,6 +52,13 @@ class CatalogEnrichmentEventTest < ActiveSupport::TestCase
     assert_includes event.errors[:action], "is not included in the list"
   end
 
+  test "rejects an unsupported provider" do
+    event = build_event(provider: "evil")
+
+    assert_not event.valid?
+    assert_includes event.errors[:provider], "is not included in the list"
+  end
+
   test "rejects a product from a different organization" do
     foreign = create_foreign_organization_catalog!
     event = build_event(product: foreign[:product])

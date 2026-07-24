@@ -136,6 +136,23 @@ class CatalogReplaceProductCreatorsTest < ActiveSupport::TestCase
     assert_includes @product.errors[:creator_assignments].join, "must be an array"
   end
 
+  test "rejects credited_as over 255 characters before destroy and leaves links unchanged" do
+    ProductCreator.create!(product: @product, creator: @bradbury, role: "author", position: 0)
+    audit_before = AdministrativeAuditEvent.where(action: "catalog.product.creators_replaced").count
+
+    result = Catalog::ReplaceProductCreators.call(
+      product: @product,
+      assignments: [ { creator_id: @le_guin.id, role: "author", credited_as: "x" * 256 } ],
+      actor: @actor,
+      store: @store
+    )
+
+    assert_not result
+    assert_match(/too long|255/i, @product.errors[:creator_assignments].join)
+    assert_equal [ @bradbury.id ], @product.product_creators.reload.pluck(:creator_id)
+    assert_equal audit_before, AdministrativeAuditEvent.where(action: "catalog.product.creators_replaced").count
+  end
+
   test "records an audit event only when the link collection actually changes" do
     assert_difference -> { AdministrativeAuditEvent.count }, 1 do
       Catalog::ReplaceProductCreators.call(

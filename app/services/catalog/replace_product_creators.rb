@@ -34,6 +34,7 @@ module Catalog
       before_snapshot = snapshot
       resolved = build_resolved_assignments
       return false if @product.errors[:creator_assignments].any?
+      return false unless validate_prospective!(resolved)
 
       replace!(resolved)
       audit_link_changes!(before_snapshot)
@@ -85,6 +86,35 @@ module Catalog
       end
 
       resolved
+    end
+
+    # Validate join attributes before destroy_all so a failed create! cannot
+    # leave the product with an empty creator set. Soft uniqueness against
+    # rows that will be replaced is already handled in build_resolved_assignments;
+    # skip that callback here by checking only attribute validations that
+    # would still fail after the replace.
+    def validate_prospective!(resolved)
+      valid = true
+      resolved.each_with_index do |attrs, index|
+        record = ProductCreator.new(
+          product: @product,
+          creator: attrs[:creator],
+          role: attrs[:role],
+          credited_as: attrs[:credited_as],
+          position: index
+        )
+        record.validate
+        blocking_messages = record.errors.map do |error|
+          next if error.attribute == :creator_id && error.message.include?("already linked")
+
+          error.full_message
+        end.compact
+        next if blocking_messages.empty?
+
+        valid = false
+        blocking_messages.each { |message| @product.errors.add(:creator_assignments, message) }
+      end
+      valid
     end
 
     def replace!(resolved)

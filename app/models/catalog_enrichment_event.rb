@@ -7,12 +7,13 @@
 # create ordinary AdministrativeAuditEvent evidence instead.
 class CatalogEnrichmentEvent < ApplicationRecord
   ACTIONS = %w[create fill_empty selected_apply].freeze
+  PROVIDERS = %w[isbndb google_books].freeze
 
   belongs_to :product
   belongs_to :organization
   belongs_to :actor_user, class_name: "User"
 
-  validates :provider, presence: true
+  validates :provider, presence: true, inclusion: { in: PROVIDERS }
   validates :requested_identifier, presence: true
   validates :canonical_identifier, presence: true
   validates :action, presence: true, inclusion: { in: ACTIONS }
