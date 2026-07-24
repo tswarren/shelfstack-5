@@ -23,19 +23,15 @@
           · observed <%= number_to_currency(comparison.observed_cents.to_i / 100.0) %>
           · variance <%= number_to_currency(comparison.variance_cents.to_i / 100.0) %>
           <% if comparison.variance_cents.to_i.nonzero? %>
-            <% final = active.find { |r| %w[accepted_variance explained_no_correction linked_domain_correction].include?(r.resolution_type) } %>
+            <% final = active.find { |r| %w[accepted_variance explained_no_correction].include?(r.resolution_type) } %>
             <% if final %>
               · <%= final.resolution_type.humanize %>: <%= final.explanation %>
-            <% elsif active.any? { |r| r.resolution_type == "unresolved" } %>
-              · left unresolved
             <% elsif !reconciliation.finalized? && Current.user.can?("reporting.record_reconciliation_resolution", store: Current.store) %>
               <%= form_with url: record_reconciliation_resolution_path(reconciliation, comparison), method: :post, class: "form-stack" do %>
                 <label class="field-label" for="resolution_type_<%= comparison.id %>">Resolution</label>
                 <select name="resolution_type" id="resolution_type_<%= comparison.id %>" class="input" required>
                   <option value="explained_no_correction">Explain — no correction</option>
                   <option value="accepted_variance">Accept variance</option>
-                  <option value="linked_domain_correction">Link domain correction</option>
-                  <option value="unresolved">Leave unresolved</option>
                 </select>
                 <label class="field-label" for="explanation_<%= comparison.id %>">Explanation</label>
                 <textarea name="explanation" id="explanation_<%= comparison.id %>" class="input" required rows="2"></textarea>

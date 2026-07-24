@@ -8,7 +8,6 @@ module Reporting
     FINAL_RESOLUTION_TYPES = %w[
       accepted_variance
       explained_no_correction
-      linked_domain_correction
     ].freeze
 
     def initialize(reconciliation:, actor:, approver: nil, approver_pin: nil, reason: nil)
@@ -118,6 +117,8 @@ module Reporting
         requested_value: abs_variance,
         approver: @approver,
         approver_pin: @approver_pin,
+        approver_permission_key: "reporting.reconcile.approve",
+        self_approver_permission_key: "reporting.reconcile.approve_self",
         pos_session: recon.pos_session
       )
       raise Error, auth.error || "variance authorization failed" unless auth.allowed?

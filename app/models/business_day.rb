@@ -15,6 +15,7 @@ class BusinessDay < ApplicationRecord
   validates :reporting_date, presence: true
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :opened_at, presence: true
+  validate :reconciled_markers_immutable
 
   scope :open_days, -> { where(status: "open") }
 
@@ -24,5 +25,19 @@ class BusinessDay < ApplicationRecord
 
   def closed?
     status == "closed"
+  end
+
+  private
+
+  def reconciled_markers_immutable
+    return unless persisted?
+    return if reconciled_at_in_database.blank?
+
+    if will_save_change_to_reconciled_at? && reconciled_at.blank?
+      errors.add(:reconciled_at, "cannot be cleared once set")
+    end
+    if will_save_change_to_reconciled_by_user_id? && reconciled_by_user_id.blank?
+      errors.add(:reconciled_by_user, "cannot be cleared once set")
+    end
   end
 end

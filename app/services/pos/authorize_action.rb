@@ -99,11 +99,11 @@ module Pos
 
         authorization_limit_snapshot = approver_authority.configured_limit
       elsif @limit_key && self_approval?
+        # approve_self is the elevated exception: do not re-apply the same
+        # membership threshold that forced escalation. Snapshot still recorded.
         self_authority = Authorization::EvaluateAuthority.call(
           user: @approver, store: @store, limit_key: @limit_key, requested_value: @requested_value
         )
-        return denied("self-approver authority is insufficient") unless self_authority.allow?
-
         authorization_limit_snapshot = self_authority.configured_limit
       end
 

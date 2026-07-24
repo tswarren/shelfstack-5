@@ -29,6 +29,7 @@ class PosSession < ApplicationRecord
   validate :device_belongs_to_store
   validate :drawer_belongs_to_store
   validate :business_day_belongs_to_store
+  validate :reconciled_markers_immutable
 
   scope :open_sessions, -> { where(status: "open") }
 
@@ -65,5 +66,17 @@ class PosSession < ApplicationRecord
     return if business_day.store_id == store_id
 
     errors.add(:business_day, "must belong to the same store")
+  end
+
+  def reconciled_markers_immutable
+    return unless persisted?
+    return if reconciled_at_in_database.blank?
+
+    if will_save_change_to_reconciled_at? && reconciled_at.blank?
+      errors.add(:reconciled_at, "cannot be cleared once set")
+    end
+    if will_save_change_to_reconciled_by_user_id? && reconciled_by_user_id.blank?
+      errors.add(:reconciled_by_user, "cannot be cleared once set")
+    end
   end
 end

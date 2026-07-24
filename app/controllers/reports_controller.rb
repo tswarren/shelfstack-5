@@ -27,7 +27,8 @@ class ReportsController < ApplicationController
     @can_view_inventory = Current.user.can?("reporting.view_inventory", store: Current.store)
     @can_view_stored_value = Current.user.can?("reporting.view_stored_value", store: Current.store)
     @can_view_audit = Current.user.can?("reporting.view_audit", store: Current.store)
-    @can_reconcile = Current.user.can?("reporting.reconcile_session", store: Current.store)
+    @can_reconcile = Current.user.can?("reporting.reconcile_session", store: Current.store) ||
+      Current.user.can?("reporting.reconcile_business_day", store: Current.store)
   end
 
   def open_purchase_orders
@@ -132,7 +133,8 @@ class ReportsController < ApplicationController
     allowed = %w[
       purchasing.purchase_order.view inventory.receipt.view requests.product_request.view
       reporting.view_sales reporting.view_tenders reporting.view_tax reporting.view_inventory
-      reporting.view_stored_value reporting.view_audit reporting.reconcile_session
+      reporting.view_stored_value reporting.view_audit
+      reporting.reconcile_session reporting.reconcile_business_day
     ].any? { |key| Current.user.can?(key, store: Current.store) }
     return if allowed
 

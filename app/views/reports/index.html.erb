@@ -17,7 +17,7 @@
   <% if @can_view_sales %>
     <section class="card workspace-card">
       <h2>Commercial activity</h2>
-      <p class="muted">Gross, discounts, returns, net sales by completion date.</p>
+      <p class="muted">Gross, discounts, returns, net sales by business-day reporting date.</p>
       <div class="page-actions">
         <%= link_to "View", commercial_activity_report_path, class: "button button-outline" %>
       </div>
@@ -56,8 +56,8 @@
 
   <% if @can_view_stored_value %>
     <section class="card workspace-card">
-      <h2>Stored-value liability</h2>
-      <p class="muted">Liability by account type with cache/ledger mismatch detection.</p>
+      <h2>Stored-value activity</h2>
+      <p class="muted">Store-scoped issued, reloaded, redeemed, and refunded activity from completed POS.</p>
       <div class="page-actions">
         <%= link_to "View", stored_value_liability_report_path, class: "button button-outline" %>
       </div>

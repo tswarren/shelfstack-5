@@ -15,6 +15,8 @@ class ReconciliationsController < ApplicationController
     @pending_days = Current.store.business_days
       .where(status: "closed", reconciled_at: nil)
       .order(closed_at: :desc)
+    @can_reconcile_session = Current.user.can?("reporting.reconcile_session", store: Current.store)
+    @can_reconcile_business_day = Current.user.can?("reporting.reconcile_business_day", store: Current.store)
   end
 
   def session_show

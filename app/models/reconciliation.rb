@@ -20,6 +20,9 @@ class Reconciliation < ApplicationRecord
   validate :scope_shape
   validate :finalize_shape
 
+  before_update :prevent_finalized_mutation
+  before_destroy :prevent_finalized_destroy
+
   def draft?
     status == "draft"
   end
@@ -49,5 +52,19 @@ class Reconciliation < ApplicationRecord
       errors.add(:reconciled_at, "must be blank while draft") if reconciled_at.present?
       errors.add(:reconciled_by_user, "must be blank while draft") if reconciled_by_user_id.present?
     end
+  end
+
+  def prevent_finalized_mutation
+    return unless status_in_database == "finalized"
+
+    errors.add(:base, "cannot change a finalized reconciliation")
+    throw :abort
+  end
+
+  def prevent_finalized_destroy
+    return unless status_in_database == "finalized" || finalized?
+
+    errors.add(:base, "cannot destroy a finalized reconciliation")
+    throw :abort
   end
 end

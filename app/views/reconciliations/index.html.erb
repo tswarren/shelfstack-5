@@ -11,7 +11,11 @@
         <li>
           Session #<%= session.id %> · day <%= session.business_day.reporting_date %>
           · variance <%= number_to_currency(session.cash_variance_cents.to_i / 100.0) %>
-          <%= link_to "Reconcile", session_reconciliation_path(session), class: "button button-outline" %>
+          <% if @can_reconcile_session %>
+            <%= link_to "Reconcile", session_reconciliation_path(session), class: "button button-outline" %>
+          <% else %>
+            <span class="muted">Required session reconciliation (session permission needed)</span>
+          <% end %>
         </li>
       <% end %>
     </ul>
@@ -27,7 +31,11 @@
       <% @pending_days.each do |day| %>
         <li>
           <%= day.reporting_date %>
-          <%= link_to "Reconcile", business_day_reconciliation_path(day), class: "button button-outline" %>
+          <% if @can_reconcile_business_day %>
+            <%= link_to "Reconcile", business_day_reconciliation_path(day), class: "button button-outline" %>
+          <% else %>
+            <span class="muted">Pending (business-day permission needed)</span>
+          <% end %>
         </li>
       <% end %>
     </ul>

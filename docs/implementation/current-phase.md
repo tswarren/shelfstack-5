@@ -17,9 +17,15 @@
 
 ## Immediate next work
 
-1. Operator walkthrough on `phase/p7-reporting-and-reconciliation` for close control: session close → Session Z → day close with batch/unavailable → recon queue (resolve nonzero variances) → finalize. Treat 7e report-pack breadth as follow-up.
-2. Session `card_reconciliation_grain` remains schema-supported but not selectable/operable until merchant-slip session close exists; MVP is `business_day` only.
-3. Post-finalization reconciliation superseding and directional (`received_and_refunded`) card evidence entry are deferred.
+1. Operator walkthrough on `phase/p7-reporting-and-reconciliation` for close control: session close → Session Z → day close with batch/unavailable → recon queue (resolve nonzero variances with Explain / Accept variance; approve / approve_self over threshold) → finalize.
+2. Session `card_reconciliation_grain` remains schema-supported but not selectable/operable until merchant-slip session close exists; MVP is `business_day` only — see [#58](https://github.com/tswarren/shelfstack-5/issues/58).
+3. Deferred Phase 7 follow-ups (labels `phase-7` + `deferred`):
+   - Linked domain correction resolutions — [#56](https://github.com/tswarren/shelfstack-5/issues/56)
+   - Resolution superseding / post-finalization policy — [#57](https://github.com/tswarren/shelfstack-5/issues/57)
+   - Session card grain / merchant-slip close — [#58](https://github.com/tswarren/shelfstack-5/issues/58)
+   - Directional / multi-terminal card evidence — [#59](https://github.com/tswarren/shelfstack-5/issues/59)
+   - Org-scoped stored-value liability & cache integrity — [#60](https://github.com/tswarren/shelfstack-5/issues/60)
+   - Complete Phase 7e report pack — [#61](https://github.com/tswarren/shelfstack-5/issues/61)
 4. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
 5. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
 6. Return-containing post-void remains blocked until append-only Product Request fulfilment restoration lands.

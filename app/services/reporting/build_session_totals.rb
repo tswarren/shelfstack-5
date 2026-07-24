@@ -18,7 +18,7 @@ module Reporting
 
       commercial = build_commercial(lines, txns, void_txn_ids)
       tax = build_tax(taxes, lines)
-      stored_value = build_stored_value(lines, tenders)
+      stored_value = build_stored_value(lines, tenders, void_txn_ids)
       tender_totals = build_tenders(tenders)
       settlement = build_settlement(commercial, tax, stored_value, tender_totals)
       cash = build_cash(session)
@@ -168,10 +168,18 @@ module Reporting
       line&.direction == "return" ? -amount : amount
     end
 
-    def build_stored_value(lines, tenders)
+    def build_stored_value(lines, tenders, void_txn_ids)
       sv_lines = lines.select { |l| l.line_kind == "stored_value" }
-      issued = sv_lines.select { |l| l.stored_value_operation == "issue" }.sum { |l| l.extended_price_cents.to_i }
-      reloaded = sv_lines.select { |l| l.stored_value_operation == "reload" }.sum { |l| l.extended_price_cents.to_i }
+      # Post-void reversing lines keep direction=sale and the original operation;
+      # negate their funding so issue/reload + void nets to zero.
+      issued = sv_lines.select { |l| l.stored_value_operation == "issue" }.sum do |line|
+        cents = line.extended_price_cents.to_i
+        void_txn_ids.include?(line.pos_transaction_id) ? -cents : cents
+      end
+      reloaded = sv_lines.select { |l| l.stored_value_operation == "reload" }.sum do |line|
+        cents = line.extended_price_cents.to_i
+        void_txn_ids.include?(line.pos_transaction_id) ? -cents : cents
+      end
       redeemed = tenders.select { |t| t.tender_type.tender_category == "stored_value" && t.direction == "received" }
                        .sum { |t| t.amount_cents.to_i }
       refunded = tenders.select { |t| t.tender_type.tender_category == "stored_value" && t.direction == "refunded" }
