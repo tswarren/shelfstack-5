@@ -105,7 +105,8 @@ Legacy names in [organization-and-authorization.md](organization-and-authorizati
 | `catalog.format.manage` | Manage product formats | organization | 2 | — | no | yes |
 | `catalog.condition.manage` | Manage product conditions | organization | 2 | — | no | yes |
 | `catalog.label.print` | Print labels | store | 2 | — | no | no |
-| `catalog.lookup_external` | Query external bibliographic metadata (Gate 8b service boundary; no endpoint until 8c) | organization | 8 | — | no | no |
+| `catalog.lookup_external` | Query external bibliographic metadata (preview / lookup; does not create products) | organization | 8 | — | no | no |
+| `catalog.create_from_enrichment` | Accept create-from-ISBN preview and persist Product/Variant/Creators with enrichment provenance (also requires `catalog.product.create`) | organization | 8 | — | no | yes |
 | `catalog.manage_creators` | Create, rename, and deactivate Creator masters | organization | 8 | — | no | yes |
 
 ## Inventory (Phases 3–5)
