@@ -21,6 +21,10 @@ module Catalog
         loop do
           begin
             response = transport.get(url: url, headers: headers)
+            if response.nil?
+              raise Catalog::Providers::HttpTransport::ConnectionError,
+                    "transport returned no response for #{url}"
+            end
             return response unless RETRIABLE_STATUSES.include?(response.status) && attempts < MAX_RETRIES
 
             attempts += 1

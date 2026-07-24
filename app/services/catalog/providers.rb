@@ -8,16 +8,13 @@ module Catalog
     class << self
       # Optional process-wide transport for request/system tests (Gate 8c).
       # Production code never sets this; LookupExternalMetadata prefers an
-      # explicit per-call `transport:` argument when present. Stored on
-      # Rails.application.config.x so threaded Capybara servers see the same
-      # object as the test thread.
-      def transport_override
-        Rails.application.config.x.catalog_provider_transport
-      end
-
-      def transport_override=(transport)
-        Rails.application.config.x.catalog_provider_transport = transport
-      end
+      # explicit per-call `transport:` argument when present.
+      #
+      # Intentionally a module ivar — do NOT store this on
+      # Rails.application.config.x. Unset `config.x.some_key` returns a
+      # truthy empty ActiveSupport::OrderedOptions (for nested assignment),
+      # which would be mistaken for a transport and break live lookups.
+      attr_accessor :transport_override
     end
   end
 end
