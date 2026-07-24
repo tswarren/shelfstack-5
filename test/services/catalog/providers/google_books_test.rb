@@ -147,4 +147,16 @@ class CatalogProvidersGoogleBooksTest < ActiveSupport::TestCase
     assert_not result.success?
     assert_equal :invalid_response, result.code
   end
+
+  test "items array containing null maps to invalid_response without raising" do
+    transport = FakeHttpTransport.new(responses: [
+      FakeHttpTransport.json_response(status: 200, body: '{"items":[null]}')
+    ])
+    adapter = Catalog::Providers::GoogleBooks.new(transport: transport, api_key: nil)
+
+    result = adapter.lookup(requested_identifier: CANONICAL, canonical_identifier: CANONICAL)
+
+    assert_not result.success?
+    assert_equal :invalid_response, result.code
+  end
 end

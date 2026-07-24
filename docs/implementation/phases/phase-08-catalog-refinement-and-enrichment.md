@@ -1,6 +1,6 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** In progress — Gates 8a–8c merged to `main` ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#97](https://github.com/tswarren/shelfstack-5/issues/97)); next Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))
+**Status:** In progress — Gates 8a–8c merged to `main` ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#97](https://github.com/tswarren/shelfstack-5/issues/97)); Gate 8c review hardening (signed preview provenance) before Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))
 **Date:** 2026-07-24
 **Depends on:** Phase 7 core complete
 **Roadmap position:** Active delivery phase after Phase 7
@@ -433,6 +433,7 @@ The creation workflow may use existing configured defaults, but must visibly sho
 * External list price is never treated as the store regular price.
 * Product creation creates no inventory movement.
 * Imported operational fields require explicit operator confirmation.
+* Accept binds immutable import provenance (provider, provider record, retrieved-at, accepted warnings, list-price snapshot) via a short-lived signed preview token — not editable form fields alone (DWR-022 / OD-P8-09 hardening).
 
 ---
 

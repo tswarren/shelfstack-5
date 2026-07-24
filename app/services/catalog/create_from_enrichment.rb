@@ -5,9 +5,11 @@ module Catalog
   # row from an accepted create-from-ISBN preview (Gate 8c).
   #
   # Requires both `catalog.create_from_enrichment` and `catalog.product.create`.
-  # The provider call must already be complete: pass accepted fields / provider
-  # provenance in. Creates nothing on authorization failure, local duplicate,
-  # or any in-transaction error (full rollback).
+  # The provider call must already be complete. Callers must pass
+  # provider provenance from a verified ProductImportPreviewToken (or
+  # equivalent trusted source) — never from untrusted browser fields alone.
+  # Creates nothing on authorization failure, local duplicate, or any
+  # in-transaction error (full rollback).
   class CreateFromEnrichment < ApplicationService
     Error = Class.new(StandardError)
 
@@ -31,15 +33,23 @@ module Catalog
 
     def initialize(
       organization:, actor:, store:,
-      identifier:, provider:, provider_record_id:, retrieved_at:,
+      provider:, provider_record_id:, retrieved_at:,
       product_attrs:, variant_attrs:,
+      identifier: nil,
+      requested_identifier: nil,
+      canonical_identifier: nil,
       creator_resolutions: [],
       accepted_warnings: []
     )
       @organization = organization
       @actor = actor
       @store = store
-      @identifier = identifier
+      # Canonical identity drives duplicate detection and Product creation.
+      # Requested identity is retained only for enrichment-event provenance
+      # (e.g. ISBN-10 entered by the operator).
+      @canonical_identifier = (canonical_identifier.presence || identifier).to_s
+      @requested_identifier = (requested_identifier.presence || @canonical_identifier).to_s
+      @identifier = @canonical_identifier
       @provider = provider.to_s
       @provider_record_id = provider_record_id
       @retrieved_at = retrieved_at
@@ -146,20 +156,15 @@ module Catalog
     end
 
     def enforce_operational_safety!
-      # OD-P8-01: never become sellable or copy list price into regular price
-      # from enrichment. Operator may pass sellable only if they also supply
-      # eligibility — still force false here for create-from-enrichment.
+      # OD-P8-01: never become sellable; never persist a store regular price
+      # from create-from-enrichment (list price is bibliographic only).
+      # Purchasable is not operator-confirmed on the Gate 8c preview — force
+      # false so import does not silently enable purchasing.
       @product_attrs[:sellable] = false
       @variant_attrs[:sellable] = false
-      @variant_attrs[:regular_price_cents] = nil if enrichment_would_copy_list_price?
-      @variant_attrs.delete(:regular_price_cents) if @variant_attrs[:regular_price_cents].blank?
+      @variant_attrs[:purchasable] = false
+      @variant_attrs.delete(:regular_price_cents)
       @product_attrs[:list_price_cents] = persistable_list_price_cents
-    end
-
-    def enrichment_would_copy_list_price?
-      list = @product_attrs[:list_price_cents]
-      regular = @variant_attrs[:regular_price_cents]
-      list.present? && regular.present? && list.to_i == regular.to_i
     end
 
     def persistable_list_price_cents
@@ -178,12 +183,11 @@ module Catalog
     end
 
     def sanitized_variant_attrs
-      attrs = @variant_attrs.slice(*VARIANT_ATTR_KEYS).merge(sellable: false)
+      attrs = @variant_attrs.slice(*VARIANT_ATTR_KEYS).merge(sellable: false, purchasable: false)
       attrs[:inventory_tracking_mode] ||= "quantity"
       attrs[:name] ||= "Standard"
       attrs[:status] ||= "active"
-      attrs[:purchasable] = true unless attrs.key?(:purchasable)
-      attrs.delete(:regular_price_cents) if attrs[:regular_price_cents].blank?
+      attrs.delete(:regular_price_cents)
       attrs
     end
 
@@ -233,7 +237,7 @@ module Catalog
         actor_user: @actor,
         provider: @provider,
         provider_record_id: @provider_record_id,
-        requested_identifier: @identifier.to_s,
+        requested_identifier: @requested_identifier,
         canonical_identifier: product.identifier,
         action: "create",
         retrieved_at: @retrieved_at || Time.current,
@@ -254,6 +258,7 @@ module Catalog
       fields["variant"] = {
         "inventory_tracking_mode" => product.product_variants.first&.inventory_tracking_mode,
         "sellable" => false,
+        "purchasable" => false,
         "regular_price_cents" => product.product_variants.first&.regular_price_cents
       }
       fields

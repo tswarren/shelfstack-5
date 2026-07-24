@@ -13,7 +13,7 @@ module Catalog
       regular_price_cents: nil,
       status: "active",
       sellable: false,
-      purchasable: true
+      purchasable: false
     }.freeze
 
     CreatorSuggestion = Data.define(
@@ -69,6 +69,29 @@ module Catalog
       return provider_failure_result(lookup, existing) unless lookup.success?
 
       build_preview(lookup.normalized_result, existing)
+    rescue ArgumentError => error
+      PreviewResult.new(
+        status: :failure,
+        success?: false,
+        code: :unsupported_provider,
+        message: error.message,
+        product: nil,
+        products: [],
+        match_kind: :none,
+        requested_identifier: @identifier.to_s,
+        canonical_identifier: nil,
+        provider: @provider.to_s,
+        normalized_result: nil,
+        proposed_product_attrs: {},
+        proposed_variant_attrs: {},
+        format_proposal: nil,
+        list_price_proposal: nil,
+        creator_suggestions: [],
+        eligibility_fields: [],
+        sale_eligibility_blockers: [],
+        warnings: [],
+        unresolved_fields: []
+      )
     end
 
     private
@@ -262,7 +285,10 @@ module Catalog
         EligibilityField.new(field: "product_format_id", status: product_attrs[:product_format_id].present? ? :explicit : :missing,
                              value: product_attrs[:product_format_id], source: "enrichment_or_operator"),
         EligibilityField.new(field: "product_type", status: :explicit, value: product_attrs[:product_type], source: "enrichment_default"),
+        EligibilityField.new(field: "product_status", status: :explicit, value: product_attrs[:status] || "active", source: "import_default"),
+        EligibilityField.new(field: "variant_status", status: :explicit, value: variant_attrs[:status] || "active", source: "import_default"),
         EligibilityField.new(field: "sellable", status: :explicit, value: false, source: "safety_default"),
+        EligibilityField.new(field: "purchasable", status: :explicit, value: false, source: "safety_default"),
         EligibilityField.new(field: "inventory_tracking_mode", status: :explicit,
                              value: variant_attrs[:inventory_tracking_mode], source: "operator_default"),
         EligibilityField.new(field: "regular_price_cents", status: :missing, value: nil, source: "operator"),

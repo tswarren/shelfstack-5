@@ -79,4 +79,3 @@ module Catalog
     end
   end
 end
-

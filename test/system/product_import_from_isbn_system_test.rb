@@ -62,4 +62,21 @@ class ProductImportFromIsbnSystemTest < ApplicationSystemTestCase
     assert_current_path product_path(existing)
     assert_text(/already exists/i)
   end
+
+  test "Product Request return_to lands on the request form with product selected after ISBN accept" do
+    visit new_product_request_path
+    click_link "Search or create it"
+
+    assert_text "Create from ISBN"
+    fill_in "ISBN", with: CANONICAL_ISBN13
+    select "ISBNdb", from: "Provider"
+    click_button "Look up ISBN"
+
+    assert_text "Preview product import"
+    click_button "Create product"
+
+    product = Product.find_by!(identifier: CANONICAL_ISBN13)
+    assert_current_path new_product_request_path(product_id: product.id)
+    assert_equal product.id.to_s, find("#product_request_product_id", visible: :all).value
+  end
 end

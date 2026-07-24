@@ -128,6 +128,30 @@ class CatalogProvidersIsbndbTest < ActiveSupport::TestCase
     assert_equal :invalid_response, result.code
   end
 
+  test "root JSON array maps to invalid_response without raising" do
+    transport = FakeHttpTransport.new(responses: [
+      FakeHttpTransport.json_response(status: 200, body: "[]")
+    ])
+    adapter = Catalog::Providers::Isbndb.new(transport: transport, api_key: "test-key")
+
+    result = adapter.lookup(requested_identifier: CANONICAL, canonical_identifier: CANONICAL)
+
+    assert_not result.success?
+    assert_equal :invalid_response, result.code
+  end
+
+  test "book payload that is an array maps to invalid_response without raising" do
+    transport = FakeHttpTransport.new(responses: [
+      FakeHttpTransport.json_response(status: 200, body: '{"book":[]}')
+    ])
+    adapter = Catalog::Providers::Isbndb.new(transport: transport, api_key: "test-key")
+
+    result = adapter.lookup(requested_identifier: CANONICAL, canonical_identifier: CANONICAL)
+
+    assert_not result.success?
+    assert_equal :invalid_response, result.code
+  end
+
   test "credential values never appear in a failure message" do
     secret = "super-secret-isbndb-key-should-not-leak"
     transport = FakeHttpTransport.new(responses: [
