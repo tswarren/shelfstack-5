@@ -138,14 +138,47 @@ module Pos
     end
 
     def validate_day_totals!(business_day, totals)
-      live = Reporting::BuildBusinessDayTotals.call(
+      activity = Reporting::BuildBusinessDayTotals.call(
         business_day: business_day,
-        mode: :live,
+        mode: :activity_rebuild,
         source_cutoff_at: business_day.closed_at
       )
-      unless live.commercial["net_sales_cents"].to_i == totals.commercial["net_sales_cents"].to_i &&
-          live.settlement["net_tenders_cents"].to_i == totals.settlement["net_tenders_cents"].to_i
-        raise Error, "Day Z consolidation does not match completed day activity"
+      mismatches = day_totals_component_mismatches(totals, activity)
+      return if mismatches.empty?
+
+      raise Error, "Day Z consolidation does not match completed day activity (#{mismatches.join(', ')})"
+    end
+
+    def day_totals_component_mismatches(final_totals, activity)
+      checks = {
+        "gross_sales_cents" => [ final_totals.commercial["gross_sales_cents"], activity.commercial["gross_sales_cents"] ],
+        "discount_total_cents" => [ final_totals.commercial["discount_total_cents"], activity.commercial["discount_total_cents"] ],
+        "return_total_cents" => [ final_totals.commercial["return_total_cents"], activity.commercial["return_total_cents"] ],
+        "post_void_commercial_effect_cents" => [
+          final_totals.commercial["post_void_commercial_effect_cents"],
+          activity.commercial["post_void_commercial_effect_cents"]
+        ],
+        "net_sales_cents" => [ final_totals.commercial["net_sales_cents"], activity.commercial["net_sales_cents"] ],
+        "net_tax_cents" => [ final_totals.settlement["net_tax_cents"], activity.settlement["net_tax_cents"] ],
+        "stored_value_funded_cents" => [
+          final_totals.settlement["stored_value_issued_reloaded_cents"],
+          activity.settlement["stored_value_issued_reloaded_cents"]
+        ],
+        "transaction_total_cents" => [
+          final_totals.settlement["transaction_total_cents"],
+          activity.settlement["transaction_total_cents"]
+        ],
+        "net_tenders_cents" => [
+          final_totals.settlement["net_tenders_cents"],
+          activity.settlement["net_tenders_cents"]
+        ],
+        "completed_transactions" => [
+          final_totals.activity_counts["completed_transactions"],
+          activity.activity_counts["completed_transactions"]
+        ]
+      }
+      checks.filter_map do |key, (left, right)|
+        key if left.to_i != right.to_i
       end
     end
 

@@ -12,9 +12,10 @@ module Reporting
 
     def call
       tenders = PosTender
-        .joins(:tender_type, :pos_transaction)
+        .joins(:tender_type, pos_transaction: { completed_pos_session: :business_day })
         .where(store_id: @store.id, status: "completed", removed_at: nil)
-        .where(pos_transactions: { status: "completed", completed_at: @from_date.beginning_of_day..@to_date.end_of_day })
+        .where(pos_transactions: { status: "completed" })
+        .where(business_days: { reporting_date: @from_date..@to_date })
         .includes(:tender_type)
 
       tenders.group_by { |t| t.tender_type.tender_category }.map do |category, rows|

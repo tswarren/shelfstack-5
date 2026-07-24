@@ -54,6 +54,9 @@ module Pos
 
         cutoff = session.closed_at
         totals = Reporting::BuildSessionTotals.call(pos_session: session, source_cutoff_at: cutoff)
+        unless totals.settlement["balanced"]
+          raise Error, "cannot close session: transaction total does not equal net completed tenders"
+        end
         z_report = persist_session_z!(session, totals, cutoff)
         audit_z_created!(session, z_report)
 
@@ -191,6 +194,23 @@ module Pos
       z_number = store.next_session_z_number
       store.update!(next_session_z_number: z_number + 1)
 
+      payload = totals.to_payload
+      payload["identity"] = (payload["identity"] || {}).merge(
+        "session_z_number" => z_number,
+        "closed_by_username" => @actor.username
+      )
+      payload["card_evidence"] = session.pos_close_card_evidences.order(:id).map do |row|
+        {
+          "kind" => row.kind,
+          "status" => row.status,
+          "precision" => row.precision,
+          "net_cents" => row.net_cents,
+          "terminal_reference" => row.terminal_reference,
+          "batch_reference" => row.batch_reference,
+          "unavailable_reason" => row.unavailable_reason
+        }
+      end
+
       PosSessionZReport.create!(
         pos_session: session,
         store: store,
@@ -200,7 +220,7 @@ module Pos
         report_definition_version: totals.report_definition_version,
         generated_at: cutoff,
         generated_by_user: @actor,
-        payload: totals.to_payload,
+        payload: payload,
         expected_cash_cents: totals.cash["expected_cash_cents"],
         counted_cash_cents: totals.cash["counted_cash_cents"],
         cash_variance_cents: totals.cash["cash_variance_cents"]

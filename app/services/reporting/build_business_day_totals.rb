@@ -2,8 +2,10 @@
 
 module Reporting
   class BuildBusinessDayTotals < ApplicationService
-    # mode: :live (Day X) mixes open-session live totals + closed Session Z payloads
-    # mode: :final consolidates canonical Session Z snapshots only
+    # mode:
+    #   :live — prefer Session Z for closed sessions; rebuild open
+    #   :final — consolidate Session Z snapshots only
+    #   :activity_rebuild — always rebuild from completed activity (ignore Session Z)
     def initialize(business_day:, mode: :live, source_cutoff_at: Time.current)
       @business_day = business_day
       @mode = mode.to_sym
@@ -31,6 +33,7 @@ module Reporting
         business_date: @business_day.reporting_date,
         source_cutoff_at: @source_cutoff_at,
         mode: @mode.to_s,
+        identity: build_identity,
         commercial: commercial,
         tax: tax,
         stored_value: stored_value,
@@ -47,12 +50,23 @@ module Reporting
     private
 
     def totals_for_session(session)
-      if session.closed? && session.pos_session_z_report.present?
+      case @mode
+      when :activity_rebuild
+        BuildSessionTotals.call(
+          pos_session: session,
+          source_cutoff_at: @source_cutoff_at,
+          recompute_cash: true
+        )
+      when :final
+        return nil unless session.closed? && session.pos_session_z_report.present?
+
         payload_to_session_totals(session.pos_session_z_report.payload)
-      elsif @mode == :final
-        nil
-      else
-        BuildSessionTotals.call(pos_session: session, source_cutoff_at: @source_cutoff_at)
+      else # :live
+        if session.closed? && session.pos_session_z_report.present?
+          payload_to_session_totals(session.pos_session_z_report.payload)
+        else
+          BuildSessionTotals.call(pos_session: session, source_cutoff_at: @source_cutoff_at)
+        end
       end
     end
 
@@ -64,6 +78,7 @@ module Reporting
         business_day_id: payload.fetch("business_day_id"),
         business_date: Date.iso8601(payload.fetch("business_date")),
         source_cutoff_at: Time.iso8601(payload.fetch("source_cutoff_at")),
+        identity: payload["identity"] || {},
         commercial: payload.fetch("commercial"),
         tax: payload.fetch("tax"),
         stored_value: payload.fetch("stored_value"),
@@ -76,9 +91,30 @@ module Reporting
       )
     end
 
+    def build_identity
+      day = @business_day
+      {
+        "store_name" => day.store.name,
+        "business_date" => day.reporting_date.iso8601,
+        "opened_by_username" => day.opened_by_user.username,
+        "closed_by_username" => day.closed_by_user&.username,
+        "opened_at" => day.opened_at&.iso8601(6),
+        "closed_at" => day.closed_at&.iso8601(6)
+      }
+    end
+
     def session_row(totals)
+      identity = totals.identity || {}
+      z = @business_day.pos_sessions.find { |s| s.id == totals.pos_session_id }&.pos_session_z_report
       {
         "pos_session_id" => totals.pos_session_id,
+        "session_z_number" => z&.z_number || identity["session_z_number"],
+        "pos_device_name" => identity["pos_device_name"],
+        "cash_drawer_name" => identity["cash_drawer_name"],
+        "cashier_username" => identity["cashier_username"],
+        "opened_at" => identity["opened_at"],
+        "closed_at" => identity["closed_at"],
+        "closed_by_username" => identity["closed_by_username"],
         "net_sales_cents" => totals.commercial["net_sales_cents"],
         "net_tenders_cents" => totals.settlement["net_tenders_cents"],
         "cash_variance_cents" => totals.cash["cash_variance_cents"],

@@ -2,9 +2,10 @@
 
 module Reporting
   class BuildSessionTotals < ApplicationService
-    def initialize(pos_session:, source_cutoff_at: Time.current)
+    def initialize(pos_session:, source_cutoff_at: Time.current, recompute_cash: false)
       @pos_session = pos_session
       @source_cutoff_at = source_cutoff_at
+      @recompute_cash = recompute_cash
     end
 
     def call
@@ -13,14 +14,15 @@ module Reporting
       lines = completed_lines(txns)
       tenders = completed_tenders(txns)
       taxes = completed_taxes(lines)
+      void_txn_ids = txns.select { |t| t.reverses_pos_transaction_id.present? }.map(&:id).to_set
 
-      commercial = build_commercial(lines, txns)
-      tax = build_tax(taxes)
+      commercial = build_commercial(lines, txns, void_txn_ids)
+      tax = build_tax(taxes, lines)
       stored_value = build_stored_value(lines, tenders)
       tender_totals = build_tenders(tenders)
       settlement = build_settlement(commercial, tax, stored_value, tender_totals)
       cash = build_cash(session)
-      departments = build_departments(lines)
+      departments = build_departments(lines, void_txn_ids)
       counts = build_activity_counts(txns, lines, tenders)
 
       SessionTotals.new(
@@ -30,6 +32,7 @@ module Reporting
         business_day_id: session.business_day_id,
         business_date: session.business_day.reporting_date,
         source_cutoff_at: @source_cutoff_at,
+        identity: build_identity(session),
         commercial: commercial,
         tax: tax,
         stored_value: stored_value,
@@ -68,31 +71,80 @@ module Reporting
       PosLineItemTax.where(pos_line_item_id: lines.map(&:id)).includes(:store_tax_rate)
     end
 
-    def build_commercial(lines, txns)
-      sales = lines.select { |l| l.direction == "sale" && l.line_kind != "stored_value" }
-      returns = lines.select { |l| l.direction == "return" }
-      post_voids = txns.select { |t| t.reverses_pos_transaction_id.present? }
+    def build_identity(session)
+      {
+        "store_name" => session.store.name,
+        "pos_device_name" => session.pos_device.name,
+        "cash_drawer_name" => session.cash_drawer&.name,
+        "cashier_username" => session.cashier_user.username,
+        "opened_by_username" => session.opened_by_user.username,
+        "closed_by_username" => session.closed_by_user&.username,
+        "opened_at" => session.opened_at&.iso8601(6),
+        "closed_at" => session.closed_at&.iso8601(6),
+        "business_date" => session.business_day.reporting_date.iso8601,
+        "session_status" => session.status
+      }
+    end
+
+    def build_commercial(lines, txns, void_txn_ids)
+      ordinary_lines = lines.reject { |l| void_txn_ids.include?(l.pos_transaction_id) }
+      void_lines = lines.select { |l| void_txn_ids.include?(l.pos_transaction_id) }
+      ordinary_txns = txns.reject { |t| void_txn_ids.include?(t.id) }
+      void_txns = txns.select { |t| void_txn_ids.include?(t.id) }
+
+      sales = ordinary_lines.select { |l| l.direction == "sale" && l.line_kind != "stored_value" }
+      returns = ordinary_lines.select { |l| l.direction == "return" && l.line_kind != "stored_value" }
 
       gross_sales = sales.sum { |l| l.extended_price_cents.to_i }
       return_total = returns.sum { |l| l.extended_price_cents.to_i }
-      discount_total = txns.reject { |t| t.reverses_pos_transaction_id.present? }.sum { |t| t.discount_total_cents.to_i }
-      price_override_lines = sales.count { |l| l.price_overridden_at.present? }
+      discount_total = ordinary_txns.sum { |t| t.discount_total_cents.to_i }
+      post_void_commercial_effect = void_txns.sum { |t| transaction_commercial_effect(t, void_lines) }
+
+      sale_cogs = sales.sum { |l| l.cost_extended_cents.to_i }
+      return_cogs_reversal = returns.sum { |l| l.cost_extended_cents.to_i }
+      post_void_cogs_effect = void_cogs_effect(void_lines)
+      net_cogs = sale_cogs - return_cogs_reversal + post_void_cogs_effect
+
+      net_sales = gross_sales - discount_total - return_total + post_void_commercial_effect
 
       {
         "gross_sales_cents" => gross_sales,
         "discount_total_cents" => discount_total,
         "return_total_cents" => return_total,
-        "post_void_count" => post_voids.size,
-        "net_sales_cents" => gross_sales - discount_total - return_total,
+        "post_void_count" => void_txns.size,
+        "post_void_commercial_effect_cents" => post_void_commercial_effect,
+        "net_sales_cents" => net_sales,
         "units_sold" => sales.sum { |l| l.quantity.to_i },
         "units_returned" => returns.sum { |l| l.quantity.to_i },
-        "price_override_line_count" => price_override_lines,
-        "cost_extended_cents" => sales.sum { |l| l.cost_extended_cents.to_i },
-        "missing_cost_line_count" => sales.count { |l| l.line_kind != "stored_value" && l.cost_extended_cents.nil? }
+        "price_override_line_count" => sales.count { |l| l.price_overridden_at.present? },
+        "sale_cogs_cents" => sale_cogs,
+        "customer_return_cogs_reversal_cents" => return_cogs_reversal,
+        "post_void_cogs_effect_cents" => post_void_cogs_effect,
+        "net_cogs_cents" => net_cogs,
+        "cost_extended_cents" => net_cogs,
+        "missing_cost_line_count" => ordinary_lines.count { |l|
+          l.line_kind != "stored_value" && l.cost_extended_cents.nil?
+        }
       }
     end
 
-    def build_tax(taxes)
+    # Sale extended - return extended - discount, using reversing-txn snapshots.
+    def transaction_commercial_effect(txn, void_lines)
+      txn_lines = void_lines.select { |l| l.pos_transaction_id == txn.id && l.line_kind != "stored_value" }
+      sale_ext = txn_lines.select { |l| l.direction == "sale" }.sum { |l| l.extended_price_cents.to_i }
+      return_ext = txn_lines.select { |l| l.direction == "return" }.sum { |l| l.extended_price_cents.to_i }
+      sale_ext - return_ext - txn.discount_total_cents.to_i
+    end
+
+    def void_cogs_effect(void_lines)
+      product = void_lines.select { |l| l.line_kind != "stored_value" }
+      sale_cogs = product.select { |l| l.direction == "sale" }.sum { |l| l.cost_extended_cents.to_i }
+      return_cogs = product.select { |l| l.direction == "return" }.sum { |l| l.cost_extended_cents.to_i }
+      sale_cogs - return_cogs
+    end
+
+    def build_tax(taxes, lines)
+      line_by_id = lines.index_by(&:id)
       components = taxes.group_by(&:store_tax_rate_id).map do |_rate_id, rows|
         rate = rows.first.store_tax_rate
         receipt_code = rows.first.receipt_code_snapshot.presence || rate&.receipt_code.presence || "tax"
@@ -101,13 +153,19 @@ module Reporting
           "store_tax_rate_id" => rate&.id,
           "name" => name,
           "receipt_code" => receipt_code,
-          "amount_cents" => rows.sum(&:amount_cents)
+          "amount_cents" => rows.sum { |tax| signed_tax_amount(tax, line_by_id[tax.pos_line_item_id]) }
         }
       end.sort_by { |row| row["name"].to_s }
       {
-        "tax_total_cents" => taxes.sum(&:amount_cents),
+        "tax_total_cents" => taxes.sum { |tax| signed_tax_amount(tax, line_by_id[tax.pos_line_item_id]) },
         "components" => components
       }
+    end
+
+    # Line-item tax rows store absolute amounts; return / post-void reverse lines negate.
+    def signed_tax_amount(tax, line)
+      amount = tax.amount_cents.to_i
+      line&.direction == "return" ? -amount : amount
     end
 
     def build_stored_value(lines, tenders)
@@ -169,7 +227,7 @@ module Reporting
       end
 
       breakdown = Pos::CalculateExpectedCash.call(pos_session: session)
-      expected = if session.closed? && session.expected_cash_cents.present?
+      expected = if !@recompute_cash && session.closed? && session.expected_cash_cents.present?
         session.expected_cash_cents
       else
         breakdown.expected_cash_cents
@@ -189,8 +247,10 @@ module Reporting
       }
     end
 
-    def build_departments(lines)
-      product_lines = lines.select { |l| l.line_kind != "stored_value" }
+    def build_departments(lines, void_txn_ids)
+      product_lines = lines.reject { |l|
+        l.line_kind == "stored_value" || void_txn_ids.include?(l.pos_transaction_id)
+      }
       dept_meta = Department.where(id: product_lines.map(&:department_id).compact.uniq)
         .pluck(:id, :name, :department_number)
         .to_h { |id, name, number| [ id, { "name" => name, "department_number" => number } ] }

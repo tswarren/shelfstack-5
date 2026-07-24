@@ -56,9 +56,9 @@
       <% sessions.each do |row| %>
         <% session = sessions_by_id[row["pos_session_id"]] %>
         <tr>
-          <td>#<%= row["pos_session_id"] %></td>
-          <td><%= session&.pos_device&.name || "—" %></td>
-          <td><%= session&.cashier_user&.username || "—" %></td>
+          <td>#<%= row["pos_session_id"] %><% if row["session_z_number"] %> · Z #<%= row["session_z_number"] %><% end %></td>
+          <td><%= row["pos_device_name"].presence || session&.pos_device&.name || "—" %></td>
+          <td><%= row["cashier_username"].presence || session&.cashier_user&.username || "—" %></td>
           <td><%= session&.status || "—" %></td>
           <td class="num"><%= pos_money(row["net_sales_cents"]) %></td>
           <td class="num"><%= row["completed_transactions"].to_i %></td>
@@ -86,13 +86,18 @@
       <tr><td>Discounts</td><td class="num"><%= pos_money(commercial["discount_total_cents"]) %></td></tr>
       <tr><td>Customer returns</td><td class="num"><%= pos_money(commercial["return_total_cents"]) %></td></tr>
       <tr><td>Post-void transactions</td><td class="num"><%= commercial["post_void_count"].to_i %></td></tr>
+      <tr><td>Post-void commercial effect</td><td class="num"><%= pos_money(commercial["post_void_commercial_effect_cents"]) %></td></tr>
       <tr class="is-total"><td>Net sales</td><td class="num"><%= pos_money(commercial["net_sales_cents"]) %></td></tr>
       <tr><td>Units sold</td><td class="num"><%= commercial["units_sold"].to_i %></td></tr>
       <% if show_cost %>
-        <tr><td>Cost</td><td class="num"><%= pos_money(commercial["cost_extended_cents"]) %></td></tr>
+        <tr><td>Sale COGS</td><td class="num"><%= pos_money(commercial["sale_cogs_cents"] || commercial["cost_extended_cents"]) %></td></tr>
+        <tr><td>Customer-return COGS reversal</td><td class="num"><%= pos_money(commercial["customer_return_cogs_reversal_cents"]) %></td></tr>
+        <tr><td>Post-void COGS effect</td><td class="num"><%= pos_money(commercial["post_void_cogs_effect_cents"]) %></td></tr>
+        <tr class="is-total"><td>Net COGS</td><td class="num"><%= pos_money(commercial["net_cogs_cents"] || commercial["cost_extended_cents"]) %></td></tr>
       <% end %>
       <% if show_margin && show_cost %>
-        <tr><td>Margin</td><td class="num"><%= pos_money(commercial["net_sales_cents"].to_i - commercial["cost_extended_cents"].to_i) %></td></tr>
+        <% net_cogs = (commercial["net_cogs_cents"] || commercial["cost_extended_cents"]).to_i %>
+        <tr><td>Margin</td><td class="num"><%= pos_money(commercial["net_sales_cents"].to_i - net_cogs) %></td></tr>
       <% end %>
     </tbody>
   </table>
