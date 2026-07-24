@@ -5,10 +5,9 @@ module Reporting
     Error = Class.new(StandardError)
     Result = Data.define(:resolution, :success?, :error)
 
-    MVP_RESOLUTION_TYPES = %w[
+    NUMERIC_RESOLUTION_TYPES = %w[
       explained_no_correction
       accepted_variance
-      accept_evidence_unavailable
     ].freeze
 
     def initialize(reconciliation:, actor:, resolution_type:, explanation: nil,
@@ -30,13 +29,11 @@ module Reporting
         recon = Reconciliation.lock.find(@reconciliation.id)
         raise Error, "cannot change a finalized reconciliation" if recon.finalized?
 
-        validate_resolution_type!
+        validate_comparison_required!
+        validate_resolution_for_comparison!
         validate_ownership!(recon)
+        validate_no_supersede!
         validate_no_conflicting_active_resolution!
-
-        if @supersedes
-          @supersedes.update!(superseded: true)
-        end
 
         if @explanation.blank?
           raise Error, "explanation is required"
@@ -47,7 +44,7 @@ module Reporting
           reconciliation_comparison: @comparison,
           resolution_type: @resolution_type,
           explanation: @explanation,
-          supersedes_resolution: @supersedes,
+          supersedes_resolution: nil,
           recorded_by_user: @actor,
           recorded_at: Time.current
         )
@@ -61,7 +58,7 @@ module Reporting
           metadata: {
             "resolution_type" => resolution.resolution_type,
             "reconciliation_id" => recon.id,
-            "comparison_id" => @comparison&.id
+            "comparison_id" => @comparison.id
           }
         )
 
@@ -73,42 +70,50 @@ module Reporting
 
     private
 
-    def validate_resolution_type!
+    def validate_comparison_required!
+      raise Error, "comparison is required" if @comparison.nil?
+    end
+
+    def validate_resolution_for_comparison!
       if @resolution_type == "unresolved"
         raise Error, "unresolved resolutions are not recorded; use Review later to leave the draft open"
       end
       if @resolution_type == "linked_domain_correction"
         raise Error, "linked domain correction is not available until correction linking is implemented"
       end
-      return if MVP_RESOLUTION_TYPES.include?(@resolution_type)
 
-      raise Error, "unsupported resolution type #{@resolution_type}"
+      if @comparison.observed_unavailable
+        unless @resolution_type == "accept_evidence_unavailable"
+          raise Error, "unavailable evidence requires accept_evidence_unavailable"
+        end
+        return
+      end
+
+      if @comparison.variance_cents.to_i.nonzero?
+        unless NUMERIC_RESOLUTION_TYPES.include?(@resolution_type)
+          raise Error, "nonzero variance requires accepted_variance or explained_no_correction"
+        end
+        return
+      end
+
+      raise Error, "an exact comparison does not require a resolution"
     end
 
     def validate_ownership!(recon)
-      if @comparison
-        unless @comparison.reconciliation_id == recon.id
-          raise Error, "comparison does not belong to this reconciliation"
-        end
-      end
-
-      return unless @supersedes
-
-      unless @supersedes.reconciliation_id == recon.id
-        raise Error, "superseded resolution does not belong to this reconciliation"
-      end
-      if @comparison && @supersedes.reconciliation_comparison_id.present? &&
-          @supersedes.reconciliation_comparison_id != @comparison.id
-        raise Error, "superseded resolution does not apply to this comparison"
+      unless @comparison.reconciliation_id == recon.id
+        raise Error, "comparison does not belong to this reconciliation"
       end
     end
 
-    def validate_no_conflicting_active_resolution!
-      return if @comparison.nil?
-      return if @supersedes.present?
+    def validate_no_supersede!
+      return if @supersedes.nil?
 
+      raise Error, "resolution superseding is not available yet; see deferred follow-up for append-only replace"
+    end
+
+    def validate_no_conflicting_active_resolution!
       active = @comparison.reconciliation_resolutions.where(superseded: false)
-      raise Error, "comparison already has an active resolution; supersede it explicitly" if active.exists?
+      raise Error, "comparison already has an active resolution" if active.exists?
     end
   end
 end

@@ -71,12 +71,8 @@ class PosSession < ApplicationRecord
   def reconciled_markers_immutable
     return unless persisted?
     return if reconciled_at_in_database.blank?
+    return unless will_save_change_to_reconciled_at? || will_save_change_to_reconciled_by_user_id?
 
-    if will_save_change_to_reconciled_at? && reconciled_at.blank?
-      errors.add(:reconciled_at, "cannot be cleared once set")
-    end
-    if will_save_change_to_reconciled_by_user_id? && reconciled_by_user_id.blank?
-      errors.add(:reconciled_by_user, "cannot be cleared once set")
-    end
+    errors.add(:base, "reconciliation markers cannot be changed once set")
   end
 end

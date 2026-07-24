@@ -414,6 +414,63 @@ module Reporting
       )
       assert_not second.success?
       assert_match(/already has an active resolution/i, second.error)
+
+      supersede = RecordReconciliationResolution.call(
+        reconciliation: assembled.reconciliation, actor: @admin,
+        reconciliation_comparison: comparison,
+        resolution_type: "explained_no_correction",
+        explanation: "try supersede",
+        supersedes_resolution: first.resolution
+      )
+      assert_not supersede.success?
+      assert_match(/superseding is not available/i, supersede.error)
+    end
+
+    test "rejects resolution types that do not match the comparison" do
+      day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+      session = Pos::OpenSession.call(
+        business_day: day, store: @store, pos_device: @device, cash_drawer: @drawer,
+        opening_cash_cents: 0, cashier: @admin, actor: @admin
+      ).pos_session
+      assert Pos::CloseSession.call(pos_session: session, actor: @admin, counted_cash_cents: 40).success?
+      assembled = AssembleSessionReconciliation.call(pos_session: session.reload, actor: @admin)
+      comparison = assembled.reconciliation.reconciliation_comparisons.first
+      assert comparison.variance_cents.to_i.nonzero?
+
+      mismatched = RecordReconciliationResolution.call(
+        reconciliation: assembled.reconciliation, actor: @admin,
+        reconciliation_comparison: comparison,
+        resolution_type: "accept_evidence_unavailable",
+        explanation: "tampered type"
+      )
+      assert_not mismatched.success?
+      assert_match(/nonzero variance requires/i, mismatched.error)
+
+      missing = RecordReconciliationResolution.call(
+        reconciliation: assembled.reconciliation, actor: @admin,
+        resolution_type: "accepted_variance",
+        explanation: "no comparison"
+      )
+      assert_not missing.success?
+      assert_match(/comparison is required/i, missing.error)
+
+      # Inverse: unavailable comparison rejects numeric variance types.
+      unavailable = assembled.reconciliation.reconciliation_comparisons.create!(
+        comparison_type: "session_merchant_slip",
+        position: 99,
+        expected_cents: 100,
+        observed_cents: nil,
+        variance_cents: nil,
+        observed_unavailable: true
+      )
+      inverse = RecordReconciliationResolution.call(
+        reconciliation: assembled.reconciliation, actor: @admin,
+        reconciliation_comparison: unavailable,
+        resolution_type: "accepted_variance",
+        explanation: "wrong for unavailable"
+      )
+      assert_not inverse.success?
+      assert_match(/unavailable evidence requires/i, inverse.error)
     end
 
     test "finalized reconciliation header cannot return to draft and denormalized markers stay set" do
@@ -434,11 +491,47 @@ module Reporting
       assert recon.reload.finalized?
 
       session.reload
-      assert session.reconciled_at.present?
+      original_at = session.reconciled_at
+      original_by = session.reconciled_by_user_id
+      assert original_at.present?
       assert_raises(ActiveRecord::RecordInvalid) do
         session.update!(reconciled_at: nil, reconciled_by_user: nil)
       end
-      assert session.reload.reconciled_at.present?
+      assert_raises(ActiveRecord::RecordInvalid) do
+        session.update!(reconciled_at: original_at + 1.hour, reconciled_by_user_id: users(:clerk).id)
+      end
+      session.reload
+      assert_equal original_at.to_i, session.reconciled_at.to_i
+      assert_equal original_by, session.reconciled_by_user_id
+    end
+
+    test "variance finalize audit metadata includes pos_approval_id when approval is required" do
+      membership = StoreMembership.find_by!(user: @admin, store: @store)
+      membership.update!(cash_variance_review_threshold_cents: 0)
+      _day, session, _net = close_session_with_cash_variance!(counted_delta: 55)
+      assembled = AssembleSessionReconciliation.call(pos_session: session, actor: @admin)
+      comparison = assembled.reconciliation.reconciliation_comparisons.first
+      assert RecordReconciliationResolution.call(
+        reconciliation: assembled.reconciliation, actor: @admin,
+        reconciliation_comparison: comparison, resolution_type: "accepted_variance",
+        explanation: "approved variance"
+      ).success?
+
+      assert FinalizeReconciliation.call(
+        reconciliation: assembled.reconciliation, actor: @admin,
+        approver: @admin, approver_pin: "1234", reason: "self approve for audit link"
+      ).success?
+
+      event = AdministrativeAuditEvent.where(
+        action: "reconciliation.finalized",
+        subject_type: "Reconciliation",
+        subject_id: assembled.reconciliation.id
+      ).order(:id).last
+      assert event.present?
+      assert event.metadata["pos_approval_id"].present?
+      assert PosApproval.exists?(id: event.metadata["pos_approval_id"])
+    ensure
+      Authorization::AuthorityLimits.apply_administrator_defaults!(membership) if membership
     end
 
     test "CloseBusinessDay rolls back when Session Z commercial payload is corrupted" do

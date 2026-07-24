@@ -46,7 +46,7 @@ module Reporting
 
         numeric = comparisons.reject(&:observed_unavailable)
         max_abs_variance = numeric.map { |c| c.variance_cents.to_i.abs }.max || 0
-        authorize_variance!(recon, max_abs_variance, permission) if max_abs_variance.positive?
+        approval = max_abs_variance.positive? ? authorize_variance!(recon, max_abs_variance, permission) : nil
 
         now = Time.current
         recon.update!(
@@ -69,7 +69,8 @@ module Reporting
           subject: recon,
           metadata: {
             "scope_type" => recon.scope_type,
-            "max_abs_variance_cents" => max_abs_variance
+            "max_abs_variance_cents" => max_abs_variance,
+            "pos_approval_id" => approval&.id
           }
         )
 
@@ -122,6 +123,8 @@ module Reporting
         pos_session: recon.pos_session
       )
       raise Error, auth.error || "variance authorization failed" unless auth.allowed?
+
+      auth.pos_approval
     end
   end
 end
