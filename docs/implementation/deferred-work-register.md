@@ -125,6 +125,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-025 | Product merge / canonical identifier correction workflows | 2 | catalog_candidate | Catalog permissions foreshadow; out of Phase 8 core | Controlled process design | unscheduled | — |
 | DWR-026 | Store-specific pricing | catalog | catalog_candidate | [catalog-and-products.md](../domains/catalog-and-products.md) open questions | Price-resolution service boundary | later_extensions | — |
 | DWR-027 | BISAC / external subject → merchandise class mapping | — | delivery_debt | OD-P8-05 accepted — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) | Optional Gate 8g | Phase 8 | [#101](https://github.com/tswarren/shelfstack-5/issues/101) |
+| DWR-028 | Product import `return_to`: reject malformed percent-encoding before post-commit redirect | 8c | delivery_debt | [#112](https://github.com/tswarren/shelfstack-5/pull/112) re-review P3 — `URI.parse` can accept a root-relative path whose query still raises `ArgumentError` in `Rack::Utils.parse_nested_query` after create | Parse nested query inside `sanitize_return_to`; rescue `ArgumentError` in `return_path`; add controller test | Phase 8 (non-blocking) | [#116](https://github.com/tswarren/shelfstack-5/issues/116) |
 | DWR-030 | Detailed buyback | — | deferred_capability | [deferred-capabilities.md](deferred-capabilities.md) | Dedicated acquisition design | later_extensions | — |
 | DWR-031 | Inventory counts | — | deferred_capability | deferred-capabilities | Count document design | later_extensions | — |
 | DWR-032 | Inter-store transfers | — | deferred_capability | deferred-capabilities | Transfer ownership workflow | later_extensions | — |
@@ -161,7 +162,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 Open / deferred decisions:     DWR-001 … DWR-003 (+ DWR-007 near OD-009)
 Interim correction blocks:     DWR-004 … DWR-006
 Phase 6.5 / 7 carry-forward:   DWR-010 … DWR-019
-Catalog / Phase 8:            DWR-020 … DWR-027 (021 → 8.5; 024 deferred)
+Catalog / Phase 8:            DWR-020 … DWR-028 (021 → 8.5; 024 deferred)
 Later extensions:              DWR-030 … DWR-052  (= deferred-capabilities.md)
 Doc hygiene:                   DWR-060 … DWR-063
 ```
