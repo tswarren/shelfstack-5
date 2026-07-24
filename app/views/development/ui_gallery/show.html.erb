@@ -40,6 +40,20 @@
 </section>
 
 <section class="record-section">
+  <h2>Record picker</h2>
+  <p class="muted">Shared Gate 8a search-to-link control. Requires catalog/classification permission.</p>
+  <div class="form-grid" style="max-width:36rem">
+    <%= render "shared/record_picker",
+          name: "gallery[product_id]",
+          id: "gallery_product_id",
+          record_type: "product",
+          selected: Current.organization&.products&.order(:name)&.first,
+          label: "Product",
+          hint: "Type a name or identifier." %>
+  </div>
+</section>
+
+<section class="record-section">
   <h2>Currency mask</h2>
   <div data-controller="currency-mask" class="field" style="max-width:12rem">
     <label class="field-label" for="gallery_currency">Amount</label>

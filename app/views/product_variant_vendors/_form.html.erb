@@ -4,21 +4,22 @@
   <section class="form-section">
     <h2 class="form-section-title">Source</h2>
     <div class="form-grid">
-      <div class="field">
-        <%= form.label :vendor_id, "Vendor" %>
-        <%= form.collection_select :vendor_id, @vendors, :id, :name, { include_blank: true },
-              required: true, disabled: product_variant_vendor.persisted? %>
-      </div>
-      <div class="field">
-        <%= form.label :product_variant_id, "Product variant" %>
-        <%= form.select :product_variant_id,
-              options_for_select(
-                @product_variants.map { |v| [ "#{v.product.name} — #{v.name} (#{v.sku})", v.id ] },
-                product_variant_vendor.product_variant_id
-              ),
-              { include_blank: true },
-              required: true, disabled: product_variant_vendor.persisted? %>
-      </div>
+      <%= render "shared/record_picker",
+            form: form,
+            method: :vendor_id,
+            record_type: "vendor",
+            selected: product_variant_vendor.vendor,
+            label: "Vendor",
+            required: true,
+            disabled: product_variant_vendor.persisted? %>
+      <%= render "shared/record_picker",
+            form: form,
+            method: :product_variant_id,
+            record_type: "product_variant",
+            selected: product_variant_vendor.product_variant,
+            label: "Product variant",
+            required: true,
+            disabled: product_variant_vendor.persisted? %>
       <div class="field">
         <%= form.label :vendor_item_code, "Vendor item code" %>
         <%= form.text_field :vendor_item_code %>

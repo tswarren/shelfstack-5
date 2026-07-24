@@ -14,6 +14,18 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_match "The Illustrated Man", response.body
   end
 
+  test "edit form uses shared record pickers for classification links" do
+    product = products(:sample_book)
+    get edit_product_path(product)
+    assert_response :success
+    assert_match "data-controller=\"record-picker\"", response.body
+    assert_match "data-record-picker-record-type-value=\"merchandise_class\"", response.body
+    assert_match "data-record-picker-record-type-value=\"department\"", response.body
+    assert_match "data-record-picker-record-type-value=\"product_format\"", response.body
+    assert_match "data-record-picker-record-type-value=\"tax_category\"", response.body
+    assert_no_match(/name="product\[merchandise_class_id\]"[^>]*<option/m, response.body)
+  end
+
   test "searches by normalized ISBN-10 input" do
     get products_path, params: { q: "0-306-40615-2" }
     assert_response :success
@@ -79,6 +91,37 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     get products_path
     assert_redirected_to root_path
+  end
+
+  test "validation rerender does not disclose foreign-organization classification labels" do
+    foreign = create_foreign_organization_catalog!
+    product = products(:sample_book)
+    variant = product.product_variants.first
+
+    patch product_path(product), params: {
+      product: {
+        name: product.name,
+        product_type: product.product_type,
+        product_format_id: product.product_format_id,
+        merchandise_class_id: foreign[:merchandise_class].id,
+        default_department_id: foreign[:department].id,
+        default_tax_category_id: foreign[:tax_category].id,
+        status: product.status,
+        sellable: product.sellable
+      },
+      product_variant: {
+        inventory_tracking_mode: variant.inventory_tracking_mode,
+        regular_price_cents: variant.regular_price_cents,
+        sellable: variant.sellable,
+        status: variant.status
+      }
+    }
+
+    assert_response :unprocessable_entity
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_CLASS_NAME)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_TAX_NAME)}/, response.body)
+    assert_no_match(/Foreign Department SECRET/, response.body)
+    assert_match(/must belong to the same organization/, response.body)
   end
 
   test "editor without deactivate can edit an already nonsellable product" do

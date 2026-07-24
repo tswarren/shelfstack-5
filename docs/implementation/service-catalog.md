@@ -391,9 +391,21 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 
 Shared variance authority for recon accept: membership `cash_variance_review_threshold_cents` via `Authorization::EvaluateAuthority` / `Pos::AuthorizeAction` (`reconciliation_variance`).
 
+## Phase 8 — Catalog refinement & enrichment
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`) |
+| `Catalog::ResolveRecordPickerSelection` | Catalog and Products | 8a | No | Yes | None | Organization, record type, id | In-org record or `nil` (prevents foreign-org label disclosure on validation rerender) |
+
+### Phase 8 notes
+
+- Gate 8a shared picker: `GET /catalog/record_searches` + `shared/record_picker` partial + Stimulus `record-picker` / `linked-record-pickers`. Design: [interaction-patterns.md](../design/interaction-patterns.md).
+- Gate 8b+ (Creators, enrichment adapters, create-from-ISBN) add services when implemented.
+
 ## Later phases (add when implemented)
 
-- Phase 7+: reporting/reconciliation interfaces over posted corrections and stored value
+- Phase 8.5+: named multi-variant unlock after cross-domain packet
 
 ## Related
 

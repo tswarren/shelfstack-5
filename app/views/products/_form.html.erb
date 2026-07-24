@@ -69,34 +69,32 @@
     <section class="form-section">
       <h2 class="form-section-title">Classification</h2>
       <div class="form-grid">
-        <div class="field">
-          <%= product_form.label :product_format_id, "Format", class: "field-label" %>
-          <%= product_form.collection_select :product_format_id, Current.organization.product_formats.order(:name), :id, :name, include_blank: true %>
-        </div>
-        <div class="field">
-          <%= product_form.label :merchandise_class_id, "Merchandise class", class: "field-label" %>
-          <%= product_form.select :merchandise_class_id,
-                MerchandiseClass.sorted_hierarchically(
-                  Current.organization.merchandise_classes.includes(parent: :parent)
-                ).map { |c| [ hierarchy_path_label(c), c.id ] },
-                { include_blank: true }, class: "input" %>
-        </div>
-        <div class="field">
-          <%= product_form.label :default_department_id, "Default department", class: "field-label" %>
-          <%= product_form.select :default_department_id,
-                Department.sorted_hierarchically(
-                  Current.organization.departments.includes(:parent_department)
-                ).map { |d| [ hierarchy_path_label(d), d.id ] },
-                { include_blank: true }, class: "input" %>
-          <p class="field-hint">Leave blank to inherit from the merchandise class when present.</p>
-        </div>
-        <div class="field">
-          <%= product_form.label :default_tax_category_id, "Default tax category", class: "field-label" %>
-          <%= product_form.select :default_tax_category_id,
-                Current.organization.tax_categories.order(:name).map { |c| [ c.name, c.id ] },
-                { include_blank: true }, class: "input" %>
-          <p class="field-hint">Leave blank to inherit from merchandise class or department.</p>
-        </div>
+        <%= render "shared/record_picker",
+              form: product_form,
+              method: :product_format_id,
+              record_type: "product_format",
+              selected: product.product_format,
+              label: "Format" %>
+        <%= render "shared/record_picker",
+              form: product_form,
+              method: :merchandise_class_id,
+              record_type: "merchandise_class",
+              selected: product.merchandise_class,
+              label: "Merchandise class" %>
+        <%= render "shared/record_picker",
+              form: product_form,
+              method: :default_department_id,
+              record_type: "department",
+              selected: product.default_department,
+              label: "Default department",
+              hint: "Leave blank to inherit from the merchandise class when present." %>
+        <%= render "shared/record_picker",
+              form: product_form,
+              method: :default_tax_category_id,
+              record_type: "tax_category",
+              selected: product.default_tax_category,
+              label: "Default tax category",
+              hint: "Leave blank to inherit from merchandise class or department." %>
       </div>
     </section>
 

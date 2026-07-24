@@ -15,6 +15,9 @@ class ProductRequestsControllerTest < ActionDispatch::IntegrationTest
   test "renders new, show, and edit" do
     get new_product_request_path
     assert_response :success
+    assert_match "data-controller=\"record-picker\"", response.body
+    assert_match "data-record-picker-record-type-value=\"product\"", response.body
+    assert_match "data-record-picker-record-type-value=\"product_variant\"", response.body
 
     request = product_requests(:open_stock_replenishment)
     get product_request_path(request)
@@ -22,6 +25,7 @@ class ProductRequestsControllerTest < ActionDispatch::IntegrationTest
 
     get edit_product_request_path(request)
     assert_response :success
+    assert_match ApplicationController.helpers.record_picker_label(request.product, "product"), response.body
   end
 
   test "creates a product request through the service" do
@@ -44,6 +48,29 @@ class ProductRequestsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :unprocessable_entity
+  end
+
+  test "validation rerender does not disclose foreign-organization product or variant labels" do
+    foreign = create_foreign_organization_catalog!
+
+    assert_no_difference "ProductRequest.count" do
+      post product_requests_path, params: {
+        product_request: {
+          request_type: "staff_suggestion",
+          product_id: foreign[:product].id,
+          product_variant_id: foreign[:variant].id,
+          requested_quantity: 1,
+          priority: "normal"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_PRODUCT_NAME)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_PRODUCT_IDENTIFIER)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_VARIANT_SKU)}/, response.body)
+    assert_no_match(/#{Regexp.escape(ForeignOrganizationHelper::SECRET_VARIANT_NAME)}/, response.body)
+    assert_match(/must belong to the same organization/, response.body)
   end
 
   test "resolves an open non-customer request" do
