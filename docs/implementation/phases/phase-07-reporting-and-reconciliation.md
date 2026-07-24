@@ -301,11 +301,14 @@ reconciliation
 └── resolution
     ├── explained_no_correction
     ├── accepted_variance
-    ├── linked_domain_correction
-    └── unresolved
+    ├── accept_evidence_unavailable
+    ├── linked_domain_correction   (schema / deferred — [#56](https://github.com/tswarren/shelfstack-5/issues/56))
+    └── unresolved                 (schema only; MVP leaves draft via Review later — not recorded)
 ```
 
-When an operational balance requires correction, resolution uses the owning domain’s correction mechanism and may be linked from the reconciliation record.
+**MVP operable resolutions:** `explained_no_correction` and `accepted_variance` for nonzero numeric comparisons; `accept_evidence_unavailable` for unavailable observed evidence. Resolution type must match comparison state. Exact (zero-variance) comparisons do not take a resolution. `linked_domain_correction` and recorded `unresolved` are rejected until deferred work lands. Superseding is rejected until [#57](https://github.com/tswarren/shelfstack-5/issues/57).
+
+When an operational balance requires correction, resolution uses the owning domain’s correction mechanism and may be linked from the reconciliation record (deferred linking UX).
 
 ### Reconciliation finalization and mutability
 
@@ -313,8 +316,8 @@ When an operational balance requires correction, resolution uses the owning doma
 - **Close never automatically marks a session or day reconciled**, including exact (zero-variance) matches.
 - UI may offer one-action **Reconcile now** after close; it remains a separate audited finalize action.
 - Comparisons and findings may be assembled in draft (after operational close).
-- Finalization records `reconciled_at` / `reconciled_by`.
-- After finalization, evidence and resolutions are immutable or corrected only through append-only superseding records.
+- Finalization records `reconciled_at` / `reconciled_by` on the reconciliation header and denormalized session/day caches.
+- After finalization, the reconciliation header, comparisons, findings, and resolutions are immutable. Append-only superseding remains deferred ([#57](https://github.com/tswarren/shelfstack-5/issues/57)). Denormalized `reconciled_*` markers cannot be cleared or rewritten once set.
 
 ### Variance acceptance authority
 
@@ -389,7 +392,7 @@ The following remain outside Phase 7 and must not be pulled into its PRs:
 
 Gates may land as sequential short-lived PRs. Prefer finishing 7a before deep UI polish. **7e may trail 7b–7d** once shared definitions exist. Optional extensions are not numbered gates.
 
-**Implementation status (branch):** 7a–7d implemented and corrected for operator walkthrough; **7e partially delivered** (commercial/tender/tax/stock/open-PO/SV store activity and limited CSV). Session card grain is deferred/not selectable; post-finalization superseding and operable `received_and_refunded` evidence entry are deferred.
+**Implementation status (branch):** 7a–7d implemented and hardened for operator walkthrough (including SV post-void settlement, approve/approve_self, MVP resolution matching, finalized freeze, day-only queue access); **7e partially delivered** (commercial/tender/tax/stock/open-PO/SV store activity and limited CSV). Deferred: session card grain ([#58](https://github.com/tswarren/shelfstack-5/issues/58)), linked corrections ([#56](https://github.com/tswarren/shelfstack-5/issues/56)), superseding ([#57](https://github.com/tswarren/shelfstack-5/issues/57)), directional/multi-terminal evidence ([#59](https://github.com/tswarren/shelfstack-5/issues/59)), org SV liability ([#60](https://github.com/tswarren/shelfstack-5/issues/60)), remaining 7e breadth ([#61](https://github.com/tswarren/shelfstack-5/issues/61)).
 
 | Gate | Focus | Core? |
 | --- | --- | --- |
@@ -480,12 +483,12 @@ Close remains `pos.session.close` / `pos.business_day.close`. Reconcile and reso
 - [ ] Business day still cannot close while a session remains open (preserved)
 - [ ] Defined close-blocking tie-out failures prevent close; broader integrity anomalies surface as exceptions without automatically blocking close
 - [ ] Close never auto-reconciles; Reconcile now / Review later remains a separate audited action (including exact matches)
-- [ ] One canonical reconciliation per session/day; finalization is immutable or append-only superseding
-- [ ] Reconciliation reviews persisted close results per hierarchy and grain; unavailable observed values are supported
-- [ ] Comparisons, findings, and resolutions do not alter POS, tenders, ledgers, counts, or Z rows
-- [ ] Operational correction from reconciliation uses owning-domain services and is linkable from the reconciliation record
-- [ ] Internal tie-out failures cannot be cleared only by accepting a reconciliation variance
-- [ ] Variance acceptance follows cash-style authority (exact / within / above / evidence unavailable)
+- [x] One canonical reconciliation per session/day; MVP finalization is fully immutable (append-only superseding deferred)
+- [x] Reconciliation reviews persisted close results per hierarchy and grain; unavailable observed values are supported
+- [x] Comparisons, findings, and resolutions do not alter POS, tenders, ledgers, counts, or Z rows
+- [ ] Operational correction from reconciliation uses owning-domain services and is linkable from the reconciliation record (deferred [#56](https://github.com/tswarren/shelfstack-5/issues/56))
+- [x] Internal tie-out failures cannot be cleared only by accepting a reconciliation variance
+- [x] Variance acceptance follows cash-style authority (exact / within / above / evidence unavailable) with `reporting.reconcile.approve` / `approve_self`
 - [ ] Pre-Phase-7 closed records remain legacy unsnapshotted (no silent backfill)
 - [ ] `reporting.*` permissions seeded; close and reconcile surfaces enforce authorization at the service boundary
 - [ ] Browser print works for Session X, Session Z, Business-Day X, and Business-Day Z without a hardware-specific stack

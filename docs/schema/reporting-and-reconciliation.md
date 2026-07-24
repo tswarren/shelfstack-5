@@ -36,13 +36,13 @@ Store columns (Phase 7a.1): `card_reconciliation_grain`, `next_session_z_number`
 
 ## Reconciliation
 
-Operational session/day status remains `open` | `closed` only. The finalized reconciliation header is authoritative. Optional denormalized `reconciled_at` / `reconciled_by_user_id` on session/day are caches written atomically with finalize.
+Operational session/day status remains `open` | `closed` only. The finalized reconciliation header is authoritative. Optional denormalized `reconciled_at` / `reconciled_by_user_id` on session/day are caches written atomically with finalize and must not be cleared or rewritten afterward.
 
 | Table | Notes |
 | --- | --- |
-| `reconciliations` | `scope_type` `session` \| `business_day`; `status` `draft` \| `finalized`; finalize requires `reconciled_at`/`reconciled_by_user_id` |
-| `reconciliation_comparisons` | `session_cash`, `session_merchant_slip`, `day_machine_batch`; `observed_unavailable` forbids numeric variance |
+| `reconciliations` | `scope_type` `session` \| `business_day`; `status` `draft` \| `finalized`; finalize requires `reconciled_at`/`reconciled_by_user_id`; finalized header rejects further updates/destroy |
+| `reconciliation_comparisons` | `session_cash`, `session_merchant_slip`, `day_machine_batch`; `observed_unavailable` forbids numeric variance; immutable after finalize |
 | `reconciliation_findings` | Category + explanation on a comparison |
-| `reconciliation_resolutions` | Append-only; may supersede prior resolutions |
+| `reconciliation_resolutions` | Append-only; schema supports `supersedes_resolution_id`, but MVP rejects superseding until deferred work lands; resolution type must match comparison state |
 
 Do **not** implement a generic balance-changing `reconciliation_adjustments` table.

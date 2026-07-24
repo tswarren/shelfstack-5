@@ -166,6 +166,7 @@ Structured snapshot is authoritative (definition version, historical labels, sou
 - UI may offer one-action “Reconcile now” / “reconcile exact matches” after close; it remains a separate audited finalize action.
 - Draft assembly, then finalize with `reconciled_at` / `reconciled_by`.
 - After finalization: immutable or append-only superseding corrections only.
+- **MVP delivery note:** finalization is fully immutable (header + children); append-only superseding and linked domain-correction resolutions are deferred ([#57](https://github.com/tswarren/shelfstack-5/issues/57), [#56](https://github.com/tswarren/shelfstack-5/issues/56)). Operable resolutions are Explain / Accept variance / accept unavailable, matched to comparison state.
 
 ### 16 — Variance acceptance authority
 

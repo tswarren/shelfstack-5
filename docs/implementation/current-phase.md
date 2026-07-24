@@ -34,6 +34,8 @@
 
 ## Completed recently
 
+- Phase 7 walkthrough-blocker remediation on `phase/p7-reporting-and-reconciliation`: SV issue/reload post-void settlement; `reporting.reconcile.approve` / `approve_self`; MVP resolution vocabulary (Explain / Accept / accept unavailable); finalized recon + denormalized marker freeze; day-only recon navigation; finalize audit `pos_approval_id`; deferred follow-ups [#56](https://github.com/tswarren/shelfstack-5/issues/56)–[#61](https://github.com/tswarren/shelfstack-5/issues/61).
+- Phase 7a–7d close-control path implemented (Session/Day X·Z, recon queue, first report pack partial); session card grain not selectable until [#58](https://github.com/tswarren/shelfstack-5/issues/58).
 - Phase 7a accepted: MVP `business_day` card grain; multi-row directional card evidence with `net_only` default; `evidence_unavailable`; no auto-reconcile at close; cash-style variance authority; concrete `reporting.*` permission rows; decision note [phase-07-reporting-and-reconciliation-v1.md](decisions/phase-07-reporting-and-reconciliation-v1.md).
 - Phase 7 plan revised with gates 7a–7e and close-control model.
 - Phase 6.5 cashier workspace merged to `main` at `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)); walkthrough accepted 2026-07-23.

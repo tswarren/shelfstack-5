@@ -385,8 +385,8 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 | `Reporting::SessionReconciliationRequirement` | Reporting | 7d | No | Yes | None | Closed session | Whether session recon is required (cash or session-grain card activity) |
 | `Reporting::AssembleSessionReconciliation` | Reporting | 7d | Yes | Yes | None | Closed session, actor | Draft/finalized session reconciliation + comparisons |
 | `Reporting::AssembleBusinessDayReconciliation` | Reporting | 7d | Yes | Yes | None | Closed day, actor | Draft day reconciliation; blocked by pending required session recons |
-| `Reporting::FinalizeReconciliation` | Reporting | 7d | Yes | Yes | Reconciliation (`lock`) | Reconciliation, actor, optional approver | Finalized header + denormalized `reconciled_at`/`by` on scope |
-| `Reporting::RecordReconciliationResolution` | Reporting | 7d | Yes | No | None | Reconciliation, resolution type | Append-only resolution (may supersede) |
+| `Reporting::FinalizeReconciliation` | Reporting | 7d | Yes | Yes | Reconciliation (`lock`) | Reconciliation, actor, optional approver/PIN | Finalized header + denormalized `reconciled_*`; variance via `reporting.reconcile.approve` / `approve_self`; audit includes `pos_approval_id` |
+| `Reporting::RecordReconciliationResolution` | Reporting | 7d | Yes | No | Reconciliation (`lock`) | Reconciliation, comparison, resolution type | MVP Explain/Accept/accept-unavailable only; rejects mismatched types, `unresolved`, linked correction, and superseding |
 | `Reporting::CommercialActivityReport` / `TenderActivityReport` / `TaxActivityReport` / `StockSnapshotReport` / `StoredValueLiabilityReport` / `IntegrityDiagnostics` / `ExportCsv` | Reporting | 7e (partial) | No | Yes | None | Store / reporting_date range | Read-only pack projections; SV is store activity/ledger effect (not org liability); CSV subset |
 
 Shared variance authority for recon accept: membership `cash_variance_review_threshold_cents` via `Authorization::EvaluateAuthority` / `Pos::AuthorizeAction` (`reconciliation_variance`).
