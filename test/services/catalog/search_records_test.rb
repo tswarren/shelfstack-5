@@ -126,4 +126,40 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     assert match.inactive
     assert_match(/Inactive/, match.label)
   end
+
+  test "treats percent and underscore as literal search characters" do
+    percent_vendor = Vendor.create!(
+      organization: @organization,
+      code: "PCT100",
+      name: "100% Returns Co",
+      active: true
+    )
+    underscore_vendor = Vendor.create!(
+      organization: @organization,
+      code: "US_VND",
+      name: "Trade_Book Supply",
+      active: true
+    )
+    ordinary = vendors(:acme_distributor)
+
+    percent_ids = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "vendor",
+      query: "%"
+    ).map(&:id)
+
+    assert_includes percent_ids, percent_vendor.id
+    assert_not_includes percent_ids, ordinary.id,
+                        "bare % must not act as an unrestricted SQL wildcard"
+
+    underscore_ids = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "vendor",
+      query: "_"
+    ).map(&:id)
+
+    assert_includes underscore_ids, underscore_vendor.id
+    assert_not_includes underscore_ids, ordinary.id,
+                        "bare _ must not match arbitrary single characters"
+  end
 end
