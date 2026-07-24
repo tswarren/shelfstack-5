@@ -1,6 +1,6 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** In progress — Gate 8a merged to `main` (PR [#102](https://github.com/tswarren/shelfstack-5/pull/102)); Gate 8b Slice 1 (schema + Creators) in progress on `feat/p8-96-biblio-creators-enrichment-schema` ([#96](https://github.com/tswarren/shelfstack-5/issues/96))
+**Status:** In progress — Gates 8a–8b merged to `main`; Gate 8c create-from-ISBN ([#97](https://github.com/tswarren/shelfstack-5/issues/97)) next / landing; then Gate 8d ([#98](https://github.com/tswarren/shelfstack-5/issues/98))
 **Date:** 2026-07-24
 **Depends on:** Phase 7 core complete
 **Roadmap position:** Active delivery phase after Phase 7
@@ -1260,10 +1260,10 @@ rather than remaining only in the phase plan.
 
 ## 19. Implementation sequence
 
-1. Deliver Gate 8a shared record-picker infrastructure — **done pending merge** ([#95](https://github.com/tswarren/shelfstack-5/issues/95)).
-2. Deliver Gate 8b schema and provider foundation (including Creator model and Creator search-to-link).
-3. Deliver Gate 8c create-from-ISBN.
-4. Deliver Gate 8d Product summary hub.
+1. Deliver Gate 8a shared record-picker infrastructure — **done** ([#95](https://github.com/tswarren/shelfstack-5/issues/95), PR [#102](https://github.com/tswarren/shelfstack-5/pull/102)).
+2. Deliver Gate 8b schema and provider foundation (including Creator model and Creator search-to-link) — **done** ([#96](https://github.com/tswarren/shelfstack-5/issues/96), PRs [#103](https://github.com/tswarren/shelfstack-5/pull/103)/[#104](https://github.com/tswarren/shelfstack-5/pull/104)).
+3. Deliver Gate 8c create-from-ISBN — **landing** ([#97](https://github.com/tswarren/shelfstack-5/issues/97)).
+4. Deliver Gate 8d Product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98)).
 5. Evaluate and schedule Gates 8e and 8f (or move them to the Deferred Work Register with a named target).
 6. Record unimplemented Gate 8g items in the Deferred Work Register as needed.
 7. Keep DWR-021 multi-variant targeted to Phase 8.5 (cross-domain packet before code); DWR-024 publisher party deferred.

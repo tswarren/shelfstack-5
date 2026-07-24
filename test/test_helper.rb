@@ -15,5 +15,9 @@ module ActiveSupport
 
     include PosSetupHelper
     include ForeignOrganizationHelper
+
+    teardown do
+      Catalog::Providers.transport_override = nil
+    end
   end
 end

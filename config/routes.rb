@@ -89,7 +89,12 @@ Rails.application.routes.draw do
       post :reserve
     end
   end
-  resources :product_imports, only: %i[new create]
+  resources :product_imports, only: %i[new create] do
+    collection do
+      post :preview
+      post :accept
+    end
+  end
   get "buyer_review", to: "buyer_review#index", as: :buyer_review_index
   post "buyer_review/:id/add_to_purchase_order", to: "buyer_review#add_to_purchase_order", as: :add_to_purchase_order
 
