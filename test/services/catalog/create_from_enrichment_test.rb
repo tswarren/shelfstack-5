@@ -62,6 +62,27 @@ class CatalogCreateFromEnrichmentTest < ActiveSupport::TestCase
     assert_nil result.variant.regular_price_cents
   end
 
+  test "purchasable is forced false even when submitted true" do
+    result = create_from_enrichment!(
+      variant_attrs: base_variant_attrs.merge(purchasable: true)
+    )
+
+    assert result.success?
+    assert_equal false, result.variant.purchasable
+  end
+
+  test "enrichment event retains requested ISBN-10 separately from canonical ISBN-13" do
+    result = create_from_enrichment!(
+      requested_identifier: "0316769487",
+      canonical_identifier: CANONICAL_ISBN13
+    )
+
+    assert result.success?
+    assert_equal CANONICAL_ISBN13, result.product.identifier
+    assert_equal "0316769487", result.enrichment_event.requested_identifier
+    assert_equal CANONICAL_ISBN13, result.enrichment_event.canonical_identifier
+  end
+
   test "existing product short-circuits without creating rows" do
     existing = products(:sample_book)
 
@@ -199,16 +220,18 @@ class CatalogCreateFromEnrichmentTest < ActiveSupport::TestCase
       regular_price_cents: nil,
       status: "active",
       sellable: false,
-      purchasable: true
+      purchasable: false
     }
   end
 
-  def create_from_enrichment!(product_attrs: base_product_attrs, variant_attrs: base_variant_attrs, creator_resolutions: nil)
+  def create_from_enrichment!(product_attrs: base_product_attrs, variant_attrs: base_variant_attrs, creator_resolutions: nil,
+                               requested_identifier: CANONICAL_ISBN13, canonical_identifier: CANONICAL_ISBN13)
     Catalog::CreateFromEnrichment.call(
       organization: @organization,
       actor: @admin,
       store: @store,
-      identifier: CANONICAL_ISBN13,
+      requested_identifier: requested_identifier,
+      canonical_identifier: canonical_identifier,
       provider: "isbndb",
       provider_record_id: CANONICAL_ISBN13,
       retrieved_at: @retrieved_at,

@@ -8,7 +8,7 @@ require "ostruct"
 #
 # Lookup ≠ apply: preview requires catalog.lookup_external; accept requires
 # catalog.create_from_enrichment and catalog.product.create.
-# Accept provenance comes only from a signed preview token.
+# Accept provenance and Creator claims come only from a signed preview token.
 class ProductImportsController < ApplicationController
   before_action :require_import_entry!, only: :new
   before_action -> { require_permission!("catalog.lookup_external") }, only: :preview
@@ -22,13 +22,13 @@ class ProductImportsController < ApplicationController
 
   def new
     @attrs = {}
-    @return_to = params[:return_to]
+    @return_to = sanitize_return_to(params[:return_to])
     @identifier = params[:identifier]
     @provider = params[:provider].presence || "isbndb"
   end
 
   def preview
-    @return_to = params[:return_to]
+    @return_to = sanitize_return_to(params[:return_to])
     @identifier = params[:identifier].to_s.strip
     @provider = params[:provider].presence || "isbndb"
 
@@ -55,7 +55,8 @@ class ProductImportsController < ApplicationController
         organization: Current.organization,
         actor: Current.user,
         normalized_result: result.normalized_result,
-        warnings: result.warnings
+        warnings: result.warnings,
+        creator_suggestions: result.creator_suggestions
       )
       @product_formats = Current.organization.product_formats.where(active: true).order(:name)
       # Full HTML page — Turbo form posts negotiate as turbo_stream; a 200 with
@@ -73,20 +74,25 @@ class ProductImportsController < ApplicationController
   end
 
   def accept
-    @return_to = params[:return_to]
+    @return_to = sanitize_return_to(params[:return_to])
     @preview_token = params[:preview_token].to_s
     @preview_params = accept_params
 
+    verified = nil
     begin
       verified = Catalog::ProductImportPreviewToken.verify!(
         token: @preview_token,
         organization: Current.organization,
         actor: Current.user
       )
+      creator_resolutions = Catalog::ProductImportPreviewToken.resolve_creator_resolutions!(
+        payload: verified,
+        submitted: submitted_creator_rows
+      )
     rescue Catalog::ProductImportPreviewToken::Error => error
-      @identifier = params[:identifier].to_s.strip
-      @provider = params[:provider].to_s
-      rebuild_preview_for_rerender(verified: nil)
+      @identifier = verified&.dig("canonical_identifier").presence || params[:identifier].to_s.strip
+      @provider = verified&.dig("provider").presence || params[:provider].to_s
+      rebuild_preview_for_rerender(verified: verified)
       @error = error.message
       @product_formats = Current.organization.product_formats.where(active: true).order(:name)
       return render_html(:preview, status: :unprocessable_entity)
@@ -99,13 +105,14 @@ class ProductImportsController < ApplicationController
       organization: Current.organization,
       actor: Current.user,
       store: Current.store,
-      identifier: verified["canonical_identifier"],
+      requested_identifier: verified["requested_identifier"],
+      canonical_identifier: verified["canonical_identifier"],
       provider: verified["provider"],
       provider_record_id: verified["provider_record_id"],
       retrieved_at: parse_retrieved_at(verified["retrieved_at"]),
       product_attrs: product_attrs_from_accept(verified),
       variant_attrs: variant_attrs_from_accept,
-      creator_resolutions: creator_resolutions_from_accept,
+      creator_resolutions: creator_resolutions,
       accepted_warnings: Array(verified["accepted_warnings"])
     )
 
@@ -127,7 +134,7 @@ class ProductImportsController < ApplicationController
   end
 
   def create
-    @return_to = params[:return_to]
+    @return_to = sanitize_return_to(params[:return_to])
     attrs = import_params
 
     result = Catalog::ImportProductMetadata.call(
@@ -179,15 +186,36 @@ class ProductImportsController < ApplicationController
     require_permission!("catalog.product.create")
   end
 
+  # Only root-relative local paths are honored. Malformed, absolute, and
+  # protocol-relative values fall back to the Product page so redirect
+  # construction cannot raise after a successful create.
+  def sanitize_return_to(value)
+    raw = value.to_s.strip
+    return nil if raw.blank?
+    return nil if raw.start_with?("//")
+    return nil unless raw.start_with?("/")
+
+    uri = URI.parse(raw)
+    return nil if uri.scheme.present? || uri.host.present?
+    return nil if uri.path.blank? || !uri.path.start_with?("/")
+
+    raw
+  rescue URI::InvalidURIError
+    nil
+  end
+
   def return_path(product, fallback: nil)
     if @return_to.present?
       uri = URI.parse(@return_to)
       query = Rack::Utils.parse_nested_query(uri.query)
       query["product_id"] = product.id
-      "#{uri.path}?#{query.to_query}"
+      qs = query.to_query
+      qs.present? ? "#{uri.path}?#{qs}" : uri.path
     else
       fallback || product_path(product)
     end
+  rescue URI::InvalidURIError
+    fallback || product_path(product)
   end
 
   def import_params
@@ -238,11 +266,11 @@ class ProductImportsController < ApplicationController
       inventory_tracking_mode: accept_params[:inventory_tracking_mode].presence || "quantity",
       status: "active",
       sellable: false,
-      purchasable: true
+      purchasable: false
     }
   end
 
-  def creator_resolutions_from_accept
+  def submitted_creator_rows
     rows = params[:creators]
     return [] if rows.blank?
 
@@ -317,7 +345,7 @@ class ProductImportsController < ApplicationController
         assumed_organization_currency?: list_currency.blank?,
         display_only?: true
       ),
-      creator_suggestions: rebuild_creator_suggestions,
+      creator_suggestions: rebuild_creator_suggestions(verified),
       eligibility_fields: [],
       sale_eligibility_blockers: [],
       warnings: Array(verified&.dig("accepted_warnings")),
@@ -325,8 +353,11 @@ class ProductImportsController < ApplicationController
     )
   end
 
-  def rebuild_creator_suggestions
-    creator_resolutions_from_accept.map.with_index do |resolution, index|
+  def rebuild_creator_suggestions(verified)
+    claims = Array(verified&.dig("creator_suggestions"))
+    return claims_as_suggestions(claims) if claims.present?
+
+    submitted_creator_rows.map.with_index do |resolution, index|
       OpenStruct.new(
         display_name: resolution[:display_name],
         role: resolution[:role],
@@ -335,6 +366,21 @@ class ProductImportsController < ApplicationController
         resolution: resolution[:action].to_s == "create" ? :propose_create : :suggest_existing,
         matched_creator_id: resolution[:creator_id],
         candidate_creator_ids: Array(resolution[:creator_id])
+      )
+    end
+  end
+
+  def claims_as_suggestions(claims)
+    claims.map do |claim|
+      claim = claim.stringify_keys
+      OpenStruct.new(
+        display_name: claim["display_name"],
+        role: claim["role"],
+        credited_as: claim["credited_as"],
+        position: claim["position"],
+        resolution: claim["resolution"]&.to_sym,
+        matched_creator_id: claim["matched_creator_id"],
+        candidate_creator_ids: Array(claim["candidate_creator_ids"])
       )
     end
   end

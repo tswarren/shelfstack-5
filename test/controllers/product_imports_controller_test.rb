@@ -134,7 +134,9 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
     product = Product.find_by!(identifier: CANONICAL_ISBN13)
     assert_redirected_to product_path(product)
     assert_equal "Test Harbor", product.name
-    assert_nil product.product_variants.first.regular_price_cents
+    variant = product.product_variants.first
+    assert_nil variant.regular_price_cents
+    assert_equal false, variant.purchasable
     event = CatalogEnrichmentEvent.find_by!(product: product)
     assert_equal "isbndb", event.provider
     assert_equal CANONICAL_ISBN13, event.provider_record_id
@@ -150,6 +152,55 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
 
     product = Product.find_by!(identifier: CANONICAL_ISBN13)
     assert_redirected_to new_product_request_path(product_id: product.id)
+  end
+
+  test "accept with malformed return_to still creates and falls back to product show" do
+    assert_difference "Product.count", 1 do
+      post accept_product_imports_path, params: accept_params.merge(
+        return_to: "http://[bad"
+      )
+    end
+
+    product = Product.find_by!(identifier: CANONICAL_ISBN13)
+    assert_redirected_to product_path(product)
+  end
+
+  test "accept with absolute return_to falls back to product show" do
+    assert_difference "Product.count", 1 do
+      post accept_product_imports_path, params: accept_params.merge(
+        return_to: "https://evil.example/phish"
+      )
+    end
+
+    product = Product.find_by!(identifier: CANONICAL_ISBN13)
+    assert_redirected_to product_path(product)
+  end
+
+  test "accept with protocol-relative return_to falls back to product show" do
+    assert_difference "Product.count", 1 do
+      post accept_product_imports_path, params: accept_params.merge(
+        return_to: "//evil.example/phish"
+      )
+    end
+
+    product = Product.find_by!(identifier: CANONICAL_ISBN13)
+    assert_redirected_to product_path(product)
+  end
+
+  test "accept with ISBN-10 requested identifier records both event columns" do
+    token = preview_token(
+      requested_identifier: "0316769487",
+      canonical_identifier: CANONICAL_ISBN13
+    )
+
+    assert_difference "CatalogEnrichmentEvent.count", 1 do
+      post accept_product_imports_path, params: accept_params(token: token)
+    end
+
+    product = Product.find_by!(identifier: CANONICAL_ISBN13)
+    event = CatalogEnrichmentEvent.find_by!(product: product)
+    assert_equal "0316769487", event.requested_identifier
+    assert_equal CANONICAL_ISBN13, event.canonical_identifier
   end
 
   test "accept validation failure with valid token rerenders preview and keeps submitted title" do
@@ -199,6 +250,76 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 1699, product.list_price_cents
   end
 
+  test "accept rejects an extra creator row not present in the signed preview" do
+    assert_no_difference [ "Product.count", "Creator.count" ] do
+      post accept_product_imports_path, params: accept_params.merge(
+        creators: {
+          "0" => { action: "create", display_name: "Jordan Fixture", role: "author" },
+          "1" => { action: "create", display_name: "Alex Sample", role: "author" },
+          "2" => { action: "create", display_name: "Arbitrary Extra", role: "author" }
+        }
+      )
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/creator assignments must match/i, response.body)
+  end
+
+  test "accept ignores forged creator display name action and role from the form" do
+    assert_difference "Creator.count", 2 do
+      post accept_product_imports_path, params: accept_params.merge(
+        creators: {
+          "0" => {
+            action: "use_existing",
+            display_name: "Arbitrary Name",
+            role: "illustrator",
+            creator_id: creators(:ray_bradbury).id
+          },
+          "1" => {
+            action: "use_existing",
+            display_name: "Another Forgery",
+            role: "editor",
+            creator_id: creators(:ursula_le_guin).id
+          }
+        }
+      )
+    end
+
+    product = Product.find_by!(identifier: CANONICAL_ISBN13)
+    names = product.product_creators.includes(:creator).order(:position).map { |pc| pc.creator.display_name }
+    roles = product.product_creators.order(:position).pluck(:role)
+    assert_equal [ "Jordan Fixture", "Alex Sample" ], names
+    assert_equal %w[author author], roles
+  end
+
+  test "accept rejects a selected creator id outside the signed candidate set" do
+    bradbury = creators(:ray_bradbury)
+    le_guin = creators(:ursula_le_guin)
+    suggestions = [
+      Catalog::PreviewProductImport::CreatorSuggestion.new(
+        display_name: "Ambiguous Fixture",
+        role: "author",
+        credited_as: nil,
+        position: 0,
+        resolution: :require_selection,
+        matched_creator_id: nil,
+        candidate_creator_ids: [ bradbury.id ]
+      )
+    ]
+    token = preview_token(creator_suggestions: suggestions)
+
+    assert_no_difference "Product.count" do
+      post accept_product_imports_path, params: accept_params(token: token).merge(
+        creators: {
+          "0" => { action: "use_existing", creator_id: le_guin.id }
+        }
+      )
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/signed candidates/i, response.body)
+  end
+
   test "accept rejects expired preview token" do
     token = preview_token
 
@@ -217,7 +338,8 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
       organization: @organization,
       actor: users(:clerk),
       normalized_result: normalized_result_for_token,
-      warnings: []
+      warnings: [],
+      creator_suggestions: default_creator_suggestions
     )
 
     assert_no_difference "Product.count" do
@@ -230,10 +352,10 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
 
   private
 
-  def normalized_result_for_token
+  def normalized_result_for_token(requested_identifier: CANONICAL_ISBN13, canonical_identifier: CANONICAL_ISBN13)
     Catalog::Enrichment::BuildNormalizedResult.call(
-      requested_identifier: CANONICAL_ISBN13,
-      canonical_identifier: CANONICAL_ISBN13,
+      requested_identifier: requested_identifier,
+      canonical_identifier: canonical_identifier,
       provider: "isbndb",
       provider_record_id: CANONICAL_ISBN13,
       retrieved_at: @retrieved_at,
@@ -242,12 +364,40 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
     )
   end
 
-  def preview_token
+  def default_creator_suggestions
+    [
+      Catalog::PreviewProductImport::CreatorSuggestion.new(
+        display_name: "Jordan Fixture",
+        role: "author",
+        credited_as: nil,
+        position: 0,
+        resolution: :propose_create,
+        matched_creator_id: nil,
+        candidate_creator_ids: []
+      ),
+      Catalog::PreviewProductImport::CreatorSuggestion.new(
+        display_name: "Alex Sample",
+        role: "author",
+        credited_as: nil,
+        position: 1,
+        resolution: :propose_create,
+        matched_creator_id: nil,
+        candidate_creator_ids: []
+      )
+    ]
+  end
+
+  def preview_token(requested_identifier: CANONICAL_ISBN13, canonical_identifier: CANONICAL_ISBN13,
+                    creator_suggestions: default_creator_suggestions)
     Catalog::ProductImportPreviewToken.issue(
       organization: @organization,
       actor: @actor,
-      normalized_result: normalized_result_for_token,
-      warnings: []
+      normalized_result: normalized_result_for_token(
+        requested_identifier: requested_identifier,
+        canonical_identifier: canonical_identifier
+      ),
+      warnings: [],
+      creator_suggestions: creator_suggestions
     )
   end
 

@@ -169,7 +169,7 @@
               options_for_select([ %w[Quantity quantity], %w[Individual individual], %w[None none] ],
                                  variant_attrs[:inventory_tracking_mode] || "quantity"),
               class: "input" %>
-        <p class="field-hint">Provider metadata never sets tracking mode, sellable, or selling price.</p>
+        <p class="field-hint">Provider metadata never sets tracking mode, sellable, purchasable, or selling price. Import creates active Product/Variant rows that are not sellable and not purchasable until configured later.</p>
       </div>
     </div>
 
