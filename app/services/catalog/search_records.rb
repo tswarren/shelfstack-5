@@ -78,27 +78,27 @@ module Catalog
     def search_merchandise_classes
       scope = @organization.merchandise_classes.includes(parent: :parent)
       scope = scope.where(active: true) unless @include_inactive
-      scope = apply_name_or_code_filter(scope, name_column: "merchandise_classes.name", code_column: "merchandise_classes.code")
+      scope = apply_name_or_code_filter(scope)
       MerchandiseClass.sorted_hierarchically(scope.to_a).first(LIMIT)
     end
 
     def search_departments
       scope = @organization.departments.includes(:parent_department)
       scope = scope.where(active: true) unless @include_inactive
-      scope = apply_name_or_code_filter(scope, name_column: "departments.name", code_column: "departments.code")
+      scope = apply_name_or_code_filter(scope)
       Department.sorted_hierarchically(scope.to_a).first(LIMIT)
     end
 
     def search_product_formats
       scope = @organization.product_formats.order(:name)
       scope = scope.where(active: true) unless @include_inactive
-      apply_name_or_code_filter(scope, name_column: "product_formats.name", code_column: "product_formats.code").limit(LIMIT)
+      apply_name_or_code_filter(scope).limit(LIMIT)
     end
 
     def search_tax_categories
       scope = @organization.tax_categories.order(:name)
       scope = scope.where(active: true) unless @include_inactive
-      apply_name_or_code_filter(scope, name_column: "tax_categories.name", code_column: "tax_categories.code").limit(LIMIT)
+      apply_name_or_code_filter(scope).limit(LIMIT)
     end
 
     def search_products
@@ -165,14 +165,18 @@ module Catalog
     def search_vendors
       scope = @organization.vendors.order(:name)
       scope = scope.where(active: true) unless @include_inactive
-      apply_name_or_code_filter(scope, name_column: "vendors.name", code_column: "vendors.code").limit(LIMIT)
+      apply_name_or_code_filter(scope).limit(LIMIT)
     end
 
-    def apply_name_or_code_filter(scope, name_column:, code_column:)
+    def apply_name_or_code_filter(scope)
       return scope if @query.blank?
 
       pattern = "%#{sanitize_like(@query)}%"
-      scope.where("#{name_column} ILIKE :q OR #{code_column} ILIKE :q", q: pattern)
+      table = scope.klass.arel_table
+      scope.where(
+        table[:name].matches(pattern, nil, false)
+          .or(table[:code].matches(pattern, nil, false))
+      )
     end
 
     def sanitize_like(value)
