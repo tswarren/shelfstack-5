@@ -99,21 +99,23 @@ Walkthrough follow-up validated before merge: over-tender with change, cash refu
 
 ## Deferred UX
 
-| Deferred | Note |
-| --- | --- |
-| Searchable record-picker / combobox | **Phase 5 entry prerequisite** |
-| Live effective-default recomputation while editing | After static display on show |
-| Modal dialog conversion | Keep `<details>`; one shared dialog primitive later |
-| Comprehensive hotkey framework | Keep Ctrl/Cmd+Enter complete; Enter on completed → register; scanner Enter |
-| Advanced returns | Scan-in-receipt, no-receipt, gift, multi-receipt |
-| Receipt printing | Summary only; no dead Print control |
-| Tax-rule matrix / visual builder | Beyond comprehension baseline |
-| Self-service PIN change | Admin setup is enough for 4f |
-| Locally hosted Inter webfont | External Inter dependency remains deferred |
-| Phone-sized POS | Out of gate scope |
-| Tender / cash-movement type admin CRUD | No routes today |
-| Fixed-point currency mask outside POS/operational cash fields | Catalog uses explicit decimal entry |
-| Pagination beyond Products/Stock unless needed | — |
+Phase 6.5 addressed parts of the cashier interaction surface (workspace chrome, keyboard/scanner paths). Remaining items are tracked in [deferred-work-register.md](../deferred-work-register.md). Reclassification after 6.5:
+
+| Deferred | Note | Register / status |
+| --- | --- | --- |
+| Searchable record-picker / combobox | Still needed for staff linking UX | DWR-020 — Phase 8 catalog candidate |
+| Live effective-default recomputation while editing | After static display on show | Unscheduled UX debt |
+| Modal dialog conversion | Keep `<details>`; one shared dialog primitive later | Unscheduled UX debt |
+| Comprehensive hotkey framework | Partial progress in 6.5; remainder with scanner work | Related [#51](https://github.com/tswarren/shelfstack-5/issues/51) (DWR-010) |
+| Advanced returns | Scan-in-receipt, no-receipt, gift, multi-receipt | Later / POS debt |
+| Receipt printing | Summary only; no dead Print control | DWR-017 parked receipt product |
+| Tax-rule matrix / visual builder | Beyond comprehension baseline | Unscheduled |
+| Self-service PIN change | Admin setup is enough for 4f | Deferred |
+| Locally hosted Inter webfont | External Inter dependency remains deferred | Deferred |
+| Phone-sized POS | Out of gate scope | Deferred |
+| Tender / cash-movement type admin CRUD | No routes; also SV adjustment reasons | DWR-018 |
+| Fixed-point currency mask outside POS/operational cash fields | Catalog uses explicit decimal entry | Unscheduled |
+| Pagination beyond Products/Stock unless needed | — | As needed |
 
 ## Gate status
 

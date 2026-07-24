@@ -1,6 +1,7 @@
 # Phase 7 — Reporting and Reconciliation
 
-**Status:** 7a decisions accepted — implementation not started  
+**Status:** Complete — core gate 7a–7d merged to `main` at `d27d6668312b19d0012fd8d370011c966838f895` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); **7e partial** ([#94](https://github.com/tswarren/shelfstack-5/issues/94))  
+
 **Depends on:** Phases 4–6 complete on `main` (posted POS, inventory, purchasing, stored value, corrections)  
 **Preferred after:** Phase 6.5 cashier workspace ([phase-06.5-cashier-workspace.md](phase-06.5-cashier-workspace.md)) — complete; operable register before report UX dominates  
 **Unlocks:** dependable close control, cash and standalone-card accountability, first operational and historical report pack; later accounting exports remain deferred  
@@ -302,11 +303,11 @@ reconciliation
     ├── explained_no_correction
     ├── accepted_variance
     ├── accept_evidence_unavailable
-    ├── linked_domain_correction   (schema / deferred — [#56](https://github.com/tswarren/shelfstack-5/issues/56))
+    ├── linked_domain_correction   (schema / deferred — [#89](https://github.com/tswarren/shelfstack-5/issues/89))
     └── unresolved                 (schema only; MVP leaves draft via Review later — not recorded)
 ```
 
-**MVP operable resolutions:** `explained_no_correction` and `accepted_variance` for nonzero numeric comparisons; `accept_evidence_unavailable` for unavailable observed evidence. Resolution type must match comparison state. Exact (zero-variance) comparisons do not take a resolution. `linked_domain_correction` and recorded `unresolved` are rejected until deferred work lands. Superseding is rejected until [#57](https://github.com/tswarren/shelfstack-5/issues/57).
+**MVP operable resolutions:** `explained_no_correction` and `accepted_variance` for nonzero numeric comparisons; `accept_evidence_unavailable` for unavailable observed evidence. Resolution type must match comparison state. Exact (zero-variance) comparisons do not take a resolution. `linked_domain_correction` and recorded `unresolved` are rejected until deferred work lands. Superseding is rejected until [#90](https://github.com/tswarren/shelfstack-5/issues/90).
 
 When an operational balance requires correction, resolution uses the owning domain’s correction mechanism and may be linked from the reconciliation record (deferred linking UX).
 
@@ -317,7 +318,7 @@ When an operational balance requires correction, resolution uses the owning doma
 - UI may offer one-action **Reconcile now** after close; it remains a separate audited finalize action.
 - Comparisons and findings may be assembled in draft (after operational close).
 - Finalization records `reconciled_at` / `reconciled_by` on the reconciliation header and denormalized session/day caches.
-- After finalization, the reconciliation header, comparisons, findings, and resolutions are immutable. Append-only superseding remains deferred ([#57](https://github.com/tswarren/shelfstack-5/issues/57)). Denormalized `reconciled_*` markers cannot be cleared or rewritten once set.
+- After finalization, the reconciliation header, comparisons, findings, and resolutions are immutable. Append-only superseding remains deferred ([#90](https://github.com/tswarren/shelfstack-5/issues/90)). Denormalized `reconciled_*` markers cannot be cleared or rewritten once set.
 
 ### Variance acceptance authority
 
@@ -392,7 +393,7 @@ The following remain outside Phase 7 and must not be pulled into its PRs:
 
 Gates may land as sequential short-lived PRs. Prefer finishing 7a before deep UI polish. **7e may trail 7b–7d** once shared definitions exist. Optional extensions are not numbered gates.
 
-**Implementation status (branch):** 7a–7d implemented and hardened for operator walkthrough (including SV post-void settlement, approve/approve_self, MVP resolution matching, finalized freeze, day-only queue access); **7e partially delivered** (commercial/tender/tax/stock/open-PO/SV store activity and limited CSV). Deferred: session card grain ([#58](https://github.com/tswarren/shelfstack-5/issues/58)), linked corrections ([#56](https://github.com/tswarren/shelfstack-5/issues/56)), superseding ([#57](https://github.com/tswarren/shelfstack-5/issues/57)), directional/multi-terminal evidence ([#59](https://github.com/tswarren/shelfstack-5/issues/59)), org SV liability ([#60](https://github.com/tswarren/shelfstack-5/issues/60)), remaining 7e breadth ([#61](https://github.com/tswarren/shelfstack-5/issues/61)).
+**Implementation status:** Core gate 7a–7d on `main` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)), including SV post-void settlement, approve/approve_self, MVP resolution matching, finalized freeze, and day-only queue access. **7e partially delivered** (commercial/tender/tax/stock/open-PO/SV store activity and limited CSV). Deferred follow-ups: session card grain ([#91](https://github.com/tswarren/shelfstack-5/issues/91)), linked corrections ([#89](https://github.com/tswarren/shelfstack-5/issues/89)), superseding ([#90](https://github.com/tswarren/shelfstack-5/issues/90)), directional/multi-terminal evidence ([#92](https://github.com/tswarren/shelfstack-5/issues/92)), org SV liability ([#93](https://github.com/tswarren/shelfstack-5/issues/93)), remaining 7e breadth ([#94](https://github.com/tswarren/shelfstack-5/issues/94)).
 
 | Gate | Focus | Core? |
 | --- | --- | --- |
@@ -462,50 +463,52 @@ Close remains `pos.session.close` / `pos.business_day.close`. Reconcile and reso
 
 ## Exit criteria
 
+**Core gate disposition:** accepted at merge of PR [#62](https://github.com/tswarren/shelfstack-5/pull/62). Items marked deferred remain follow-ups in [deferred-work-register.md](../deferred-work-register.md). Session card grain (`grain=session` merchant-slip path) stays deferred ([#91](https://github.com/tswarren/shelfstack-5/issues/91)); MVP is `business_day` only.
+
 ### Core gate (7a–7d) — close and reconciliation operable
 
-- [ ] Shared definitions documented and used: gross sales, price-override variance, discounts, returns, post-voids, net sales, tax, SV issuance/reload, tender received/refunded/net, settlement bridge
-- [ ] Time attribution and source cutoff are defined per report class and visible in report metadata; OD-001 business-date policy confirmed
-- [ ] New stores default to `card_reconciliation_grain = business_day`; MVP session close has no card prompt
-- [ ] Session X is live, recalculated, and does not close, number, or reconcile; X cash visibility respects blind-count rules when configured
-- [ ] Successful session close atomically assigns Session Z number and persists one canonical structured Z snapshot
-- [ ] When grain=`session` and card tenders exist, session close requires merchant-slip evidence or `evidence_unavailable`
-- [ ] Failed or retried session close does not consume another Z number; repeated close is idempotent
-- [ ] A session cannot be successfully closed without its required Z snapshot
-- [ ] Session Z cash path retains expected/counted/variance; recounts append; cashier view omits cost/margin
-- [ ] Business-Day X retains session breakdown
-- [ ] Successful business-day close atomically assigns Business-Day Z number and persists consolidation of Session Z snapshots
-- [ ] When the day has card tenders, day close accepts machine/batch evidence (`net_only` MVP) or `evidence_unavailable` — never invents $0 observed
-- [ ] Card evidence schema supports multiple rows and `received_and_refunded` precision; MVP UI is one net row
-- [ ] Day Z totals are Session Z consolidation; close validates roll-up against completed activity
-- [ ] Failed or retried business-day close does not consume another Z number; repeated close is idempotent
-- [ ] A business day cannot be successfully closed without its required Z snapshot
-- [ ] Business day still cannot close while a session remains open (preserved)
-- [ ] Defined close-blocking tie-out failures prevent close; broader integrity anomalies surface as exceptions without automatically blocking close
-- [ ] Close never auto-reconciles; Reconcile now / Review later remains a separate audited action (including exact matches)
+- [x] Shared definitions documented and used: gross sales, price-override variance, discounts, returns, post-voids, net sales, tax, SV issuance/reload, tender received/refunded/net, settlement bridge
+- [x] Time attribution and source cutoff are defined per report class and visible in report metadata; OD-001 business-date policy confirmed
+- [x] New stores default to `card_reconciliation_grain = business_day`; MVP session close has no card prompt
+- [x] Session X is live, recalculated, and does not close, number, or reconcile; X cash visibility respects blind-count rules when configured
+- [x] Successful session close atomically assigns Session Z number and persists one canonical structured Z snapshot
+- [ ] When grain=`session` and card tenders exist, session close requires merchant-slip evidence or `evidence_unavailable` (deferred [#91](https://github.com/tswarren/shelfstack-5/issues/91); not MVP)
+- [x] Failed or retried session close does not consume another Z number; repeated close is idempotent
+- [x] A session cannot be successfully closed without its required Z snapshot
+- [x] Session Z cash path retains expected/counted/variance; recounts append; cashier view omits cost/margin
+- [x] Business-Day X retains session breakdown
+- [x] Successful business-day close atomically assigns Business-Day Z number and persists consolidation of Session Z snapshots
+- [x] When the day has card tenders, day close accepts machine/batch evidence (`net_only` MVP) or `evidence_unavailable` — never invents $0 observed
+- [x] Card evidence schema supports multiple rows and `received_and_refunded` precision; MVP UI is one net row
+- [x] Day Z totals are Session Z consolidation; close validates roll-up against completed activity
+- [x] Failed or retried business-day close does not consume another Z number; repeated close is idempotent
+- [x] A business day cannot be successfully closed without its required Z snapshot
+- [x] Business day still cannot close while a session remains open (preserved)
+- [x] Defined close-blocking tie-out failures prevent close; broader integrity anomalies surface as exceptions without automatically blocking close
+- [x] Close never auto-reconciles; Reconcile now / Review later remains a separate audited action (including exact matches)
 - [x] One canonical reconciliation per session/day; MVP finalization is fully immutable (append-only superseding deferred)
 - [x] Reconciliation reviews persisted close results per hierarchy and grain; unavailable observed values are supported
 - [x] Comparisons, findings, and resolutions do not alter POS, tenders, ledgers, counts, or Z rows
-- [ ] Operational correction from reconciliation uses owning-domain services and is linkable from the reconciliation record (deferred [#56](https://github.com/tswarren/shelfstack-5/issues/56))
+- [ ] Operational correction from reconciliation uses owning-domain services and is linkable from the reconciliation record (deferred [#89](https://github.com/tswarren/shelfstack-5/issues/89))
 - [x] Internal tie-out failures cannot be cleared only by accepting a reconciliation variance
 - [x] Variance acceptance follows cash-style authority (exact / within / above / evidence unavailable) with `reporting.reconcile.approve` / `approve_self`
-- [ ] Pre-Phase-7 closed records remain legacy unsnapshotted (no silent backfill)
-- [ ] `reporting.*` permissions seeded; close and reconcile surfaces enforce authorization at the service boundary
-- [ ] Browser print works for Session X, Session Z, Business-Day X, and Business-Day Z without a hardware-specific stack
-- [ ] Reprint of a Z report reproduces historical and numerical equivalence from the structured snapshot without current master data
+- [x] Pre-Phase-7 closed records remain legacy unsnapshotted (no silent backfill)
+- [x] `reporting.*` permissions seeded; close and reconcile surfaces enforce authorization at the service boundary
+- [x] Browser print works for Session X, Session Z, Business-Day X, and Business-Day Z without a hardware-specific stack
+- [x] Reprint of a Z report reproduces historical and numerical equivalence from the structured snapshot without current master data
 
-### Full phase (adds 7e)
+### Full phase (adds 7e) — partial; remainder [#94](https://github.com/tswarren/shelfstack-5/issues/94)
 
-- [ ] Commercial activity report unchanged after product, department, merchandise class, tax category, or description rename
-- [ ] Returns and post-voids appear in the business day / period in which the corrective activity completes and retain links to originals
-- [ ] Received and refunded tenders are separately reportable; completed tender net ties to completed transaction net
-- [ ] Session totals tie to included completed activity; business-day totals tie to included sessions
-- [ ] Current stock reports on hand, reserved, unavailable, available, and on order; balance↔ledger mismatch is detectable where a complete ledger history or explicit opening baseline exists
-- [ ] Historical margin uses completed POS cost snapshots, not current inventory cost
-- [ ] Open-PO report reads current purchasing records
-- [ ] Stored-value liability roll-forward ties to ledger activity; cache↔ledger mismatch is detectable
-- [ ] Core tabular reports export CSV without creating accounting entries
-- [ ] Cost and margin reports require their designated permissions
+- [x] Commercial activity report unchanged after product, department, merchandise class, tax category, or description rename (snapshot-based)
+- [x] Returns and post-voids appear in the business day / period in which the corrective activity completes and retain links to originals
+- [x] Received and refunded tenders are separately reportable; completed tender net ties to completed transaction net
+- [x] Session totals tie to included completed activity; business-day totals tie to included sessions
+- [x] Current stock reports on hand, reserved, unavailable, available, and on order; balance↔ledger mismatch is detectable where a complete ledger history or explicit opening baseline exists
+- [ ] Historical margin uses completed POS cost snapshots, not current inventory cost (breadth [#94](https://github.com/tswarren/shelfstack-5/issues/94))
+- [x] Open-PO report reads current purchasing records
+- [ ] Stored-value liability roll-forward ties to ledger activity; cache↔ledger mismatch is detectable (store activity shipped; org liability / cache integrity [#93](https://github.com/tswarren/shelfstack-5/issues/93) / [#94](https://github.com/tswarren/shelfstack-5/issues/94))
+- [x] Core tabular reports export CSV without creating accounting entries
+- [ ] Cost and margin reports require their designated permissions (breadth [#94](https://github.com/tswarren/shelfstack-5/issues/94))
 
 ### Explicitly not exit criteria
 

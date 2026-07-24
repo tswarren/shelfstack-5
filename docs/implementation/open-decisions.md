@@ -2,7 +2,7 @@
 
 **Status:** Living decision queue  
 **Purpose:** Track unresolved design choices that block or shape upcoming delivery phases  
-**Related:** [architectural-locks.md](architectural-locks.md) (accepted delivery choices), [deferred-capabilities.md](deferred-capabilities.md)
+**Related:** [architectural-locks.md](architectural-locks.md) (accepted delivery choices), [deferred-work-register.md](deferred-work-register.md), [deferred-capabilities.md](deferred-capabilities.md)
 
 ## How to use
 

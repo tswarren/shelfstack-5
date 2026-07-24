@@ -8,7 +8,7 @@ alwaysApply: false
 
 When editing `docs/implementation/**`:
 
-- Keep `roadmap.md`, `current-phase.md`, `open-decisions.md`, and `phases/*` mutually consistent.
+- Keep `roadmap.md`, `current-phase.md`, `open-decisions.md`, `deferred-work-register.md`, and `phases/*` mutually consistent.
 - **Accepted** delivery choices belong in `architectural-locks.md` (or an ADR). Do not list them as Open in `open-decisions.md`.
 - Open decisions need: ID, status, needed-by phase, governing area, and a resolution link when accepted.
 - Do not move durable ADRs, permission catalogs, or identifier procedures into `implementation/` — link to `docs/adr/`, `docs/domains/`, `docs/reference/` instead.

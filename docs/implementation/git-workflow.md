@@ -2,7 +2,7 @@
 
 **Status:** Binding delivery convention  
 **Purpose:** Keep ShelfStack on a lightweight trunk-based model so branches implement the roadmap instead of duplicating it  
-**Related:** [roadmap.md](roadmap.md), [open-decisions.md](open-decisions.md), [AGENTS.md](../../AGENTS.md) §11
+**Related:** [roadmap.md](roadmap.md), [open-decisions.md](open-decisions.md), [deferred-work-register.md](deferred-work-register.md), [deferred-capabilities.md](deferred-capabilities.md), [AGENTS.md](../../AGENTS.md) §11
 
 ## Governing rule
 
@@ -19,6 +19,17 @@ main
     ├── feat/p4c-completion-service
     └── test/p4c-idempotency
 ```
+
+### Planning ownership (carry-forward work)
+
+| Artifact | Role |
+| --- | --- |
+| [roadmap.md](roadmap.md) / phase plans | Delivery sequence and phase scope |
+| [deferred-work-register.md](deferred-work-register.md) | Durable **index** of carry-forward work (disposition, prerequisites, targets) |
+| GitHub issues | **Units of work** you can branch from soon (`delivery_debt`, or work with an accepted design) |
+| [deferred-capabilities.md](deferred-capabilities.md) | Anti-invention list — **not** automatically issues |
+
+Deferred capabilities and most register rows without an accepted design stay register-only until promoted. Do not open a GitHub issue for every deferred item. Full rules: [deferred-work-register.md § Organization model](deferred-work-register.md#organization-model).
 
 ---
 

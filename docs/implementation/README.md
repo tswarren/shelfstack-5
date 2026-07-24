@@ -14,7 +14,8 @@
 
 | [architectural-locks.md](architectural-locks.md) | Settled delivery decisions that must not be re-litigated mid-phase |
 | [open-decisions.md](open-decisions.md) | Living queue of unresolved choices (needed-by phase + disposition) |
-| [deferred-capabilities.md](deferred-capabilities.md) | Explicitly out of scope until designed |
+| [deferred-work-register.md](deferred-work-register.md) | Authoritative Phases 1–7 carry-forward backlog (ODs, interim blocks, delivery debt, catalog candidates, later extensions) |
+| [deferred-capabilities.md](deferred-capabilities.md) | Short anti-invention list; later extensions until designed |
 | [testing.md](testing.md) | Project test mechanics (fixtures, concurrency, idempotency patterns) |
 | [bootstrap-and-seed.md](bootstrap-and-seed.md) | Seed layers, bootstrap env vars, INV-ORG-001, admin permission sync |
 | [service-catalog.md](service-catalog.md) | Introduced application services as they land |
