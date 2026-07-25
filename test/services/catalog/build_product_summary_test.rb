@@ -61,6 +61,26 @@ module Catalog
       assert_nil summary.stock.unit_status_counts
     end
 
+    test "evaluates sale eligibility once and surfaces blockers only on attention" do
+      @product.update!(sellable: false)
+      calls = 0
+      original = Catalog::SaleEligibility.method(:call)
+      Catalog::SaleEligibility.define_singleton_method(:call) do |**kwargs|
+        calls += 1
+        original.call(**kwargs)
+      end
+
+      begin
+        summary = BuildProductSummary.call(product: @product, store: @store, actor: @admin)
+        assert_equal 1, calls
+        assert_includes summary.attention.eligibility_blockers, "product_not_sellable"
+        assert summary.standard_item
+        assert_not summary.standard_item.respond_to?(:eligibility_blockers)
+      ensure
+        Catalog::SaleEligibility.define_singleton_method(:call, original)
+      end
+    end
+
     test "missing standard variant does not raise and sets attention" do
       service = Catalog::CreateProduct.new(
         organization: organizations(:acme),

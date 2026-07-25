@@ -36,7 +36,7 @@ module Catalog
 
     StandardItem = Data.define(
       :id, :sku, :name, :status, :regular_price_cents, :inventory_tracking_mode,
-      :sellable, :purchasable, :effective_values, :eligibility_blockers
+      :sellable, :purchasable, :effective_values
     )
 
     Attention = Data.define(:identifier_warning, :missing_standard_item, :eligibility_blockers)
@@ -80,12 +80,15 @@ module Catalog
       caps = capabilities
       variant = @product.product_variants.order(:id).first
       missing_item = variant.nil?
+      # SaleEligibility once for the hub — Attention presents blockers; Standard
+      # Item does not duplicate the same fact until a section needs it.
+      blockers = missing_item ? [] : sale_eligibility_blockers(variant)
 
       Summary.new(
         product: @product,
         store: StoreInfo.new(id: @store.id, name: @store.name),
         capabilities: caps,
-        attention: build_attention(variant, missing_item),
+        attention: build_attention(missing_item, blockers),
         identity: build_identity,
         standard_item: missing_item ? nil : build_standard_item(variant),
         stock: missing_item ? nil : build_stock(variant, caps),
@@ -116,13 +119,11 @@ module Catalog
       ) == :allow
     end
 
-    def build_attention(variant, missing_item)
-      blockers = if variant
-        Catalog::SaleEligibility.call(variant: variant, store: @store).blockers
-      else
-        []
-      end
+    def sale_eligibility_blockers(variant)
+      Catalog::SaleEligibility.call(variant: variant, store: @store).blockers
+    end
 
+    def build_attention(missing_item, blockers)
       Attention.new(
         identifier_warning: @product.identifier_warning,
         missing_standard_item: missing_item,
@@ -163,7 +164,6 @@ module Catalog
 
     def build_standard_item(variant)
       effective = Catalog::ResolveEffectiveValues.call(product: @product, variant: variant)
-      blockers = Catalog::SaleEligibility.call(variant: variant, store: @store).blockers
 
       StandardItem.new(
         id: variant.id,
@@ -174,8 +174,7 @@ module Catalog
         inventory_tracking_mode: variant.inventory_tracking_mode,
         sellable: variant.sellable,
         purchasable: variant.purchasable,
-        effective_values: effective,
-        eligibility_blockers: blockers
+        effective_values: effective
       )
     end
 

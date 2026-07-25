@@ -439,7 +439,7 @@ The creation workflow may use existing configured defaults, but must visibly sho
 
 ### 8d — Product summary hub
 
-**Status:** Done ([#98](https://github.com/tswarren/shelfstack-5/issues/98)) — selected-store Product summary hub via `Catalog::BuildProductSummary` / `Catalog::ResolveEffectiveValues`; tracking-mode stock branching (quantity / individual / none); permission-gated datasets; organization-wide vendor sources separated from store ops. All-accessible-stores table deferred. Non-blocking follow-ups: DWR-029 ([#119](https://github.com/tswarren/shelfstack-5/issues/119)) request-coverage ownership; DWR-064 ([#120](https://github.com/tswarren/shelfstack-5/issues/120)) normalized publication_date input hardening.
+**Status:** Done ([#98](https://github.com/tswarren/shelfstack-5/issues/98)) — selected-store Product summary hub via `Catalog::BuildProductSummary` / `Catalog::ResolveEffectiveValues`; tracking-mode stock branching (quantity / individual / none); permission-gated datasets; organization-wide vendor sources separated from store ops; `SaleEligibility` evaluated once for Attention. All-accessible-stores table deferred. Non-blocking follow-ups: DWR-029 ([#119](https://github.com/tswarren/shelfstack-5/issues/119)) request-coverage ownership; DWR-064 ([#120](https://github.com/tswarren/shelfstack-5/issues/120)) normalized publication_date input hardening.
 **Priority:** Must
 **Purpose:** Provide one staff-shaped view of a product without collapsing domain ownership.
 

@@ -50,7 +50,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 7–8 cl
 | `Catalog::SaleEligibility` | Catalog and Products | 2 | No | Yes | None | Variant, store, as-of date | `Catalog::SaleEligibilityResult` distinct readiness blockers |
 | `Catalog::ResolveClassification` | Catalog and Products | 4f | No | Yes | None | Product, optional variant | Effective merchandise class, department, and tax category with source labels (variant → product → MC → department) |
 | `Catalog::ResolveEffectiveValues` | Catalog and Products | 8d | No | Yes | None | Product, variant | Hub-facing classification (via `ResolveClassification` with staff source labels) plus configured Variant tracking/return/discount settings |
-| `Catalog::BuildProductSummary` | Catalog and Products | 8d | No | Yes | None | Product, store, actor | Read-only selected-store Product hub: identity, standard item, tracking-mode stock, permission-gated store ops + org-wide vendor sources; never mutates |
+| `Catalog::BuildProductSummary` | Catalog and Products | 8d | No | Yes | None | Product, store, actor | Read-only selected-store Product hub: identity, standard item, tracking-mode stock, permission-gated store ops + org-wide vendor sources; evaluates `SaleEligibility` once (Attention); never mutates |
 | `StoreTime` | Organization and Authorization | 4f | No | Yes | None | Store, optional moment | Store-zone `today` / `at` helpers for business dates and display |
 
 \*Generation is not replay-idempotent; callers must not retry blindly without checking uniqueness errors.
