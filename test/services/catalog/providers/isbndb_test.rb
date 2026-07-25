@@ -20,8 +20,7 @@ class CatalogProvidersIsbndbTest < ActiveSupport::TestCase
     assert_equal CANONICAL, normalized.canonical_identifier
     assert_equal [ "Jordan Fixture", "Alex Sample" ], normalized.creators.map(&:display_name)
     assert_equal %w[author author], normalized.creators.map(&:role)
-    assert_equal "day", normalized.publication_date.precision
-    assert_equal Date.new(2014, 2, 11), normalized.publication_date.date
+    assert_equal Date.new(2014, 2, 11), normalized.publication_date
     assert_equal 1699, normalized.list_price.amount_cents
     assert_equal "USD", normalized.list_price.currency_code
     assert_equal 1, transport.call_count

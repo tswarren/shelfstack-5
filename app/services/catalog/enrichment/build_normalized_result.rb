@@ -6,8 +6,9 @@ module Catalog
     # adapters map their own JSON into this factory's plain-hash inputs;
     # nothing downstream depends on ISBNdb- or Google-Books-specific keys.
     #
-    # Normalizes creators (role mapping + contiguous position) and list price
-    # (BigDecimal, half-up cents, uppercase-or-null currency), then deep-freezes
+    # Normalizes creators (role mapping + contiguous position), list price
+    # (BigDecimal, half-up cents, uppercase-or-null currency), language
+    # (ISO 639-2/T), and publication date (exact Date only), then deep-freezes
     # the whole result so callers cannot mutate a "normalized" value after the
     # fact.
     class BuildNormalizedResult < ApplicationService
@@ -28,7 +29,7 @@ module Catalog
         @publisher = publisher.presence
         @imprint = imprint.presence
         @raw_publication_date = publication_date
-        @language_code = language_code.to_s.strip.presence
+        @language_code = language_code
         @edition_statement = edition_statement.presence
         @provider_format = provider_format.presence
         @raw_external_subjects = external_subjects
@@ -61,7 +62,7 @@ module Catalog
           publisher: @publisher,
           imprint: @imprint,
           publication_date: normalize_publication_date,
-          language_code: @language_code,
+          language_code: Catalog::LanguageCodes.normalize(@language_code),
           edition_statement: @edition_statement,
           provider_format: @provider_format,
           external_subjects: Array(@raw_external_subjects).map(&:to_s),
@@ -77,12 +78,12 @@ module Catalog
 
       def normalize_publication_date
         return nil if @raw_publication_date.nil?
-        return @raw_publication_date if @raw_publication_date.is_a?(Catalog::Enrichment::NormalizedPublicationDate)
+        return @raw_publication_date if @raw_publication_date.is_a?(Date)
+        return @raw_publication_date.to_date if @raw_publication_date.respond_to?(:to_date)
 
-        hash = @raw_publication_date.to_h.symbolize_keys
-        return nil if hash[:date].blank?
-
-        Catalog::Enrichment::NormalizedPublicationDate.new(date: hash[:date], precision: hash[:precision])
+        nil
+      rescue ArgumentError, TypeError
+        nil
       end
 
       def normalize_money

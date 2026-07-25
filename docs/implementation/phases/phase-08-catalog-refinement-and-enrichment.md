@@ -1,6 +1,6 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** In progress — Gates 8a–8c merged to `main` ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#97](https://github.com/tswarren/shelfstack-5/issues/97)); Gate 8c review hardening (signed preview provenance) before Gate 8d product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98))
+**Status:** In progress — Gates 8a–8d delivered ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#98](https://github.com/tswarren/shelfstack-5/issues/98)); next Gate 8e vendor-source linking ([#99](https://github.com/tswarren/shelfstack-5/issues/99))
 **Date:** 2026-07-24
 **Depends on:** Phase 7 core complete
 **Roadmap position:** Active delivery phase after Phase 7
@@ -246,7 +246,7 @@ PO/receipt nested line pickers remain a follow-on (DWR-020), not part of the 8a 
 * normalized enrichment result;
 * Creator model and ordered Product-Creator join;
 * Creator search-to-link using the shared record-picker foundation;
-* accepted minimum bibliographic Product fields (`publication_date`, `publication_date_precision`, `language_code`, `edition_statement`);
+* accepted minimum bibliographic Product fields (`publication_date` exact date, curated ISO 639-2/T `language_code`, `edition_statement`);
 * provider credentials and error handling;
 * append-only `catalog_enrichment_events` provenance contract;
 * format-mapping boundary;
@@ -439,6 +439,7 @@ The creation workflow may use existing configured defaults, but must visibly sho
 
 ### 8d — Product summary hub
 
+**Status:** Done ([#98](https://github.com/tswarren/shelfstack-5/issues/98)) — selected-store Product summary hub via `Catalog::BuildProductSummary` / `Catalog::ResolveEffectiveValues`; tracking-mode stock branching (quantity / individual / none); permission-gated datasets; organization-wide vendor sources separated from store ops; `SaleEligibility` evaluated once for Attention. All-accessible-stores table deferred. Non-blocking follow-ups: DWR-029 ([#119](https://github.com/tswarren/shelfstack-5/issues/119)) request-coverage ownership; DWR-064 ([#120](https://github.com/tswarren/shelfstack-5/issues/120)) normalized publication_date input hardening.
 **Priority:** Must
 **Purpose:** Provide one staff-shaped view of a product without collapsing domain ownership.
 
@@ -481,17 +482,12 @@ The product summary should be a navigable operational surface, not a dump of dat
 
 ##### Stock
 
-For the selected store:
+For the selected store, branched by tracking mode:
 
-* on hand;
-* reserved;
-* unavailable;
-* available;
-* on order;
-* last received;
-* moving-average cost where authorized;
-* link to inventory detail;
-* units by status when individually tracked.
+* **quantity** — on hand / reserved / unavailable / available from StockBalance (`Purchasing::ReplenishmentSnapshot`); on order when authorized; moving-average cost where authorized; stock-balance deep link;
+* **individual** — InventoryUnit status counts (not StockBalance zeros); on order via `Purchasing::OnOrder` when authorized; no MAC;
+* **none** — omit inventory quantities and on-order;
+* last received from posted receipt lines with accepted quantity > 0 (not vendor-source cache).
 
 ##### Purchasing and demand
 
@@ -954,11 +950,10 @@ Names are illustrative rather than prescriptive.
 
 ## 11. Required data and schema changes
 
-Phase 8b adds the accepted minimum bibliographic Product fields (OD-P8-10):
+Phase 8b adds the accepted minimum bibliographic Product fields (OD-P8-10; revised):
 
-* `publication_date`;
-* `publication_date_precision` (`year` | `month` | `day` when present);
-* `language_code`;
+* `publication_date` (optional exact calendar date; precision column removed);
+* `language_code` (curated ISO 639-2/T alpha-3; UI default `eng`);
 * `edition_statement`.
 
 Phase 8 also introduces:
@@ -1264,8 +1259,8 @@ rather than remaining only in the phase plan.
 1. Deliver Gate 8a shared record-picker infrastructure — **done** ([#95](https://github.com/tswarren/shelfstack-5/issues/95), PR [#102](https://github.com/tswarren/shelfstack-5/pull/102)).
 2. Deliver Gate 8b schema and provider foundation (including Creator model and Creator search-to-link) — **done** ([#96](https://github.com/tswarren/shelfstack-5/issues/96), PRs [#103](https://github.com/tswarren/shelfstack-5/pull/103)/[#104](https://github.com/tswarren/shelfstack-5/pull/104)).
 3. Deliver Gate 8c create-from-ISBN — **done** ([#97](https://github.com/tswarren/shelfstack-5/issues/97), PRs [#105](https://github.com/tswarren/shelfstack-5/pull/105)/[#106](https://github.com/tswarren/shelfstack-5/pull/106)).
-4. Deliver Gate 8d Product summary hub ([#98](https://github.com/tswarren/shelfstack-5/issues/98)).
-5. Evaluate and schedule Gates 8e and 8f (or move them to the Deferred Work Register with a named target).
+4. Deliver Gate 8d Product summary hub — **done** ([#98](https://github.com/tswarren/shelfstack-5/issues/98)).
+5. Deliver Gate 8e vendor-source linking ([#99](https://github.com/tswarren/shelfstack-5/issues/99)); evaluate and schedule Gate 8f (or move to the Deferred Work Register with a named target).
 6. Record unimplemented Gate 8g items in the Deferred Work Register as needed.
 7. Keep DWR-021 multi-variant targeted to Phase 8.5 (cross-domain packet before code); DWR-024 publisher party deferred.
 8. Create GitHub issues only for accepted, branch-sized gate work.

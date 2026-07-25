@@ -1,0 +1,27 @@
+<%# locals: summary: %>
+<section class="record-section">
+  <h2>Standard item</h2>
+  <% item = summary.standard_item %>
+  <% if item.nil? %>
+    <%= render "shared/empty_state",
+          title: "No standard item",
+          body: "This Product does not have a standard item yet." %>
+  <% else %>
+    <% effective = item.effective_values %>
+    <%= render "shared/record_summary", rows: [
+      [ "SKU", tag.code(item.sku) ],
+      [ "Name", item.name ],
+      [ "Status", status_badge(item.status.titleize, variant: product_status_variant(item.status)) ],
+      [ "Regular price", item.regular_price_cents ? format_money(item.regular_price_cents) : "—" ],
+      [ "Tracking mode", effective_value_display(effective.tracking_mode) ],
+      [ "Sellable", boolean_status(item.sellable, true_label: "Sellable", false_label: "Not sellable") ],
+      [ "Purchasable", boolean_status(item.purchasable, true_label: "Purchasable", false_label: "Not purchasable") ],
+      [ "Merchandise class", effective_value_display(effective.merchandise_class) ],
+      [ "Department", effective_value_display(effective.department) ],
+      [ "Tax category", effective_value_display(effective.tax_category) ],
+      [ "Returnability", effective_value_display(effective.returnability_setting) ],
+      [ "Discountability", effective_value_display(effective.discountability_setting) ],
+      [ "Return policy", effective_value_display(effective.return_policy) ]
+    ] %>
+  <% end %>
+</section>

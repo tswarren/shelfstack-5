@@ -6,7 +6,7 @@ module Catalog
       name subtitle description product_type product_format_id merchandise_class_id
       default_department_id default_tax_category_id list_price_cents status sellable
       available_from available_until publisher_or_manufacturer_name imprint_or_brand_name
-      alternate_identifier publication_date publication_date_precision language_code edition_statement
+      alternate_identifier publication_date language_code edition_statement
     ].freeze
 
     def initialize(product:, attributes:, actor:, store:)

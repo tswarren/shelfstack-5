@@ -24,10 +24,11 @@ class ProductsController < ApplicationController
   end
 
   def show
-    @variants = @product.product_variants.order(:name)
-    @stock_balances = Current.store.stock_balances
-      .where(product_variant_id: @variants.map(&:id))
-      .index_by(&:product_variant_id)
+    @summary = Catalog::BuildProductSummary.call(
+      product: @product,
+      store: Current.store,
+      actor: Current.user
+    )
   end
 
   def new
@@ -35,7 +36,8 @@ class ProductsController < ApplicationController
       status: "active",
       sellable: false,
       variant_structure: "single",
-      product_type: "book"
+      product_type: "book",
+      language_code: Catalog::LanguageCodes::DEFAULT
     )
     @variant = @product.product_variants.build(
       name: "Standard",
@@ -197,9 +199,7 @@ class ProductsController < ApplicationController
       :name, :subtitle, :description, :product_type, :product_format_id, :merchandise_class_id,
       :default_department_id, :default_tax_category_id, :list_price_cents, :status, :sellable,
       :available_from, :available_until, :publisher_or_manufacturer_name, :imprint_or_brand_name,
-      :alternate_identifier, :edition_statement, :language_code,
-      :publication_date, :publication_date_precision,
-      :publication_date_year, :publication_date_month, :publication_date_day,
+      :alternate_identifier, :edition_statement, :language_code, :publication_date,
       creator_assignments: [ :creator_id, :role, :credited_as ]
     )
     # Prices are entered as decimal dollars (`12.95`) in the UI and converted
@@ -214,32 +214,7 @@ class ProductsController < ApplicationController
         (@product_money_errors ||= []) << [ :list_price, parsed.error || "is not a valid amount" ]
       end
     end
-    apply_publication_date_parts!(attrs)
     @product_params = attrs
-  end
-
-  # The product form always submits separate year/month/day inputs (never a
-  # lone HTML date input) so partial-precision entry stays explicit. Direct
-  # `publication_date` + `publication_date_precision` input (API/tests)
-  # still works when the part fields are absent.
-  def apply_publication_date_parts!(attrs)
-    return unless params[:product].key?(:publication_date_year) ||
-                  params[:product].key?(:publication_date_month) ||
-                  params[:product].key?(:publication_date_day)
-
-    parsed = Catalog::PartialPublicationDate.parse_parts(
-      precision: attrs[:publication_date_precision],
-      year: attrs.delete(:publication_date_year),
-      month: attrs.delete(:publication_date_month),
-      day: attrs.delete(:publication_date_day)
-    )
-
-    if parsed.errors.any?
-      (@product_money_errors ||= []) << [ :publication_date, parsed.errors.join("; ") ]
-    else
-      attrs[:publication_date] = parsed.date
-      attrs[:publication_date_precision] = parsed.precision
-    end
   end
 
   def creator_assignments_provided?

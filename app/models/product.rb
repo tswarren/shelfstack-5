@@ -39,7 +39,7 @@ class Product < ApplicationRecord
   validate :classification_belongs_to_organization
   validate :sellable_requires_standard_variant
   validate :single_structure_has_at_most_one_variant
-  validate :publication_date_precision_consistent
+  validates :language_code, inclusion: { in: Catalog::LanguageCodes::CODES }, allow_blank: true
 
   private
 
@@ -49,18 +49,9 @@ class Product < ApplicationRecord
     self.alternate_identifier = alternate_identifier.to_s.strip.gsub(/[\s\-]/, "")
   end
 
-  # No hard enum -- normalize whitespace/case only (OD-P8-10).
+  # Curated ISO 639-2/T alpha-3; maps common alpha-2 / BCP-47 provider tags.
   def normalize_language_code
-    return if language_code.blank?
-
-    self.language_code = language_code.to_s.strip.gsub(/\s+/, " ").downcase
-  end
-
-  def publication_date_precision_consistent
-    result = Catalog::PartialPublicationDate.validate(date: publication_date, precision: publication_date_precision)
-    return if result.valid?
-
-    result.errors.each { |message| errors.add(:publication_date, message) }
+    self.language_code = Catalog::LanguageCodes.normalize(language_code)
   end
 
   def availability_window_order

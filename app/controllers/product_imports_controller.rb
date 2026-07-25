@@ -233,7 +233,7 @@ class ProductImportsController < ApplicationController
       :preview_token, :return_to,
       :name, :subtitle, :description, :product_type, :product_format_id,
       :publisher_or_manufacturer_name, :imprint_or_brand_name,
-      :publication_date, :publication_date_precision, :language_code, :edition_statement,
+      :publication_date, :language_code, :edition_statement,
       :inventory_tracking_mode,
       creators: [ :action, :creator_id, :display_name, :role, :credited_as ]
     )
@@ -250,7 +250,6 @@ class ProductImportsController < ApplicationController
       publisher_or_manufacturer_name: p[:publisher_or_manufacturer_name],
       imprint_or_brand_name: p[:imprint_or_brand_name],
       publication_date: p[:publication_date],
-      publication_date_precision: p[:publication_date_precision],
       language_code: p[:language_code],
       edition_statement: p[:edition_statement],
       list_price_cents: verified["list_price_cents"],
@@ -324,7 +323,6 @@ class ProductImportsController < ApplicationController
         publisher_or_manufacturer_name: p[:publisher_or_manufacturer_name],
         imprint_or_brand_name: p[:imprint_or_brand_name],
         publication_date: p[:publication_date],
-        publication_date_precision: p[:publication_date_precision],
         language_code: p[:language_code],
         edition_statement: p[:edition_statement],
         list_price_cents: list_cents,

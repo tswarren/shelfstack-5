@@ -204,10 +204,7 @@ module Catalog
         list_price_cents: list_price.persistable? ? list_price.amount_cents : nil
       }
 
-      if normalized.publication_date
-        attrs[:publication_date] = normalized.publication_date.date
-        attrs[:publication_date_precision] = normalized.publication_date.precision
-      end
+      attrs[:publication_date] = normalized.publication_date if normalized.publication_date
 
       attrs
     end

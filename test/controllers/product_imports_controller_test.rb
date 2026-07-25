@@ -408,10 +408,9 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
       product_type: "book",
       product_format_id: product_formats(:paperback).id,
       publisher_or_manufacturer_name: "Fixture House",
-      language_code: "en",
+      language_code: "eng",
       edition_statement: "1st",
       publication_date: "2014-02-11",
-      publication_date_precision: "day",
       inventory_tracking_mode: "quantity",
       creators: {
         "0" => { action: "create", display_name: "Jordan Fixture", role: "author" },

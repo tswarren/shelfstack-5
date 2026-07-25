@@ -75,8 +75,6 @@ module Catalog
       end
 
       def map(book, requested_identifier, canonical_identifier)
-        date, precision = Catalog::Providers::ParseProviderDate.call(book["date_published"])
-
         Catalog::Enrichment::BuildNormalizedResult.call(
           requested_identifier: requested_identifier,
           canonical_identifier: canonical_identifier,
@@ -87,7 +85,7 @@ module Catalog
           description: (book["synopsis"] || book["overview"]),
           creators: Array(book["authors"]).map { |name| { display_name: name, role: "author" } },
           publisher: book["publisher"],
-          publication_date: (date ? { date: date, precision: precision } : nil),
+          publication_date: Catalog::Providers::ParseProviderDate.call(book["date_published"]),
           language_code: book["language"],
           edition_statement: book["edition"],
           provider_format: book["binding"],

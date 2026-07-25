@@ -63,12 +63,13 @@
       </div>
       <div class="field">
         <%= label_tag :publication_date, "Publication date" %>
-        <%= text_field_tag :publication_date, product_attrs[:publication_date], class: "input" %>
-        <%= hidden_field_tag :publication_date_precision, product_attrs[:publication_date_precision] %>
+        <%= date_field_tag :publication_date, product_attrs[:publication_date], class: "input" %>
       </div>
       <div class="field">
         <%= label_tag :language_code, "Language" %>
-        <%= text_field_tag :language_code, product_attrs[:language_code], class: "input" %>
+        <%= select_tag :language_code,
+              options_for_select(Catalog::LanguageCodes::OPTIONS, product_attrs[:language_code]),
+              include_blank: "—", class: "input" %>
       </div>
       <div class="field">
         <%= label_tag :edition_statement, "Edition" %>

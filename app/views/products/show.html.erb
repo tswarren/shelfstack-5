@@ -1,9 +1,15 @@
-<% content_for :title, @product.name %>
+<% identity = @summary.identity %>
+<% store_name = @summary.store.name %>
+<% content_for :title, identity.name %>
 
 <%= render "shared/page_header",
-      title: @product.name,
-      subtitle: @product.subtitle.presence,
-      breadcrumbs: [ { label: "Products", path: products_path }, { label: @product.name } ],
+      title: identity.name,
+      subtitle: [
+        identity.subtitle.presence,
+        product_summary_bibliographic_line(identity),
+        "Ops for #{store_name}"
+      ].compact.join(" · "),
+      breadcrumbs: [ { label: "Products", path: products_path }, { label: identity.name } ],
       actions: capture {
         if Current.user.can?("catalog.product.edit", store: Current.store)
           concat link_to("Edit", edit_product_path(@product), class: "button button-primary")
@@ -11,140 +17,9 @@
         concat link_to("Back to products", products_path, class: "button button-outline")
       } %>
 
-<section class="record-section">
-  <h2>Identity</h2>
-  <%= render "shared/record_summary", rows: [
-    [ "Identifier", tag.code(@product.identifier) ],
-    [ "Alternate identifier", @product.alternate_identifier.presence || "—" ],
-    [ "Product type", @product.product_type&.titleize || "—" ],
-    [ "Publisher / manufacturer", @product.publisher_or_manufacturer_name.presence || "—" ],
-    [ "Imprint / brand", @product.imprint_or_brand_name.presence || "—" ]
-  ] %>
-  <% if @product.identifier_warning.present? %>
-    <div class="ss-alert ss-alert-warning" role="status">
-      <div><strong>Identifier warning:</strong> <%= @product.identifier_warning %></div>
-    </div>
-  <% end %>
-</section>
-
-<section class="record-section">
-  <h2>Status</h2>
-  <%= render "shared/record_summary", rows: [
-    [ "Status", status_badge(@product.status.titleize, variant: product_status_variant(@product.status)) ],
-    [ "Sellable", boolean_status(@product.sellable?, true_label: "Sellable", false_label: "Not sellable") ]
-  ] %>
-</section>
-
-<section class="record-section">
-  <h2>Bibliographic detail</h2>
-  <%= render "shared/record_summary", rows: [
-    [ "Publication date", @product.publication_date_precision.present? ?
-        "#{@product.publication_date&.to_fs(:long)} (#{@product.publication_date_precision})" : "—" ],
-    [ "Language code", @product.language_code.presence || "—" ],
-    [ "Edition", @product.edition_statement.presence || "—" ]
-  ] %>
-  <% if @product.creators.any? %>
-    <ul class="creator-summary-list">
-      <% @product.product_creators.order(:position, :id).each do |product_creator| %>
-        <li>
-          <%= link_to product_creator.creator.display_name, edit_creator_path(product_creator.creator) if Current.user.can?("catalog.manage_creators", store: Current.store) %>
-          <%= product_creator.creator.display_name unless Current.user.can?("catalog.manage_creators", store: Current.store) %>
-          — <%= product_creator.role.titleize %>
-          <% if product_creator.credited_as.present? %>
-            (credited as <%= product_creator.credited_as %>)
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  <% else %>
-    <p class="muted">No creators linked.</p>
-  <% end %>
-</section>
-
-<section class="record-section">
-  <h2>Classification</h2>
-  <%= render "shared/record_summary", rows: [
-    [ "Format", @product.product_format&.name || "—" ],
-    [ "Merchandise class", @product.merchandise_class&.name || "—" ],
-    [ "Default department", @product.default_department&.name || "—" ],
-    [ "Default tax category", @product.default_tax_category&.name || "—" ]
-  ] %>
-</section>
-
-<%
-  standard = @variants.first
-  effective = Catalog::ResolveClassification.call(product: @product, variant: standard)
-%>
-<section class="record-section">
-  <h2>Effective defaults</h2>
-  <p class="muted">
-    Resolved for <%= standard ? variant_option_label(standard) : "the first variant" %> using inheritance.
-    Configured overrides are shown alongside the effective result.
-  </p>
-  <%= render "shared/record_summary", rows: [
-    [ "Merchandise class",
-      "Configured: #{configured_override_label(@product.merchandise_class)} · " \
-      "Effective: #{effective.merchandise_class&.name || "—"} · " \
-      "Source: #{effective.merchandise_class_source || "—"}" ],
-    [ "Department",
-      "Configured: #{configured_override_label(@product.default_department)} · " \
-      "Effective: #{effective.department&.name || "—"} · " \
-      "Source: #{effective.department_source || "—"}" ],
-    [ "Tax category",
-      "Configured: #{configured_override_label(@product.default_tax_category)} · " \
-      "Effective: #{effective.tax_category&.name || "—"} · " \
-      "Source: #{effective.tax_category_source || "—"}" ]
-  ] %>
-</section>
-
-<section class="record-section">
-  <h2>Pricing &amp; availability</h2>
-  <%= render "shared/record_summary", rows: [
-    [ "List price", @product.list_price_cents ? format_money(@product.list_price_cents) : "—" ],
-    [ "Available from", @product.available_from&.to_fs(:long) || "—" ],
-    [ "Available until", @product.available_until&.to_fs(:long) || "—" ]
-  ] %>
-</section>
-
-<% if @product.description.present? %>
-  <section class="record-section">
-    <h2>Description</h2>
-    <p><%= simple_format(@product.description) %></p>
-  </section>
-<% end %>
-
-<section class="record-section">
-  <h2>Variants</h2>
-  <div class="table-container">
-    <table class="data-table">
-      <caption class="sr-only">Product variants</caption>
-      <thead>
-        <tr>
-          <th scope="col">SKU</th>
-          <th scope="col">Name</th>
-          <th scope="col">Tracking</th>
-          <th scope="col">Status</th>
-          <th scope="col">Sellable</th>
-          <th scope="col" class="num">Regular price</th>
-          <th scope="col" class="num">On hand</th>
-          <th scope="col" class="num">Available</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @variants.each do |variant| %>
-          <% balance = @stock_balances[variant.id] %>
-          <tr>
-            <td><code><%= variant.sku %></code></td>
-            <td><%= variant.name %></td>
-            <td><%= variant.inventory_tracking_mode.titleize %></td>
-            <td><%= status_badge variant.status.titleize, variant: product_status_variant(variant.status) %></td>
-            <td><%= boolean_status variant.sellable?, true_label: "Sellable", false_label: "Not sellable" %></td>
-            <td class="num"><%= variant.regular_price_cents ? format_money(variant.regular_price_cents) : "—" %></td>
-            <td class="num"><%= balance ? balance.on_hand : "—" %></td>
-            <td class="num"><%= balance ? balance.available : "—" %></td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-</section>
+<%= render "products/attention", summary: @summary %>
+<%= render "products/identity", summary: @summary %>
+<%= render "products/standard_item", summary: @summary %>
+<%= render "products/stock", summary: @summary %>
+<%= render "products/store_operations", summary: @summary %>
+<%= render "products/vendor_sources", summary: @summary %>

@@ -48,7 +48,7 @@ superseded
 | OD-P8-07 | Minimal multi-variant structure (`single` / `named`) | accepted | Phase 8.5 | Catalog | Direction accepted; delivery deferred — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 | OD-P8-08 | Product-summary store context | accepted | Phase 8 | Catalog | Selected-store primary + optional all-stores — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 | OD-P8-09 | Import provenance representation | accepted | Phase 8 | Catalog | Dedicated `catalog_enrichment_events` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
-| OD-P8-10 | Minimum persisted bibliographic fields | accepted | Phase 8 | Catalog | publication_date (+ precision), language_code, edition_statement — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P8-10 | Minimum persisted bibliographic fields | accepted | Phase 8 | Catalog | exact `publication_date`, curated ISO 639-2/T `language_code` (default eng), `edition_statement` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 
 ## OD-013 role and store authority defaults
 

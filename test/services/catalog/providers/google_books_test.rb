@@ -43,7 +43,7 @@ class CatalogProvidersGoogleBooksTest < ActiveSupport::TestCase
     assert_equal "google_books", normalized.provider
     assert_equal [ "Jordan Fixture" ], normalized.creators.map(&:display_name)
     assert_equal 1699, normalized.list_price.amount_cents
-    assert_equal "day", normalized.publication_date.precision
+    assert_equal Date.new(2014, 2, 11), normalized.publication_date
   end
 
   test "no exact ISBN match returns not_found even when other items exist" do
