@@ -101,11 +101,11 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–7 core delivery. Phase 7 Reporting and Reconciliation merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
 
-**Next:** Phase 8 — Catalog refinement & enrichment (in progress). Gate 8a pending merge; next Gate 8b. Plan: [phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md). See [current-phase.md](current-phase.md).
+**Next:** No new delivery phase opened. Phase 8 Catalog refinement & enrichment **closed** (Must 8a–8d; Gate 8d PR [#118](https://github.com/tswarren/shelfstack-5/pull/118)). Should/Nice 8e–8g deferred (DWR-065 / DWR-022 / DWR-023 / DWR-027). Plan: [phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md). See [current-phase.md](current-phase.md).
 
-**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), catalog Phase 8 candidates, later extensions).
+**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, later extensions).
 
-1. Merge Gate 8a; deliver Gate 8b bibliographic/provider foundation, then 8c create-from-ISBN.
+1. Prefer ops hardening or Phase 8 non-blocking cleanups; leave Phase 8.5 / multi-variant (DWR-021) unscheduled.
 2. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
 3. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
 4. Optional ops hardening: [#51](https://github.com/tswarren/shelfstack-5/issues/51); DWR-018/019 control masters and store settings UI.

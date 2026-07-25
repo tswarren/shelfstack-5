@@ -1,9 +1,9 @@
 # Phase 8 — Catalog Refinement & Enrichment
 
-**Status:** In progress — Gates 8a–8d delivered ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#98](https://github.com/tswarren/shelfstack-5/issues/98)); next Gate 8e vendor-source linking ([#99](https://github.com/tswarren/shelfstack-5/issues/99))
-**Date:** 2026-07-24
+**Status:** Closed — Must gates 8a–8d complete ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#98](https://github.com/tswarren/shelfstack-5/issues/98); Gate 8d PR [#118](https://github.com/tswarren/shelfstack-5/pull/118)). Should/Nice gates 8e–8g deferred to [deferred-work-register.md](../deferred-work-register.md) (DWR-065 / DWR-022 / DWR-023 / DWR-027).
+**Date:** 2026-07-24 (closed 2026-07-25)
 **Depends on:** Phase 7 core complete
-**Roadmap position:** Active delivery phase after Phase 7
+**Roadmap position:** Complete core delivery phase after Phase 7
 **Governing documents:** ADR-0001, ADR-0002, ADR-0003; [catalog-and-products](../../domains/catalog-and-products.md); [architectural-locks](../architectural-locks.md)
 **Carry-forward register:** [deferred-work-register.md](../deferred-work-register.md)
 **Decision note:** [phase-08-catalog-refinement-and-enrichment-v1.md](../decisions/phase-08-catalog-refinement-and-enrichment-v1.md)  
@@ -556,6 +556,7 @@ It must not independently reproduce inheritance logic in view helpers.
 
 ### 8e — Vendor-source linking workflow
 
+**Status:** Deferred — DWR-065 / [#99](https://github.com/tswarren/shelfstack-5/issues/99) (Phase 8 closed after Must gates; not required for core exit)
 **Priority:** Should
 **Purpose:** Make an existing item orderable without navigating several unrelated screens.
 
@@ -598,6 +599,7 @@ From the product or item workflow, authorized users should be able to:
 
 ### 8f — Enrich existing product
 
+**Status:** Deferred — DWR-022 / [#100](https://github.com/tswarren/shelfstack-5/issues/100) (Phase 8 closed after Must gates; not required for core exit)
 **Priority:** Should
 **Purpose:** Apply selected bibliographic improvements without overwriting ShelfStack operational decisions.
 
@@ -716,6 +718,7 @@ The user interface must not determine operational use through an incomplete ad h
 
 ### 8g — Optional catalog enrichment extensions
 
+**Status:** Deferred — DWR-023 / DWR-027 / [#101](https://github.com/tswarren/shelfstack-5/issues/101) (optional; never blocked Phase 8 closure)
 **Priority:** Nice
 **Purpose:** Add useful enrichment that can ship independently after the core gates.
 
@@ -1116,16 +1119,7 @@ Required outcomes:
 
 ### 14.2 Phase closure
 
-Phase 8 is closed when Gates 8e and 8f are either:
-
-* implemented and accepted; or
-* explicitly moved to the Deferred Work Register with a named future target.
-
-Optional Gate 8g never blocks Phase 8 closure. Unimplemented 8g items may be:
-
-* completed later;
-* moved to the Deferred Work Register;
-* assigned to a later catalog-hardening phase.
+**Closed 2026-07-25.** Gates 8e and 8f were explicitly moved to the Deferred Work Register (DWR-065 vendor-source linking; DWR-022 enrich-existing) with target `unscheduled`. Optional Gate 8g items remain on DWR-023 / DWR-027 ([#101](https://github.com/tswarren/shelfstack-5/issues/101)).
 
 No optional gate should keep the core phase indefinitely open.
 
@@ -1259,8 +1253,9 @@ rather than remaining only in the phase plan.
 1. Deliver Gate 8a shared record-picker infrastructure — **done** ([#95](https://github.com/tswarren/shelfstack-5/issues/95), PR [#102](https://github.com/tswarren/shelfstack-5/pull/102)).
 2. Deliver Gate 8b schema and provider foundation (including Creator model and Creator search-to-link) — **done** ([#96](https://github.com/tswarren/shelfstack-5/issues/96), PRs [#103](https://github.com/tswarren/shelfstack-5/pull/103)/[#104](https://github.com/tswarren/shelfstack-5/pull/104)).
 3. Deliver Gate 8c create-from-ISBN — **done** ([#97](https://github.com/tswarren/shelfstack-5/issues/97), PRs [#105](https://github.com/tswarren/shelfstack-5/pull/105)/[#106](https://github.com/tswarren/shelfstack-5/pull/106)).
-4. Deliver Gate 8d Product summary hub — **done** ([#98](https://github.com/tswarren/shelfstack-5/issues/98)).
-5. Deliver Gate 8e vendor-source linking ([#99](https://github.com/tswarren/shelfstack-5/issues/99)); evaluate and schedule Gate 8f (or move to the Deferred Work Register with a named target).
-6. Record unimplemented Gate 8g items in the Deferred Work Register as needed.
-7. Keep DWR-021 multi-variant targeted to Phase 8.5 (cross-domain packet before code); DWR-024 publisher party deferred.
-8. Create GitHub issues only for accepted, branch-sized gate work.
+4. Deliver Gate 8d Product summary hub — **done** ([#98](https://github.com/tswarren/shelfstack-5/issues/98), PR [#118](https://github.com/tswarren/shelfstack-5/pull/118)).
+5. Gate 8e vendor-source linking — **deferred** (DWR-065 / [#99](https://github.com/tswarren/shelfstack-5/issues/99)).
+6. Gate 8f enrich-existing — **deferred** (DWR-022 / [#100](https://github.com/tswarren/shelfstack-5/issues/100)).
+7. Gate 8g optional extensions — **deferred** (DWR-023 / DWR-027 / [#101](https://github.com/tswarren/shelfstack-5/issues/101)).
+8. Keep DWR-021 multi-variant as Phase 8.5 when scheduled (cross-domain packet before code); leave unscheduled for now. DWR-024 publisher party deferred.
+9. Create GitHub issues only for accepted, branch-sized gate work.
