@@ -30,7 +30,7 @@ module Catalog
       :name, :subtitle, :identifier, :alternate_identifier, :product_type,
       :product_format_name, :status, :sellable,
       :publisher_or_manufacturer_name, :imprint_or_brand_name,
-      :publication_date, :publication_date_precision, :language_code, :edition_statement,
+      :publication_date, :language_code, :edition_statement,
       :description, :identifier_warning, :creators
     )
 
@@ -153,7 +153,6 @@ module Catalog
         publisher_or_manufacturer_name: @product.publisher_or_manufacturer_name,
         imprint_or_brand_name: @product.imprint_or_brand_name,
         publication_date: @product.publication_date,
-        publication_date_precision: @product.publication_date_precision,
         language_code: @product.language_code,
         edition_statement: @product.edition_statement,
         description: @product.description,
@@ -211,16 +210,20 @@ module Catalog
     end
 
     def build_quantity_stock(variant, caps, last_received)
-      snapshot = Purchasing::ReplenishmentSnapshot.call(store: @store, product_variant: variant)
+      # Read StockBalance directly — do not use ReplenishmentSnapshot here; it
+      # always queries OnOrder and preferred vendor-source cost even when those
+      # capabilities are absent.
       balance = StockBalance.find_by(store_id: @store.id, product_variant_id: variant.id)
-      on_order = caps.purchase_order_view ? snapshot.on_order : nil
+      on_order = if caps.purchase_order_view
+        Purchasing::OnOrder.call(store: @store, product_variant: variant)
+      end
 
       StockSummary.new(
         tracking_mode: "quantity",
-        on_hand: snapshot.on_hand,
-        reserved: snapshot.reserved,
-        unavailable: snapshot.unavailable,
-        available: snapshot.available,
+        on_hand: balance&.on_hand || 0,
+        reserved: balance&.reserved || 0,
+        unavailable: balance&.unavailable || 0,
+        available: balance&.available || 0,
         on_order: on_order,
         unit_status_counts: nil,
         stock_balance_id: balance&.id,
@@ -281,11 +284,14 @@ module Catalog
         .includes(:purchase_order)
         .joins(:purchase_order)
         .where(product_variant_id: variant.id, purchase_orders: { store_id: @store.id, status: "ordered" })
+        .where(
+          "purchase_order_lines.ordered_quantity - " \
+          "purchase_order_lines.received_quantity - " \
+          "purchase_order_lines.cancelled_quantity > 0"
+        )
         .order("purchase_orders.ordered_at DESC NULLS LAST", "purchase_orders.id DESC", :id)
-        .limit(20)
-        .filter_map do |line|
-          next unless line.open_quantity.positive?
-
+        .limit(8)
+        .map do |line|
           OpenPoLine.new(
             id: line.id,
             purchase_order_id: line.purchase_order_id,
@@ -294,7 +300,6 @@ module Catalog
             ordered_quantity: line.ordered_quantity
           )
         end
-        .first(8)
     end
 
     def recent_receipt_lines(variant)
@@ -320,18 +325,22 @@ module Catalog
     end
 
     def open_requests(variant)
-      ProductRequest
+      requests = ProductRequest
         .open_requests
         .includes(:assigned_buyer_user)
         .where(store_id: @store.id, product_id: @product.id)
         .where("product_variant_id IS NULL OR product_variant_id = ?", variant.id)
         .order(:id)
         .limit(20)
-        .map { |request| request_row(request) }
+        .to_a
+
+      customer_requests = requests.select(&:customer_request?)
+      coverage = request_coverage_by_id(customer_requests)
+      requests.map { |request| request_row(request, coverage[request.id]) }
     end
 
-    def request_row(request)
-      customer = request.request_type == "customer_request"
+    def request_row(request, coverage)
+      customer = request.customer_request?
       RequestRow.new(
         id: request.id,
         request_type: request.request_type,
@@ -340,13 +349,81 @@ module Catalog
         requested_quantity: request.requested_quantity,
         assigned_buyer_name: request.assigned_buyer_user&.username,
         resolution: request.resolution,
-        fulfilled_quantity: customer ? request.fulfilled_quantity : nil,
-        active_reserved_quantity: customer ? request.active_reserved_quantity : nil,
-        remaining_allocated_quantity: customer ? request.remaining_allocated_quantity : nil,
-        outstanding_quantity: customer ? request.outstanding_quantity : nil,
-        uncovered_quantity: customer ? request.uncovered_quantity : nil,
+        fulfilled_quantity: customer ? coverage.fetch(:fulfilled) : nil,
+        active_reserved_quantity: customer ? coverage.fetch(:reserved) : nil,
+        remaining_allocated_quantity: customer ? coverage.fetch(:allocated) : nil,
+        outstanding_quantity: customer ? coverage.fetch(:outstanding) : nil,
+        uncovered_quantity: customer ? coverage.fetch(:uncovered) : nil,
         customer_request: customer
       )
+    end
+
+    # Batched coverage for customer requests — constant queries across selected
+    # IDs (matches ProductRequest coverage formulas without per-request N+1).
+    def request_coverage_by_id(customer_requests)
+      return {} if customer_requests.empty?
+
+      request_ids = customer_requests.map(&:id)
+      fulfilled = fulfilled_quantity_by_request_id(request_ids)
+      reserved = active_reserved_quantity_by_request_id(request_ids)
+      allocated = remaining_allocated_quantity_by_request_id(request_ids)
+
+      customer_requests.each_with_object({}) do |request, map|
+        f = fulfilled.fetch(request.id, 0)
+        r = reserved.fetch(request.id, 0)
+        a = allocated.fetch(request.id, 0)
+        map[request.id] = {
+          fulfilled: f,
+          reserved: r,
+          allocated: a,
+          outstanding: [ request.requested_quantity - f, 0 ].max,
+          uncovered: [ request.requested_quantity - f - r - a, 0 ].max
+        }
+      end
+    end
+
+    def fulfilled_quantity_by_request_id(request_ids)
+      rows = ProductRequestFulfillment
+        .where(product_request_id: request_ids)
+        .group(:product_request_id, :kind)
+        .sum(:quantity)
+
+      request_ids.index_with do |id|
+        rows.fetch([ id, "fulfill" ], 0) - rows.fetch([ id, "reverse" ], 0)
+      end
+    end
+
+    def active_reserved_quantity_by_request_id(request_ids)
+      request_held = InventoryReservation.active
+        .where(source_type: "product_request", source_id: request_ids)
+        .group(:source_id)
+        .sum(:quantity)
+
+      pos_held = InventoryReservation.active
+        .where(source_type: "pos_line_item")
+        .joins("INNER JOIN pos_line_items ON pos_line_items.id = inventory_reservations.source_id")
+        .where(pos_line_items: { product_request_id: request_ids, status: "pending" })
+        .group("pos_line_items.product_request_id")
+        .sum("inventory_reservations.quantity")
+
+      request_ids.index_with do |id|
+        request_held.fetch(id, 0) + pos_held.fetch(id, 0)
+      end
+    end
+
+    def remaining_allocated_quantity_by_request_id(request_ids)
+      allocations = PurchaseOrderAllocation
+        .where(product_request_id: request_ids)
+        .includes(:purchase_order_allocation_events)
+
+      totals = Hash.new(0)
+      allocations.each do |allocation|
+        events = allocation.purchase_order_allocation_events
+        converted = events.select { |e| e.event_type == "converted_to_reservation" }.sum(&:quantity)
+        released = events.select { |e| e.event_type == "released" }.sum(&:quantity)
+        totals[allocation.product_request_id] += [ allocation.quantity - converted - released, 0 ].max
+      end
+      totals
     end
 
     def build_vendor_sources(variant, caps)

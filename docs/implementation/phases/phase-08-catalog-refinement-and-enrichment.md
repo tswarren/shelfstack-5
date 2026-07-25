@@ -246,7 +246,7 @@ PO/receipt nested line pickers remain a follow-on (DWR-020), not part of the 8a 
 * normalized enrichment result;
 * Creator model and ordered Product-Creator join;
 * Creator search-to-link using the shared record-picker foundation;
-* accepted minimum bibliographic Product fields (`publication_date`, `publication_date_precision`, `language_code`, `edition_statement`);
+* accepted minimum bibliographic Product fields (`publication_date` exact date, curated ISO 639-2/T `language_code`, `edition_statement`);
 * provider credentials and error handling;
 * append-only `catalog_enrichment_events` provenance contract;
 * format-mapping boundary;
@@ -950,11 +950,10 @@ Names are illustrative rather than prescriptive.
 
 ## 11. Required data and schema changes
 
-Phase 8b adds the accepted minimum bibliographic Product fields (OD-P8-10):
+Phase 8b adds the accepted minimum bibliographic Product fields (OD-P8-10; revised):
 
-* `publication_date`;
-* `publication_date_precision` (`year` | `month` | `day` when present);
-* `language_code`;
+* `publication_date` (optional exact calendar date; precision column removed);
+* `language_code` (curated ISO 639-2/T alpha-3; UI default `eng`);
 * `edition_statement`.
 
 Phase 8 also introduces:

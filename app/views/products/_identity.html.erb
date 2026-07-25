@@ -12,7 +12,7 @@
     [ "Publisher / manufacturer", identity.publisher_or_manufacturer_name.presence || "—" ],
     [ "Imprint / brand", identity.imprint_or_brand_name.presence || "—" ],
     [ "Publication date", publication_date_label(identity) || "—" ],
-    [ "Language", identity.language_code.presence || "—" ],
+    [ "Language", language_code_label(identity.language_code).presence || "—" ],
     [ "Edition", identity.edition_statement.presence || "—" ]
   ] %>
 

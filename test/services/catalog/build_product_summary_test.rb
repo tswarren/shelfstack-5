@@ -210,6 +210,134 @@ module Catalog
       assert summary.store_operations.open_requests.none? { |r| r.requested_quantity == 9 }
     end
 
+    test "open PO list includes an older open line when newer lines are fully resolved" do
+      older = PurchaseOrder.create!(
+        store: @store,
+        vendor: vendors(:acme_distributor),
+        purchase_order_number: "HUB-PO-OLD-#{SecureRandom.hex(3)}",
+        status: "ordered",
+        currency_code: "USD",
+        ordered_on: 30.days.ago.to_date,
+        ordered_at: 30.days.ago,
+        ordered_by_user: @admin
+      )
+      older_line = older.purchase_order_lines.create!(
+        position: 0,
+        product_variant: @variant,
+        product_variant_vendor: product_variant_vendors(:sample_book_ingram),
+        description_snapshot: @variant.name,
+        identifier_snapshot: @product.identifier,
+        sku_snapshot: @variant.sku,
+        ordered_quantity: 4,
+        cancelled_quantity: 0,
+        received_quantity: 0,
+        cost_entry_method: "direct_net_cost",
+        expected_unit_cost_cents: 700,
+        cost_provenance: "manual_entry"
+      )
+
+      21.times do |i|
+        po = PurchaseOrder.create!(
+          store: @store,
+          vendor: vendors(:acme_distributor),
+          purchase_order_number: "HUB-PO-NEW-#{i}-#{SecureRandom.hex(2)}",
+          status: "ordered",
+          currency_code: "USD",
+          ordered_on: (i + 1).days.ago.to_date,
+          ordered_at: (i + 1).hours.ago,
+          ordered_by_user: @admin
+        )
+        po.purchase_order_lines.create!(
+          position: 0,
+          product_variant: @variant,
+          product_variant_vendor: product_variant_vendors(:sample_book_ingram),
+          description_snapshot: @variant.name,
+          identifier_snapshot: @product.identifier,
+          sku_snapshot: @variant.sku,
+          ordered_quantity: 2,
+          cancelled_quantity: 0,
+          received_quantity: 2,
+          cost_entry_method: "direct_net_cost",
+          expected_unit_cost_cents: 700,
+          cost_provenance: "manual_entry"
+        )
+      end
+
+      summary = BuildProductSummary.call(product: @product, store: @store, actor: @admin)
+      open_ids = summary.store_operations.open_po_lines.map(&:id)
+
+      assert_includes open_ids, older_line.id
+      assert summary.store_operations.open_po_lines.any? { |line| line.open_quantity.positive? }
+    end
+
+    test "customer request coverage uses a bounded query count across many requests" do
+      10.times do |i|
+        ProductRequest.create!(
+          store: @store,
+          request_type: "customer_request",
+          status: "open",
+          product: @product,
+          product_variant: @variant,
+          requested_quantity: i + 1,
+          priority: "normal",
+          requested_by_user: @admin,
+          customer_reference: "HUB-COV-#{i}"
+        )
+      end
+
+      queries = []
+      callback = lambda do |_name, _start, _finish, _id, payload|
+        sql = payload[:sql].to_s
+        next if payload[:name] == "SCHEMA"
+        next if sql.match?(/\A(BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)/i)
+
+        queries << sql
+      end
+
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        BuildProductSummary.call(product: @product, store: @store, actor: @admin)
+      end
+
+      coverage_queries = queries.count do |sql|
+        sql.match?(/product_request_fulfillments|inventory_reservations|purchase_order_allocations/i)
+      end
+
+      assert_operator coverage_queries, :<=, 6,
+                      "expected batched request coverage, got #{coverage_queries} related queries:\n#{queries.grep(/product_request_fulfillments|inventory_reservations|purchase_order_allocations/i).join("\n")}"
+    end
+
+    test "quantity stock without purchase_order_view does not query OnOrder or vendor sources" do
+      StockBalance.create!(
+        store: @store, product_variant: @variant, on_hand: 3, reserved: 0, unavailable: 0,
+        inventory_value_cents: nil
+      )
+      RolePermission.where(role: roles(:administrator), permission: permissions(:purchasing_purchase_order_view)).delete_all
+      RolePermission.where(role: roles(:administrator), permission: permissions(:purchasing_vendor_source_view)).delete_all
+      RolePermission.where(role: roles(:administrator), permission: permissions(:purchasing_cost_view)).delete_all
+
+      queries = []
+      callback = lambda do |_name, _start, _finish, _id, payload|
+        sql = payload[:sql].to_s
+        next if payload[:name] == "SCHEMA"
+        next if sql.match?(/\A(BEGIN|COMMIT|ROLLBACK|SAVEPOINT|RELEASE)/i)
+
+        queries << sql
+      end
+
+      summary = nil
+      ActiveSupport::Notifications.subscribed(callback, "sql.active_record") do
+        summary = BuildProductSummary.call(product: @product, store: @store, actor: @admin.reload)
+      end
+
+      assert_equal 3, summary.stock.on_hand
+      assert_nil summary.stock.on_order
+      assert_empty summary.vendor_sources
+      assert queries.none? { |sql| sql.match?(/FROM ["`]?product_variant_vendors["`]?/i) },
+             "stock path must not query vendor sources without permission"
+      assert queries.none? { |sql| sql.match?(/FROM ["`]?purchase_order_lines["`]?/i) },
+             "stock path must not query purchase order lines without PO permission"
+    end
+
     private
 
     def create_posted_receipt!(store:, variant:, accepted:, posted_at:, delivered: nil, rejected: 0)

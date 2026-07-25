@@ -112,8 +112,6 @@ module Catalog
         info = item["volumeInfo"]
         raise TypeError, "volumeInfo must be a Hash" unless info.is_a?(Hash)
 
-        date, precision = Catalog::Providers::ParseProviderDate.call(info["publishedDate"])
-
         Catalog::Enrichment::BuildNormalizedResult.call(
           requested_identifier: requested_identifier,
           canonical_identifier: canonical_identifier,
@@ -125,7 +123,7 @@ module Catalog
           description: info["description"],
           creators: Array(info["authors"]).map { |name| { display_name: name, role: "author" } },
           publisher: info["publisher"],
-          publication_date: (date ? { date: date, precision: precision } : nil),
+          publication_date: Catalog::Providers::ParseProviderDate.call(info["publishedDate"]),
           language_code: info["language"],
           provider_format: info["printType"],
           external_subjects: info["categories"],

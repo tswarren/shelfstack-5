@@ -23,7 +23,7 @@ module Catalog
       merchandise_class_id default_department_id default_tax_category_id
       status sellable list_price_cents
       publisher_or_manufacturer_name imprint_or_brand_name
-      publication_date publication_date_precision language_code edition_statement
+      publication_date language_code edition_statement
     ].freeze
 
     VARIANT_ATTR_KEYS = %i[

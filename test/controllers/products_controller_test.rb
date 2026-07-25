@@ -384,7 +384,7 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal [ creator.id ], product.product_creators.reload.pluck(:creator_id)
   end
 
-  test "persists partial publication date entered as separate year/month parts" do
+  test "persists plain publication date and language select on update" do
     product = products(:sample_book)
     variant = product.product_variants.first
 
@@ -395,10 +395,8 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
         product_format_id: product.product_format_id,
         status: product.status,
         sellable: product.sellable,
-        publication_date_precision: "month",
-        publication_date_year: "2020",
-        publication_date_month: "5",
-        publication_date_day: ""
+        publication_date: "2020-05-15",
+        language_code: "fra"
       },
       product_variant: {
         inventory_tracking_mode: variant.inventory_tracking_mode,
@@ -410,7 +408,14 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to product_path(product)
     product.reload
-    assert_equal Date.new(2020, 5, 1), product.publication_date
-    assert_equal "month", product.publication_date_precision
+    assert_equal Date.new(2020, 5, 15), product.publication_date
+    assert_equal "fra", product.language_code
+  end
+
+  test "new product form defaults language to eng and renders language select" do
+    get new_product_path
+    assert_response :success
+    assert_select "select#product_language_code option[value=eng][selected]"
+    assert_select "input#product_publication_date[type=date]"
   end
 end

@@ -67,37 +67,16 @@
           <%= product_form.text_field :edition_statement, class: "input" %>
         </div>
         <div class="field">
-          <%= product_form.label :language_code, "Language code", class: "field-label" %>
-          <%= product_form.text_field :language_code, class: "input", placeholder: "en" %>
-          <p class="field-hint">Free text (e.g. “en”, “fr”) — normalized to lowercase.</p>
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="field">
-          <label class="field-label" for="product_publication_date_precision">Publication date precision</label>
-          <select name="product[publication_date_precision]" id="product_publication_date_precision" class="input">
-            <option value="" <%= "selected" if product.publication_date_precision.blank? %>>Unknown</option>
-            <% Catalog::PartialPublicationDate::PRECISIONS.each do |precision| %>
-              <option value="<%= precision %>" <%= "selected" if product.publication_date_precision == precision %>><%= precision.titleize %></option>
-            <% end %>
-          </select>
+          <%= product_form.label :language_code, "Language", class: "field-label" %>
+          <%= product_form.select :language_code,
+                options_for_select(Catalog::LanguageCodes::OPTIONS, product.language_code),
+                { include_blank: "—" },
+                class: "input" %>
+          <p class="field-hint">ISO 639-2 three-letter code. Defaults to English (eng) for new products.</p>
         </div>
         <div class="field">
-          <label class="field-label" for="product_publication_date_year">Year</label>
-          <input type="number" class="input" name="product[publication_date_year]" id="product_publication_date_year"
-                 value="<%= params.dig(:product, :publication_date_year).presence || product.publication_date&.year %>">
-        </div>
-        <div class="field">
-          <label class="field-label" for="product_publication_date_month">Month</label>
-          <input type="number" min="1" max="12" class="input" name="product[publication_date_month]" id="product_publication_date_month"
-                 value="<%= params.dig(:product, :publication_date_month).presence || product.publication_date&.month %>">
-          <p class="field-hint">Required for month/day precision.</p>
-        </div>
-        <div class="field">
-          <label class="field-label" for="product_publication_date_day">Day</label>
-          <input type="number" min="1" max="31" class="input" name="product[publication_date_day]" id="product_publication_date_day"
-                 value="<%= params.dig(:product, :publication_date_day).presence || product.publication_date&.day %>">
-          <p class="field-hint">Required for day precision only.</p>
+          <%= product_form.label :publication_date, "Publication date", class: "field-label" %>
+          <%= product_form.date_field :publication_date, class: "input" %>
         </div>
       </div>
     <% end %>

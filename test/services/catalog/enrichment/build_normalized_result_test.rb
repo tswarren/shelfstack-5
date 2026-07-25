@@ -14,7 +14,7 @@ class CatalogEnrichmentBuildNormalizedResultTest < ActiveSupport::TestCase
       description: "A deterministic fixture.",
       creators: [ { display_name: "Jordan Fixture", role: "author" } ],
       publisher: "Fixture House",
-      publication_date: { date: Date.new(2014, 2, 11), precision: "day" },
+      publication_date: Date.new(2014, 2, 11),
       language_code: "en",
       edition_statement: "1st",
       provider_format: "Paperback",
@@ -29,7 +29,8 @@ class CatalogEnrichmentBuildNormalizedResultTest < ActiveSupport::TestCase
     assert_equal 1, result.creators.size
     assert_equal "author", result.creators.first.role
     assert_equal 0, result.creators.first.position
-    assert_equal "day", result.publication_date.precision
+    assert_equal Date.new(2014, 2, 11), result.publication_date
+    assert_equal "eng", result.language_code
     assert_equal 1699, result.list_price.amount_cents
     assert_equal "USD", result.list_price.currency_code
     assert_equal [ "Fiction" ], result.external_subjects

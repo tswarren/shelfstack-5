@@ -87,8 +87,8 @@ Suggested attributes:
 - Format;
 - publisher or manufacturer;
 - imprint or brand;
-- release date (`publication_date`, with `publication_date_precision` of `year` | `month` | `day` — Gate 8b / OD-P8-10; see [`Catalog::PartialPublicationDate`](../implementation/service-catalog.md));
-- language (`language_code`, free text, normalized whitespace/case — Gate 8b);
+- release date (`publication_date`, optional exact calendar date — OD-P8-10; year/month-only provider strings are not persisted);
+- language (`language_code`, curated ISO 639-2/T alpha-3 via [`Catalog::LanguageCodes`](../implementation/service-catalog.md); UI default `eng`; blank allowed; alpha-2 / BCP-47 mapped on normalize);
 - edition (`edition_statement` — Gate 8b);
 - ordered Creators (Gate 8b / OD-P8-02 — see below);
 - external list price;
@@ -118,7 +118,7 @@ Service-only in 8b — no lookup HTTP endpoint or result cache ships until Gate 
 - Only a valid ISBN-13 or Bookland EAN-13 (978/979) proceeds to a provider call (ISBN-10 is canonicalized first, per `Identifiers::Normalize`); UPC, ShelfStack-generated `21`/`27`/`28`/`29` identifiers, other EAN-13 ranges, and malformed input return `unsupported_identifier` with **zero** transport calls.
 - An unrecognized `provider:` symbol raises `ArgumentError` at the facade (programmer misuse) — Gate 8c's controller is responsible for turning an invalid user-selected provider into an ordinary validation response.
 - Provider order remains ISBNdb (primary) → Google Books (operator-selected secondary, never automatic fallback) → manual entry. Google Books defaults to keyless public lookup; an optional API key is used only when keyless fails.
-- Adapters map every response into `Catalog::Enrichment::NormalizedResult` — an immutable, deep-frozen, provider-neutral shape (title, creators, publisher, `Catalog::Enrichment::NormalizedPublicationDate`, list price as `Catalog::Enrichment::NormalizedMoney`, external subjects, images, warnings). Application code never depends on ISBNdb- or Google-Books-specific response keys.
+- Adapters map every response into `Catalog::Enrichment::NormalizedResult` — an immutable, deep-frozen, provider-neutral shape (title, creators, publisher, exact `publication_date` `Date` when known, curated ISO 639-2/T `language_code`, list price as `Catalog::Enrichment::NormalizedMoney`, external subjects, images, warnings). Application code never depends on ISBNdb- or Google-Books-specific response keys.
 - Provider creator names normalize into the Slice 1 `ProductCreator` role allowlist; a missing or unrecognized role becomes `contributor` plus a `Catalog::Enrichment::NormalizedWarning` — arbitrary provider role strings are never persisted.
 - List price parses with `BigDecimal` (never `Float`), rejects negative/non-numeric amounts, rounds half-up to integer cents, and uppercases the currency code (or keeps it null) — whether a null/mismatched currency may apply remains the later create/enrich workflow's decision (OD-P8-01 §5), not this lookup layer's.
 - Normalized adapter failures: `not_found`, `ambiguous_result`, `authentication_failed`, `rate_limited`, `timeout`, `provider_unavailable`, `invalid_response`, `unsupported_identifier`. Google Books distinguishes a missing exact-ISBN match (`not_found`) from more than one exact match, including duplicate hits (`ambiguous_result`) — it never accepts the first relevance-ranked hit.

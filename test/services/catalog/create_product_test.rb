@@ -268,8 +268,7 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
         name: "Bibliographic Book",
         product_type: "book",
         product_format_id: product_formats(:hardcover).id,
-        publication_date: Date.new(2020, 1, 1),
-        publication_date_precision: "year",
+        publication_date: Date.new(2020, 1, 15),
         language_code: "EN",
         edition_statement: "2nd ed."
       },
@@ -281,9 +280,8 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
     )
 
     assert service.call
-    assert_equal Date.new(2020, 1, 1), service.product.publication_date
-    assert_equal "year", service.product.publication_date_precision
-    assert_equal "en", service.product.language_code
+    assert_equal Date.new(2020, 1, 15), service.product.publication_date
+    assert_equal "eng", service.product.language_code
     assert_equal "2nd ed.", service.product.edition_statement
   end
 end

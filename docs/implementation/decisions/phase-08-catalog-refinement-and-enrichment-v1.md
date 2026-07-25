@@ -323,11 +323,12 @@ Dedicated append-only `catalog_enrichment_events` (not general logs alone). Acti
 Retain existing Product fields. Add:
 
 ```text
-publication_date
-publication_date_precision   # year | month | day when present
-language_code
+publication_date      # optional exact calendar date (HTML date / provider YYYY-MM-DD only)
+language_code         # curated ISO 639-2/T alpha-3; UI default eng; blank allowed
 edition_statement
 ```
+
+**Revision (2026-07-25):** Dropped `publication_date_precision` and the year/month placeholder contract. Provider year-only / month-only dates are not persisted. `language_code` is no longer free text — curated ISO 639-2/T with alpha-2 / BCP-47 mapping on normalize/import.
 
 Do not add first-class columns for page count, dimensions, series, Dewey/LCC, reviews, provider IDs, etc., without a concrete requirement. Creators, images, subjects, and enrichment history use related tables. UI may label `name` as **Title**; do not rename the column. List-price rules follow OD-P8-01 §5.
 

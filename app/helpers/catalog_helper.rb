@@ -58,10 +58,13 @@ module CatalogHelper
   end
 
   def publication_date_label(identity)
-    return if identity.publication_date.blank?
+    date = identity.respond_to?(:publication_date) ? identity.publication_date : identity
+    return if date.blank?
 
-    label = identity.publication_date.to_fs(:long)
-    precision = identity.publication_date_precision
-    precision.present? ? "#{label} (#{precision})" : label
+    date.to_fs(:long)
+  end
+
+  def language_code_label(code)
+    Catalog::LanguageCodes.label_for(code)
   end
 end
