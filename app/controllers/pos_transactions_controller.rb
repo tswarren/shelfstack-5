@@ -41,19 +41,26 @@ class PosTransactionsController < ApplicationController
   end
 
   def create
+    # Phase 11: Ready must not open empty transactions. First valid customer work
+    # uses ScanToStart (or later Product lookup Add). Keep this endpoint for
+    # in-shell reopen paths that already have an authorized session, but refuse
+    # bare create without accompanying work intent.
     pos_session = current_open_session
     return unless pos_session
 
+    if params[:query].blank? && params[:product_request_id].blank?
+      return redirect_to register_path,
+                         alert: "Scan merchandise to start. Empty transactions are not opened from Ready."
+    end
+
     result = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
     if result.success?
-      if params[:query].present?
-        session[:pos_scan_resolution] = {
-          "transaction_id" => result.pos_transaction.id,
-          "query" => params[:query].to_s,
-          "quantity" => (params[:quantity].presence || 1).to_i,
-          "product_request_id" => params[:product_request_id].presence
-        }
-      end
+      session[:pos_scan_resolution] = {
+        "transaction_id" => result.pos_transaction.id,
+        "query" => params[:query].to_s,
+        "quantity" => (params[:quantity].presence || 1).to_i,
+        "product_request_id" => params[:product_request_id].presence
+      }
       redirect_to pos_transaction_path(result.pos_transaction)
     else
       redirect_to register_path, alert: result.error

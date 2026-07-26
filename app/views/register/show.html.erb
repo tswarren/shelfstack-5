@@ -40,17 +40,17 @@
     </div>
   <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
     <h2>Register ready</h2>
-    <p class="muted">Scan merchandise to start, or open an empty transaction.</p>
+    <p class="muted">Scan merchandise to start a transaction. An empty transaction is never opened from Ready.</p>
 
     <% if @scan_outcome == "ambiguous" %>
       <p class="pos-readiness-warning" role="status">
-        Multiple matches for <strong><%= @scan_query %></strong>. Open a transaction to resolve candidates.
+        Multiple matches for <strong><%= @scan_query %></strong>. No transaction was created.
+        Refine the scan (exact ISBN, SKU, or unit ID) and try again.
       </p>
-      <div class="action-group">
-        <%= button_to "Open transaction to resolve", pos_transactions_path,
-              params: { query: @scan_query, quantity: @scan_quantity },
-              class: "button button-primary button-large" %>
-      </div>
+    <% elsif @scan_outcome.present? && @scan_outcome != "added" %>
+      <p class="pos-readiness-warning" role="status">
+        Scan did not start a transaction. <%= flash[:alert] %>
+      </p>
     <% end %>
 
     <%= form_with url: register_scan_to_start_path, method: :post, class: "pos-inline-form",
@@ -94,15 +94,11 @@
                 label: "Stage customer",
                 required: true,
                 include_blank: false,
-                hint: "Search by name, phone, email, or customer number." %>
+                hint: "Staging a customer does not create a transaction." %>
           <%= submit_tag "Use for next transaction", class: "button button-outline" %>
         <% end %>
       </details>
     <% end %>
-
-    <div class="action-group" style="margin-top: 1rem;">
-      <%= button_to "New transaction", pos_transactions_path, class: "button button-outline button-large" %>
-    </div>
 
     <details class="pos-panel" style="margin-top: 1rem;">
       <summary>Receipt lookup</summary>
@@ -134,13 +130,7 @@
           Open since <strong><%= formatted_datetime(@business_day.opened_at, format: :short) %></strong>
           <br><span class="muted">Reporting date <%= @business_day.reporting_date %></span>
         </p>
-        <% if @day_totals && (@can_view_day_x || @can_view_session_x) %>
-          <p>
-            Net sales <strong><%= pos_money(@day_totals.commercial["net_sales_cents"]) %></strong>
-            · Net tenders <strong><%= pos_money(@day_totals.settlement["net_tenders_cents"]) %></strong>
-            · <%= @day_totals.activity_counts["completed_transactions"].to_i %> transactions
-          </p>
-        <% end %>
+        <p class="muted">Sales, tender, and cash-variance totals live on Day X / Session X reports — not on Ready.</p>
         <div class="action-group">
           <% if @can_view_day_x %>
             <%= link_to "Day X", business_day_x_report_business_day_path(@business_day), class: "button button-small button-outline" %>
@@ -170,14 +160,11 @@
                   <th scope="col">Session</th>
                   <th scope="col">Cashier</th>
                   <th scope="col">Status</th>
-                  <th scope="col" class="num">Net sales</th>
-                  <th scope="col" class="num">Txns</th>
-                  <th scope="col"><span class="sr-only">Reports</span></th>
+                  <th scope="col"><span class="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
                 <% @day_sessions.each do |session| %>
-                  <% row = @session_totals_by_id[session.id] || {} %>
                   <tr>
                     <td>
                       #<%= session.id %>
@@ -188,14 +175,6 @@
                     </td>
                     <td><%= session.cashier_user.username %></td>
                     <td><%= session.status %></td>
-                    <td class="num">
-                      <% if row["net_sales_cents"] %>
-                        <%= pos_money(row["net_sales_cents"]) %>
-                      <% else %>
-                        —
-                      <% end %>
-                    </td>
-                    <td class="num"><%= row["completed_transactions"] || "—" %></td>
                     <td>
                       <div class="action-group">
                         <% if session.open? && @can_view_session_x %>
@@ -222,13 +201,6 @@
               </tbody>
             </table>
           </div>
-          <% if @can_view_cash && @day_totals %>
-            <p class="muted" style="margin-top: 0.75rem;">
-              Consolidated session cash variance
-              <%= pos_money(@day_totals.cash_summary["cash_variance_cents"]) %>
-              (display only — no day cash count).
-            </p>
-          <% end %>
         <% end %>
       </section>
     <% end %>

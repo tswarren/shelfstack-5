@@ -141,7 +141,8 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".workspace-primary"
     assert_select ".workspace-primary input.button-primary[value=?]", "Scan to start"
-    assert_select ".workspace-primary .button-outline", text: "New transaction"
+    assert_select ".workspace-primary", text: /empty transaction is never opened/i
+    assert_select ".workspace-primary .button-outline", text: "New transaction", count: 0
     assert_select "a", text: "Main workspace"
     assert_select "a[href=?]", root_path, text: "Main workspace"
   end
