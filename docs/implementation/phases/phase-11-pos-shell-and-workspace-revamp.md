@@ -1,6 +1,7 @@
 # Phase 11 — POS Shell and Workspace Revamp
 
-**Status:** Scheduled — not started  
+**Status:** In progress — Gate 11A underway  
+
 **Depends on:** Phase 10 fully complete; Phase 6.5 cashier workspace on `main`; Phase 9 Customer v1  
 **Primary register item:** [DWR-067](../deferred-work-register.md)  
 **Absorbs:** DWR-010  

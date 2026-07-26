@@ -28,11 +28,13 @@ module Catalog
       "product" => %w[
         catalog.product.view catalog.product.create catalog.product.edit
         requests.product_request.view requests.product_request.create requests.product_request.edit
+        pos.access pos.transaction.open
       ],
       "product_variant" => %w[
         catalog.product.view catalog.product.create catalog.product.edit catalog.variant.edit
         requests.product_request.view requests.product_request.create requests.product_request.edit
         purchasing.vendor_source.view purchasing.vendor_source.manage
+        pos.access pos.transaction.open
       ],
       "vendor" => %w[
         purchasing.vendor.view purchasing.vendor.manage

@@ -1,7 +1,8 @@
 # Current Phase
 
 **Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** Scheduled — not started  
+**Status:** In progress — combined delivery PR on `feat/phase-11` (Step 0 + Gates 11A–11E; supersedes #138–#145)  
+
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Epic:** [#130](https://github.com/tswarren/shelfstack-5/issues/130)  
 **Gates:** [#131](https://github.com/tswarren/shelfstack-5/issues/131) (11A) · [#132](https://github.com/tswarren/shelfstack-5/issues/132) (11B) · [#133](https://github.com/tswarren/shelfstack-5/issues/133) (11C) · [#134](https://github.com/tswarren/shelfstack-5/issues/134) (11D) · [#135](https://github.com/tswarren/shelfstack-5/issues/135) (11E)

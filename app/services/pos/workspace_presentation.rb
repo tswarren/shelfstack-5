@@ -1,10 +1,21 @@
 # frozen_string_literal: true
 
 module Pos
-  # Cashier-facing presentation state derived from records + URL params.
-  # Not a persisted transaction status.
+  # Cashier-facing presentation state derived from persisted facts + optional URL
+  # params. Not a persisted transaction status (Phase 11 / pos-register-ui.md).
+  #
+  # Derivation priority (first match wins):
+  #   1. no active transaction context → ready
+  #   2. completed → receipt
+  #   3. open + void_required → recovery
+  #   4. open + unresolved tenders → tender (forced)
+  #   5. open + presentation=tender → tender (UI choice)
+  #   6. open or suspended → transaction
+  #
+  # Refresh must re-derive from records; it must not mutate business state.
   class WorkspacePresentation
-    STATES = %w[ready receipt recovery tender transaction].freeze
+    PRESENTATIONS = %w[ready transaction tender recovery receipt].freeze
+    STATES = PRESENTATIONS # backwards-compatible alias
 
     Result = Data.define(
       :state,
@@ -35,7 +46,7 @@ module Pos
       state = derive_state
       Result.new(
         state: state,
-        label: state.to_s.humanize,
+        label: label_for(state),
         primary_action: primary_action_for(state),
         primary_label: primary_label_for(state),
         primary_amount_cents: primary_amount_for(state),
@@ -48,14 +59,25 @@ module Pos
     private
 
     def derive_state
-      return "ready" if @pos_transaction.blank?
+      return "ready" if @pos_transaction.blank? || @pos_transaction.cancelled?
       return "receipt" if @pos_transaction.completed?
       return "recovery" if @pos_transaction.open? && @pos_transaction.void_required_tenders?
       return "tender" if @pos_transaction.open? && forced_tender?
       return "tender" if @pos_transaction.open? && @presentation_param == "tender"
       return "transaction" if @pos_transaction.open? || @pos_transaction.suspended?
 
-      "transaction"
+      "ready"
+    end
+
+    def label_for(state)
+      case state
+      when "ready" then "Ready"
+      when "transaction" then "Transaction"
+      when "tender" then "Tender"
+      when "recovery" then "Recovery"
+      when "receipt" then "Receipt"
+      else state.to_s.humanize
+      end
     end
 
     def forced_tender?

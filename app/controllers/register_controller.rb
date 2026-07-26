@@ -35,7 +35,8 @@ class RegisterController < ApplicationController
       pos_session: session,
       actor: Current.user,
       query: params[:query],
-      quantity: params[:quantity].presence || 1
+      quantity: params[:quantity].presence || 1,
+      product_variant_id: params[:product_variant_id]
     )
 
     if result.success?
@@ -96,18 +97,10 @@ class RegisterController < ApplicationController
     @can_view_day_z = Current.user.can?("reporting.view_business_day_z", store: Current.store)
     @can_view_session_x = Current.user.can?("reporting.view_session_x", store: Current.store)
     @can_view_session_z = Current.user.can?("reporting.view_session_z", store: Current.store)
-    @can_view_cash = Current.user.can?("reporting.view_cash", store: Current.store)
     @day_sessions = []
-    @day_totals = nil
-    @session_totals_by_id = {}
     return if @business_day.blank?
 
+    # Ready keeps session/day actions and report links only — not live sales/tender/cash KPIs.
     @day_sessions = @business_day.pos_sessions.includes(:pos_device, :cashier_user, :pos_session_z_report).order(:id)
-    return unless @can_view_day_x || @can_view_session_x
-
-    @day_totals = Reporting::BuildBusinessDayTotals.call(business_day: @business_day, mode: :live)
-    @day_totals.session_breakdown.each do |row|
-      @session_totals_by_id[row["pos_session_id"]] = row
-    end
   end
 end

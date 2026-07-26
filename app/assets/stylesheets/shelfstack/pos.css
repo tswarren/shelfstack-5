@@ -1,5 +1,57 @@
 /* POS workspace — see docs/design/pos-register-ui.md */
 
+.layout-pos .pos-presentation-status {
+  display: inline-flex;
+  align-items: center;
+}
+
+.layout-pos-receipt {
+  background: var(--surface-secondary, #f6f5f2);
+}
+
+.pos-receipt-main {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.pos-receipt-toolbar {
+  margin-bottom: 1rem;
+}
+
+.pos-customer-receipt {
+  background: #fff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1rem;
+}
+
+.pos-receipt-reprint {
+  color: var(--danger-text, #b42318);
+  letter-spacing: 0.08em;
+  text-align: center;
+  margin: 0 0 0.75rem;
+}
+
+.pos-receipt-header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.pos-receipt-lines {
+  margin: 1rem 0;
+}
+
+.layout-pos[data-pos-presentation="recovery"] .pos-main {
+  --pos-presentation-accent: var(--danger-border, #b42318);
+}
+
+.layout-pos .pos-main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 1.5rem;
+}
+
 .pos-panel {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;

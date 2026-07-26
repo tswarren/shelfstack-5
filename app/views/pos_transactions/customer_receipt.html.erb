@@ -1,0 +1,84 @@
+<% content_for :title, "Receipt #{@pos_transaction.receipt_number}" %>
+
+<div class="pos-receipt-toolbar no-print">
+  <p class="muted">Browser print path only — no managed printer queue.</p>
+  <div class="action-group">
+    <button type="button" class="button button-primary" onclick="window.print()">Print</button>
+    <%= link_to "Back to receipt", pos_transaction_path(@pos_transaction), class: "button button-outline" %>
+    <%= link_to "Register", register_path, class: "button button-ghost" %>
+  </div>
+</div>
+
+<article class="pos-customer-receipt" aria-label="Customer receipt">
+  <% if @reprint %>
+    <p class="pos-receipt-reprint" role="status"><strong>REPRINT</strong></p>
+  <% end %>
+
+  <header class="pos-receipt-header">
+    <h1><%= Current.store.name %></h1>
+    <p class="muted"><%= Current.organization.name %></p>
+    <% if Current.store.respond_to?(:address_line1) && Current.store.try(:address_line1).present? %>
+      <p class="muted"><%= Current.store.address_line1 %></p>
+    <% end %>
+  </header>
+
+  <p>
+    Receipt <strong><%= @pos_transaction.receipt_number %></strong><br>
+    <span class="muted"><%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></span>
+  </p>
+
+  <% if @pos_transaction.customer.present? && can_lookup_customers? %>
+    <p>
+      Customer: <%= @pos_transaction.customer.display_name %>
+      <code><%= @pos_transaction.customer.customer_number %></code>
+    </p>
+  <% end %>
+
+  <table class="data-table pos-receipt-lines">
+    <thead>
+      <tr>
+        <th scope="col">Item</th>
+        <th scope="col" class="num">Qty</th>
+        <th scope="col" class="num">Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @receipt_lines.each do |line| %>
+        <tr>
+          <td>
+            <%= line.effective_description.presence || line.description_snapshot.presence || "Line" %>
+            <% if line.direction == "return" %>
+              <span class="muted">(return)</span>
+            <% end %>
+          </td>
+          <td class="num"><%= line.quantity %></td>
+          <td class="num"><%= pos_money(line.extended_price_cents.to_i * (line.direction == "return" ? -1 : 1)) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <dl class="definition-grid pos-totals">
+    <div class="definition-item"><dt>Subtotal</dt><dd><%= pos_money(@pos_transaction.subtotal_cents) %></dd></div>
+    <div class="definition-item"><dt>Discount</dt><dd><%= pos_money(@pos_transaction.discount_total_cents) %></dd></div>
+    <div class="definition-item"><dt>Tax</dt><dd><%= pos_money(@pos_transaction.tax_total_cents) %></dd></div>
+    <div class="definition-item"><dt>Total</dt><dd class="pos-balance"><%= pos_money(@pos_transaction.net_total_cents) %></dd></div>
+  </dl>
+
+  <% if @receipt_tenders.any? %>
+    <h2>Tenders</h2>
+    <ul class="pos-tender-summary">
+      <% @receipt_tenders.each do |tender| %>
+        <li>
+          <%= tender.tender_type.name %> · <%= tender.direction.humanize %> ·
+          <%= pos_money(tender.amount_cents) %>
+          <% if tender.change_due_cents.to_i.positive? %>
+            <span class="muted">(change <%= pos_money(tender.change_due_cents) %>)</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <p class="muted pos-receipt-footer">Thank you.</p>
+</article>

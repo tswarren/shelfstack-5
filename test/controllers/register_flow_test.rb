@@ -30,7 +30,9 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?]", business_day_x_report_business_day_path(business_day), text: "Day X"
     assert_select "a[href=?]", session_x_report_pos_session_path(session), text: "Session X"
     assert_select "a[href=?]", close_form_business_day_path(business_day), text: "Close business day"
-    assert_match(/Net sales/, response.body)
+    assert_match(/Sales, tender, and cash-variance totals live on/, response.body)
+    refute_match(/Net sales/, response.body)
+    refute_match(/cash variance/i, response.body)
   end
 
   test "admin can open day/session, add lines, suspend, and recall" do
@@ -53,14 +55,19 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     session = PosSession.order(:id).last
     assert_equal "open", session.status
 
-    post pos_transactions_path
+    open_inventory(@variant, quantity: 5, unit_cost_cents: 500)
+    assert_no_difference "PosTransaction.count" do
+      post pos_transactions_path
+      assert_redirected_to register_path
+    end
+
+    assert_difference "PosTransaction.count", 1 do
+      post register_scan_to_start_path, params: { query: @variant.sku, quantity: 2 }
+    end
     transaction = PosTransaction.order(:id).last
     assert_redirected_to pos_transaction_path(transaction)
-
-    post pos_transaction_pos_line_items_path(transaction), params: { query: @variant.sku, quantity: 2 }
-    assert_response :redirect
-    assert_match %r{\Ahttp://www.example.com/pos_transactions/#{transaction.id}}, @response.redirect_url
     assert_equal 1, transaction.pos_line_items.pending.count
+    assert_equal 2, transaction.pos_line_items.pending.first.quantity
 
     post pos_transaction_pos_line_items_path(transaction), params: {
       kind: "open_ring", department_id: @department.id, unit_price_cents: 500, quantity: 1
@@ -183,9 +190,8 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     }
 
     open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
-    post pos_transactions_path
+    post register_scan_to_start_path, params: { query: @variant.sku, quantity: 1 }
     transaction = PosTransaction.order(:id).last
-    post pos_transaction_pos_line_items_path(transaction), params: { query: @variant.sku, quantity: 1 }
     cash = tender_types(:cash)
     net = Pos::RecalculateTransaction.call(pos_transaction: transaction).net_total_cents
     post pos_transaction_pos_tenders_path(transaction), params: {
@@ -213,9 +219,8 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     }
 
     open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
-    post pos_transactions_path
+    post register_scan_to_start_path, params: { query: @variant.sku, quantity: 1 }
     transaction = PosTransaction.order(:id).last
-    post pos_transaction_pos_line_items_path(transaction), params: { query: @variant.sku, quantity: 1 }
 
     tax_ids = PosLineItemTax.where(pos_line_item_id: transaction.pos_line_items.select(:id)).order(:id).pluck(:id, :amount_cents)
     get pos_transaction_path(transaction)
@@ -280,6 +285,65 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
       assert_response :success
       assert_select "input.button-primary[value=?]", "Scan to start"
     end
+  end
+
+  test "failed and ambiguous ready scans leave no transaction" do
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+
+    assert_no_difference "PosTransaction.count" do
+      post register_scan_to_start_path, params: { query: "NO-SUCH-SKU-ZZZ", quantity: 1 }
+      assert_redirected_to register_path
+    end
+
+    get register_path
+    assert_response :success
+    assert_no_match(/New transaction/, response.body)
+    assert_no_match(/Open transaction to resolve/, response.body)
+  end
+
+  test "register and transaction show expose server presentation without mutating txn" do
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+
+    get register_path
+    assert_response :success
+    assert_select "body.layout-pos[data-pos-presentation=ready]"
+    assert_select ".pos-presentation-status", text: /Ready/
+
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    post register_scan_to_start_path, params: { query: @variant.sku, quantity: 1 }
+    transaction = PosTransaction.order(:id).last
+    before = transaction.reload.attributes.slice("status", "updated_at", "net_total_cents")
+
+    get pos_transaction_path(transaction)
+    assert_response :success
+    assert_select "body.layout-pos[data-pos-presentation=transaction]"
+    assert_select ".pos-presentation-status", text: /Transaction/
+    assert_equal before, transaction.reload.attributes.slice("status", "updated_at", "net_total_cents")
+
+    get tender_pos_transaction_path(transaction)
+    assert_response :success
+    assert_select "body.layout-pos[data-pos-presentation=tender]"
+    assert_equal before, transaction.reload.attributes.slice("status", "updated_at", "net_total_cents")
   end
 
   private

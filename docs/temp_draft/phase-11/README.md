@@ -7,4 +7,6 @@ Planning stubs, prioritization matrix, and the completed pre-Phase 11 maintenanc
 
 ## Active scratch
 
-Optional: Correction Integrity Design Packet for DWR-004–006 (parallel design; not Phase 11 implementation).
+| File | Role |
+| --- | --- |
+| [correction-integrity-design-packet.md](correction-integrity-design-packet.md) | Parallel design for DWR-004 / DWR-005 / DWR-006 — not Phase 11 implementation |
