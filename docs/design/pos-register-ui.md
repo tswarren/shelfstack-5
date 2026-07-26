@@ -2,6 +2,7 @@
 
 **Status:** Governing for Delivery Phase 11 POS shell (builds on Phase 6.5 cashier workspace; supersedes Phase 4-only interaction notes where they conflict)  
 **Prototype reference:** [prototypes/ui_mockup/pos.html](prototypes/ui_mockup/pos.html)  
+**Visual review package:** [pos/README.md](pos/README.md)  
 **Phase plan:** [../implementation/phases/phase-11-pos-shell-and-workspace-revamp.md](../implementation/phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Shipped baseline:** [../implementation/phases/phase-06.5-cashier-workspace.md](../implementation/phases/phase-06.5-cashier-workspace.md)  
 **Related:** [scanner-and-hotkeys.md](scanner-and-hotkeys.md); [accessibility.md](accessibility.md)  
@@ -22,6 +23,7 @@ Action: selected-line or transaction actions     [ dynamic primary CTA ]
 - Product / Product Variant / Inventory Unit remain distinguishable in resolution UI.
 - Labels may be cashier-friendly (for example “Register 2”) while the system records POS device and drawer separately.
 - Day/session open forms are **pre-Ready operational** states, not POS transaction presentation states.
+- Measurable geometry, density, scrolling, scenario, component, and screenshot requirements live in the [POS visual review package](pos/README.md).
 
 ## Terminology (UI vs domain)
 
@@ -154,11 +156,16 @@ Triage new categories; do not invent a broad exception framework.
 
 ## Supported register viewport
 
-- Intended: desktop register / laptop widths with the persistent shell usable.
-- Minimum usable width: align with existing POS CSS breakpoint (~960px stacks to one column; declare phone-width POS **unsupported**).
-- Summary may stack below lines on narrow widths within the supported range.
-- Drawers/panels overlay the workspace; trap focus while open ([accessibility.md](accessibility.md)).
-- Touch-first / phone POS is out of Phase 6.5 scope.
+The measurable viewport contract is governed by [pos/visual-contract.md](pos/visual-contract.md).
+
+- Primary review target: **1366 × 768**.
+- Minimum supported register viewport: **1024 × 768**.
+- Widths below 1024px are unsupported for register operation in this phase.
+- An ordinary eight-line transaction at the primary target does not require page-level vertical scrolling.
+- Longer transaction lines and lookup results scroll inside bounded regions while totals and the primary action remain visible.
+- Ready, Transaction, Tender, and Recovery retain recognizable shell geometry rather than collapsing into a generic long single-column page.
+- Drawers/dialogs overlay the workspace and trap focus while open ([accessibility.md](accessibility.md)).
+- Touch-first / phone POS remains out of scope.
 
 ## Accessibility
 
@@ -172,6 +179,8 @@ Line selection must be a keyboard-focusable control (button / radio / equivalent
 - Clear transient disabled-submit state on `turbo:before-cache`.
 - Browser Back must not show editable controls for an already completed transaction.
 - Server state always wins after navigation.
+- Use the complete authoritative POS workspace as the normal state-changing Turbo replacement boundary; visual panels are not automatically independent frames.
+- Use a separate transient overlay boundary for supporting lookup and editor workflows as defined in [pos/component-map.md](pos/component-map.md).
 
 ## Server authority
 
