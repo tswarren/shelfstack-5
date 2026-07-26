@@ -10,7 +10,11 @@ class CustomersController < ApplicationController
   def index
     @query = params[:q].to_s.strip
     if @query.present?
-      result = Customers::Search.call(organization: Current.organization, query: @query)
+      result = Customers::Search.call(
+        organization: Current.organization,
+        query: @query,
+        default_phone_country: Current.store&.country_code
+      )
       @customers = result.customers
       @inactive_direct_match = result.inactive_direct_match
     else
@@ -38,7 +42,7 @@ class CustomersController < ApplicationController
       organization: Current.organization,
       actor: Current.user,
       store: Current.store,
-      attributes: customer_params.to_h,
+      attributes: customer_create_params.to_h,
       create_anyway: ActiveModel::Type::Boolean.new.cast(params[:create_anyway]),
       default_phone_country: Current.store&.country_code
     )
@@ -51,7 +55,7 @@ class CustomersController < ApplicationController
       flash.now[:alert] = "Possible duplicate customer. Open an existing customer or create a new customer anyway."
       render :new, status: :unprocessable_entity
     else
-      @customer = result.customer || Current.organization.customers.new(customer_params)
+      @customer = result.customer || Current.organization.customers.new(customer_create_params)
       @possible_duplicates = []
       flash.now[:alert] = result.error
       render :new, status: :unprocessable_entity
@@ -67,13 +71,15 @@ class CustomersController < ApplicationController
       customer: @customer,
       actor: Current.user,
       store: Current.store,
-      attributes: customer_params.to_h,
+      attributes: customer_update_params.to_h,
       default_phone_country: Current.store&.country_code
     )
 
     if result.success?
       redirect_to customer_path(@customer), notice: "Customer updated."
     else
+      @customer = result.customer
+      @possible_duplicates = []
       flash.now[:alert] = result.error
       render :edit, status: :unprocessable_entity
     end
@@ -99,12 +105,21 @@ class CustomersController < ApplicationController
     @customer = Current.organization.customers.find(params[:id])
   end
 
-  def customer_params
+  def customer_create_params
     params.require(:customer).permit(
       :customer_type, :organization_name, :first_name, :last_name,
       :address_line_1, :address_line_2, :city, :region, :postal_code, :country_code,
       :primary_phone, :alternate_phone, :primary_email, :alternate_email,
-      :preferred_contact_method, :notes, :active
+      :preferred_contact_method, :notes
+    )
+  end
+
+  def customer_update_params
+    params.require(:customer).permit(
+      :organization_name, :first_name, :last_name,
+      :address_line_1, :address_line_2, :city, :region, :postal_code, :country_code,
+      :primary_phone, :alternate_phone, :primary_email, :alternate_email,
+      :preferred_contact_method, :notes
     )
   end
 end

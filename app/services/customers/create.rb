@@ -11,7 +11,7 @@ module Customers
       customer_type organization_name first_name last_name
       address_line_1 address_line_2 city region postal_code country_code
       primary_phone alternate_phone primary_email alternate_email
-      preferred_contact_method notes active
+      preferred_contact_method notes
     ].freeze
 
     def initialize(organization:, actor:, attributes:, store: nil, create_anyway: false, default_phone_country: nil)
@@ -48,7 +48,7 @@ module Customers
         )
         customer = @organization.customers.create!(attrs.merge(
           customer_number: number,
-          active: attrs.key?("active") ? ActiveModel::Type::Boolean.new.cast(attrs["active"]) : true
+          active: true
         ))
 
         if @store.present? && @actor.present?
@@ -77,9 +77,7 @@ module Customers
     private
 
     def build_unsaved(attrs)
-      @organization.customers.new(attrs.merge(
-        active: attrs.key?("active") ? ActiveModel::Type::Boolean.new.cast(attrs["active"]) : true
-      ))
+      @organization.customers.new(attrs.merge(active: true))
     end
 
     def normalize_contact_attributes(attrs)

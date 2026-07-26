@@ -61,6 +61,37 @@ class Catalog::RecordSearchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
+  test "denies customer search without customers.customer.view" do
+    store = stores(:main_street)
+    user = User.create!(
+      username: "pos_only_#{SecureRandom.hex(2)}",
+      user_number: rand(10_000..99_999),
+      first_name: "Pos", last_name: "Only",
+      password: "password123",
+      active: true, default_store: store
+    )
+    role = Role.create!(
+      organization: store.organization, code: "pos_only_#{user.username}", name: "POS only", active: true
+    )
+    RolePermission.create!(role: role, permission: Permission.find_by!(code: "pos.access"))
+    StoreMembership.create!(user: user, store: store, role: role, active: true)
+
+    delete session_path
+    post session_path, params: { username: user.username, password: "password123" }
+
+    get catalog_record_searches_path, params: { type: "customer", q: "Jordan" }, as: :json
+    assert_response :forbidden
+  end
+
+  test "customer phone search matches formatted national numbers" do
+    get catalog_record_searches_path,
+        params: { type: "customer", q: "(519) 555-0123" }, as: :json
+    assert_response :success
+
+    body = JSON.parse(response.body)
+    assert body["results"].any? { |r| r["id"] == customers(:jordan_lee).id }
+  end
+
   test "isolates results to current organization" do
     get catalog_record_searches_path, params: { type: "vendor", q: "Ingram" }, as: :json
     assert_response :success

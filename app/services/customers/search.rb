@@ -2,15 +2,16 @@
 
 module Customers
   # Org-scoped Customer search. Active-by-default; direct customer_number may
-  # return inactive with include_inactive_by_number.
+  # return inactive with an inactive_direct_match warning.
   class Search < ApplicationService
     Result = Data.define(:customers, :inactive_direct_match)
 
-    def initialize(organization:, query:, include_inactive: false, limit: 25)
+    def initialize(organization:, query:, include_inactive: false, limit: 25, default_phone_country: nil)
       @organization = organization
       @query = query.to_s.strip
       @include_inactive = include_inactive
       @limit = limit
+      @default_phone_country = default_phone_country.to_s.strip.upcase.presence
     end
 
     def call
@@ -31,7 +32,7 @@ module Customers
       scope = scope.active unless @include_inactive
 
       pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
-      phone_digits = @query.gsub(/[^\d+]/, "")
+      e164 = normalize_query_phone
 
       scope = scope.where(
         <<~SQL.squish,
@@ -42,17 +43,37 @@ module Customers
           OR primary_email ILIKE :q
           OR alternate_email ILIKE :q
           OR customer_number = :exact
-          OR primary_phone = :phone
-          OR alternate_phone = :phone
-          OR primary_phone ILIKE :q
-          OR alternate_phone ILIKE :q
+          OR primary_phone = :e164
+          OR alternate_phone = :e164
         SQL
         q: pattern,
         exact: @query,
-        phone: phone_digits.presence || @query
+        e164: e164
       ).order(:last_name, :first_name, :organization_name).limit(@limit)
 
       Result.new(customers: scope.to_a, inactive_direct_match: nil)
+    end
+
+    private
+
+    # Best-effort E.164 for phone-shaped queries. Invalid input is ignored so
+    # name/email/number search still runs. Try store country first, then CA/US
+    # so common NANP formats still match across nearby defaults.
+    def normalize_query_phone
+      return nil unless @query.match?(/\d/)
+
+      countries = [ @default_phone_country, "CA", "US" ].compact.uniq
+      countries.each do |country|
+        return NormalizePhone.call(@query, default_country: country)
+      rescue NormalizePhone::Error
+        next
+      end
+
+      return NormalizePhone.call(@query) if @query.start_with?("+")
+
+      nil
+    rescue NormalizePhone::Error
+      nil
     end
   end
 end

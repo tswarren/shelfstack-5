@@ -7,7 +7,8 @@ class CustomerSearchesController < ApplicationController
   def index
     result = Customers::Search.call(
       organization: Current.organization,
-      query: params[:q].to_s
+      query: params[:q].to_s,
+      default_phone_country: Current.store&.country_code
     )
     @customers = result.customers
     @inactive_direct_match = result.inactive_direct_match

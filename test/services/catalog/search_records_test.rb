@@ -226,10 +226,38 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     assert_includes results.map(&:id), inactive.id
   end
 
-  test "authorized? allows customer search for product request create" do
+  test "authorized? requires customers.customer.view for customer search" do
     admin = users(:admin)
     store = stores(:main_street)
 
     assert Catalog::SearchRecords.authorized?(user: admin, store: store, record_type: "customer")
+
+    limited = User.create!(
+      username: "pos_only_#{SecureRandom.hex(2)}",
+      user_number: rand(10_000..99_999),
+      first_name: "Pos", last_name: "Only",
+      password: "password123",
+      active: true, default_store: store
+    )
+    role = Role.create!(
+      organization: @organization, code: "pos_only_#{limited.username}", name: "POS only", active: true
+    )
+    RolePermission.create!(role: role, permission: Permission.find_by!(code: "pos.access"))
+    StoreMembership.create!(user: limited, store: store, role: role, active: true)
+
+    assert_not Catalog::SearchRecords.authorized?(user: limited, store: store, record_type: "customer")
+  end
+
+  test "customer picker search ignores include_inactive for enumeration" do
+    inactive = customers(:inactive_patron)
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "customer",
+      query: "Patron",
+      include_inactive: true
+    )
+
+    assert_not_includes results.map(&:id), inactive.id
   end
 end

@@ -41,20 +41,18 @@ module Catalog
       "creator" => %w[
         catalog.product.view catalog.product.create catalog.product.edit catalog.manage_creators
       ],
-      "customer" => %w[
-        customers.customer.view customers.customer.create customers.customer.edit
-        requests.product_request.create requests.product_request.edit
-        pos.access
-      ]
+      # Customer PII requires explicit customer view — not pos.access or request edit alone.
+      "customer" => %w[customers.customer.view]
     }.freeze
 
-    def initialize(organization:, record_type:, query: nil, include_inactive: false, product_id: nil, labeler: nil)
+    def initialize(organization:, record_type:, query: nil, include_inactive: false, product_id: nil, labeler: nil, default_phone_country: nil)
       @organization = organization
       @record_type = record_type.to_s
       @query = query.to_s.strip
       @include_inactive = include_inactive
       @product_id = product_id
       @labeler = labeler
+      @default_phone_country = default_phone_country
     end
 
     def call
@@ -194,25 +192,22 @@ module Catalog
     end
 
     # Delegates typed search to Customers::Search (Customers domain). Blank query
-    # returns a bounded active list for picker open.
+    # returns a bounded active list for picker open. Caller-controlled
+    # include_inactive is ignored — inactive appears only via direct number match.
     def search_customers
       if @query.present?
         result = Customers::Search.call(
           organization: @organization,
           query: @query,
-          include_inactive: @include_inactive,
+          include_inactive: false,
+          default_phone_country: @default_phone_country,
           limit: LIMIT
         )
-        customers = result.customers
-        unless @include_inactive
-          customers = customers.select { |c| c.active? || result.inactive_direct_match&.id == c.id }
-        end
+        customers = result.customers.select { |c| c.active? || result.inactive_direct_match&.id == c.id }
         return customers.first(LIMIT)
       end
 
-      scope = @organization.customers.order(:last_name, :first_name, :organization_name)
-      scope = scope.active unless @include_inactive
-      scope.limit(LIMIT)
+      @organization.customers.active.order(:last_name, :first_name, :organization_name).limit(LIMIT)
     end
 
     def apply_name_or_code_filter(scope)

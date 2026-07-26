@@ -5,8 +5,8 @@ main_street:
   name: Main Street
   timezone: America/New_York
   currency_code: USD
-  region: NY
-  country_code: US
+  region: ON
+  country_code: CA
   active: true
   next_purchase_order_number: 3
   next_receipt_number: 2
@@ -17,6 +17,6 @@ warehouse:
   name: Warehouse
   timezone: America/New_York
   currency_code: USD
-  region: NY
-  country_code: US
+  region: ON
+  country_code: CA
   active: true
