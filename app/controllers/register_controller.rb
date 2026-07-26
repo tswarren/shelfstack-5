@@ -6,7 +6,8 @@ class RegisterController < ApplicationController
   layout "pos"
 
   before_action -> { require_permission!("pos.access") }
-  before_action -> { require_permission!("pos.transaction.open") }, only: %i[scan_to_start lookup_receipt]
+  before_action -> { require_permission!("pos.transaction.open") },
+                only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value]
 
   def show
     load_register_context!
@@ -18,6 +19,11 @@ class RegisterController < ApplicationController
       pos_transaction: nil,
       open_session: @open_session
     )
+    if @open_session.present?
+      @departments = Department.sorted_hierarchically(
+        Current.organization.departments.includes(:parent_department)
+      )
+    end
   end
 
   def scan_to_start
@@ -78,7 +84,93 @@ class RegisterController < ApplicationController
     redirect_to pos_transaction_path(txn)
   end
 
+  def start_open_ring
+    load_register_context!
+    return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
+
+    department = Current.organization.departments.find_by(id: params[:department_id])
+    result = Pos::StartOpenRing.call(
+      pos_session: @open_session,
+      actor: Current.user,
+      department: department,
+      unit_price_cents: money_param_to_cents(params[:unit_price_cents], label: "Price"),
+      quantity: params[:quantity].presence || 1,
+      description: params[:description]
+    )
+    if result.success?
+      redirect_to pos_transaction_path(result.pos_transaction, intent: "open_ring"),
+                  notice: "Open-ring line added."
+    elsif result.pos_transaction
+      redirect_to pos_transaction_path(result.pos_transaction), alert: result.error
+    else
+      redirect_to register_path, alert: result.error
+    end
+  rescue ArgumentError => e
+    redirect_to register_path, alert: e.message
+  end
+
+  def start_stored_value
+    load_register_context!
+    return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
+
+    account = resolve_ready_stored_value_account
+    return if performed?
+    if account.blank?
+      return redirect_to register_path, alert: "Select or create a gift-card account."
+    end
+
+    result = Pos::StartStoredValue.call(
+      pos_session: @open_session,
+      actor: Current.user,
+      account: account,
+      operation: params[:stored_value_operation].presence || "issue",
+      amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount")
+    )
+    if result.success?
+      redirect_to pos_transaction_path(result.pos_transaction, intent: "stored_value"),
+                  notice: "Stored-value line added."
+    elsif result.pos_transaction
+      redirect_to pos_transaction_path(result.pos_transaction), alert: result.error
+    else
+      redirect_to register_path, alert: result.error
+    end
+  rescue ArgumentError => e
+    redirect_to register_path, alert: e.message
+  end
+
   private
+
+  def resolve_ready_stored_value_account
+    if params[:create_account].present?
+      unless Current.user.can?("stored_value.account.create", store: Current.store)
+        redirect_to register_path, alert: "missing permission stored_value.account.create"
+        return nil
+      end
+
+      created = StoredValue::CreateAccount.call(
+        organization: Current.organization,
+        account_type: "gift_card",
+        actor: Current.user,
+        store: Current.store,
+        alternate_identifier: params[:alternate_identifier].presence
+      )
+      unless created.success?
+        redirect_to register_path, alert: created.error
+        return nil
+      end
+      return created.account
+    end
+
+    identifier = params[:account_number].presence || params[:alternate_identifier].presence
+    return nil if identifier.blank?
+
+    StoredValue::ResolveAccount.call(
+      organization: Current.organization, identifier: identifier
+    ).account
+  rescue StoredValue::ResolveAccount::Error
+    nil
+  end
+
 
   def load_register_context!
     @business_day = Current.store.business_days.find_by(status: "open")

@@ -1,33 +1,32 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Focus-safe POS overlay host (POS-UI-008). Mechanism is implementation-level
-// (native <dialog>); interaction contract stays in the decision log.
+// Focus-safe POS overlay host (POS-UI-008). Supports multiple static dialogs
+// opened via data-pos-overlay-id-param="<dialog-id>".
 export default class extends Controller {
   static targets = ["dialog"]
 
   connect() {
     this._returnFocusTo = null
-    this._onTurboLoad = () => this.clearIfWorkspaceReplaced()
-    document.addEventListener("turbo:load", this._onTurboLoad)
-    document.addEventListener("turbo:frame-load", this._onTurboLoad)
-  }
-
-  disconnect() {
-    document.removeEventListener("turbo:load", this._onTurboLoad)
-    document.removeEventListener("turbo:frame-load", this._onTurboLoad)
+    this._openDialog = null
   }
 
   open(event) {
     event?.preventDefault()
     this._returnFocusTo = event?.currentTarget || document.activeElement
-    if (!this.hasDialogTarget) return
-    if (typeof this.dialogTarget.showModal === "function") {
-      this.dialogTarget.showModal()
+    const id = event?.params?.id
+    const dialog = id
+      ? this.element.querySelector(`#${CSS.escape(id)}`)
+      : this.dialogTargets[0]
+    if (!dialog) return
+
+    this._openDialog = dialog
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal()
     } else {
-      this.dialogTarget.setAttribute("open", "")
+      dialog.setAttribute("open", "")
     }
-    const focusable = this.dialogTarget.querySelector(
-      "input:not([type=hidden]), select, textarea, button, [href]"
+    const focusable = dialog.querySelector(
+      "input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [href]"
     )
     focusable?.focus()
   }
@@ -43,19 +42,22 @@ export default class extends Controller {
   }
 
   closeAndRestore() {
-    if (!this.hasDialogTarget) return
-    if (this.dialogTarget.open) this.dialogTarget.close()
-    this.dialogTarget.removeAttribute("open")
-    const content = this.dialogTarget.querySelector("[data-pos-overlay-target='content']")
-    if (content) content.innerHTML = ""
+    const dialog =
+      this._openDialog ||
+      this.dialogTargets.find((el) => el.open) ||
+      this.element.querySelector("dialog[open]")
+    if (!dialog) return
+
+    if (dialog.open && typeof dialog.close === "function") {
+      dialog.close()
+    }
+    dialog.removeAttribute("open")
+    this._openDialog = null
+
     const restore = this._returnFocusTo
     this._returnFocusTo = null
-    if (restore && typeof restore.focus === "function") restore.focus()
-  }
-
-  clearIfWorkspaceReplaced() {
-    if (this.hasDialogTarget && this.dialogTarget.open) {
-      this.closeAndRestore()
+    if (restore && typeof restore.focus === "function") {
+      restore.focus()
     }
   }
 }

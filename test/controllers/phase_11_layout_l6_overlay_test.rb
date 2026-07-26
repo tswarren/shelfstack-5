@@ -25,7 +25,7 @@ class Phase11LayoutL6OverlayTest < ActionDispatch::IntegrationTest
     assert_select "turbo-frame#pos_overlay"
     assert_select "dialog#pos-product-lookup"
     assert_select "dialog#pos-product-lookup [data-controller='record-picker']"
-    assert_select "button[data-action='pos-overlay#open']", text: "Product lookup"
+    assert_select "button[data-pos-overlay-id-param='pos-product-lookup']", text: "Product lookup"
     assert_select ".pos-shell"
   end
 end

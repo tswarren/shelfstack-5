@@ -128,6 +128,8 @@ Rails.application.routes.draw do
   get "register", to: "register#show", as: :register
   post "register/scan_to_start", to: "register#scan_to_start", as: :register_scan_to_start
   post "register/lookup_receipt", to: "register#lookup_receipt", as: :register_lookup_receipt
+  post "register/start_open_ring", to: "register#start_open_ring", as: :register_start_open_ring
+  post "register/start_stored_value", to: "register#start_stored_value", as: :register_start_stored_value
   post "register/stage_customer", to: "pos_customers#stage", as: :register_stage_customer
   post "register/clear_staged_customer", to: "pos_customers#clear_stage", as: :register_clear_staged_customer
 
