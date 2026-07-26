@@ -20,7 +20,7 @@ class CustomersController < ApplicationController
       @customers = result.customers
       @inactive_direct_match = result.inactive_direct_match
     else
-      @pagy, @customers = pagy(Current.organization.customers.active.order(:last_name, :first_name, :organization_name), limit: pagy_limit)
+      @pagy, @customers = pagy(:offset, Current.organization.customers.active.order(:last_name, :first_name, :organization_name), limit: pagy_limit)
       @inactive_direct_match = nil
     end
   end

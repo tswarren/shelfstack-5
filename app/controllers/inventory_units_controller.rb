@@ -6,7 +6,7 @@ class InventoryUnitsController < ApplicationController
 
   def index
     scope = Current.store.inventory_units.includes(product_variant: :product).order(created_at: :desc)
-    @pagy, @inventory_units = pagy(scope, limit: pagy_limit)
+    @pagy, @inventory_units = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def show; end

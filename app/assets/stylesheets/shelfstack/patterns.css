@@ -248,15 +248,15 @@
   font-size: 0.9rem;
 }
 
-.pagination-nav .pagy-nav {
+/* Pagy 43 series_nav uses `nav.pagy` with bare `a` children. */
+.pagination-nav .pagy {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
   align-items: center;
 }
 
-.pagination-nav .pagy-nav a,
-.pagination-nav .pagy-nav .page {
+.pagination-nav .pagy a {
   display: inline-flex;
   align-items: center;
   min-width: 2.25rem;
@@ -271,21 +271,20 @@
   font-size: 0.9rem;
 }
 
-.pagination-nav .pagy-nav a:hover {
+.pagination-nav .pagy a[href]:hover {
   border-color: var(--border-strong);
   background: var(--bg-200);
 }
 
-.pagination-nav .pagy-nav .page.current,
-.pagination-nav .pagy-nav a[aria-current="page"] {
+.pagination-nav .pagy a[aria-current="page"] {
   border-color: var(--brand-primary);
   background: var(--brand-primary-soft);
   color: var(--brand-primary);
   font-weight: 700;
 }
 
-.pagination-nav .pagy-nav .page.disabled,
-.pagination-nav .pagy-nav .gap {
+.pagination-nav .pagy a:not([href]),
+.pagination-nav .pagy a[role="separator"] {
   color: var(--text-disabled);
   background: var(--surface-disabled);
   cursor: not-allowed;

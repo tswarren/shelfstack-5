@@ -14,7 +14,7 @@ class ProductRequestsController < ApplicationController
     scope = Current.store.product_requests.includes(:product, :product_variant, :customer, :assigned_buyer_user).order(created_at: :desc)
     scope = scope.where(status: params[:status]) if ProductRequest::STATUSES.include?(params[:status])
     scope = scope.where(request_type: params[:request_type]) if ProductRequest::REQUEST_TYPES.include?(params[:request_type])
-    @pagy, @product_requests = pagy(scope, limit: pagy_limit)
+    @pagy, @product_requests = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def show

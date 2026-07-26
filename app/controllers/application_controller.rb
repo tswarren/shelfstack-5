@@ -2,20 +2,20 @@
 
 class ApplicationController < ActionController::Base
   include Authentication
-  include Pagy::Backend
+  include Pagy::Method
   include HumanReadableParams
 
   allow_browser versions: :modern
   stale_when_importmap_changes
 
-  rescue_from Pagy::OverflowError, with: :redirect_to_last_page
+  rescue_from Pagy::RangeError, with: :redirect_to_last_page
 
   private
 
   # Clamp the requested page size: default 25, maximum 100.
   def pagy_limit
     requested = params[:limit].to_i
-    return Pagy::DEFAULT[:limit] if requested <= 0
+    return Pagy::OPTIONS[:limit] if requested <= 0
 
     requested.clamp(1, 100)
   end
