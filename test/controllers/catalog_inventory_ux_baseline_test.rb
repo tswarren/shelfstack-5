@@ -3,7 +3,7 @@
 require "test_helper"
 
 # Phase 4f UX baseline (PR3): catalog and inventory back-office page patterns —
-# Pagy pagination with filter preservation, decimal money parsing, adjustment
+# Pagy 43 pagination with filter preservation, decimal money parsing, adjustment
 # line scaffolding, and reservation release with a captured reason.
 class CatalogInventoryUxBaselineTest < ActionDispatch::IntegrationTest
   setup do

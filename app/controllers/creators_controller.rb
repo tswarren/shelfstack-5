@@ -13,7 +13,7 @@ class CreatorsController < ApplicationController
       pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@query)}%"
       scope = scope.where("display_name ILIKE :q OR sort_name ILIKE :q", q: pattern)
     end
-    @pagy, @creators = pagy(scope, limit: pagy_limit)
+    @pagy, @creators = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def new

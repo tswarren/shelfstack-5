@@ -34,7 +34,7 @@ class ReportsController < ApplicationController
   def open_purchase_orders
     scope = Current.store.purchase_orders.where(status: %w[draft ordered])
       .includes(:vendor, :purchase_order_lines).order(created_at: :desc)
-    @pagy, @purchase_orders = pagy(scope, limit: pagy_limit)
+    @pagy, @purchase_orders = pagy(:offset, scope, limit: pagy_limit)
     @can_view_cost = Current.user.can?("purchasing.cost.view", store: Current.store) ||
       Current.user.can?("reporting.view_cost", store: Current.store)
   end
@@ -52,7 +52,7 @@ class ReportsController < ApplicationController
 
   def receiving_history
     receipt_scope = Current.store.receipts.includes(:vendor).order(created_at: :desc)
-    @pagy, @receipts = pagy(receipt_scope, limit: pagy_limit)
+    @pagy, @receipts = pagy(:offset, receipt_scope, limit: pagy_limit)
     @can_view_cost = Current.user.can?("inventory.cost.view", store: Current.store) ||
       Current.user.can?("purchasing.cost.view", store: Current.store) ||
       Current.user.can?("reporting.view_cost", store: Current.store)
@@ -67,7 +67,7 @@ class ReportsController < ApplicationController
   def customer_requests
     scope = Current.store.product_requests.where(request_type: "customer_request")
       .includes(:product, :product_variant, :customer).order(created_at: :desc)
-    @pagy, @product_requests = pagy(scope, limit: pagy_limit)
+    @pagy, @product_requests = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def allocation_events
@@ -76,7 +76,7 @@ class ReportsController < ApplicationController
       .where(purchase_orders: { store_id: Current.store.id })
       .includes(purchase_order_allocation: [ :product_request, { purchase_order_line: [ :product_variant, :purchase_order ] } ], user: [])
       .order(occurred_at: :desc, id: :desc)
-    @pagy, @events = pagy(scope, limit: pagy_limit)
+    @pagy, @events = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def commercial_activity

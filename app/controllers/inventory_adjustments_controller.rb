@@ -9,7 +9,7 @@ class InventoryAdjustmentsController < ApplicationController
     scope = Current.store.inventory_adjustments
       .includes(:inventory_adjustment_reason)
       .order(created_at: :desc)
-    @pagy, @inventory_adjustments = pagy(scope, limit: pagy_limit)
+    @pagy, @inventory_adjustments = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def show

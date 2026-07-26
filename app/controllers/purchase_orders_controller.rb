@@ -14,7 +14,7 @@ class PurchaseOrdersController < ApplicationController
   def index
     scope = Current.store.purchase_orders.includes(:vendor).order(created_at: :desc)
     scope = scope.where(status: params[:status]) if PurchaseOrder::STATUSES.include?(params[:status])
-    @pagy, @purchase_orders = pagy(scope, limit: pagy_limit)
+    @pagy, @purchase_orders = pagy(:offset, scope, limit: pagy_limit)
     @can_view_cost = Current.user.can?("purchasing.cost.view", store: Current.store)
   end
 

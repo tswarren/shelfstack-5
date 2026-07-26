@@ -29,7 +29,7 @@ class StockBalancesController < ApplicationController
     when "negative"     then scope = scope.where("on_hand < 0")
     end
 
-    @pagy, @stock_balances = pagy(scope, limit: pagy_limit)
+    @pagy, @stock_balances = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def show

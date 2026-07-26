@@ -8,7 +8,7 @@ class ReceiptsController < ApplicationController
   def index
     scope = Current.store.receipts.includes(:vendor).order(created_at: :desc)
     scope = scope.where(status: params[:status]) if Receipt::STATUSES.include?(params[:status])
-    @pagy, @receipts = pagy(scope, limit: pagy_limit)
+    @pagy, @receipts = pagy(:offset, scope, limit: pagy_limit)
     @can_view_cost = can_view_receipt_cost?
   end
 

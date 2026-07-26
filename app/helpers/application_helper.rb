@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 module ApplicationHelper
-  include Pagy::Frontend
-
   def page_title(title, browser_title: nil)
     content_for(:title, browser_title.presence || title)
     tag.h1(title)

@@ -20,7 +20,7 @@ class ProductsController < ApplicationController
       end
       @lookup_ambiguous = result.ambiguous?
     end
-    @pagy, @products = pagy(scope, limit: pagy_limit)
+    @pagy, @products = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def show

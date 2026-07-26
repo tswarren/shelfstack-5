@@ -14,7 +14,7 @@ class BuyerReviewController < ApplicationController
       .includes(:product, :product_variant, :assigned_buyer_user, purchase_order_allocations: :purchase_order_allocation_events)
       .order(Arel.sql("CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 ELSE 2 END"), :needed_by_on, :created_at)
     scope = scope.where(request_type: params[:request_type]) if ProductRequest::REQUEST_TYPES.include?(params[:request_type])
-    @pagy, @product_requests = pagy(scope, limit: pagy_limit)
+    @pagy, @product_requests = pagy(:offset, scope, limit: pagy_limit)
 
     @can_view_cost = Current.user.can?("purchasing.cost.view", store: Current.store) ||
       Current.user.can?("inventory.cost.view", store: Current.store)

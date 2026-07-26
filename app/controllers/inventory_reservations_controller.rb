@@ -13,7 +13,7 @@ class InventoryReservationsController < ApplicationController
       .includes(product_variant: :product)
       .order(Arel.sql("CASE status WHEN 'active' THEN 0 ELSE 1 END"), reserved_at: :desc)
     scope = scope.where(status: @status) if @status
-    @pagy, @inventory_reservations = pagy(scope, limit: pagy_limit)
+    @pagy, @inventory_reservations = pagy(:offset, scope, limit: pagy_limit)
   end
 
   def release
