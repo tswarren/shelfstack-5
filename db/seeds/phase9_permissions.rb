@@ -3,13 +3,15 @@
 unless defined?(PHASE9_PERMISSIONS)
   PHASE9_PERMISSIONS = [
     { code: "customers.customer.view", name: "View customers", permission_group: "customers",
-      description: "View Customer records" },
+      description: "View Customer records and full admin surfaces" },
+    { code: "customers.customer.lookup", name: "Look up customers", permission_group: "customers",
+      description: "Search and see limited Customer references for POS and Product Requests" },
     { code: "customers.customer.create", name: "Create customers", permission_group: "customers",
-      description: "Create Customer records" },
+      description: "Create Customer records (requires view)" },
     { code: "customers.customer.edit", name: "Edit customers", permission_group: "customers",
-      description: "Edit Customer records" },
+      description: "Edit Customer records (requires view)" },
     { code: "customers.customer.deactivate", name: "Deactivate customers", permission_group: "customers",
-      description: "Deactivate Customer records" }
+      description: "Deactivate Customer records (requires view)" }
   ].freeze
 end
 

@@ -11,17 +11,19 @@ module Customers
     end
 
     def call
-      @customer.update!(active: false)
+      ActiveRecord::Base.transaction do
+        @customer.update!(active: false)
 
-      if @store.present? && @actor.present?
-        Administration::RecordAuditEvent.call(
-          actor: @actor,
-          organization: @customer.organization,
-          store: @store,
-          action: "customers.customer.deactivated",
-          subject: @customer,
-          metadata: { "customer_number" => @customer.customer_number }
-        )
+        if @store.present? && @actor.present?
+          Administration::RecordAuditEvent.call(
+            actor: @actor,
+            organization: @customer.organization,
+            store: @store,
+            action: "customers.customer.deactivated",
+            subject: @customer,
+            metadata: { "customer_number" => @customer.customer_number }
+          )
+        end
       end
 
       Result.new(customer: @customer, success?: true, error: nil)

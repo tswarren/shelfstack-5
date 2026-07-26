@@ -69,5 +69,47 @@ module Pos
       assert_not result.success?
       assert_match(/inactive/i, result.error)
     end
+
+    test "consume preserves stage when transaction already has a different customer" do
+      other = customers(:riverside_school)
+      open = OpenTransaction.call(pos_session: @session, actor: @admin)
+      txn = open.pos_transaction
+      AttachCustomer.call(pos_transaction: txn, customer: @customer, actor: @admin)
+
+      stage = StageCustomer.call(pos_session: @session, customer: other, actor: @admin)
+      assert stage.success?, stage.error
+
+      result = ConsumeStagedCustomer.call(
+        pos_session: @session.reload,
+        pos_transaction: txn.reload,
+        actor: @admin
+      )
+
+      assert result.success?
+      assert result.conflict?
+      assert_not result.consumed
+      assert_equal @customer.id, txn.reload.customer_id
+      assert_equal other.id, @session.reload.staged_customer_id
+    end
+
+    test "consume clears stage when transaction already has the same customer" do
+      open = OpenTransaction.call(pos_session: @session, actor: @admin)
+      txn = open.pos_transaction
+      # OpenTransaction may already have consumed a stage; ensure attached then re-stage same.
+      AttachCustomer.call(pos_transaction: txn, customer: @customer, actor: @admin) if txn.customer_id.blank?
+      StageCustomer.call(pos_session: @session, customer: @customer, actor: @admin)
+
+      result = ConsumeStagedCustomer.call(
+        pos_session: @session.reload,
+        pos_transaction: txn.reload,
+        actor: @admin
+      )
+
+      assert result.success?
+      assert_not result.conflict?
+      assert result.consumed
+      assert_equal @customer.id, txn.reload.customer_id
+      assert_nil @session.reload.staged_customer_id
+    end
   end
 end

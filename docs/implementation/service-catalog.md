@@ -397,7 +397,7 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id` / `default_phone_country`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`); Gate 8b adds `creator`; Phase 9 adds `customer` (requires `customers.customer.view`; picker ignores `include_inactive`) |
+| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id` / `default_phone_country`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`); Gate 8b adds `creator`; Phase 9 adds `customer` (requires `customers.customer.view` or `customers.customer.lookup`; picker ignores `include_inactive`) |
 | `Catalog::ResolveRecordPickerSelection` | Catalog and Products | 8a | No | Yes | None | Organization, record type, id | In-org record or `nil` (prevents foreign-org label disclosure on validation rerender); Gate 8b adds the `creator` type (no active filter — inactive Creators already linked stay visible) |
 | `Catalog::LanguageCodes` | Catalog and Products | 8b (rev.) | No | Yes | None | raw language tag | Curated ISO 639-2/T normalize/label helpers (`eng` default for new UI); alpha-2 / BCP-47 → alpha-3 |
 | `Catalog::NormalizeCreatorName` | Catalog and Products | 8b | No | Yes | None | Raw Creator display name | Unicode-normalized, whitespace-collapsed, lowercased match key (punctuation/diacritics retained) |
@@ -434,10 +434,10 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 | `Customers::FindPossibleDuplicates` | Customers | 9 | No | Yes | None | Org, contact attrs | Matching customers across primary+alternate phone/email |
 | `Customers::Search` | Customers | 9 | No | Yes | None | Org, query, optional `default_phone_country` | Active-by-default matches; phone queries normalize to E.164; direct `22` number may surface inactive with warning |
 | `Customers::Create` | Customers | 9 | Yes | No | Identifier sequence `22` | Org, actor, attrs, optional store / `create_anyway` / default phone country | Customer with immutable `customer_number`; pre-persist duplicate gate unless `create_anyway` |
-| `Customers::Update` / `Deactivate` | Customers | 9 | Yes | No | None | Customer, actor, attrs / deactivate | Update excludes `customer_type`/`active`; invalid phone redisplays attempted attrs; deactivate is the only inactive transition |
+| `Customers::Update` / `Deactivate` | Customers | 9 | Yes | No | None | Customer, actor, attrs / deactivate | Update excludes `customer_type`/`active`; invalid phone redisplays attempted attrs; deactivate + audit are one transaction; deactivate is the only inactive transition |
 | `Pos::StageCustomer` | Point of Sale | 9 | Yes | No | Session (`lock`) | Session, customer, actor | Owner-scoped stage triad; replace+warn |
 | `Pos::ClearStagedCustomer` | Point of Sale | 9 | Yes | No | Session (`lock`) | Session, actor (or force) | Clears stage triad |
-| `Pos::ConsumeStagedCustomer` | Point of Sale | 9 | Yes | No | Session + Transaction (`lock`) | Session, transaction, actor | Attaches only when `staged_customer_by_user_id == actor`; clears triad |
+| `Pos::ConsumeStagedCustomer` | Point of Sale | 9 | Yes | No | Session + Transaction (`lock`) | Session, transaction, actor | Owner-only; attaches when txn has no customer; same customer clears stage; different customer preserves stage (`conflict?`) |
 | `Pos::AttachCustomer` / `RemoveCustomer` | Point of Sale | 9 | Yes | No | Transaction (`lock`) | Transaction, customer/actor | Commercially inert attach/remove; requires editable transaction; org + active checks |
 
 ### Phase 9 notes

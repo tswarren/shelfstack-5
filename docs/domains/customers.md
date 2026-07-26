@@ -85,10 +85,15 @@ Workflows that require notification (new `customer_request` assignment) must use
 
 ```text
 customers.customer.view
+customers.customer.lookup
 customers.customer.create
 customers.customer.edit
 customers.customer.deactivate
 ```
+
+- `view` — full Customer admin (index/show/forms) and search.
+- `lookup` — search plus limited name/number/contact references for POS and Product Requests.
+- `create` / `edit` / `deactivate` require `view` in addition to the action permission.
 
 ## Invariants
 

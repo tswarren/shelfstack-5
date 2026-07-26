@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class CustomersController < ApplicationController
-  before_action -> { require_permission!("customers.customer.view") }, only: %i[index show]
+  # Create/edit/deactivate require view so lifecycle actions cannot bypass record access.
+  before_action -> { require_permission!("customers.customer.view") },
+                only: %i[index show new create edit update deactivate]
   before_action -> { require_permission!("customers.customer.create") }, only: %i[new create]
   before_action -> { require_permission!("customers.customer.edit") }, only: %i[edit update]
   before_action -> { require_permission!("customers.customer.deactivate") }, only: %i[deactivate]

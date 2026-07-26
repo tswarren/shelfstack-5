@@ -2,7 +2,7 @@
 
 # JSON/HTML fragment search for Customer pickers (Product Requests, POS).
 class CustomerSearchesController < ApplicationController
-  before_action -> { require_permission!("customers.customer.view") }
+  before_action -> { require_any_permission!("customers.customer.view", "customers.customer.lookup") }
 
   def index
     result = Customers::Search.call(
@@ -35,7 +35,7 @@ class CustomerSearchesController < ApplicationController
       primary_phone: customer.primary_phone,
       primary_email: customer.primary_email,
       city: customer.city,
-      label: customer.picker_label,
+      label: customer.picker_label(query: params[:q]),
       preferred_contact_method: customer.preferred_contact_method,
       contactable: customer.contactable?,
       active: customer.active?

@@ -83,7 +83,8 @@ class RegisterController < ApplicationController
     @open_transaction = @open_session && PosTransaction.open_transactions.find_by(active_pos_session: @open_session)
     @suspended_transactions = @business_day ? Current.store.pos_transactions.suspended.order(suspended_at: :desc) : PosTransaction.none
     @cash_movement_types = Current.organization.cash_movement_types.where(active: true).order(:name)
-    @can_view_customers = Current.user.can?("customers.customer.view", store: Current.store)
+    @can_view_customers = Current.user.can?("customers.customer.view", store: Current.store) ||
+      Current.user.can?("customers.customer.lookup", store: Current.store)
   end
 
   def load_register_reporting!

@@ -1,15 +1,19 @@
 <section class="pos-panel" aria-label="Customer">
   <h2>Customer</h2>
   <% if @pos_transaction.customer.present? %>
-    <p>
-      <strong><%= @pos_transaction.customer.display_name %></strong>
-      <code><%= @pos_transaction.customer.customer_number %></code>
-    </p>
-    <% if @pos_transaction.editable? && Current.user.can?("customers.customer.view", store: Current.store) %>
-      <%= button_to "Remove customer", remove_customer_pos_transaction_path(@pos_transaction),
-            method: :post, class: "button button-outline" %>
+    <% if can_lookup_customers? %>
+      <p>
+        <strong><%= @pos_transaction.customer.display_name %></strong>
+        <code><%= @pos_transaction.customer.customer_number %></code>
+      </p>
+      <% if @pos_transaction.editable? %>
+        <%= button_to "Remove customer", remove_customer_pos_transaction_path(@pos_transaction),
+              method: :post, class: "button button-outline" %>
+      <% end %>
+    <% else %>
+      <p class="muted">Customer attached.</p>
     <% end %>
-  <% elsif @pos_transaction.editable? && Current.user.can?("customers.customer.view", store: Current.store) %>
+  <% elsif @pos_transaction.editable? && can_lookup_customers? %>
     <%= form_with url: attach_customer_pos_transaction_path(@pos_transaction), method: :post, class: "form" do %>
       <%= render "shared/record_picker",
             name: "customer_id",

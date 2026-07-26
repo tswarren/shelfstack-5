@@ -163,4 +163,11 @@ module Authentication
       redirect_to root_path, alert: "You are not authorized to perform that action."
     end
   end
+
+  # True when any listed permission is granted in the current store.
+  def require_any_permission!(*permission_keys)
+    return if permission_keys.any? { |key| Current.user&.can?(key, store: Current.store) }
+
+    redirect_to root_path, alert: "You are not authorized to perform that action."
+  end
 end

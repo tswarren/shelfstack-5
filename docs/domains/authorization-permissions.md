@@ -234,14 +234,16 @@ Canonical keys for the Customer master ([ADR-0017](../adr/0017-customer-domain-a
 | Key | Description | Scope | Phase | Authority | Approvals | Audit |
 | --- | --- | --- | --- | --- | --- | --- |
 | `customers.customer.view` | View Customer records | store | 9 | — | no | no |
+| `customers.customer.lookup` | Look up customers for POS/PR | store | 9 | — | no | no |
 | `customers.customer.create` | Create Customer records | store | 9 | — | no | yes |
 | `customers.customer.edit` | Edit Customer records | store | 9 | — | no | yes |
 | `customers.customer.deactivate` | Deactivate Customer records | store | 9 | — | no | yes |
 
 ### Customer evaluation
 
-- No separate permission for viewing contact details in Phase 9.
-- POS stage/attach uses `customers.customer.view` (and create when creating from register). Commercial POS permissions remain separate.
+- `view` grants full admin access. `lookup` grants search and limited association references for POS and Product Requests.
+- Create/edit/deactivate require `view` in addition to the action permission.
+- POS stage/attach and customer record-picker search accept `view` or `lookup`. Commercial POS permissions remain separate.
 
 ## Stored value (Phase 6)
 

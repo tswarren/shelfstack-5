@@ -556,6 +556,10 @@ admin_customers_customer_view:
   role: administrator
   permission: customers_customer_view
 
+admin_customers_customer_lookup:
+  role: administrator
+  permission: customers_customer_lookup
+
 admin_customers_customer_create:
   role: administrator
   permission: customers_customer_create
@@ -567,3 +571,7 @@ admin_customers_customer_edit:
 admin_customers_customer_deactivate:
   role: administrator
   permission: customers_customer_deactivate
+
+clerk_customers_customer_lookup:
+  role: associate
+  permission: customers_customer_lookup

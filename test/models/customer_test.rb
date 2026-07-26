@@ -18,4 +18,15 @@ class CustomerTest < ActiveSupport::TestCase
 
     assert_equal "Inactive Patron · #{customer.customer_number}", customer.picker_label
   end
+
+  test "picker_label prefers alternate contact that matches the query" do
+    customer = customers(:jordan_lee)
+    customer.alternate_email = "school-office@example.org"
+    customer.primary_email = "jordan.lee@example.com"
+
+    label = customer.picker_label(query: "school-office")
+
+    assert_match "school-office@example.org", label
+    assert_no_match(/jordan\.lee@example\.com/, label)
+  end
 end

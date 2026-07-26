@@ -231,7 +231,7 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     assert_includes results.map(&:id), inactive.id
   end
 
-  test "authorized? requires customers.customer.view for customer search" do
+  test "authorized? allows customer view or lookup but not pos.access alone" do
     admin = users(:admin)
     store = stores(:main_street)
 
@@ -251,6 +251,10 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     StoreMembership.create!(user: limited, store: store, role: role, active: true)
 
     assert_not Catalog::SearchRecords.authorized?(user: limited, store: store, record_type: "customer")
+
+    RolePermission.create!(role: role, permission: Permission.find_by!(code: "customers.customer.lookup"))
+    limited_lookup = User.find(limited.id)
+    assert Catalog::SearchRecords.authorized?(user: limited_lookup, store: store, record_type: "customer")
   end
 
   test "customer picker search ignores include_inactive for enumeration" do

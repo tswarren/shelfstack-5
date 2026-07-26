@@ -304,10 +304,34 @@ module ApplicationHelper
     end
   end
 
-  def customer_option_label(customer)
+  def customer_option_label(customer, query: nil)
     return "—" if customer.blank?
 
-    customer.picker_label
+    customer.picker_label(query: query)
+  end
+
+  # Full Customer CRUD requires view. POS/PR association uses view or lookup.
+  def can_lookup_customers?(store: Current.store)
+    return false if Current.user.blank?
+
+    Current.user.can?("customers.customer.view", store: store) ||
+      Current.user.can?("customers.customer.lookup", store: store)
+  end
+
+  def can_view_customers?(store: Current.store)
+    Current.user&.can?("customers.customer.view", store: store)
+  end
+
+  # Name (and optional show link) for attached customers on PR/POS surfaces.
+  def customer_association_label(customer, link_to_record: true)
+    return "—" if customer.blank?
+    return "Customer attached" unless can_lookup_customers?
+
+    if link_to_record && can_view_customers?
+      link_to(customer.display_name.presence || customer.customer_number, customer_path(customer))
+    else
+      customer.display_name.presence || customer.customer_number
+    end
   end
 
   def country_code_options_for_select(selected: nil)

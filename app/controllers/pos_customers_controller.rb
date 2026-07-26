@@ -5,7 +5,7 @@ class PosCustomersController < ApplicationController
   layout "pos"
 
   before_action -> { require_permission!("pos.access") }
-  before_action -> { require_permission!("customers.customer.view") }
+  before_action -> { require_any_permission!("customers.customer.view", "customers.customer.lookup") }
 
   def stage
     session = current_open_session

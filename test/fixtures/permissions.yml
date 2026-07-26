@@ -775,6 +775,12 @@ customers_customer_view:
   permission_group: customers
   active: true
 
+customers_customer_lookup:
+  code: customers.customer.lookup
+  name: Look up customers
+  permission_group: customers
+  active: true
+
 customers_customer_create:
   code: customers.customer.create
   name: Create customers

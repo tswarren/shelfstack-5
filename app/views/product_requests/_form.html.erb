@@ -43,16 +43,28 @@
         <%= form.label :needed_by_on, "Needed by", class: "field-label" %>
         <%= form.date_field :needed_by_on, class: "input" %>
       </div>
-      <%= render "shared/record_picker",
-            form: form,
-            method: :customer_id,
-            record_type: "customer",
-            selected: product_request.customer,
-            label: "Customer",
-            hint: safe_join([
-              "Required and contactable for customer requests. ".html_safe,
-              (link_to("Manage customers", customers_path) if Current.user.can?("customers.customer.view", store: Current.store))
-            ].compact) %>
+      <% if can_lookup_customers? %>
+        <%= render "shared/record_picker",
+              form: form,
+              method: :customer_id,
+              record_type: "customer",
+              selected: product_request.customer,
+              label: "Customer",
+              hint: safe_join([
+                "Required and contactable for customer requests. ".html_safe,
+                (link_to("Manage customers", customers_path) if can_view_customers?)
+              ].compact) %>
+      <% else %>
+        <div class="field">
+          <span class="field-label">Customer</span>
+          <% if product_request.customer.present? %>
+            <p><%= customer_association_label(product_request.customer, link_to_record: false) %></p>
+            <%= form.hidden_field :customer_id %>
+          <% else %>
+            <p class="field-hint">Customer lookup permission is required to select a customer.</p>
+          <% end %>
+        </div>
+      <% end %>
       <div class="field">
         <%= form.label :assigned_buyer_user_id, "Assigned buyer (optional)", class: "field-label" %>
         <%= form.collection_select :assigned_buyer_user_id, @buyers, :id, :username, { include_blank: true }, class: "input" %>

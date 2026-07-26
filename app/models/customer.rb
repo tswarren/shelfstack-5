@@ -39,14 +39,14 @@ class Customer < ApplicationRecord
   end
 
   # Search/picker label: identity plus phone, email, and city when present.
-  def picker_label
-    phone = primary_phone.presence || alternate_phone.presence
-    email = primary_email.presence || alternate_email.presence
+  # When +query+ matches an alternate contact, that value is preferred so the
+  # cashier sees the term they typed.
+  def picker_label(query: nil)
     [
       display_name.presence || "Customer",
       customer_number,
-      phone,
-      email,
+      contact_value_for_label(:phone, query),
+      contact_value_for_label(:email, query),
       city.presence
     ].compact.join(" · ")
   end
@@ -68,6 +68,39 @@ class Customer < ApplicationRecord
   end
 
   private
+
+  def contact_value_for_label(kind, query)
+    primary, alternate = case kind
+    when :phone then [ primary_phone, alternate_phone ]
+    when :email then [ primary_email, alternate_email ]
+    else return nil
+    end
+
+    q = query.to_s.strip
+    if q.present?
+      if contact_matches_query?(alternate, q, kind)
+        return alternate
+      end
+      if contact_matches_query?(primary, q, kind)
+        return primary
+      end
+    end
+
+    primary.presence || alternate.presence
+  end
+
+  def contact_matches_query?(value, query, kind)
+    return false if value.blank?
+
+    if kind == :phone
+      value_digits = value.gsub(/\D/, "")
+      query_digits = query.gsub(/\D/, "")
+      return true if query_digits.length >= 7 && value_digits.end_with?(query_digits)
+      return true if value.include?(query)
+    end
+
+    value.to_s.downcase.include?(query.downcase)
+  end
 
   def normalize_customer_data
     self.organization_name = organization_name.to_s.strip.presence

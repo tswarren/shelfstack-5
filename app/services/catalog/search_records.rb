@@ -41,8 +41,8 @@ module Catalog
       "creator" => %w[
         catalog.product.view catalog.product.create catalog.product.edit catalog.manage_creators
       ],
-      # Customer PII requires explicit customer view — not pos.access or request edit alone.
-      "customer" => %w[customers.customer.view]
+      # Full view or narrower lookup — not pos.access / request edit alone.
+      "customer" => %w[customers.customer.view customers.customer.lookup]
     }.freeze
 
     def initialize(organization:, record_type:, query: nil, include_inactive: false, product_id: nil, labeler: nil, default_phone_country: nil)
@@ -290,7 +290,7 @@ module Catalog
     end
 
     def customer_label(record)
-      record.picker_label
+      record.picker_label(query: @query)
     end
 
     def path_label(record)

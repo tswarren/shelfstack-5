@@ -61,7 +61,7 @@ class Catalog::RecordSearchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "denies customer search without customers.customer.view" do
+  test "denies customer search without view or lookup" do
     store = stores(:main_street)
     user = User.create!(
       username: "pos_only_#{SecureRandom.hex(2)}",
@@ -81,6 +81,16 @@ class Catalog::RecordSearchesControllerTest < ActionDispatch::IntegrationTest
 
     get catalog_record_searches_path, params: { type: "customer", q: "Jordan" }, as: :json
     assert_response :forbidden
+  end
+
+  test "allows customer search with lookup permission" do
+    delete session_path
+    post session_path, params: { username: "clerk", password: "password123" }
+
+    get catalog_record_searches_path, params: { type: "customer", q: "Jordan" }, as: :json
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body["results"].any? { |r| r["id"] == customers(:jordan_lee).id }
   end
 
   test "customer phone search matches formatted numbers and shows identifying references" do

@@ -19,7 +19,13 @@ module Catalog
         include_inactive: ActiveModel::Type::Boolean.new.cast(params[:include_inactive]),
         product_id: params[:product_id].presence,
         default_phone_country: Current.store&.country_code,
-        labeler: ->(record, type) { helpers.record_picker_label(record, type) }
+        labeler: lambda { |record, type|
+          if type.to_s == "customer"
+            record.picker_label(query: params[:q])
+          else
+            helpers.record_picker_label(record, type)
+          end
+        }
       )
 
       render json: {
