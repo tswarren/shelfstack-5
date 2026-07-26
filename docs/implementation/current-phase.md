@@ -21,15 +21,14 @@
 ## Immediate next work
 
 1. Start Gate 11A ([#131](https://github.com/tswarren/shelfstack-5/issues/131)) — stable register foundation (shell, Ready, core Transaction).
-2. Optional independent maintenance (not a Phase 11 gate): DWR-028 ([#116](https://github.com/tswarren/shelfstack-5/issues/116)) and DWR-064 ([#120](https://github.com/tswarren/shelfstack-5/issues/120)) — brief under [temp_draft/phase-11/00-pre-phase-11-maintenance.md](../temp_draft/phase-11/00-pre-phase-11-maintenance.md).
-3. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006.
-4. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
-5. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.
-6. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
-7. Retain OD-014 interim post-void block until a full correction algorithm is accepted.
-8. Do not open Phase 8.5 / multi-variant (DWR-021) until explicitly scheduled.
-9. Full CRM beyond flat Customer v1 remains deferred (DWR-036).
-10. Phase 7 follow-ups (#89–#94) and catalog Should/Nice remain register-tracked until pulled.
+2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006.
+3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
+4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.
+5. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+6. Retain OD-014 interim post-void block until a full correction algorithm is accepted.
+7. Do not open Phase 8.5 / multi-variant (DWR-021) until explicitly scheduled.
+8. Full CRM beyond flat Customer v1 remains deferred (DWR-036).
+9. Phase 7 follow-ups (#89–#94) and catalog Should/Nice remain register-tracked until pulled.
 
 ## Program spine (preference)
 

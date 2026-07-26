@@ -154,7 +154,6 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-061 | Roadmap Phase 5 follow-up #33 stale after close | 5 | doc_hygiene | Resolved 2026-07-23 — roadmap marks [#33](https://github.com/tswarren/shelfstack-5/issues/33) closed | — | — | — |
 | DWR-062 | Phase 4f deferred UX partly addressed in 6.5; reclassify remainder | 4f / 6.5 | doc_hygiene | Resolved 2026-07-23 — 4f Deferred UX table points at this register | Keep remainder rows (DWR-010, DWR-017–DWR-020) current | — | — |
 | DWR-063 | Roadmap Phase 8 label vs catalog-refinement candidate | 8 | doc_hygiene | Resolved 2026-07-24 — Phase 8 is catalog refinement; deferred capabilities are later extensions | Promote temp draft to `phases/phase-08-…` when scoping accepted | Phase 8 | — |
-| DWR-064 | Harden `BuildNormalizedResult` publication_date input boundary | 8d | delivery_debt | Resolved — accepts only `Date` / date-time / `ParseProviderDate` strings; duck-typed `to_date` rejected; year/month-only remain nil (OD-P8-10). Issue [#120](https://github.com/tswarren/shelfstack-5/issues/120) | — | — | [#120](https://github.com/tswarren/shelfstack-5/issues/120) |
 | DWR-064 | Harden `BuildNormalizedResult` publication_date input boundary | 8d | delivery_debt | Resolved in [#137](https://github.com/tswarren/shelfstack-5/pull/137) — Date/date-time/`ParseProviderDate` only; duck-typed `to_date` rejected; year/month-only nil (OD-P8-10); closes [#120](https://github.com/tswarren/shelfstack-5/issues/120) | — | — | [#120](https://github.com/tswarren/shelfstack-5/issues/120) |
 | DWR-065 | Vendor-source linking workflow (Gate 8e) | 8 | delivery_debt | Phase 8 Must gates closed; Should gate deferred — [phase-08…](phases/phase-08-catalog-refinement-and-enrichment.md) §8e | Product/variant → vendor search → create/update source (code, cost, pack); keep Purchasing ownership | unscheduled | [#99](https://github.com/tswarren/shelfstack-5/issues/99) |
 | DWR-066 | Product show rail: build stock summary when any of stock/receipt/PO/cost caps is present | 10 | delivery_debt | Phase 10 MVP review — **triggered invariant:** must revisit before any role grants receipt / purchasing / cost visibility without `stock_view`. Not Phase 11 scope. | Return a stock summary object when any relevant capability exists; nil unauthorized fields; rail gates each row | unscheduled | — |
@@ -168,9 +167,6 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 Open / deferred decisions:     DWR-001 … DWR-003 (+ DWR-007 near OD-009)
 Interim correction blocks:     DWR-004 … DWR-006
 Phase 6.5 / 7 carry-forward:   DWR-010 … DWR-019
-Catalog / Phase 8 follow-on:   DWR-020 … DWR-027, DWR-029, DWR-065 (021 / 8.5 unscheduled; 024 deferred; 8e–8g unscheduled; DWR-028/064 resolved)
-Phase 10 follow-on:            DWR-066 (rail capability decoupling — gate before independent receipt/PO/cost roles)
-Phase 11 candidate:            DWR-067 (POS shell revamp; absorbs DWR-010; stages DWR-017)
 Catalog / Phase 8 follow-on:   DWR-020 … DWR-027, DWR-029, DWR-065 (021 / 8.5 unscheduled; 024 deferred; 8e–8g unscheduled; DWR-028/064 resolved in #137)
 Phase 10 follow-on:            DWR-066 (triggered invariant — before independent receipt/PO/cost roles)
 Phase 11 (scheduled):          DWR-067 epic; DWR-010 → Gate E; DWR-017 Must → Gate D; DWR-020 POS → Gate B
