@@ -17,5 +17,6 @@ Each phase document defines goals, principal tables, services, exit criteria, an
 | 8 | [phase-08-catalog-refinement-and-enrichment.md](phase-08-catalog-refinement-and-enrichment.md) |
 | 9 | [phase-09-customer-records.md](phase-09-customer-records.md) |
 | 10 | [phase-10-product-record-and-form-refinement.md](phase-10-product-record-and-form-refinement.md) |
+| 11 | [phase-11-pos-shell-and-workspace-revamp.md](phase-11-pos-shell-and-workspace-revamp.md) |
 
 Return to [../roadmap.md](../roadmap.md).

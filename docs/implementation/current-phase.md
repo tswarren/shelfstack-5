@@ -1,12 +1,14 @@
 # Current Phase
 
-**Last completed delivery phase:** Phase 10 — Product record and form workflow refinement  
-**Status:** Fully complete — Gates 10a–10e accepted (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))  
-**Phase document:** [phases/phase-10-product-record-and-form-refinement.md](phases/phase-10-product-record-and-form-refinement.md)
+**Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
+**Status:** Scheduled — not started  
+**Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
+**Epic:** [#130](https://github.com/tswarren/shelfstack-5/issues/130)  
+**Gates:** [#131](https://github.com/tswarren/shelfstack-5/issues/131) (11A) · [#132](https://github.com/tswarren/shelfstack-5/issues/132) (11B) · [#133](https://github.com/tswarren/shelfstack-5/issues/133) (11C) · [#134](https://github.com/tswarren/shelfstack-5/issues/134) (11D) · [#135](https://github.com/tswarren/shelfstack-5/issues/135) (11E)
 
-**Next delivery phase:** Unscheduled. Candidate sequencing and POS shell revamp stub live under [temp_draft/phase-11/](../temp_draft/phase-11/README.md) (DWR-067) — not governing until promoted.
+**Last completed delivery phase:** Phase 10 — Product record and form workflow refinement (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))
 
-**Phase 10 closed:** Gates 10a–10e delivered in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Follow-on: DWR-066 (rail capability decoupling — revisit before roles grant receipt / purchasing / cost visibility independently of `stock_view`).
+**Phase 10 closed:** Gates 10a–10e delivered in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Follow-on: DWR-066 (triggered invariant — revisit before roles grant receipt / purchasing / cost visibility independently of `stock_view`).
 
 **Phase 9 closed:** Gates 9a–9d merged to `main` at `db6778d87f9e10b7890884dcd96437b85e211ec1` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)
 
@@ -18,32 +20,41 @@
 
 ## Immediate next work
 
-1. Schedule the next delivery phase when ready — candidate: DWR-067 POS shell / workspace revamp ([phase-11 drafts](../temp_draft/phase-11/README.md)).
-2. Before splitting receipt / purchasing / cost visibility from `stock_view` in roles, resolve DWR-066.
-3. Phase 8 deferred Should/Nice remain register-tracked until pulled back (DWR-022 / DWR-023 / DWR-027 / DWR-065).
-4. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md).
-5. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
-6. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
-7. Do not pull customer-receipt product design or hardware printing into near-term work except as staged under DWR-067 Gate D (DWR-017).
+1. Start Gate 11A ([#131](https://github.com/tswarren/shelfstack-5/issues/131)) — stable register foundation (shell, Ready, core Transaction).
+2. Optional independent maintenance (not a Phase 11 gate): DWR-028 ([#116](https://github.com/tswarren/shelfstack-5/issues/116)) and DWR-064 ([#120](https://github.com/tswarren/shelfstack-5/issues/120)) — brief under [temp_draft/phase-11/00-pre-phase-11-maintenance.md](../temp_draft/phase-11/00-pre-phase-11-maintenance.md).
+3. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006.
+4. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
+5. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.
+6. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
+7. Retain OD-014 interim post-void block until a full correction algorithm is accepted.
 8. Do not open Phase 8.5 / multi-variant (DWR-021) until explicitly scheduled.
 9. Full CRM beyond flat Customer v1 remains deferred (DWR-036).
-10. Leave DWR-029 (request-coverage extraction from product hub) unscheduled.
+10. Phase 7 follow-ups (#89–#94) and catalog Should/Nice remain register-tracked until pulled.
+
+## Program spine (preference)
+
+```text
+Phase 11 (active)
+  → Correction workflows (after DWR-004–006 design packet accepted)
+  → Reporting / reconciliation hardening (DWR-015/016 may proceed earlier if design stalls)
+```
+
+Archived prioritization matrix: [../archive/phase-11-drafts-2026-07-26/00-pre-phase-11-prioritization.md](../archive/phase-11-drafts-2026-07-26/00-pre-phase-11-prioritization.md)
 
 ## Do not start yet
 
 - Inventing deficit settlement beyond the accepted OD-014 Phase 5 decision.
+- Implementing DWR-004–006 before the Correction Integrity Design Packet is accepted.
 - Full CRM beyond flat Customer v1 (DWR-036 remainder).
 - PWA / offline POS; integrated payments; full ESC/POS fleets.
-- Fat POS shell revamp until DWR-067 is promoted to a governing phase plan.
 - Scaffolding later_extensions from [deferred-capabilities.md](deferred-capabilities.md).
 
 ## Pointers
 
-- Phase 10 plan: [phases/phase-10-product-record-and-form-refinement.md](phases/phase-10-product-record-and-form-refinement.md)
-- Post–Phase 10 sequencing (draft): [../temp_draft/phase-11/](../temp_draft/phase-11/README.md)
+- Phase 11 plan: [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)
 - Carry-forward backlog: [deferred-work-register.md](deferred-work-register.md)
 - Master sequence: [roadmap.md](roadmap.md)
 - Design: [../design/README.md](../design/README.md)
 - Git workflow: [git-workflow.md](git-workflow.md)
-- Phase 9 plan: [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md)
-- Customers domain: [../domains/customers.md](../domains/customers.md)
+- Active scratch: [../temp_draft/phase-11/](../temp_draft/phase-11/README.md)
+- Phase 10 plan: [phases/phase-10-product-record-and-form-refinement.md](phases/phase-10-product-record-and-form-refinement.md)
