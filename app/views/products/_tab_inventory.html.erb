@@ -14,10 +14,6 @@
             title: "No stock projection",
             body: "Stock is unavailable for this product at #{store_name}." %>
     <% elsif stock.tracking_mode == "quantity" %>
-      <p class="muted">
-        Available = on hand − reserved − unavailable
-        (<%= stock.available %> = <%= stock.on_hand %> − <%= stock.reserved %> − <%= stock.unavailable %>).
-      </p>
       <%= render "shared/record_summary", rows: [
         [ "On hand", stock.on_hand ],
         [ "Reserved", stock.reserved ],
