@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : "Receipt" %> · ShelfStack</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="turbo-cache-control" content="no-cache">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= shelfstack_stylesheet_tags %>
+    <style>
+      @media print {
+        .pos-receipt-toolbar { display: none !important; }
+        body { background: #fff; }
+        .pos-customer-receipt { box-shadow: none; border: 0; }
+      }
+    </style>
+  </head>
+  <body class="layout-pos-receipt">
+    <main id="main-content" class="pos-receipt-main" tabindex="-1">
+      <%= yield %>
+    </main>
+  </body>
+</html>

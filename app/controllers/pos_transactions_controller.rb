@@ -5,7 +5,7 @@ class PosTransactionsController < ApplicationController
 
   SnapshotTotals = Data.define(:subtotal_cents, :discount_total_cents, :tax_total_cents, :net_total_cents)
 
-  before_action -> { require_permission!("pos.access") }, only: %i[index show tender]
+  before_action -> { require_permission!("pos.access") }, only: %i[index show tender customer_receipt]
   before_action -> { require_permission!("pos.transaction.open") }, only: %i[create]
   before_action -> { require_permission!("pos.transaction.suspend") }, only: %i[suspend]
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
@@ -15,9 +15,9 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.post_void.create") },
                 only: %i[post_void_form approve_post_void clear_post_void_approval post_void]
   before_action :set_transaction,
-                only: %i[show tender suspend recall cancel complete start_linked_return post_void_form approve_post_void
-                         clear_post_void_approval post_void]
-  before_action :disable_turbo_and_browser_cache, only: %i[show tender]
+                only: %i[show tender customer_receipt suspend recall cancel complete start_linked_return post_void_form
+                         approve_post_void clear_post_void_approval post_void]
+  before_action :disable_turbo_and_browser_cache, only: %i[show tender customer_receipt]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
@@ -38,6 +38,20 @@ class PosTransactionsController < ApplicationController
 
     assign_workspace_context!(presentation_param: "tender")
     render :show
+  end
+
+  # Browser-printable customer receipt (Gate 11D Must). No printer queue / ESC/POS.
+  # Rendering or print invocation failure must not reverse completion.
+  def customer_receipt
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction),
+                         alert: "Customer receipts are available only for completed transactions."
+    end
+
+    @reprint = ActiveModel::Type::Boolean.new.cast(params[:reprint])
+    @receipt_lines = @pos_transaction.pos_line_items.where(status: "completed").order(:position, :id)
+    @receipt_tenders = @pos_transaction.pos_tenders.where(status: "completed").order(:created_at, :id)
+    render layout: "pos_receipt"
   end
 
   def create
