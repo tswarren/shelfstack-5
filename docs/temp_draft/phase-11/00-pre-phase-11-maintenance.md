@@ -1,6 +1,6 @@
 # Pre-Phase 11 maintenance — Catalog boundary hardening
 
-**Status:** Ready for implementation **Delivery classification:** Pre-phase maintenance PR **Depends on:** Phase 10 complete **Blocks Phase 11:** No, but should be completed before Phase 11 begins **Closes:** \#116, \#120 **Resolves:** DWR-028, DWR-064
+**Status:** Implemented in [#137](https://github.com/tswarren/shelfstack-5/pull/137) (pending merge) **Delivery classification:** Pre-phase maintenance PR **Depends on:** Phase 10 complete **Blocks Phase 11:** No **Closes:** \#116, \#120 **Resolves:** DWR-028, DWR-064
 
 ## Goal
 
