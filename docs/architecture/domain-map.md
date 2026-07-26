@@ -33,13 +33,14 @@ It does not define every table, field, screen, service class, or implementation 
 
 ## 2. Domain overview
 
-ShelfStack currently consists of nine principal domains.
+ShelfStack currently consists of ten principal domains.
 
 | Domain                           | Primary responsibility                                                          |
 | -------------------------------- | ------------------------------------------------------------------------------- |
 | Organization and Authorization   | Who may act, at which Store, and within what authority                          |
 | Classification and Configuration | Shared classifications, policies, reasons, and Store-specific operating rules   |
 | Catalog and Products             | What merchandise or service exists and which exact configuration is operational |
+| Customers                        | Organization-scoped Customer master identity and contact facts                  |
 | Product Requests                 | What customers or staff want the Store to obtain or fulfil                      |
 | Vendors and Purchasing           | What the Store intends to acquire and from whom                                 |
 | Receiving and Inventory          | What merchandise arrived, was accepted, and is physically owned by each Store   |
@@ -56,6 +57,7 @@ flowchart LR
     AUTH[Organization and Authorization]
     CONFIG[Classification and Configuration]
     CATALOG[Catalog and Products]
+    CUSTOMERS[Customers]
     REQUESTS[Product Requests]
     PURCH[ Vendors and Purchasing ]
     INVENTORY[Receiving and Inventory]
@@ -65,6 +67,7 @@ flowchart LR
 
     AUTH --> CONFIG
     AUTH --> CATALOG
+    AUTH --> CUSTOMERS
     AUTH --> REQUESTS
     AUTH --> PURCH
     AUTH --> INVENTORY
@@ -83,6 +86,9 @@ flowchart LR
     CATALOG --> INVENTORY
     CATALOG --> POS
     CATALOG --> REPORTING
+
+    CUSTOMERS --> REQUESTS
+    CUSTOMERS --> POS
 
     REQUESTS --> PURCH
     REQUESTS --> INVENTORY
@@ -356,7 +362,51 @@ The Receiving and Inventory domain owns operational Inventory Units.
 
 ---
 
-## 4.4 Product Requests
+## 4.4 Customers
+
+### Purpose
+
+The Customers domain owns organization-scoped Customer master identity and contact facts used for Product Request association and commercially inert POS attachment.
+
+It answers:
+
+* Who is this Customer within the Organization?
+* How may the store contact them?
+* Is the Customer active and contactable for notification-dependent workflows?
+
+### Owns
+
+* Customer;
+* immutable `customer_number` (namespace `22`);
+* customer type, name, address, and contact fields;
+* preferred contact method;
+* active / inactive status;
+* Customer create, update, deactivate, search, and duplicate detection.
+
+### References but does not own
+
+* Organization and Store;
+* Product Request (`customer_id`);
+* POS Transaction (`customer_id`) and Session staged-customer triad;
+* Stored-Value Account (optional future link deferred).
+
+### Principal invariants
+
+* `customer_number` is unique, immutable, and a valid generated namespace `22` EAN-13.
+* Customers belong to an Organization, not a Store.
+* Contact values are not unique customer identifiers.
+* Phase 9 POS attachment is commercially inert ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)).
+
+### Governing ADRs
+
+* [ADR-0017: Introduce a Flat Customer Domain and Namespace 22](../adr/0017-customer-domain-and-namespace-22.md)
+* [ADR-0002: Canonical Identifiers and Namespaces](../adr/0002-canonical-identifiers-and-namespaces.md)
+
+Specification: [customers.md](../domains/customers.md)
+
+---
+
+## 4.5 Product Requests
 
 ### Purpose
 
@@ -413,7 +463,7 @@ Every Product Request requires an existing Product (`product_id`). Variant may b
 ### References but does not own
 
 * Product and Product Variant;
-* Customer, when later implemented (v1 uses opaque `customer_reference`);
+* Customer (`customer_id`; [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md));
 * Inventory Reservations;
 * Purchase-Order Allocations (Customer Requests only);
 * Purchase Orders;
@@ -454,7 +504,7 @@ Non-customer requests do not ordinarily retain Purchase-Order Allocations after 
 
 ---
 
-## 4.5 Vendors and Purchasing
+## 4.6 Vendors and Purchasing
 
 ### Purpose
 
@@ -537,7 +587,7 @@ It does not create:
 
 ---
 
-## 4.6 Receiving and Inventory
+## 4.7 Receiving and Inventory
 
 ### Purpose
 
@@ -658,7 +708,7 @@ It may be created for:
 
 ---
 
-## 4.7 Point of Sale
+## 4.8 Point of Sale
 
 ### Purpose
 
@@ -779,7 +829,7 @@ Corrections use:
 
 ---
 
-## 4.8 Stored Value
+## 4.9 Stored Value
 
 ### Purpose
 
@@ -870,7 +920,7 @@ The cached balance exists for performance but must reconcile to the Ledger.
 
 ---
 
-## 4.9 Reporting and Reconciliation
+## 4.10 Reporting and Reconciliation
 
 ### Purpose
 
@@ -1278,7 +1328,7 @@ For example:
 * Reporting should be developed alongside every posted Domain.
 * Stored Value requires POS integration but also has its own ledger.
 * Inventory foundations must exist before complete POS selling.
-* Product Requests may begin before full customer management exists.
+* Product Requests began with an opaque Phase 5 `customer_reference` interim before Customer v1.
 
 The [Implementation Roadmap](../implementation/roadmap.md) governs actual delivery order.
 
@@ -1288,19 +1338,16 @@ The [Implementation Roadmap](../implementation/roadmap.md) governs actual delive
 
 The following capabilities are recognized but do not yet have fully settled domain ownership or workflows.
 
-## 9.1 Customers
+## 9.1 Full customer CRM (beyond Customer v1)
 
-A future Customer domain may own:
+Flat Customer master identity and contact facts are delivered ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md); [customers.md](../domains/customers.md)). Remaining CRM capabilities stay deferred (DWR-036), including:
 
-* customer identity;
-* customer organizations;
-* contact methods;
-* notification preferences;
-* reusable Tax Exemptions;
-* purchase history access;
-* pickup communication.
-
-Product Requests use opaque `customer_reference` values in Phase 5 before a full Customer domain is implemented.
+* households and customer organizations beyond `customer_type`;
+* multi-contact methods and notification preferences platform;
+* customer merge / restore / archival;
+* reusable Tax Exemptions on the Customer;
+* purchase-history CRM and loyalty;
+* pickup communication workflows.
 
 ## 9.2 Buyback
 

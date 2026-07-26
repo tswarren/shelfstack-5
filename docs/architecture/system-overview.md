@@ -557,7 +557,18 @@ This domain owns:
 
 It provides effective classifications and policy defaults to the catalog, inventory, POS, and reporting domains.
 
-## 1.5.4 Product requests
+## 1.5.4 Customers
+
+This domain owns:
+
+* organization-scoped Customer master records;  
+* immutable `customer_number` (namespace `22`);  
+* contact facts and preferred contact method;  
+* active / inactive status.
+
+It references but does not own Product Requests, POS transactions, or stored-value accounts. Phase 9 POS attachment is commercially inert ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)).
+
+## 1.5.5 Product requests
 
 This domain owns:
 
@@ -565,7 +576,7 @@ This domain owns:
 * request type;  
 * requested quantity;  
 * priority and needed-by date;  
-* nullable v1 customer reference;  
+* nullable Customer association (`customer_id`);  
 * requesting user and assigned buyer;  
 * request lifecycle and fulfilment summary.
 
@@ -573,11 +584,12 @@ It records demand that the store may attempt to fulfil.
 
 It references but does not own:
 
+* Customer master records;  
 * inventory reservations for physically present supply;  
 * purchase-order allocations for expected future supply;  
 * purchase orders, receipts, and POS fulfilment activity.
 
-## 1.5.5 Vendors and purchasing
+## 1.5.6 Vendors and purchasing
 
 This domain owns:
 
@@ -593,7 +605,7 @@ This domain owns:
 It determines what the store intends to acquire and owns purchase-order
 allocations that commit expected supply to Product Requests.
 
-## 1.5.6 Receiving and inventory
+## 1.5.7 Receiving and inventory
 
 This domain owns:
 
@@ -609,7 +621,7 @@ This domain owns:
 
 It is the authoritative source for what physical merchandise each store possesses and what portion is currently sellable.
 
-## 1.5.7 Point of sale
+## 1.5.8 Point of sale
 
 This domain owns:
 
@@ -629,7 +641,7 @@ It coordinates catalog, classification, inventory, authorization, stored value, 
 
 It does not replace those domains.
 
-## 1.5.8 Stored value
+## 1.5.9 Stored value
 
 This domain owns:
 
@@ -645,7 +657,7 @@ This domain owns:
 
 Stored-value activity may originate in POS, returns, or future buyback workflows, but its balance remains governed by its own ledger.
 
-## 1.5.9 Reporting and reconciliation
+## 1.5.10 Reporting and reconciliation
 
 This domain consumes:
 
@@ -797,7 +809,7 @@ frontlist_selection
 
 Every product request must reference an existing ShelfStack product ([ADR-0015](../adr/0015-product-backed-demand-and-customer-supply-commitments.md)). Free-text notes may preserve context but do not substitute for product identity. Product variant may remain unresolved until purchasing or exact fulfilment requires it.
 
-A customer request indicates that the store is attempting to supply merchandise for a particular customer (v1: opaque `customer_reference`, not a Customer master).
+A customer request indicates that the store is attempting to supply merchandise for a particular Customer via `customer_id` ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)). New customer requests require an active, organization-compatible, contactable Customer.
 
 Staff suggestions, stock replenishment, and frontlist selections are buyer-decision records. They do not create customer obligations and do not ordinarily retain purchase-order allocations after the buyer acts.
 
@@ -810,7 +822,7 @@ A product request identifies:
 * requested quantity;  
 * priority and needed-by date (especially for customer requests);  
 * requesting user;  
-* customer reference, when applicable;  
+* Customer (`customer_id`), when applicable;  
 * notes;  
 * current status;  
 * buyer resolution details for non-customer requests.
@@ -1557,7 +1569,7 @@ Potential later work includes:
 * inventory counts;  
 * store transfers;  
 * complete return-to-vendor workflow;  
-* customer records;  
+* full customer CRM beyond flat Customer v1;  
 * customer holds;  
 * special orders;  
 * reusable tax exemptions;  
@@ -1583,13 +1595,14 @@ The current architecture establishes strong foundations for:
 * purchasing and receiving;  
 * POS;  
 * authorization;  
+* flat Customer master (namespace `22`);  
 * stored value;  
 * reporting.
 
 The following remain intentionally incomplete and require separate design before implementation:
 
 * detailed buyback workflow;  
-* customer master and customer orders;  
+* full customer CRM beyond flat Customer v1, and customer orders beyond Product Requests;  
 * inventory-count workflow;  
 * inter-store transfer documents;  
 * complete return-to-vendor documentation;  

@@ -311,7 +311,7 @@ The following areas remain intentionally deferred or require dedicated design:
 * inter-store transfers;
 * complete return-to-vendor workflow;
 * detailed buyback;
-* customer records and notifications;
+* full customer CRM beyond flat Customer v1, and customer notifications;
 * reusable tax exemptions;
 * advanced promotions;
 * stored-value replacement and expiration;

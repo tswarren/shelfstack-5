@@ -19,8 +19,8 @@ Do **not** open GitHub issues for these rows until a design packet promotes them
 | Inventory counts | Dedicated count documents and posting |
 | Inter-store transfers | Changes authoritative store ownership |
 | Complete return-to-vendor (RTV) | Beyond disposition flags / deferred unit statuses |
-| Full customer CRM | Beyond Phase 5 opaque `customer_reference`; no Customer master in Phase 5 |
-| Customer notifications platform | After customer domain design |
+| Full customer CRM | Beyond Phase 9 flat Customer v1 ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)); loyalty, households, merge, multi-contact, notifications remain deferred (DWR-036) |
+| Customer notifications platform | After remaining CRM design (flat Customer v1 exists) |
 | Automated replenishment / forecasting | Manual replenishment review and stock_replenishment demand in Phase 5 |
 | Full frontlist / ONIX campaign management | Product-backed frontlist_selection in Phase 5; full campaign tooling deferred |
 | Vendor EDI / acknowledgements / cascading | Phase 5 preserves structural hooks; full lifecycle deferred — see [phase-05-ordering-scope-and-future-lifecycle-boundaries.md](phase-05-ordering-scope-and-future-lifecycle-boundaries.md) |

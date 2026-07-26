@@ -69,7 +69,7 @@ flowchart TD
 | 6.5 | Cashier workspace | Complete — merged to `main` at `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)) | [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) |
 | 7 | Reporting and reconciliation | Complete — core 7a–7d merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)) | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Catalog refinement & enrichment | Complete — Must 8a–8d accepted; Should/Nice 8e–8g deferred | [phases/phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md) |
-| 9 | Customer records (v1) | In progress — [phase-09…](phases/phase-09-customer-records.md); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md) | [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md) |
+| 9 | Customer records (v1) | Complete — merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md) | [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md) |
 
 ## Mapping to system-overview §1.8
 
@@ -100,11 +100,11 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–7 core delivery. Phase 7 Reporting and Reconciliation merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
+Completed: Phases 0–9 core delivery. Phase 9 Customer records merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)). Phase 8 Must 8a–8d closed; Should/Nice 8e–8g deferred. Phase 7 at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
 
-**Next:** Phase 9 Customer records (v1) — [phase-09-customer-records.md](phases/phase-09-customer-records.md); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md). Phase 8 Must gates closed; Should/Nice 8e–8g remain deferred. See [current-phase.md](current-phase.md).
+**Next:** Carry-forward / later extensions — no numbered Must phase open. See [current-phase.md](current-phase.md) and [deferred-work-register.md](deferred-work-register.md).
 
-**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, later extensions).
+**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, full CRM beyond Customer v1 (DWR-036), later extensions).
 
 1. Prefer ops hardening or Phase 8 non-blocking cleanups; leave Phase 8.5 / multi-variant (DWR-021) unscheduled.
 2. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.

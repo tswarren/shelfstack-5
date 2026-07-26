@@ -92,7 +92,7 @@ doc_hygiene        — documentation status drift only
 
 ### Target phase
 
-Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the Phase 8 catch-all for deferred capabilities). Proposed catalog refinement may claim delivery Phase 8; if so, deferred capabilities move to `later_extensions` / Phase 9+.
+Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the Phase 8 catch-all for deferred capabilities). Delivery Phases 8–9 are closed; remaining deferred capabilities stay on `later_extensions` until explicitly scheduled.
 
 ---
 

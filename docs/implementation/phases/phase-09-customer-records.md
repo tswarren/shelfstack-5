@@ -1,6 +1,7 @@
 # Phase 9 — Customer records (v1)
 
-**Status:** Implemented (gates 9a–9d)  
+**Status:** Complete — gates 9a–9d merged to `main` at `db6778d87f9e10b7890884dcd96437b85e211ec1` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122))  
+
 
 **Depends on:** Phase 5 (Product Requests), Phase 6.5 (cashier workspace shell)  
 **Chronologically follows:** Phase 8 catalog refinement (closed)  

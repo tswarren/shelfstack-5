@@ -1,9 +1,8 @@
 # Current Phase
 
-**Active delivery phase:** Phase 9 — Customer records (v1)  
-**Status:** Gates 9a–9d implemented (pending merge / walkthrough acceptance)  
-**Phase 9 plan:** [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md)  
-**Governing ADR:** [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)
+**Active delivery phase:** None numbered — Phase 9 Customer records closed  
+**Status:** Carry-forward / later extensions  
+**Phase 9 closed:** Gates 9a–9d merged to `main` at `db6778d87f9e10b7890884dcd96437b85e211ec1` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)
 
 **Phase 8 closed:** Must gates 8a–8d complete ([#95](https://github.com/tswarren/shelfstack-5/issues/95)–[#98](https://github.com/tswarren/shelfstack-5/issues/98); Gate 8d PR [#118](https://github.com/tswarren/shelfstack-5/pull/118)). Should/Nice 8e–8g deferred (DWR-022 / DWR-023 / DWR-027 / DWR-065).
 
@@ -13,13 +12,14 @@
 
 ## Immediate next work
 
-1. Phase 9 gates 9a–9d per [phase-09-customer-records.md](phases/phase-09-customer-records.md).
-2. Phase 8 deferred Should/Nice remain register-tracked until pulled back.
+1. Prefer register-tracked carry-forward and ops hardening over inventing a new numbered Must phase.
+2. Phase 8 deferred Should/Nice remain register-tracked until pulled back (DWR-022 / DWR-023 / DWR-027 / DWR-065).
 3. Phase 7 follow-ups remain deferred (`phase-7` + `deferred`); canonical list in [deferred-work-register.md](deferred-work-register.md).
 4. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
 5. Retain OD-014 interim post-void block until a full correction algorithm PR is accepted.
-6. Do not pull customer-receipt product design or hardware printing into this phase (DWR-017).
+6. Do not pull customer-receipt product design or hardware printing into near-term work (DWR-017).
 7. Do not open Phase 8.5 / multi-variant (DWR-021) until explicitly scheduled.
+8. Full CRM beyond flat Customer v1 remains deferred (DWR-036).
 
 ## Do not start yet
 
