@@ -35,7 +35,8 @@ class RegisterController < ApplicationController
       pos_session: session,
       actor: Current.user,
       query: params[:query],
-      quantity: params[:quantity].presence || 1
+      quantity: params[:quantity].presence || 1,
+      product_variant_id: params[:product_variant_id]
     )
 
     if result.success?

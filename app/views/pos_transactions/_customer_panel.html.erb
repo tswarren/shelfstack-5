@@ -25,6 +25,11 @@
             hint: "Search by name, phone, email, or customer number." %>
       <%= submit_tag "Attach", class: "button button-outline" %>
     <% end %>
+    <% if Current.user.can?("customers.customer.create", store: Current.store) %>
+      <p class="field-hint" style="margin-top: 0.75rem;">
+        <%= link_to "Create customer", new_customer_path, class: "button button-small button-ghost" %>
+      </p>
+    <% end %>
   <% else %>
     <p class="muted">No customer attached.</p>
   <% end %>

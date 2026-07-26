@@ -70,6 +70,28 @@
       <%= form.submit "Scan to start", class: "button button-primary button-large" %>
     <% end %>
 
+    <details class="pos-panel" style="margin-top: 1rem;">
+      <summary>Product lookup</summary>
+      <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
+      <%= form_with url: register_scan_to_start_path, method: :post, class: "form" do %>
+        <%= render "shared/record_picker",
+              name: "product_variant_id",
+              id: "ready_product_variant_id",
+              record_type: "product_variant",
+              label: "Product variant",
+              required: true,
+              include_blank: false,
+              hint: "Search by name, ISBN, SKU, or identifier." %>
+        <div class="field">
+          <label class="field-label" for="ready_lookup_quantity">Qty</label>
+          <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>
+        </div>
+        <div class="form-actions">
+          <%= submit_tag "Add from Ready", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </details>
+
     <% if @can_view_customers %>
       <details class="pos-panel" style="margin-top: 1rem;" <%= "open" if @open_session.staged_customer.present? %>>
         <summary>Customer for next transaction</summary>
@@ -96,6 +118,12 @@
                 include_blank: false,
                 hint: "Staging a customer does not create a transaction." %>
           <%= submit_tag "Use for next transaction", class: "button button-outline" %>
+        <% end %>
+        <% if Current.user.can?("customers.customer.create", store: Current.store) %>
+          <p class="field-hint" style="margin-top: 0.75rem;">
+            <%= link_to "Create customer", new_customer_path, class: "button button-small button-ghost" %>
+            (opens customer form; staging remains on Ready)
+          </p>
         <% end %>
       </details>
     <% end %>

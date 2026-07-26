@@ -43,6 +43,30 @@
         <%= form.submit "Add line", class: "button button-primary" %>
       <% end %>
       <%= render "scan_resolution" %>
+      <% if @pos_transaction.editable? %>
+        <details class="pos-panel" style="margin-top: 0.75rem;">
+          <summary>Product lookup</summary>
+          <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
+          <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do %>
+            <%= hidden_field_tag :intent, intent %>
+            <%= render "shared/record_picker",
+                  name: "product_variant_id",
+                  id: "txn_product_variant_id",
+                  record_type: "product_variant",
+                  label: "Product variant",
+                  required: true,
+                  include_blank: false,
+                  hint: "Search by name, ISBN, SKU, or identifier." %>
+            <div class="field">
+              <label class="field-label" for="txn_lookup_quantity">Qty</label>
+              <%= number_field_tag :quantity, 1, id: "txn_lookup_quantity", min: 1, class: "input input-qty" %>
+            </div>
+            <div class="form-actions">
+              <%= submit_tag "Add from lookup", class: "button button-outline" %>
+            </div>
+          <% end %>
+        </details>
+      <% end %>
     </section>
   <% elsif intent == "stored_value" %>
     <%
