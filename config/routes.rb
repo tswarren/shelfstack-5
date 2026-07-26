@@ -156,6 +156,7 @@ Rails.application.routes.draw do
       post :complete
       post :start_linked_return
       get :tender
+      get :customer_receipt
       get :post_void_form
       post :approve_post_void
       post :clear_post_void_approval

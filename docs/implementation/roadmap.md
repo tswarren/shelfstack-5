@@ -116,7 +116,7 @@ Completed: Phases 0–10 core delivery. Phase 10 product record/form refinement 
 2. Parallel design: Correction Integrity Design Packet (DWR-004–006); do not implement until accepted.
 3. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
 4. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
-5. Optional independent maintenance: [#116](https://github.com/tswarren/shelfstack-5/issues/116) / [#120](https://github.com/tswarren/shelfstack-5/issues/120) (not Phase 11 gates). Conditional: DWR-018/019 only if a gate is blocked.
+5. Conditional: DWR-018/019 only if a Phase 11 gate is blocked.
 
 
 

@@ -5,7 +5,7 @@ class PosTransactionsController < ApplicationController
 
   SnapshotTotals = Data.define(:subtotal_cents, :discount_total_cents, :tax_total_cents, :net_total_cents)
 
-  before_action -> { require_permission!("pos.access") }, only: %i[index show tender]
+  before_action -> { require_permission!("pos.access") }, only: %i[index show tender customer_receipt]
   before_action -> { require_permission!("pos.transaction.open") }, only: %i[create]
   before_action -> { require_permission!("pos.transaction.suspend") }, only: %i[suspend]
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
@@ -15,37 +15,66 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.post_void.create") },
                 only: %i[post_void_form approve_post_void clear_post_void_approval post_void]
   before_action :set_transaction,
-                only: %i[show tender suspend recall cancel complete start_linked_return post_void_form approve_post_void
-                         clear_post_void_approval post_void]
-  before_action :disable_turbo_and_browser_cache, only: %i[show tender]
+                only: %i[show tender customer_receipt suspend recall cancel complete start_linked_return post_void_form
+                         approve_post_void clear_post_void_approval post_void]
+  before_action :disable_turbo_and_browser_cache, only: %i[show tender customer_receipt]
 
   def index
     @suspended_transactions = Current.store.pos_transactions.suspended.order(suspended_at: :desc)
   end
 
   def show
+    if @pos_transaction.cancelled?
+      return redirect_to register_path, notice: "That transaction was cancelled."
+    end
+
     assign_workspace_context!(presentation_param: params[:presentation])
   end
 
   def tender
+    if @pos_transaction.cancelled?
+      return redirect_to register_path, notice: "That transaction was cancelled."
+    end
+
     assign_workspace_context!(presentation_param: "tender")
     render :show
   end
 
+  # Browser-printable customer receipt (Gate 11D Must). No printer queue / ESC/POS.
+  # Rendering or print invocation failure must not reverse completion.
+  def customer_receipt
+    unless @pos_transaction.completed?
+      return redirect_to pos_transaction_path(@pos_transaction),
+                         alert: "Customer receipts are available only for completed transactions."
+    end
+
+    @reprint = ActiveModel::Type::Boolean.new.cast(params[:reprint])
+    @receipt_lines = @pos_transaction.pos_line_items.where(status: "completed").order(:position, :id)
+    @receipt_tenders = @pos_transaction.pos_tenders.where(status: "completed").order(:created_at, :id)
+    render layout: "pos_receipt"
+  end
+
   def create
+    # Phase 11: Ready must not open empty transactions. First valid customer work
+    # uses ScanToStart (or later Product lookup Add). Keep this endpoint for
+    # in-shell reopen paths that already have an authorized session, but refuse
+    # bare create without accompanying work intent.
     pos_session = current_open_session
     return unless pos_session
 
+    if params[:query].blank? && params[:product_request_id].blank?
+      return redirect_to register_path,
+                         alert: "Scan merchandise to start. Empty transactions are not opened from Ready."
+    end
+
     result = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
     if result.success?
-      if params[:query].present?
-        session[:pos_scan_resolution] = {
-          "transaction_id" => result.pos_transaction.id,
-          "query" => params[:query].to_s,
-          "quantity" => (params[:quantity].presence || 1).to_i,
-          "product_request_id" => params[:product_request_id].presence
-        }
-      end
+      session[:pos_scan_resolution] = {
+        "transaction_id" => result.pos_transaction.id,
+        "query" => params[:query].to_s,
+        "quantity" => (params[:quantity].presence || 1).to_i,
+        "product_request_id" => params[:product_request_id].presence
+      }
       redirect_to pos_transaction_path(result.pos_transaction)
     else
       redirect_to register_path, alert: result.error

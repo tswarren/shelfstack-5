@@ -55,6 +55,10 @@
         <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
               data: { "pos-register-target": "backToRegister" },
               autofocus: true %>
+        <%= link_to "Print receipt", customer_receipt_pos_transaction_path(@pos_transaction),
+              class: "button button-outline button-large", target: "_blank", rel: "noopener" %>
+        <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
+              class: "button button-ghost button-large", target: "_blank", rel: "noopener" %>
         <% returnable = @pos_transaction.pos_line_items
              .where(status: "completed", direction: "sale")
              .where.not(line_kind: "stored_value")
@@ -68,7 +72,7 @@
                 class: "button button-ghost button-large" %>
         <% end %>
       </div>
-      <p class="field-hint">Press Enter to start the next transaction from Ready.</p>
+      <p class="field-hint">Press Enter to start the next transaction from Ready. Print uses the browser print path.</p>
     </section>
 
     <details class="pos-panel">
@@ -127,13 +131,15 @@
         </details>
       <% end %>
       <%= render "transaction_actions" %>
-      <% if tender_mode && @pos_transaction.editable? %>
+      <% if tender_mode && @pos_transaction.editable? && !@workspace.forced_tender %>
         <p>
-          <%= link_to "Return to editing",
+          <%= link_to "Return to Transaction",
                 pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-                class: "button button-ghost button-small",
-                data: (@pos_transaction.unresolved_tenders? ? { turbo_confirm: "Leave tender with unresolved payment activity?" } : {}) %>
+                class: "button button-ghost button-small" %>
         </p>
+        <p class="field-hint">Commercial editing reopens only while settlement state is safe.</p>
+      <% elsif tender_mode && @workspace.forced_tender %>
+        <p class="muted" role="status">Return to Transaction is blocked while tender activity is unresolved.</p>
       <% end %>
     </aside>
   </div>

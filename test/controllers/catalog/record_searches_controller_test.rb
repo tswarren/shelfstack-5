@@ -53,9 +53,31 @@ class Catalog::RecordSearchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
-  test "denies clerk without catalog permission for products" do
+  test "allows clerk with pos.access to search products for POS lookup" do
     delete session_path
     post session_path, params: { username: "clerk", password: "password123" }
+
+    get catalog_record_searches_path, params: { type: "product", q: "Illustrated" }, as: :json
+    assert_response :success
+  end
+
+  test "denies product search without catalog or pos permission" do
+    store = stores(:main_street)
+    user = User.create!(
+      username: "nocat_#{SecureRandom.hex(2)}",
+      user_number: rand(10_000..99_999),
+      first_name: "No", last_name: "Catalog",
+      password: "password123",
+      active: true, default_store: store
+    )
+    role = Role.create!(
+      organization: store.organization, code: "nocat_#{user.username}", name: "No catalog", active: true
+    )
+    RolePermission.create!(role: role, permission: Permission.find_by!(code: "customers.customer.view"))
+    StoreMembership.create!(user: user, store: store, role: role, active: true)
+
+    delete session_path
+    post session_path, params: { username: user.username, password: "password123" }
 
     get catalog_record_searches_path, params: { type: "product", q: "Illustrated" }, as: :json
     assert_response :forbidden

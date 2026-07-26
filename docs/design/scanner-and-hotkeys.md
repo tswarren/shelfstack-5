@@ -1,6 +1,7 @@
 # Scanner and hotkeys
 
-**Status:** Governing baseline for POS input (Phase 6.5)  
+**Status:** Governing baseline for POS input (Phase 11 / Gate 11E; builds on Phase 6.5)  
+
 **Exploratory archive:** [../archive/ux-drafts-2026-07/keyboard-shortcuts-barcode-integration.md](../archive/ux-drafts-2026-07/keyboard-shortcuts-barcode-integration.md)  
 **Prototype:** [prototypes/ui_mockup/pos.html](prototypes/ui_mockup/pos.html)  
 **POS UI contract:** [pos-register-ui.md](pos-register-ui.md)

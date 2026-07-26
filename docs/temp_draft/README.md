@@ -4,7 +4,7 @@ Scratch area for work in progress. Durable material must be promoted to governin
 
 ## Active scratch
 
-- Phase 11 maintenance brief: [`phase-11/`](phase-11/README.md) — DWR-028 / DWR-064 only (governing Phase 11 plan is promoted)
+- Phase 11 parallel design: [`phase-11/`](phase-11/README.md) — Correction Integrity Design Packet (DWR-004–006); governing Phase 11 plan is promoted
 
 ## Recent promotions
 

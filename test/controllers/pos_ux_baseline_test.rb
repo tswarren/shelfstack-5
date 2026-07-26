@@ -141,7 +141,8 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".workspace-primary"
     assert_select ".workspace-primary input.button-primary[value=?]", "Scan to start"
-    assert_select ".workspace-primary .button-outline", text: "New transaction"
+    assert_select ".workspace-primary", text: /empty transaction is never opened/i
+    assert_select ".workspace-primary .button-outline", text: "New transaction", count: 0
     assert_select "a", text: "Main workspace"
     assert_select "a[href=?]", root_path, text: "Main workspace"
   end
@@ -183,7 +184,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
                     "postable children should follow full-tree order (Books child before dept 800)"
   end
 
-  test "completed transaction shows change due and back to register without print" do
+  test "completed transaction shows change due, next transaction, and print receipt" do
     Pos::AddOpenRingLine.call(
       pos_transaction: @transaction, department: @department, unit_price_cents: 1000, actor: @admin
     )
@@ -200,7 +201,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select ".pos-completed-summary"
     assert_match "Change due", response.body
     assert_select "a", text: "Next transaction"
-    assert_no_match(/Print Receipt/i, response.body)
+    assert_select "a", text: "Print receipt"
   end
 
   test "receipt lookup loads returnable lines for selection" do
