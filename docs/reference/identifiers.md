@@ -35,7 +35,7 @@ Exact allowed character sets for free-text alternate identifiers may be wider; t
 4. Store and look up only the ISBN-13 canonical form.
 5. Do **not** store ISBN-10 solely as an alternate identifier for search.
 
-Invalid ISBN-10 check digits produce an overridable warning and keep the stripped ISBN-10-shaped value as canonical storage (same pattern as invalid EAN-13/UPC checksums). Invalid ISBN-10-shaped input must not be silently converted into a valid-looking ISBN-13.
+Invalid ISBN-10-shaped input must not be silently converted into a valid-looking ISBN-13.
 
 ### Test vector
 

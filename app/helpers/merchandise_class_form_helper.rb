@@ -6,12 +6,13 @@ module MerchandiseClassFormHelper
   def merchandise_class_select_options(organization, selected: nil)
     selected = coerce_merchandise_class(organization, selected)
     records = organization.merchandise_classes.includes(:parent).to_a
+    by_id = records.index_by(&:id)
     keep_ids = Set.new(records.select(&:active?).map(&:id))
     if selected
       cursor = selected
       while cursor
         keep_ids << cursor.id
-        cursor = cursor.parent
+        cursor = by_id[cursor.parent_id]
       end
     end
 
@@ -29,12 +30,14 @@ module MerchandiseClassFormHelper
   def merchandise_class_cascade_payload(organization, selected: nil)
     selected = coerce_merchandise_class(organization, selected)
     records = organization.merchandise_classes.select(:id, :name, :level, :parent_id, :active).to_a
+    by_id = records.index_by(&:id)
     keep_ids = Set.new(records.select(&:active?).map(&:id))
     if selected
       cursor = selected
       while cursor
         keep_ids << cursor.id
-        cursor = records.find { |r| r.id == cursor.parent_id } || cursor.parent
+        # Walk only organization-scoped rows — never trust association parents.
+        cursor = by_id[cursor.parent_id]
       end
     end
 
@@ -55,13 +58,16 @@ module MerchandiseClassFormHelper
 
   private
 
+  # Always re-resolve through the organization. Never trust an already-loaded
+  # MerchandiseClass instance — it may belong to another organization.
   def coerce_merchandise_class(organization, selected)
-    case selected
-    when MerchandiseClass then selected
-    when Integer, String
-      organization.merchandise_classes.find_by(id: selected)
+    id = case selected
+    when MerchandiseClass then selected.id
+    when Integer, String then selected
     else
-      nil
+      return nil
     end
+
+    organization.merchandise_classes.find_by(id: id)
   end
 end

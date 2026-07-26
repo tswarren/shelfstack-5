@@ -13,12 +13,29 @@ export default class extends Controller {
       }
     }
     document.addEventListener("keydown", this._onKeydown)
+    document.addEventListener("turbo:before-stream-render", this.onBeforeStreamRender)
   }
 
   disconnect() {
     this.element.removeEventListener("close", this.onClose)
     this.element.removeEventListener("cancel", this.onCancel)
     document.removeEventListener("keydown", this._onKeydown)
+    document.removeEventListener("turbo:before-stream-render", this.onBeforeStreamRender)
+  }
+
+  // Handles <%= turbo_stream.action :close_dialog, "inline-creator-dialog" %>.
+  onBeforeStreamRender = (event) => {
+    const streamElement = event.target
+    if (
+      streamElement.getAttribute("action") !== "close_dialog" ||
+      streamElement.getAttribute("target") !== this.element.id
+    ) {
+      return
+    }
+
+    event.detail.render = () => {
+      this.closeAndReturnFocus()
+    }
   }
 
   disableSubmit() {
@@ -46,9 +63,9 @@ export default class extends Controller {
     })
   }
 
-  // Called from turbo_stream after successful create.
+  // Called from turbo_stream after successful create. Focus return runs via
+  // the native `close` listener (`onClose`).
   closeAndReturnFocus() {
     if (this.element.open) this.element.close()
-    this.returnFocus()
   }
 }

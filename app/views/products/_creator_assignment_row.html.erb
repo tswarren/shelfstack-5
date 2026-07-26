@@ -12,13 +12,15 @@
      id="creator-assignment-row-<%= index %>"
      data-creator-assignments-target="row"
      data-creator-row-index="<%= index %>">
-  <%= render "shared/record_picker",
-        name: "product[creator_assignments][][creator_id]",
-        id: "product_creator_assignment_#{index}_creator_id",
-        record_type: "creator",
-        selected_id: creator&.id,
-        label: "Creator",
-        required: true %>
+  <div id="product_creator_assignment_<%= index %>_creator_picker">
+    <%= render "shared/record_picker",
+          name: "product[creator_assignments][][creator_id]",
+          id: "product_creator_assignment_#{index}_creator_id",
+          record_type: "creator",
+          selected_id: creator&.id,
+          label: "Creator",
+          required: true %>
+  </div>
   <div class="field">
     <label class="field-label" for="product_creator_assignment_<%= index %>_role">Role</label>
     <select name="product[creator_assignments][][role]"
@@ -40,6 +42,7 @@
   <div class="creator-assignment-row-actions">
     <% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
       <button type="button"
+              id="inline-creator-opener-<%= index %>"
               class="button button-outline"
               data-controller="inline-creator"
               data-action="inline-creator#open">

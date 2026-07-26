@@ -3,14 +3,21 @@
 <% identifier_warning_detail = local_assigns[:identifier_warning_detail] || @identifier_warning_detail %>
 <% identifier_value = local_assigns.key?(:identifier) ? local_assigns[:identifier] : (@identifier.nil? ? params[:identifier] : @identifier) %>
 <% accept_identifier_warning = ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning]) %>
+<%
+  price_sync_mode = params[:price_sync_mode].presence
+  unless %w[linked independent].include?(price_sync_mode)
+    price_sync_mode = (product.list_price_cents.present? &&
+      variant&.regular_price_cents.present? &&
+      product.list_price_cents != variant.regular_price_cents) ? "independent" : "linked"
+  end
+%>
 <%= form_with model: product,
       url: product.persisted? ? product_path(product) : products_path,
       method: product.persisted? ? :patch : :post,
       class: "form form--with-sticky-actions",
-      data: { controller: "price-sync",
-              price_sync_mode_value: (product.list_price_cents.present? &&
-                variant&.regular_price_cents.present? &&
-                product.list_price_cents != variant.regular_price_cents) ? "independent" : "linked" } do |form| %>
+      data: { controller: "price-sync", price_sync_mode_value: price_sync_mode } do |form| %>
+  <%= hidden_field_tag :price_sync_mode, price_sync_mode,
+        data: { price_sync_target: "mode" } %>
   <%= render "shared/form_errors", object: product, id: "form-errors-product" %>
   <% if variant.present? && variant.errors.any? %>
     <%= render "shared/form_errors", object: variant, id: "form-errors-variant" %>
@@ -41,7 +48,7 @@
             </label>
           </div>
           <div class="button-row">
-            <button type="submit" class="button button-primary" name="accept_identifier_warning" value="1">
+            <button type="submit" class="button button-primary">
               Save anyway
             </button>
             <a href="#product_identifier" class="button button-outline">Correct identifier</a>

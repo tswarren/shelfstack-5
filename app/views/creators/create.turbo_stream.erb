@@ -20,22 +20,20 @@
       <% end %>
     <% end %>
   <% else %>
-    <% row_dom_id = "creator-assignment-row-#{@row_index.presence || "new"}" %>
-    <%= turbo_stream.replace row_dom_id do %>
-      <%= render "products/creator_assignment_row",
-            index: @row_index.presence || SecureRandom.hex(4),
-            creator: @creator,
-            role: "author",
-            credited_as: nil %>
+    <% row_index = @row_index.presence || "new" %>
+    <% picker_dom_id = "product_creator_assignment_#{row_index}_creator_picker" %>
+    <%# Replace only the creator picker — preserve role, credited-as, and opener button. %>
+    <%= turbo_stream.replace picker_dom_id do %>
+      <div id="<%= picker_dom_id %>">
+        <%= render "shared/record_picker",
+              name: "product[creator_assignments][][creator_id]",
+              id: "product_creator_assignment_#{row_index}_creator_id",
+              record_type: "creator",
+              selected_id: @creator.id,
+              label: "Creator",
+              required: true %>
+      </div>
     <% end %>
-    <%= turbo_stream.append "flash" do %>
-      <template data-inline-creator-success="1"></template>
-    <% end %>
-    <script>
-      (() => {
-        const dialog = document.getElementById("inline-creator-dialog");
-        if (dialog?.open) dialog.close();
-      })();
-    </script>
+    <%= turbo_stream.action :close_dialog, "inline-creator-dialog" %>
   <% end %>
 <% end %>

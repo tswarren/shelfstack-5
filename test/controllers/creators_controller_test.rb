@@ -53,6 +53,29 @@ class CreatorsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "inline product-form create replaces only the creator picker and closes dialog" do
+    post session_path, params: { username: "admin", password: "password123" }
+
+    assert_difference "Creator.count", 1 do
+      post creators_url,
+           params: {
+             inline_product_form: "1",
+             row_index: "row42",
+             creator: { display_name: "Inline Stream Creator", active: true }
+           },
+           as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_match(
+      /turbo-stream[^>]*action="replace"[^>]*target="product_creator_assignment_row42_creator_picker"/,
+      response.body
+    )
+    assert_no_match(/creator-assignment-row-row42/, response.body)
+    assert_match(/turbo-stream[^>]*action="close_dialog"[^>]*target="inline-creator-dialog"/, response.body)
+    assert_no_match(/<script>/, response.body)
+  end
+
   test "update persists changes and records an audit diff" do
     post session_path, params: { username: "admin", password: "password123" }
     creator = creators(:ray_bradbury)

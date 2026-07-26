@@ -16,7 +16,7 @@ It does **not** change:
 
 - `Catalog::CreateProduct`'s two-step safety mechanism — product and standard variant are still built `sellable: false`, then the requested final sellable state is applied once both records exist. This phase changes what the **form pre-selects** as that requested state, not how the service persists it.
 - Merchandise class / department / tax category effective-value resolution.
-- Identifier normalization's `warning` vs. `invalid` `validation_status` distinction (`Identifiers::NormalizedIdentifier`).
+- Identifier normalization's `warning` vs. `invalid` `validation_status` distinction (`Identifiers::NormalizedIdentifier`), including that invalid ISBN-10 input remains non-overridable and is not stored as a ten-digit `:isbn13` canonical. Gate 10d binds overridable EAN-13/UPC check-digit warnings on the create form (§7.3).
 - The `capabilities`-gated dataset boundaries already returned by `Catalog::BuildProductSummary`.
 
 It must **not**:
@@ -145,7 +145,7 @@ Clearing the regular price field alone does **not** implicitly relink. Server-si
 - Service: `Catalog::CreateProduct` (`accept_identifier_warning:`)
 - Edit path is out of scope: edit form shows identifier as read-only; `Catalog::UpdateProduct` / `Catalog::UpdateProductWithStandardVariant` reject `identifier` attrs.
 
-When identifier normalization returns an overridable `warning` (including invalid ISBN-10 / EAN-13 / UPC check digits), an inline banner offers an accept checkbox plus **Save anyway** or **Correct identifier**, with entered form data preserved either way. The sticky create submit honors the checkbox.
+When identifier normalization returns an overridable `warning` (invalid EAN-13 / UPC check digits), an inline banner offers an accept checkbox plus **Save anyway** or **Correct identifier**, with entered form data preserved either way. Both **Save anyway** and the sticky create submit require the checkbox; neither button forces acceptance on its own.
 
 On resubmission, the server re-normalizes the currently submitted identifier. Warning acceptance is valid only when:
 

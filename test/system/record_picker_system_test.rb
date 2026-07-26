@@ -185,17 +185,18 @@ class RecordPickerSystemTest < ApplicationSystemTestCase
 
   test "selected labels survive validation rerender" do
     visit new_product_path
+    # Merchandise class is a flat/cascade select (Gate 10c); exercise a record picker.
     select_picker_result(
-      query_id: "product_merchandise_class_id_query",
-      query: "fiction",
-      result_text: /Fiction/i
+      query_id: "product_product_format_id_query",
+      query: "hard",
+      result_text: /Hardcover/i
     )
-    label = find("#product_merchandise_class_id_query").value
+    label = find("#product_product_format_id_query").value
     # Bypass HTML5 required so the server re-renders the form with errors.
     page.execute_script("document.querySelector('#product_name')?.removeAttribute('required')")
     click_button "Create product"
     assert_selector "#form-errors-product, .field-error", wait: 5
-    assert_equal label, find("#product_merchandise_class_id_query").value
+    assert_equal label, find("#product_product_format_id_query").value
   end
 
   test "stale delayed search response does not repopulate after clear" do

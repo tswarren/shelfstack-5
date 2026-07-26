@@ -205,12 +205,12 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "warning", product.identifier_validation_status
   end
 
-  test "invalid ISBN-10 check digit offers overridable warning and keeps form data" do
+  test "invalid ISBN-10 check digit blocks without save-anyway override" do
     assert_no_difference "Product.count" do
       post products_path, params: {
         identifier: "0-306-40615-3",
         product: {
-          name: "ISBN10 Warned",
+          name: "ISBN10 Blocked",
           product_type: "book",
           product_format_id: product_formats(:hardcover).id,
           status: "active",
@@ -227,9 +227,35 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_match(/invalid ISBN-10 check digit/, response.body)
-    assert_match(/Save anyway/, response.body)
-    assert_match(/value="ISBN10 Warned"/, response.body)
+    assert_no_match(/Save anyway/, response.body)
+    assert_match(/value="ISBN10 Blocked"/, response.body)
     assert_match(/value="0-306-40615-3"/, response.body)
+  end
+
+  test "price sync mode survives validation redisplay when regular price is cleared" do
+    assert_no_difference "Product.count" do
+      post products_path, params: {
+        price_sync_mode: "independent",
+        product: {
+          name: "",
+          list_price: "24.95",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          status: "active",
+          sellable: true
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price: "",
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/name="price_sync_mode"[^>]*value="independent"/, response.body)
+    assert_match(/data-price-sync-mode-value="independent"/, response.body)
   end
 
   test "denies clerk without catalog permission" do
