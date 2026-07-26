@@ -21,6 +21,7 @@
 }
 
 .card {
+  min-width: 0;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   background: var(--surface-primary);
@@ -29,14 +30,68 @@
 
 .card-header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 0.85rem 1rem;
   border-bottom: 1px solid var(--border-subtle);
 }
 
+.card-header h2,
+.card-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
 .card-body {
   padding: 1rem;
+}
+
+.card-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-100);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.card--nested {
+  box-shadow: none;
+}
+
+.card--nested + .card--nested {
+  margin-top: 1rem;
+}
+
+.list-clean {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list-clean li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+}
+
+.list-clean li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.list-clean li:first-child {
+  padding-top: 0;
+}
+
+.list-clean strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .toolbar {
@@ -255,23 +310,30 @@
   margin-top: 0.65rem;
 }
 
-.store-status-rail {
-  margin: 0 0 1.25rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--surface-primary);
+.product-record-panel {
+  margin-top: 0.25rem;
 }
 
-.store-status-rail-title {
-  margin: 0 0 0.75rem;
-  font-size: 1rem;
-  font-weight: 700;
+.product-record-panel > .tabs {
+  margin-top: 0;
 }
 
-.summary-strip .metric-value-sm {
-  font-size: 0.95rem;
-  font-weight: 650;
+.product-record-panel > .tabs > .tabs-list {
+  padding: 0 0.35rem;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.tabs-body {
+  padding-top: 1.1rem;
+}
+
+.tabs-aside .card--nested + .card--nested {
+  margin-top: 1rem;
+}
+
+.attention-panel .ss-alert + .ss-alert {
+  margin-top: 0.65rem;
 }
 
 .tabs {
@@ -282,16 +344,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
-  margin-bottom: 1rem;
+  overflow-x: auto;
   border-bottom: 1px solid var(--border-default);
 }
 
 .tabs-tab {
   position: relative;
-  padding: 0.65rem 0.85rem;
+  padding: 0.7rem 0.9rem;
   color: var(--text-secondary);
   text-decoration: none;
   font-weight: 650;
+  white-space: nowrap;
 }
 
 .tabs-tab:hover {
@@ -314,11 +377,15 @@
 }
 
 .tabs-panel {
-  margin-bottom: 1.25rem;
+  min-width: 0;
 }
 
 .tabs-panel[hidden] {
   display: none;
+}
+
+.tabs-main .card--nested:first-child {
+  margin-top: 0;
 }
 
 .provenance {

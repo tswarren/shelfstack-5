@@ -32,9 +32,6 @@
   </div>
 </header>
 
-<%= render "products/attention", summary: @summary %>
-<%= render "products/store_status_rail", summary: @summary %>
-
 <%
   tabs = [
     { id: "overview", label: "Overview" },
@@ -48,5 +45,12 @@
     "inventory" => capture { render "products/tab_inventory", summary: @summary },
     "supply" => capture { render "products/tab_supply", summary: @summary }
   }
+  aside = capture do
+    concat render("products/store_status_rail", summary: @summary)
+    concat render("products/attention", summary: @summary)
+  end
 %>
-<%= render "shared/tabs", tabs: tabs, panel_contents: panel_contents %>
+
+<section class="card product-record-panel" aria-label="Product record">
+  <%= render "shared/tabs", tabs: tabs, panel_contents: panel_contents, aside: aside %>
+</section>

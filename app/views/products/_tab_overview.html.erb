@@ -1,70 +1,90 @@
 <%# locals: summary: %>
 <% identity = summary.identity %>
 <% item = summary.standard_item %>
-<section class="record-section">
-  <h2 class="sr-only">Overview</h2>
-  <% rows = [
-    [ "Identifier", tag.code(identity.identifier) ],
-    [ "Product type", identity.product_type&.titleize || "—" ],
-    [ "Format", identity.product_format_name.presence || "—" ],
-    [ "Status", status_badge(identity.status.titleize, variant: product_status_variant(identity.status)) ],
-    [ "Sellable", boolean_status(identity.sellable, true_label: "Sellable", false_label: "Not sellable") ],
-    [ "Publisher / manufacturer", identity.publisher_or_manufacturer_name.presence || "—" ]
-  ] %>
-  <% unless suppress_product_identity_field?(:alternate_identifier, identity) %>
-    <% rows.insert(1, [ "Alternate identifier", identity.alternate_identifier ]) %>
-  <% end %>
-  <% unless suppress_product_identity_field?(:imprint_or_brand_name, identity) %>
-    <% rows << [ "Imprint / brand", identity.imprint_or_brand_name ] %>
-  <% end %>
-  <% if identity.publication_date.present? %>
-    <% rows << [ "Publication date", publication_date_label(identity) ] %>
-  <% end %>
-  <% unless suppress_product_identity_field?(:language_code, identity) %>
-    <% rows << [ "Language", language_code_label(identity.language_code) ] %>
-  <% end %>
-  <% unless suppress_product_identity_field?(:edition_statement, identity) %>
-    <% rows << [ "Edition", identity.edition_statement ] %>
-  <% end %>
-  <%= render "shared/record_summary", rows: rows %>
 
-  <% mc = summary.product.merchandise_class %>
-  <% if mc.present? %>
-    <h3 class="record-subsection-title">Classification</h3>
-    <p class="classification-breadcrumb"><%= merchandise_class_breadcrumb(mc) %></p>
-  <% elsif item&.effective_values&.merchandise_class&.value.present? %>
-    <h3 class="record-subsection-title">Classification</h3>
-    <p class="classification-breadcrumb"><%= merchandise_class_breadcrumb(item.effective_values.merchandise_class.value) %></p>
-  <% end %>
-
-  <% if identity.creators.any? %>
-    <h3 class="record-subsection-title">Creators</h3>
-    <ul class="creator-summary-list">
-      <% identity.creators.each do |creator| %>
-        <li>
-          <% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
-            <%= link_to creator.display_name, edit_creator_path(creator.id) %>
-          <% else %>
-            <%= creator.display_name %>
-          <% end %>
-          — <%= creator.role.to_s.titleize %>
-          <% if creator.credited_as.present? %>
-            (credited as <%= creator.credited_as %>)
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
-  <% end %>
-
-  <% if identity.description.present? %>
-    <h3 class="record-subsection-title">Description</h3>
-    <% if long_description?(identity.description) %>
-      <details class="description-details">
-        <summary>Show full description</summary>
-        <%= simple_format(identity.description) %>
-      </details>
-    <% else %>
-      <%= simple_format(identity.description) %>
+<article class="card card--nested">
+  <div class="card-header">
+    <h2>Product details</h2>
+  </div>
+  <div class="card-body">
+    <% rows = [
+      [ "Identifier", tag.code(identity.identifier) ],
+      [ "Product type", identity.product_type&.titleize || "—" ],
+      [ "Format", identity.product_format_name.presence || "—" ],
+      [ "Status", status_badge(identity.status.titleize, variant: product_status_variant(identity.status)) ],
+      [ "Sellable", boolean_status(identity.sellable, true_label: "Sellable", false_label: "Not sellable") ],
+      [ "Publisher / manufacturer", identity.publisher_or_manufacturer_name.presence || "—" ]
+    ] %>
+    <% unless suppress_product_identity_field?(:alternate_identifier, identity) %>
+      <% rows.insert(1, [ "Alternate identifier", identity.alternate_identifier ]) %>
     <% end %>
-  <% end %>
-</section>
+    <% unless suppress_product_identity_field?(:imprint_or_brand_name, identity) %>
+      <% rows << [ "Imprint / brand", identity.imprint_or_brand_name ] %>
+    <% end %>
+    <% if identity.publication_date.present? %>
+      <% rows << [ "Publication date", publication_date_label(identity) ] %>
+    <% end %>
+    <% unless suppress_product_identity_field?(:language_code, identity) %>
+      <% rows << [ "Language", language_code_label(identity.language_code) ] %>
+    <% end %>
+    <% unless suppress_product_identity_field?(:edition_statement, identity) %>
+      <% rows << [ "Edition", identity.edition_statement ] %>
+    <% end %>
+    <%= render "shared/record_summary", rows: rows %>
+  </div>
+</article>
+
+<% mc = summary.product.merchandise_class || item&.effective_values&.merchandise_class&.value %>
+<% if mc.present? %>
+  <article class="card card--nested">
+    <div class="card-header">
+      <h2>Classification</h2>
+    </div>
+    <div class="card-body">
+      <p class="classification-breadcrumb"><%= merchandise_class_breadcrumb(mc) %></p>
+    </div>
+  </article>
+<% end %>
+
+<% if identity.creators.any? %>
+  <article class="card card--nested">
+    <div class="card-header">
+      <h2>Creators</h2>
+    </div>
+    <div class="card-body">
+      <ul class="creator-summary-list">
+        <% identity.creators.each do |creator| %>
+          <li>
+            <% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
+              <%= link_to creator.display_name, edit_creator_path(creator.id) %>
+            <% else %>
+              <%= creator.display_name %>
+            <% end %>
+            — <%= creator.role.to_s.titleize %>
+            <% if creator.credited_as.present? %>
+              (credited as <%= creator.credited_as %>)
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </article>
+<% end %>
+
+<% if identity.description.present? %>
+  <article class="card card--nested">
+    <div class="card-header">
+      <h2>Description</h2>
+    </div>
+    <div class="card-body">
+      <% if long_description?(identity.description) %>
+        <details class="description-details">
+          <summary>Show full description</summary>
+          <%= simple_format(identity.description) %>
+        </details>
+      <% else %>
+        <%= simple_format(identity.description) %>
+      <% end %>
+    </div>
+  </article>
+<% end %>

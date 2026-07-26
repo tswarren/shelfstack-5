@@ -2,48 +2,51 @@
 <% ops = summary.store_operations %>
 <% caps = summary.capabilities %>
 <% store_name = summary.store.name %>
-<section class="record-section">
-  <h2 class="sr-only">Supply</h2>
 
-  <h3 class="record-subsection-title">Supply summary — <%= store_name %></h3>
-  <% summary_rows = [] %>
-  <% if caps.purchase_order_view %>
-    <% summary_rows << [ "Open order quantity", ops.open_order_quantity || 0 ] %>
-    <% if ops.latest_po %>
-      <% summary_rows << [ "Most recent purchase order", link_to(ops.latest_po.label, purchase_order_path(ops.latest_po.id)) ] %>
+<article class="card card--nested">
+  <div class="card-header">
+    <h2>Supply summary — <%= store_name %></h2>
+  </div>
+  <div class="card-body">
+    <% summary_rows = [] %>
+    <% if caps.purchase_order_view %>
+      <% summary_rows << [ "Open order quantity", ops.open_order_quantity || 0 ] %>
+      <% if ops.latest_po %>
+        <% summary_rows << [ "Most recent purchase order", link_to(ops.latest_po.label, purchase_order_path(ops.latest_po.id)) ] %>
+      <% else %>
+        <% summary_rows << [ "Most recent purchase order", "—" ] %>
+      <% end %>
     <% else %>
-      <% summary_rows << [ "Most recent purchase order", "—" ] %>
+      <p class="muted">Purchase-order details are not available with your permissions.</p>
     <% end %>
-  <% else %>
-    <p class="muted">Purchase-order details are not available with your permissions.</p>
-  <% end %>
-  <% if caps.receipt_view %>
-    <% if ops.latest_receipt %>
-      <% summary_rows << [ "Most recent receipt", link_to(ops.latest_receipt.label, receipt_path(ops.latest_receipt.id)) ] %>
+    <% if caps.receipt_view %>
+      <% if ops.latest_receipt %>
+        <% summary_rows << [ "Most recent receipt", link_to(ops.latest_receipt.label, receipt_path(ops.latest_receipt.id)) ] %>
+      <% else %>
+        <% summary_rows << [ "Most recent receipt", "—" ] %>
+      <% end %>
     <% else %>
-      <% summary_rows << [ "Most recent receipt", "—" ] %>
+      <p class="muted">Receipt details are not available with your permissions.</p>
     <% end %>
-  <% else %>
-    <p class="muted">Receipt details are not available with your permissions.</p>
-  <% end %>
-  <% if caps.request_view %>
-    <% count = ops.open_demand_count || 0 %>
-    <% demand_cell = if count.positive? && ops.open_requests.first
-      safe_join([
-        "#{count} open",
-        " · ",
-        link_to("##{ops.open_requests.first.id}", product_request_path(ops.open_requests.first.id))
-      ])
-    else
-      "None"
-    end %>
-    <% summary_rows << [ "Open demand", demand_cell ] %>
-  <% else %>
-    <p class="muted">Product-request details are not available with your permissions.</p>
-  <% end %>
-  <% if summary_rows.any? %>
-    <%= render "shared/record_summary", rows: summary_rows %>
-  <% end %>
+    <% if caps.request_view %>
+      <% count = ops.open_demand_count || 0 %>
+      <% demand_cell = if count.positive? && ops.open_requests.first
+        safe_join([
+          "#{count} open",
+          " · ",
+          link_to("##{ops.open_requests.first.id}", product_request_path(ops.open_requests.first.id))
+        ])
+      else
+        "None"
+      end %>
+      <% summary_rows << [ "Open demand", demand_cell ] %>
+    <% else %>
+      <p class="muted">Product-request details are not available with your permissions.</p>
+    <% end %>
+    <% if summary_rows.any? %>
+      <%= render "shared/record_summary", rows: summary_rows %>
+    <% end %>
+  </div>
+</article>
 
-  <%= render "products/vendor_sources", summary: summary %>
-</section>
+<%= render "products/vendor_sources", summary: summary %>
