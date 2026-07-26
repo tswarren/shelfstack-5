@@ -1,6 +1,13 @@
 <% creator_rows = local_assigns[:creator_rows] || [] %>
+<% identifier_warning_normalized = local_assigns[:identifier_warning_normalized] || @identifier_warning_normalized %>
+<% identifier_warning_detail = local_assigns[:identifier_warning_detail] || @identifier_warning_detail %>
 <%= form_with url: product.persisted? ? product_path(product) : products_path,
-      method: product.persisted? ? :patch : :post, class: "form" do |form| %>
+      method: product.persisted? ? :patch : :post,
+      class: "form form--with-sticky-actions",
+      data: { controller: "price-sync",
+              price_sync_mode_value: (product.list_price_cents.present? &&
+                variant&.regular_price_cents.present? &&
+                product.list_price_cents != variant.regular_price_cents) ? "independent" : "linked" } do |form| %>
   <%= render "shared/form_errors", object: product, id: "form-errors-product" %>
   <% if variant.present? && variant.errors.any? %>
     <%= render "shared/form_errors", object: variant, id: "form-errors-variant" %>
@@ -9,7 +16,26 @@
   <section class="form-section">
     <h2 class="form-section-title">Identity</h2>
     <% unless product.persisted? %>
-      <div class="form-grid">
+      <% if identifier_warning_normalized.present? %>
+        <div class="identifier-warning-banner" role="status">
+          <p>
+            <strong>Identifier warning:</strong>
+            <%= identifier_warning_normalized %>
+            <% if identifier_warning_detail.present? %>
+              — <%= identifier_warning_detail %>
+            <% end %>
+          </p>
+          <p class="muted">Save anyway accepts only this exact normalized identifier. Editing the identifier clears acceptance.</p>
+          <div class="button-row">
+            <button type="submit" class="button button-primary" name="accept_identifier_warning" value="1">
+              Save anyway
+            </button>
+            <a href="#identifier" class="button button-outline">Correct identifier</a>
+          </div>
+          <input type="hidden" name="accepted_identifier_normalized" value="<%= identifier_warning_normalized %>">
+        </div>
+      <% end %>
+      <div class="form-grid form-grid--2">
         <div class="field">
           <label class="field-label" for="identifier">Identifier</label>
           <input type="text" name="identifier" id="identifier" class="input"
@@ -17,19 +43,12 @@
           <p class="field-hint">Leave blank to generate a namespace 29 identifier.</p>
         </div>
       </div>
-      <div class="checkbox-group">
-        <label>
-          <input type="checkbox" name="accept_identifier_warning" id="accept_identifier_warning" value="1"
-            <%= "checked" if params[:accept_identifier_warning] == "1" %>>
-          Accept identifier warning (save despite an invalid check digit)
-        </label>
-      </div>
     <% else %>
       <%= render "shared/record_summary", rows: [ [ "Identifier", tag.code(product.identifier) ] ] %>
     <% end %>
 
     <%= fields_for :product, product do |product_form| %>
-      <div class="form-grid">
+      <div class="form-grid form-grid--2">
         <div class="field">
           <%= product_form.label :name, class: "field-label" %>
           <%= product_form.text_field :name, class: "input", required: true %>
@@ -61,7 +80,7 @@
   <section class="form-section">
     <h2 class="form-section-title">Bibliographic detail</h2>
     <%= fields_for :product, product do |product_form| %>
-      <div class="form-grid">
+      <div class="form-grid form-grid--3">
         <div class="field">
           <%= product_form.label :edition_statement, "Edition", class: "field-label" %>
           <%= product_form.text_field :edition_statement, class: "input" %>
@@ -95,13 +114,15 @@
     <template data-creator-assignments-target="template">
       <%= render "products/creator_assignment_row", index: "NEW_RECORD", creator: nil, role: nil, credited_as: nil %>
     </template>
-    <button type="button" class="button button-secondary" data-action="creator-assignments#addRow">Add creator</button>
+    <div class="action-group">
+      <button type="button" class="button button-secondary" data-action="creator-assignments#addRow">Add creator</button>
+    </div>
   </section>
 
   <%= fields_for :product, product do |product_form| %>
     <section class="form-section">
       <h2 class="form-section-title">Description</h2>
-      <div class="field">
+      <div class="field field--full">
         <%= product_form.label :description, class: "field-label" %>
         <%= product_form.text_area :description, class: "input", rows: 4 %>
       </div>
@@ -109,19 +130,16 @@
 
     <section class="form-section">
       <h2 class="form-section-title">Classification</h2>
-      <div class="form-grid">
+      <div class="form-grid form-grid--2">
         <%= render "shared/record_picker",
               form: product_form,
               method: :product_format_id,
               record_type: "product_format",
               selected: product.product_format,
               label: "Format" %>
-        <%= render "shared/record_picker",
+        <%= render "products/merchandise_class_field",
               form: product_form,
-              method: :merchandise_class_id,
-              record_type: "merchandise_class",
-              selected: product.merchandise_class,
-              label: "Merchandise class" %>
+              product: product %>
         <%= render "shared/record_picker",
               form: product_form,
               method: :default_department_id,
@@ -141,12 +159,13 @@
 
     <section class="form-section">
       <h2 class="form-section-title">Pricing &amp; availability</h2>
-      <div class="form-grid">
+      <div class="form-grid form-grid--3">
         <%= render "shared/money_field", name: "product[list_price]", label: "List price",
               value_cents: product.list_price_cents, id: "product_list_price",
               object: product, error_attr: :list_price,
               value: params.dig(:product, :list_price),
-              hint: "Manufacturer list price. Enter dollars, e.g. 24.95." %>
+              hint: "Manufacturer list price. Enter dollars, e.g. 24.95.",
+              input_html: { data: { price_sync_target: "list", action: "input->price-sync#listChanged" } } %>
         <div class="field">
           <%= product_form.label :available_from, class: "field-label" %>
           <%= product_form.date_field :available_from, class: "input input-date" %>
@@ -162,7 +181,7 @@
   <section class="form-section">
     <h2 class="form-section-title">Standard variant</h2>
     <%= fields_for :product_variant, variant do |variant_form| %>
-      <div class="form-grid">
+      <div class="form-grid form-grid--3">
         <div class="field">
           <%= variant_form.label :inventory_tracking_mode, "Tracking mode", class: "field-label" %>
           <%= variant_form.select :inventory_tracking_mode, ProductVariant::INVENTORY_TRACKING_MODES.map { |m| [ m.titleize, m ] } %>
@@ -171,12 +190,19 @@
               value_cents: variant.regular_price_cents, id: "product_variant_regular_price",
               object: variant, error_attr: :regular_price,
               value: params.dig(:product_variant, :regular_price),
-              hint: "Required when the variant is sellable. Enter dollars, e.g. 12.95." %>
+              hint: "Required when the variant is sellable. Enter dollars, e.g. 12.95.",
+              input_html: { data: { price_sync_target: "regular", action: "input->price-sync#regularChanged" } } %>
         <div class="field">
           <%= variant_form.label :status, class: "field-label" %>
           <%= variant_form.select :status, ProductVariant::STATUSES.map { |s| [ s.titleize, s ] } %>
         </div>
       </div>
+      <p>
+        <button type="button" class="button button-ghost" data-price-sync-target="relink"
+                data-action="price-sync#useListPrice" hidden>
+          Use list price
+        </button>
+      </p>
       <div class="checkbox-group">
         <label><%= variant_form.check_box :sellable %> Variant is sellable</label>
       </div>
@@ -186,7 +212,7 @@
   <section class="form-section">
     <h2 class="form-section-title">Status</h2>
     <%= fields_for :product, product do |product_form| %>
-      <div class="form-grid">
+      <div class="form-grid form-grid--2">
         <div class="field">
           <%= product_form.label :status, class: "field-label" %>
           <%= product_form.select :status, Product::STATUSES.map { |s| [ s.titleize, s ] } %>
@@ -198,8 +224,12 @@
     <% end %>
   </section>
 
-  <div class="form-actions">
+  <div class="form-actions form-actions--sticky">
     <%= form.submit product.persisted? ? "Update product" : "Create product", class: "button button-primary" %>
     <%= link_to "Cancel", product.persisted? ? product_path(product) : products_path, class: "button button-outline" %>
   </div>
+<% end %>
+
+<% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
+  <%= render "products/inline_creator_dialog" %>
 <% end %>

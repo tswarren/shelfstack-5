@@ -2,24 +2,51 @@
 <% store_name = @summary.store.name %>
 <% content_for :title, identity.name %>
 
-<%= render "shared/page_header",
-      title: identity.name,
-      subtitle: [
-        identity.subtitle.presence,
-        product_summary_bibliographic_line(identity),
-        "Ops for #{store_name}"
-      ].compact.join(" · "),
-      breadcrumbs: [ { label: "Products", path: products_path }, { label: identity.name } ],
-      actions: capture {
-        if Current.user.can?("catalog.product.edit", store: Current.store)
-          concat link_to("Edit", edit_product_path(@product), class: "button button-primary")
-        end
-        concat link_to("Back to products", products_path, class: "button button-outline")
-      } %>
+<header class="page-header product-record-header">
+  <%= render "shared/breadcrumbs", items: [ { label: "Products", path: products_path }, { label: identity.name } ] %>
+  <div class="page-header-row">
+    <div class="page-header-text">
+      <h1><%= identity.name %></h1>
+      <% if identity.subtitle.present? %>
+        <p class="product-record-subtitle"><%= identity.subtitle %></p>
+      <% end %>
+      <% byline = product_creator_byline(identity) %>
+      <% if byline.present? %>
+        <p class="product-record-byline"><%= byline %></p>
+      <% end %>
+      <% biblio = product_summary_bibliographic_line(identity) %>
+      <% if biblio.present? %>
+        <p class="muted product-record-biblio"><%= biblio %></p>
+      <% end %>
+      <div class="product-record-badges">
+        <%= status_badge(identity.status.titleize, variant: product_status_variant(identity.status)) %>
+        <%= boolean_status(identity.sellable, true_label: "Sellable", false_label: "Not sellable") %>
+      </div>
+    </div>
+    <div class="page-actions">
+      <% if Current.user.can?("catalog.product.edit", store: Current.store) %>
+        <%= link_to "Edit", edit_product_path(@product), class: "button button-primary" %>
+      <% end %>
+      <%= link_to "Back to products", products_path, class: "button button-outline" %>
+    </div>
+  </div>
+</header>
 
 <%= render "products/attention", summary: @summary %>
-<%= render "products/identity", summary: @summary %>
-<%= render "products/standard_item", summary: @summary %>
-<%= render "products/stock", summary: @summary %>
-<%= render "products/store_operations", summary: @summary %>
-<%= render "products/vendor_sources", summary: @summary %>
+<%= render "products/store_status_rail", summary: @summary %>
+
+<%
+  tabs = [
+    { id: "overview", label: "Overview" },
+    { id: "selling", label: "Selling configuration" },
+    { id: "inventory", label: "Inventory" },
+    { id: "supply", label: "Supply" }
+  ]
+  panel_contents = {
+    "overview" => capture { render "products/tab_overview", summary: @summary },
+    "selling" => capture { render "products/tab_selling", summary: @summary },
+    "inventory" => capture { render "products/tab_inventory", summary: @summary },
+    "supply" => capture { render "products/tab_supply", summary: @summary }
+  }
+%>
+<%= render "shared/tabs", tabs: tabs, panel_contents: panel_contents %>

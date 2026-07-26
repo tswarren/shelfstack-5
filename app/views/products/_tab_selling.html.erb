@@ -1,0 +1,34 @@
+<%# locals: summary: %>
+<section class="record-section">
+  <h2 class="sr-only">Selling configuration</h2>
+  <% item = summary.standard_item %>
+  <% if item.nil? %>
+    <%= render "shared/empty_state",
+          title: "No standard item",
+          body: "This Product does not have a standard item yet." %>
+  <% else %>
+    <% effective = item.effective_values %>
+    <% price_rows = product_price_display_rows(
+          list_price_cents: summary.product.list_price_cents,
+          regular_price_cents: item.regular_price_cents
+        ) %>
+    <% rows = [
+      [ "SKU", tag.code(item.sku) ],
+      [ "Name", item.name ],
+      [ "Status", status_badge(item.status.titleize, variant: product_status_variant(item.status)) ]
+    ] + price_rows + [
+      [ "Tracking mode", effective_value_display(effective.tracking_mode) ],
+      [ "Sellable", boolean_status(item.sellable, true_label: "Sellable", false_label: "Not sellable") ],
+      [ "Purchasable", boolean_status(item.purchasable, true_label: "Purchasable", false_label: "Not purchasable") ],
+      [ "Department", effective_value_display(effective.department) ],
+      [ "Tax category", effective_value_display(effective.tax_category) ],
+      [ "Returnability", effective_value_display(effective.returnability_setting) ],
+      [ "Discountability", effective_value_display(effective.discountability_setting) ],
+      [ "Return policy", effective_value_display(effective.return_policy) ]
+    ] %>
+    <% if summary.capabilities.inventory_cost_view && summary.stock&.moving_average_cost_cents %>
+      <% rows << [ "Moving average cost", inventory_money(summary.stock.moving_average_cost_cents, quality: summary.stock.cost_quality) ] %>
+    <% end %>
+    <%= render "shared/record_summary", rows: rows %>
+  <% end %>
+</section>

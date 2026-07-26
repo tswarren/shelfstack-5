@@ -1,0 +1,28 @@
+<%# locals: tabs: [{ id:, label: }], panels: capture blocks keyed by id via yield, or use content %>
+<%# Prefer calling with a block that yields panel content via content_for, or pass panel_contents hash. %>
+<% tabs = local_assigns.fetch(:tabs) %>
+<% panel_contents = local_assigns.fetch(:panel_contents) %>
+<% default_id = tabs.first.fetch(:id) %>
+
+<div class="tabs" data-controller="tabs">
+  <div class="tabs-list" data-tabs-target="list">
+    <% tabs.each_with_index do |tab, index| %>
+      <a href="#<%= tab[:id] %>"
+         id="tab-<%= tab[:id] %>"
+         class="tabs-tab<%= " is-active" if index.zero? %>"
+         data-tabs-target="tab"
+         data-tabs-panel="<%= tab[:id] %>">
+        <%= tab[:label] %>
+      </a>
+    <% end %>
+  </div>
+
+  <% tabs.each_with_index do |tab, index| %>
+    <section id="<%= tab[:id] %>"
+             class="tabs-panel<%= " is-active" if index.zero? %>"
+             data-tabs-target="panel"
+             data-tabs-default="<%= default_id %>">
+      <%= panel_contents.fetch(tab[:id]) %>
+    </section>
+  <% end %>
+</div>

@@ -1,0 +1,73 @@
+<%# locals: summary: %>
+<% stock = summary.stock %>
+<% caps = summary.capabilities %>
+<% store_name = summary.store.name %>
+<section class="record-section">
+  <h2 class="sr-only">Inventory</h2>
+  <% if !caps.stock_view %>
+    <p class="muted">Stock details are not available with your permissions.</p>
+  <% elsif stock.nil? %>
+    <%= render "shared/empty_state",
+          title: "No stock projection",
+          body: "Stock is unavailable for this product at #{store_name}." %>
+  <% elsif stock.tracking_mode == "quantity" %>
+    <p class="muted">
+      Available = on hand − reserved − unavailable
+      (<%= stock.available %> = <%= stock.on_hand %> − <%= stock.reserved %> − <%= stock.unavailable %>).
+    </p>
+    <%= render "shared/record_summary", rows: [
+      [ "On hand", stock.on_hand ],
+      [ "Reserved", stock.reserved ],
+      [ "Unavailable", stock.unavailable ],
+      [ "Available", stock.available ],
+      [ "On order", stock.on_order.nil? ? "—" : stock.on_order ],
+      [ "Last received", (caps.receipt_view && stock.last_received_at) ? formatted_datetime(stock.last_received_at, format: :short) : "—" ]
+    ] %>
+    <% if caps.inventory_cost_view && !stock.moving_average_cost_cents.nil? %>
+      <%= render "shared/record_summary", rows: [
+        [ "Moving average cost", inventory_money(stock.moving_average_cost_cents, quality: stock.cost_quality) ],
+        (stock.cost_quality.present? ? [ "Cost quality", status_badge(stock.cost_quality.titleize, variant: cost_quality_variant(stock.cost_quality)) ] : nil)
+      ].compact %>
+    <% end %>
+    <p>
+      <% if stock.stock_balance_id %>
+        <%= link_to "View stock balance", stock_balance_path(stock.stock_balance_id) %>
+        <% if summary.standard_item %>
+          · <%= link_to "Find in stock list", stock_balances_path(q: summary.standard_item.sku) %>
+        <% end %>
+      <% else %>
+        <%= link_to "Stock balances", stock_balances_path %>
+      <% end %>
+      · <%= link_to "Reservations", inventory_reservations_path %>
+    </p>
+  <% elsif stock.tracking_mode == "individual" %>
+    <% unless stock.on_order.nil? %>
+      <p>On order: <strong><%= stock.on_order %></strong></p>
+    <% end %>
+    <div class="table-container">
+      <table class="data-table">
+        <caption class="sr-only">Inventory unit status counts for <%= store_name %></caption>
+        <thead>
+          <tr>
+            <th scope="col">Status</th>
+            <th scope="col" class="num">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% stock.unit_status_counts.each do |status, count| %>
+            <tr>
+              <td><%= status.to_s.titleize %></td>
+              <td class="num"><%= count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      <%= link_to "Inventory units", inventory_units_path %>
+      · <%= link_to "Reservations", inventory_reservations_path %>
+    </p>
+  <% elsif stock.tracking_mode == "none" %>
+    <p class="muted">This item is not inventory-tracked.</p>
+  <% end %>
+</section>

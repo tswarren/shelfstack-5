@@ -91,7 +91,61 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
     assert_includes service.product.errors[:identifier].join,
                     "invalid EAN-13 check digit"
     assert_includes service.product.errors[:identifier].join,
-                    "Accept identifier warning"
+                    "Save anyway"
+    assert_equal "9781786798986", service.identifier_warning_normalized
+  end
+
+  test "accepts warned identifier when flag and normalized value match" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      identifier: "9781786798986",
+      accept_identifier_warning: true,
+      accepted_identifier_normalized: "9781786798986",
+      product_attrs: {
+        name: "Warned Product Accepted",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id,
+        merchandise_class_id: @merchandise_class.id,
+        default_department_id: @department.id,
+        default_tax_category_id: @tax_category.id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: true
+      }
+    )
+
+    assert_difference "Product.count", 1 do
+      assert service.call
+    end
+  end
+
+  test "rejects warned identifier when accepted normalized value does not match" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      identifier: "9781786798986",
+      accept_identifier_warning: true,
+      accepted_identifier_normalized: "9780000000000",
+      product_attrs: {
+        name: "Warned Product Mismatch",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: true
+      }
+    )
+
+    assert_no_difference "Product.count" do
+      assert_not service.call
+    end
   end
 
   test "reports invalid identifier format explicitly" do

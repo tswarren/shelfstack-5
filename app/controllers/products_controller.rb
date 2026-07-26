@@ -34,7 +34,7 @@ class ProductsController < ApplicationController
   def new
     @product = Current.organization.products.new(
       status: "active",
-      sellable: false,
+      sellable: true,
       variant_structure: "single",
       product_type: "book",
       language_code: Catalog::LanguageCodes::DEFAULT
@@ -70,6 +70,7 @@ class ProductsController < ApplicationController
       variant_attrs: variant_attrs,
       identifier: params[:identifier],
       accept_identifier_warning: ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning]),
+      accepted_identifier_normalized: params[:accepted_identifier_normalized],
       creator_assignments: creator_assignments_param
     )
 
@@ -78,7 +79,12 @@ class ProductsController < ApplicationController
     else
       @product = service.product || Current.organization.products.new(product_attrs)
       @variant = service.variant || ProductVariant.new(variant_attrs)
+      # CreateProduct builds sellable:false for safety; restore submitted form values for re-render.
+      @product.assign_attributes(product_attrs)
+      @variant.assign_attributes(variant_attrs)
       @creator_rows = submitted_creator_rows
+      @identifier_warning_normalized = service.identifier_warning_normalized
+      @identifier_warning_detail = service.identifier_warning_detail
       if @product.errors.empty? && @variant.errors.empty?
         @product.errors.add(:base, "Could not create product.")
       end

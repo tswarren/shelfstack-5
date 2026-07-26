@@ -19,13 +19,28 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     get product_path(product)
     assert_response :success
-    assert_match "Ops for Main Street", response.body
-    assert_match "Stock — Main Street", response.body
-    assert_match "Orders, receipts, and requests — Main Street", response.body
+    assert_match "Store status — Main Street", response.body
+    assert_match 'id="overview"', response.body
+    assert_match 'id="selling"', response.body
+    assert_match 'id="inventory"', response.body
+    assert_match 'id="supply"', response.body
+    assert_match "data-controller=\"tabs\"", response.body
     assert_match "Vendor sources — Organization-wide", response.body
     assert_no_match(/Stock — Organization/i, response.body)
-    assert_match "Standard item", response.body
+    assert_match "Selling configuration", response.body
     assert_match product.product_variants.first.sku, response.body
+  end
+
+  test "product show renders all tab panel content without JavaScript enhancement" do
+    product = products(:sample_book)
+
+    get product_path(product)
+    assert_response :success
+    assert_match 'href="#overview"', response.body
+    assert_match 'href="#inventory"', response.body
+    assert_match 'data-tabs-target="panel"', response.body
+    assert_no_match(/role="tablist"/, response.body)
+    assert_match product.name, response.body
   end
 
   test "product summary hub omits unauthorized stock section content" do
@@ -77,11 +92,19 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     get edit_product_path(product)
     assert_response :success
     assert_match "data-controller=\"record-picker\"", response.body
-    assert_match "data-record-picker-record-type-value=\"merchandise_class\"", response.body
+    assert_match "data-controller=\"merchandise-class-cascade\"", response.body
+    assert_match 'name="product[merchandise_class_id]"', response.body
     assert_match "data-record-picker-record-type-value=\"department\"", response.body
     assert_match "data-record-picker-record-type-value=\"product_format\"", response.body
     assert_match "data-record-picker-record-type-value=\"tax_category\"", response.body
-    assert_no_match(/name="product\[merchandise_class_id\]"[^>]*<option/m, response.body)
+  end
+
+  test "new product form defaults product and variant sellable to true" do
+    get new_product_path
+    assert_response :success
+    assert_select "input[name='product[sellable]'][type='checkbox'][checked]"
+    assert_select "input[name='product_variant[sellable]'][type='checkbox'][checked]"
+    assert_match "form-actions--sticky", response.body
   end
 
   test "searches by normalized ISBN-10 input" do
@@ -140,7 +163,8 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_match(/invalid EAN-13 check digit/, response.body)
-    assert_match(/Accept identifier warning/, response.body)
+    assert_match(/Save anyway/, response.body)
+    assert_match(/accepted_identifier_normalized/, response.body)
   end
 
   test "denies clerk without catalog permission" do

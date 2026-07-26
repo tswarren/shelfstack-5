@@ -33,6 +33,12 @@ module Catalog
         )
       end
 
+      accepted_normalized = nil
+      if @accept_identifier_warning && @attrs[:identifier].present?
+        normalized = Identifiers::Normalize.call(@attrs[:identifier])
+        accepted_normalized = normalized.canonical.presence || normalized.normalized.presence
+      end
+
       service = Catalog::CreateProduct.new(
         organization: @organization,
         actor: @actor,
@@ -40,7 +46,8 @@ module Catalog
         product_attrs: @attrs.slice(*Catalog::CreateProduct::PRODUCT_TRACKED_ATTRIBUTES.map(&:to_sym)),
         variant_attrs: @attrs.slice(*(Catalog::CreateProduct::VARIANT_TRACKED_ATTRIBUTES.map(&:to_sym) + [ :purchasable ])),
         identifier: @attrs[:identifier],
-        accept_identifier_warning: @accept_identifier_warning
+        accept_identifier_warning: @accept_identifier_warning,
+        accepted_identifier_normalized: accepted_normalized
       )
 
       if service.call

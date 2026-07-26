@@ -14,5 +14,8 @@ Each phase document defines goals, principal tables, services, exit criteria, an
 | 6 | [phase-06-corrections-and-stored-value.md](phase-06-corrections-and-stored-value.md) |
 | 6.5 | [phase-06.5-cashier-workspace.md](phase-06.5-cashier-workspace.md) |
 | 7 | [phase-07-reporting-and-reconciliation.md](phase-07-reporting-and-reconciliation.md) |
+| 8 | [phase-08-catalog-refinement-and-enrichment.md](phase-08-catalog-refinement-and-enrichment.md) |
+| 9 | [phase-09-customer-records.md](phase-09-customer-records.md) |
+| 10 | [phase-10-product-record-and-form-refinement.md](phase-10-product-record-and-form-refinement.md) |
 
 Return to [../roadmap.md](../roadmap.md).

@@ -165,7 +165,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 Open / deferred decisions:     DWR-001 … DWR-003 (+ DWR-007 near OD-009)
 Interim correction blocks:     DWR-004 … DWR-006
 Phase 6.5 / 7 carry-forward:   DWR-010 … DWR-019
-Catalog / Phase 8 follow-on:   DWR-020 … DWR-029, DWR-064, DWR-065 (021 / 8.5 unscheduled; 024 deferred; 8e–8g unscheduled)
+Catalog / Phase 8 follow-on:   DWR-020 … DWR-029, DWR-064, DWR-065 (021 / 8.5 unscheduled; 024 deferred; 8e–8g unscheduled; DWR-029 stays unscheduled during delivery Phase 10)
 Later extensions:              DWR-030 … DWR-052  (= deferred-capabilities.md)
 Doc hygiene:                   DWR-060 … DWR-063
 ```

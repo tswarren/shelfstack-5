@@ -19,6 +19,7 @@ module Catalog
 
     def initialize(organization:, actor:, store:, product_attrs:, variant_attrs:,
                    identifier: nil, accept_identifier_warning: false,
+                   accepted_identifier_normalized: nil,
                    creator_assignments: Catalog::ReplaceProductCreators::OMIT)
       @organization = organization
       @actor = actor
@@ -26,14 +27,17 @@ module Catalog
       @product_attrs = product_attrs.to_h.symbolize_keys
       @variant_attrs = variant_attrs.to_h.symbolize_keys
       @identifier = identifier
-      @accept_identifier_warning = accept_identifier_warning
+      @accept_identifier_warning = ActiveModel::Type::Boolean.new.cast(accept_identifier_warning)
+      @accepted_identifier_normalized = accepted_identifier_normalized.to_s.presence
       @creator_assignments = creator_assignments
       @product = nil
       @variant = nil
       @generated_identifier = false
+      @identifier_warning_normalized = nil
+      @identifier_warning_detail = nil
     end
 
-    attr_reader :product, :variant
+    attr_reader :product, :variant, :identifier_warning_normalized, :identifier_warning_detail
 
     def call
       build_unsaved_shells!
@@ -115,10 +119,20 @@ module Catalog
       when :valid, :not_applicable
         true
       when :warning
-        @accept_identifier_warning
+        warning_acceptance_matches?(normalized)
       else
         false
       end
+    end
+
+    # Re-normalize is performed by the caller; acceptance is valid only when the
+    # flag is set, status is still warning, and the normalized value matches the
+    # value presented in the confirmation (no client fingerprint trust).
+    def warning_acceptance_matches?(normalized)
+      return false unless @accept_identifier_warning
+
+      presented = normalized.canonical.presence || normalized.normalized.presence
+      presented.present? && presented == @accepted_identifier_normalized
     end
 
     def add_identifier_rejection_errors!(normalized)
@@ -135,9 +149,11 @@ module Catalog
 
       case normalized.validation_status
       when :warning
+        @identifier_warning_normalized = display
+        @identifier_warning_detail = detail
         @product.errors.add(
           :identifier,
-          "#{display}: #{detail}. Check “Accept identifier warning” to save anyway."
+          "#{display}: #{detail}. Choose “Save anyway” to accept this identifier warning."
         )
       when :invalid
         @product.errors.add(:identifier, "#{display}: #{detail}")

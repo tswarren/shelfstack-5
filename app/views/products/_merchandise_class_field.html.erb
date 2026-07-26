@@ -1,0 +1,43 @@
+<%# locals: form:, product: %>
+<% selected = product.merchandise_class %>
+<% options = merchandise_class_select_options(Current.organization, selected: selected) %>
+<% payload = merchandise_class_cascade_payload(Current.organization, selected: selected) %>
+<div class="field field--full"
+     data-controller="merchandise-class-cascade"
+     data-merchandise-class-cascade-tree-value="<%= ERB::Util.json_escape(payload.to_json) %>">
+  <%= form.label :merchandise_class_id, "Merchandise class", class: "field-label" %>
+
+  <div class="merchandise-class-cascade" data-merchandise-class-cascade-target="cascade" hidden>
+    <div class="field">
+      <label class="field-label" for="merchandise_class_primary">Primary</label>
+      <select id="merchandise_class_primary" class="input"
+              data-merchandise-class-cascade-target="primary"
+              data-action="change->merchandise-class-cascade#primaryChanged">
+        <option value="">—</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="merchandise_class_secondary">Secondary</label>
+      <select id="merchandise_class_secondary" class="input"
+              data-merchandise-class-cascade-target="secondary"
+              data-action="change->merchandise-class-cascade#secondaryChanged">
+        <option value="">Any / stop here</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label" for="merchandise_class_minor">Minor</label>
+      <select id="merchandise_class_minor" class="input"
+              data-merchandise-class-cascade-target="minor"
+              data-action="change->merchandise-class-cascade#minorChanged">
+        <option value="">Any / stop here</option>
+      </select>
+    </div>
+  </div>
+
+  <%= form.select :merchandise_class_id,
+        options_for_select(options.map { |label, id, _| [ label, id ] }, selected&.id),
+        { include_blank: "—" },
+        class: "input",
+        data: { merchandise_class_cascade_target: "canonical" } %>
+  <p class="field-hint">Choose any depth. Without JavaScript, use the full hierarchical list.</p>
+</div>

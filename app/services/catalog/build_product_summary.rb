@@ -63,7 +63,12 @@ module Catalog
 
     StoreInfo = Data.define(:id, :name)
 
-    StoreOperations = Data.define(:open_po_lines, :recent_receipt_lines, :open_requests)
+    LatestRecord = Data.define(:id, :label)
+
+    StoreOperations = Data.define(
+      :open_po_lines, :recent_receipt_lines, :open_requests,
+      :open_order_quantity, :latest_po, :latest_receipt, :open_demand_count
+    )
 
     Summary = Data.define(
       :product, :store, :capabilities, :attention, :identity,
@@ -267,14 +272,32 @@ module Catalog
     end
 
     def empty_store_operations
-      StoreOperations.new(open_po_lines: [], recent_receipt_lines: [], open_requests: [])
+      StoreOperations.new(
+        open_po_lines: [], recent_receipt_lines: [], open_requests: [],
+        open_order_quantity: nil, latest_po: nil, latest_receipt: nil, open_demand_count: nil
+      )
     end
 
     def build_store_operations(variant, caps)
+      po_lines = caps.purchase_order_view ? open_po_lines(variant) : []
+      receipt_lines = caps.receipt_view ? recent_receipt_lines(variant) : []
+      requests = caps.request_view ? open_requests(variant) : []
+
+      latest_po = if caps.purchase_order_view && po_lines.first
+        LatestRecord.new(id: po_lines.first.purchase_order_id, label: po_lines.first.purchase_order_number)
+      end
+      latest_receipt = if caps.receipt_view && receipt_lines.first
+        LatestRecord.new(id: receipt_lines.first.receipt_id, label: receipt_lines.first.receipt_number)
+      end
+
       StoreOperations.new(
-        open_po_lines: caps.purchase_order_view ? open_po_lines(variant) : [],
-        recent_receipt_lines: caps.receipt_view ? recent_receipt_lines(variant) : [],
-        open_requests: caps.request_view ? open_requests(variant) : []
+        open_po_lines: po_lines,
+        recent_receipt_lines: receipt_lines,
+        open_requests: requests,
+        open_order_quantity: caps.purchase_order_view ? po_lines.sum(&:open_quantity) : nil,
+        latest_po: latest_po,
+        latest_receipt: latest_receipt,
+        open_demand_count: caps.request_view ? requests.size : nil
       )
     end
 

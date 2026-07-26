@@ -27,10 +27,19 @@ module CatalogHelper
     SALE_ELIGIBILITY_BLOCKER_LABELS.fetch(key) { key.tr("_", " ").capitalize }
   end
 
+  LONG_DESCRIPTION_CHARS = 280
+
   def effective_value_display(resolved)
     return "—" if resolved.nil? || (resolved.value.nil? && resolved.source_label == "Missing")
 
-    value = case resolved.value
+    value = effective_value_label(resolved)
+    safe_join([ value, " ", effective_value_provenance(resolved) ])
+  end
+
+  def effective_value_label(resolved)
+    return "—" if resolved.nil? || (resolved.value.nil? && resolved.source_label == "Missing")
+
+    case resolved.value
     when nil then "—"
     when true then "Yes"
     when false then "No"
@@ -39,22 +48,74 @@ module CatalogHelper
     else
       resolved.value.to_s.tr("_", " ")
     end
+  end
 
-    safe_join([
-      value,
-      " ",
-      content_tag(:span, "Source: #{resolved.source_label}", class: "muted")
-    ])
+  # Visible source label + decorative icon + visually-hidden detail (not title-only).
+  def effective_value_provenance(resolved)
+    return "".html_safe if resolved.nil?
+
+    detail = "Source: #{resolved.source_label}"
+    content_tag(:span, class: "provenance") do
+      safe_join([
+        content_tag(:span, resolved.source_label, class: "provenance-label muted"),
+        " ",
+        icon_tag("info", class: "provenance-icon"),
+        content_tag(:span, detail, class: "sr-only")
+      ])
+    end
   end
 
   def product_summary_bibliographic_line(identity)
     parts = [
       identity.product_format_name,
       identity.publisher_or_manufacturer_name,
-      publication_date_label(identity),
-      identity.edition_statement
+      publication_date_label(identity)
     ].compact_blank
     parts.presence&.join(" · ")
+  end
+
+  def product_creator_byline(identity)
+    return if identity.creators.blank?
+
+    identity.creators.map(&:display_name).join(", ")
+  end
+
+  def product_price_display_rows(list_price_cents:, regular_price_cents:)
+    rows = []
+    if list_price_cents.present? && regular_price_cents.present?
+      if list_price_cents == regular_price_cents
+        rows << [ "Selling price", format_money(regular_price_cents) ]
+      else
+        rows << [ "List price", format_money(list_price_cents) ]
+        rows << [ "Selling price", format_money(regular_price_cents) ]
+      end
+    elsif regular_price_cents.present?
+      rows << [ "Selling price", format_money(regular_price_cents) ]
+    elsif list_price_cents.present?
+      rows << [ "List price", format_money(list_price_cents) ]
+    end
+    rows
+  end
+
+  def long_description?(text)
+    normalized_description_length(text) > LONG_DESCRIPTION_CHARS
+  end
+
+  def normalized_description_length(text)
+    ActionController::Base.helpers.strip_tags(text.to_s).gsub(/\s+/, " ").strip.length
+  end
+
+  def suppress_product_identity_field?(field, identity)
+    case field.to_sym
+    when :alternate_identifier then identity.alternate_identifier.blank?
+    when :edition_statement then identity.edition_statement.blank?
+    when :imprint_or_brand_name then identity.imprint_or_brand_name.blank?
+    when :language_code
+      identity.language_code.blank? ||
+        Catalog::LanguageCodes.normalize(identity.language_code) == Catalog::LanguageCodes::DEFAULT
+    else
+      false
+    end
   end
 
   def publication_date_label(identity)
@@ -66,5 +127,11 @@ module CatalogHelper
 
   def language_code_label(code)
     Catalog::LanguageCodes.label_for(code)
+  end
+
+  def merchandise_class_breadcrumb(merchandise_class)
+    return if merchandise_class.blank?
+
+    hierarchy_path_label(merchandise_class)
   end
 end

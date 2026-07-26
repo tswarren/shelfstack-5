@@ -54,6 +54,26 @@
   margin: 0 0 1.25rem;
 }
 
+.definition-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.definition-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.definition-grid--full,
+.definition-grid .definition-item--full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 700px) {
+  .definition-grid--2,
+  .definition-grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
 .definition-item dt {
   color: var(--text-muted);
   font-size: 0.82rem;
@@ -214,4 +234,113 @@
   color: var(--text-disabled);
   background: var(--surface-disabled);
   cursor: not-allowed;
+}
+
+/* Product record — Phase 10 */
+
+.product-record-header .product-record-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 1.1rem;
+}
+
+.product-record-header .product-record-byline,
+.product-record-header .product-record-biblio {
+  margin: 0.2rem 0 0;
+}
+
+.product-record-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.65rem;
+}
+
+.store-status-rail {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-primary);
+}
+
+.store-status-rail-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.summary-strip .metric-value-sm {
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.tabs {
+  margin-top: 0.5rem;
+}
+
+.tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.tabs-tab {
+  position: relative;
+  padding: 0.65rem 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 650;
+}
+
+.tabs-tab:hover {
+  color: var(--text-primary);
+}
+
+.tabs-tab.is-active {
+  color: var(--brand-primary);
+}
+
+.tabs-tab.is-active::after {
+  content: "";
+  position: absolute;
+  right: 0.55rem;
+  bottom: -1px;
+  left: 0.55rem;
+  height: 3px;
+  border-radius: 2px 2px 0 0;
+  background: var(--brand-primary);
+}
+
+.tabs-panel {
+  margin-bottom: 1.25rem;
+}
+
+.tabs-panel[hidden] {
+  display: none;
+}
+
+.provenance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  vertical-align: middle;
+}
+
+.provenance-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  color: var(--text-muted);
+}
+
+.classification-breadcrumb {
+  margin: 0;
+  font-weight: 650;
+}
+
+.icon {
+  display: inline-block;
+  vertical-align: -0.125em;
+  flex-shrink: 0;
 }

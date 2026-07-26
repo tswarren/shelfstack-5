@@ -1,5 +1,5 @@
 <%#
-  One ordered Creator-assignment row on the product form (Gate 8b).
+  One ordered Creator-assignment row on the product form (Gate 8b / 10e).
 
   Locals:
     index:       unique token used to build distinct DOM ids per row
@@ -8,7 +8,10 @@
     role:        currently selected role string (or nil)
     credited_as: currently entered credited-as string (or nil)
 %>
-<div class="creator-assignment-row" data-creator-assignments-target="row">
+<div class="creator-assignment-row"
+     id="creator-assignment-row-<%= index %>"
+     data-creator-assignments-target="row"
+     data-creator-row-index="<%= index %>">
   <%= render "shared/record_picker",
         name: "product[creator_assignments][][creator_id]",
         id: "product_creator_assignment_#{index}_creator_id",
@@ -35,6 +38,14 @@
            placeholder="Optional edition-specific credit">
   </div>
   <div class="creator-assignment-row-actions">
+    <% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
+      <button type="button"
+              class="button button-outline"
+              data-controller="inline-creator"
+              data-action="inline-creator#open">
+        New creator
+      </button>
+    <% end %>
     <button type="button" class="button button-ghost" data-action="creator-assignments#moveUp">Move up</button>
     <button type="button" class="button button-ghost" data-action="creator-assignments#moveDown">Move down</button>
     <button type="button" class="button button-ghost" data-action="creator-assignments#removeRow">Remove</button>

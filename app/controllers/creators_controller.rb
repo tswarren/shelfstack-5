@@ -22,6 +22,8 @@ class CreatorsController < ApplicationController
 
   def create
     @creator = Current.organization.creators.new(creator_params)
+    @inline_product_form = ActiveModel::Type::Boolean.new.cast(params[:inline_product_form])
+    @row_index = params[:row_index].to_s.presence
 
     if @creator.save
       Administration::RecordAuditEvent.call(
@@ -32,7 +34,19 @@ class CreatorsController < ApplicationController
         subject: @creator,
         metadata: { "after" => creator_snapshot(@creator) }
       )
-      redirect_to creators_path, notice: "Creator created."
+      if @inline_product_form
+        respond_to do |format|
+          format.turbo_stream
+          format.html { redirect_to creators_path, notice: "Creator created." }
+        end
+      else
+        redirect_to creators_path, notice: "Creator created."
+      end
+    elsif @inline_product_form
+      respond_to do |format|
+        format.turbo_stream { render :create, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_entity }
+      end
     else
       render :new, status: :unprocessable_entity
     end
