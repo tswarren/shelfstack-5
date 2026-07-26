@@ -7,7 +7,7 @@
 Resolve two small Catalog/Product carry-forward items before opening the larger Phase 11 POS workspace effort:
 
 1. Prevent malformed product-import return paths from causing an exception after a Product has already been created.  
-2. Establish and enforce ShelfStack’s publication-date normalization policy for exact and partial provider dates.
+2. Harden the `BuildNormalizedResult` publication-date input boundary so it matches OD-P8-10 / `ParseProviderDate` (exact calendar days only; no duck-typed `to_date`).
 
 This PR is intentionally narrow. It introduces no schema changes, new permissions, new user-facing workflows, or Phase 11 functionality.
 
@@ -122,82 +122,44 @@ Retain existing coverage for:
 
 ---
 
-### B. Normalize exact and partial publication dates
+### B. Harden `publication_date` input boundary (OD-P8-10)
 
 **Register:** DWR-064 **Issue:** \#120
 
-ShelfStack stores `products.publication_date` as a date without a separate precision field.
+ShelfStack stores `products.publication_date` as an optional **exact** calendar date (OD-P8-10 revision). There is no precision column. Provider year-only / month-only strings are **not** persisted and must not be turned into Jan 1 / day-1 placeholders.
 
-Provider metadata may supply:
+Adapters already use `Catalog::Providers::ParseProviderDate` (day-only). The remaining debt is that `BuildNormalizedResult#normalize_publication_date` still accepts any duck-typed `to_date`.
 
-* an exact date;  
-* a year and month;  
-* a year only.
+#### Accepted policy (unchanged)
 
-ShelfStack will normalize partial values into concrete dates.
-
-#### Accepted normalization policy
-
-| Source precision | Example input | Stored date |
+| Source | Example input | Stored date |
 | :---- | :---- | :---- |
-| Year | `2014` | `2014-01-01` |
-| Year and month | `2014-02` | `2014-02-01` |
 | Full date | `2014-02-11` | `2014-02-11` |
 | Date-time | `2014-02-11T15:30:00Z` | `2014-02-11` |
-| Invalid or unsupported | `2014-13`, arbitrary object | `nil` |
-
-The stored value does not distinguish an exact January 1 publication date from a year-only value normalized to January 1\. This limitation is accepted for the current product model.
+| Year only | `2014` | `nil` |
+| Year and month | `2014-02` | `nil` |
+| Invalid / unsupported / duck-typed `to_date` | `2014-13`, custom object | `nil` |
 
 #### Shared provider parser
 
-Update `Catalog::Providers::ParseProviderDate` to support year-only, year-month, and full-date strings explicitly.
+Keep day-only behavior. Optionally tighten the day regex so a trailing non-digit terminator is explicit:
 
 ```
-module Catalog
-  module Providers
-    class ParseProviderDate < ApplicationService
-      FULL_DATE = /\A(\d{4})-(\d{2})-(\d{2})(?:\D|\z)/
-      YEAR_MONTH = /\A(\d{4})-(\d{2})\z/
-      YEAR_ONLY = /\A(\d{4})\z/
-
-      def initialize(raw)
-        @raw = raw.to_s.strip
-      end
-
-      def call
-        return nil if @raw.blank?
-
-        if (match = FULL_DATE.match(@raw))
-          Date.new(match[1].to_i, match[2].to_i, match[3].to_i)
-        elsif (match = YEAR_MONTH.match(@raw))
-          Date.new(match[1].to_i, match[2].to_i, 1)
-        elsif (match = YEAR_ONLY.match(@raw))
-          Date.new(match[1].to_i, 1, 1)
-        end
-      rescue ArgumentError
-        nil
-      end
-    end
-  end
-end
+FULL_DATE = /\A(\d{4})-(\d{2})-(\d{2})(?:\D|\z)/
 ```
 
-A different implementation is acceptable if it preserves the same explicit and deterministic rules.
-
-Do not use general-purpose parsing such as `Date.parse`, because it may accept ambiguous or unintended formats.
+Do not add year-only / month-only acceptance. Do not use `Date.parse`.
 
 #### Normalized-result boundary
 
-Update `Catalog::Enrichment::BuildNormalizedResult#normalize_publication_date` so it accepts only known date representations:
+Update `Catalog::Enrichment::BuildNormalizedResult#normalize_publication_date` so it accepts only:
 
-* `Date`;  
-* `DateTime`;  
-* Ruby `Time`;  
-* `ActiveSupport::TimeWithZone`;  
+* `Date` (covers `DateTime`);  
+* `Time` / `ActiveSupport::TimeWithZone` (calendar day via `#to_date`);  
 * strings processed through `Catalog::Providers::ParseProviderDate`;  
 * `nil`.
 
-Arbitrary objects must not be accepted merely because they implement `to_date`.
+Reject arbitrary objects that merely implement `to_date`.
 
 ```
 def normalize_publication_date
@@ -205,8 +167,8 @@ def normalize_publication_date
   when nil
     nil
   when Date
-    @raw_publication_date.to_date
-  when Time, ActiveSupport::TimeWithZone
+    @raw_publication_date
+  when DateTime, Time, ActiveSupport::TimeWithZone
     @raw_publication_date.to_date
   when String
     Catalog::Providers::ParseProviderDate.call(@raw_publication_date)
@@ -218,51 +180,34 @@ rescue ArgumentError, TypeError
 end
 ```
 
-Because `DateTime` inherits from `Date`, the `Date` branch covers both.
-
 #### Parser tests
 
-Add or update `ParseProviderDate` tests:
+Retain / extend `ParseProviderDate` coverage:
 
 | Input | Expected |
 | :---- | :---- |
-| `"2014"` | `Date.new(2014, 1, 1)` |
-| `"2014-02"` | `Date.new(2014, 2, 1)` |
 | `"2014-02-11"` | `Date.new(2014, 2, 11)` |
 | `"2014-02-11T15:30:00Z"` | `Date.new(2014, 2, 11)` |
-| `"2014-13"` | `nil` |
-| `"2014-00"` | `nil` |
-| `"2014-02-30"` | `nil` |
-| `"2014-"` | `nil` |
-| `"14"` | `nil` |
-| `""` | `nil` |
-| `nil` | `nil` |
+| `"2014"` | `nil` |
+| `"2014-02"` | `nil` |
+| `"2014-02-31"` | `nil` |
+| `"20140211"` | `nil` |
+| `""` / `nil` | `nil` |
 
 #### Normalized-result tests
 
-Extend `CatalogEnrichmentBuildNormalizedResultTest`:
+Extend `BuildNormalizedResult` tests:
 
 | Input | Expected |
 | :---- | :---- |
 | `Date.new(2014, 2, 11)` | `2014-02-11` |
-| `DateTime.new(2014, 2, 11, 15, 30)` | `2014-02-11` |
-| `Time.utc(2014, 2, 11, 15, 30)` | `2014-02-11` |
 | `Time.zone.parse("2014-02-11 15:30")` | `2014-02-11` |
-| `"2014"` | `2014-01-01` |
-| `"2014-02"` | `2014-02-01` |
-| `"2014-02-11"` | `2014-02-11` |
 | `"2014-02-11T15:30:00Z"` | `2014-02-11` |
-| invalid calendar value | `nil` |
-| hash containing date parts | `nil` |
+| `"2014"` / `"2014-02"` | `nil` |
 | custom object implementing `to_date` | `nil` |
 | `nil` | `nil` |
 
-Also retain existing coverage for:
-
-* fully populated normalized results;  
-* deep freezing;  
-* provider adapter normalization;  
-* invalid provider values.
+Also retain existing coverage for fully populated results, deep freezing, and provider adapters.
 
 ---
 
@@ -276,29 +221,17 @@ Update DWR-028 to resolved:
 
 Update DWR-064 to resolved:
 
-> Resolved in PR \#\_\_\_ — publication-date normalization now accepts explicit date/time objects and shared provider strings. Year-only values normalize to January 1; year-month values normalize to the first day of the month; arbitrary `to_date` objects are rejected. Issue \#120 closed.
+> Resolved in PR \#\_\_\_ — `BuildNormalizedResult` accepts only `Date` / date-time / `ParseProviderDate` strings; duck-typed `to_date` rejected; year/month-only remain nil per OD-P8-10. Issue \#120 closed.
 
 Remove DWR-028 and DWR-064 from the active Catalog/Phase 8 follow-on bucket summary.
 
 ### Catalog documentation
 
-Update any governing or design documentation that currently states that year-only or year-month provider dates are rejected.
-
-Document the accepted policy:
-
-```
-YYYY       → YYYY-01-01
-YYYY-MM    → YYYY-MM-01
-YYYY-MM-DD → exact date
-```
-
-Also state that date precision is not retained separately in the current schema.
+No policy change. Confirm domain/schema text still states that year/month-only provider strings are not persisted (OD-P8-10). Do not document Jan 1 / day-1 placeholders.
 
 ### Current phase
 
-Do not schedule Phase 11 in this PR.
-
-`current-phase.md` may note that pre-Phase 11 readiness hardening is underway or complete, but the next delivery phase must remain unscheduled until the Phase 11 plan is separately promoted.
+Phase 11 scheduling lives in the separate docs PR. This maintenance PR only resolves DWR-028 / DWR-064.
 
 ---
 
@@ -384,11 +317,7 @@ fix: complete pre-Phase 11 catalog readiness hardening
 
 - Validate product-import `return_to` query encoding before constructing post-create redirects.
 - Fall back safely when URI parsing or nested-query decoding fails.
-- Normalize provider publication dates using the accepted policy:
-  - `YYYY` → `YYYY-01-01`
-  - `YYYY-MM` → `YYYY-MM-01`
-  - full dates remain exact.
-- Restrict normalized publication-date inputs to explicit date/time types and shared parser strings.
+- Restrict normalized publication-date inputs to explicit date/time types and `ParseProviderDate` strings (OD-P8-10 exact-day; year/month-only stay nil).
 - Resolve DWR-028 and DWR-064.
 
 ## Architecture and scope
@@ -404,8 +333,8 @@ fix: complete pre-Phase 11 catalog readiness hardening
 
 - Product import malformed `return_to` regression coverage.
 - Valid local redirect preservation.
-- Partial and exact provider publication-date parsing.
-- Explicit normalized-result type boundary.
+- Exact-day provider publication-date parsing; year/month-only remain nil.
+- Explicit normalized-result type boundary (reject duck-typed `to_date`).
 - Full CI.
 
 Closes #116
@@ -444,13 +373,10 @@ The readiness PR is complete when:
 1. malformed percent-encoded `return_to` values cannot cause a post-commit exception;  
 2. Product creation succeeds and uses the correct fallback redirect;  
 3. valid root-relative return paths continue to work;  
-4. year-only publication dates normalize to January 1;  
-5. year-month publication dates normalize to the first day of the month;  
-6. full dates remain exact;  
-7. invalid dates normalize to `nil`;  
-8. arbitrary `to_date` objects are rejected;  
-9. all provider date strings use the shared parser;  
-10. targeted tests and full CI pass;  
-11. \#116 and \#120 close;  
-12. DWR-028 and DWR-064 are marked resolved;  
-13. Phase 11 remains separately unscheduled.
+4. full dates remain exact; year-only and month-only stay `nil` (OD-P8-10);  
+5. invalid dates normalize to `nil`;  
+6. arbitrary `to_date` objects are rejected;  
+7. string inputs use the shared parser;  
+8. targeted tests and full CI pass;  
+9. \#116 and \#120 close;  
+10. DWR-028 and DWR-064 are marked resolved.
