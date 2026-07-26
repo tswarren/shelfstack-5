@@ -191,4 +191,82 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     assert_not_includes underscore_ids, ordinary.id,
                         "bare _ must not match arbitrary single characters"
   end
+
+  test "searches customers by name and labels with phone email and city" do
+    customer = customers(:jordan_lee)
+    customer.update!(city: "London")
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization, record_type: "customer", query: "Jordan"
+    )
+
+    match = results.find { |r| r.id == customer.id }
+    assert match
+    assert_equal customer.picker_label, match.label
+    assert_match customer.customer_number, match.label
+    assert_match customer.primary_phone, match.label
+    assert_match customer.primary_email, match.label
+    assert_match "London", match.label
+  end
+
+  test "blank customer query returns a bounded active list" do
+    results = Catalog::SearchRecords.call(
+      organization: @organization, record_type: "customer", query: ""
+    )
+
+    assert results.any?
+    assert_includes results.map(&:id), customers(:jordan_lee).id
+    assert_not_includes results.map(&:id), customers(:inactive_patron).id
+  end
+
+  test "customer number match surfaces inactive customer without include_inactive" do
+    inactive = customers(:inactive_patron)
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "customer",
+      query: inactive.customer_number
+    )
+
+    assert_includes results.map(&:id), inactive.id
+  end
+
+  test "authorized? allows customer view or lookup but not pos.access alone" do
+    admin = users(:admin)
+    store = stores(:main_street)
+
+    assert Catalog::SearchRecords.authorized?(user: admin, store: store, record_type: "customer")
+
+    limited = User.create!(
+      username: "pos_only_#{SecureRandom.hex(2)}",
+      user_number: rand(10_000..99_999),
+      first_name: "Pos", last_name: "Only",
+      password: "password123",
+      active: true, default_store: store
+    )
+    role = Role.create!(
+      organization: @organization, code: "pos_only_#{limited.username}", name: "POS only", active: true
+    )
+    RolePermission.create!(role: role, permission: Permission.find_by!(code: "pos.access"))
+    StoreMembership.create!(user: limited, store: store, role: role, active: true)
+
+    assert_not Catalog::SearchRecords.authorized?(user: limited, store: store, record_type: "customer")
+
+    RolePermission.create!(role: role, permission: Permission.find_by!(code: "customers.customer.lookup"))
+    limited_lookup = User.find(limited.id)
+    assert Catalog::SearchRecords.authorized?(user: limited_lookup, store: store, record_type: "customer")
+  end
+
+  test "customer picker search ignores include_inactive for enumeration" do
+    inactive = customers(:inactive_patron)
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "customer",
+      query: "Patron",
+      include_inactive: true
+    )
+
+    assert_not_includes results.map(&:id), inactive.id
+  end
 end

@@ -83,6 +83,25 @@ module Pos
             next failure(open.error, outcome: "failed")
           end
           transaction = open.pos_transaction
+        else
+          consume = ConsumeStagedCustomer.call(
+            pos_session: session,
+            pos_transaction: transaction,
+            actor: @actor
+          )
+          if consume.conflict?
+            next Result.new(
+              success?: false,
+              pos_transaction: transaction,
+              pos_line_item: nil,
+              error: "Staged customer was not attached because this transaction already has a " \
+                     "different customer. Resolve the customer on the open transaction before scanning.",
+              outcome: "customer_conflict",
+              resolution: resolution,
+              warnings: []
+            )
+          end
+          transaction.reload
         end
 
         add = AddLine.call(

@@ -1,0 +1,25 @@
+<% if @customers.empty? %>
+  <p class="field-hint">No matching customers.</p>
+<% else %>
+  <ul class="lookup-results" role="listbox">
+    <% @customers.each do |customer| %>
+      <% label = customer.picker_label(query: params[:q]) %>
+      <% reference_text = label.delete_prefix("#{customer.display_name} · ").delete_prefix(customer.display_name.to_s) %>
+      <li>
+        <button type="button"
+                class="lookup-result"
+                data-customer-id="<%= customer.id %>"
+                data-customer-label="<%= label %>"
+                data-action="click->customer-picker#select">
+          <strong><%= customer.display_name %></strong>
+          <% if reference_text.present? %>
+            <span class="muted"><%= reference_text %></span>
+          <% end %>
+          <% unless customer.active? %>
+            <span class="banner-warning">Inactive</span>
+          <% end %>
+        </button>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

@@ -766,3 +766,35 @@ catalog_manage_creators:
   name: Manage creators
   permission_group: catalog
   active: true
+
+# Phase 9
+
+customers_customer_view:
+  code: customers.customer.view
+  name: View customers
+  permission_group: customers
+  active: true
+
+customers_customer_lookup:
+  code: customers.customer.lookup
+  name: Look up customers
+  permission_group: customers
+  active: true
+
+customers_customer_create:
+  code: customers.customer.create
+  name: Create customers
+  permission_group: customers
+  active: true
+
+customers_customer_edit:
+  code: customers.customer.edit
+  name: Edit customers
+  permission_group: customers
+  active: true
+
+customers_customer_deactivate:
+  code: customers.customer.deactivate
+  name: Deactivate customers
+  permission_group: customers
+  active: true

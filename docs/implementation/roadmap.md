@@ -68,7 +68,8 @@ flowchart TD
 | 6 | Corrections and stored value | Complete — merged to `main` at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39); [#36](https://github.com/tswarren/shelfstack-5/issues/36) closed) | [phases/phase-06-corrections-and-stored-value.md](phases/phase-06-corrections-and-stored-value.md) |
 | 6.5 | Cashier workspace | Complete — merged to `main` at `bd7fb9d35469027a60c9d3277744fda0a0ed06d9` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)) | [phases/phase-06.5-cashier-workspace.md](phases/phase-06.5-cashier-workspace.md) |
 | 7 | Reporting and reconciliation | Complete — core 7a–7d merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)) | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
-| 8 | Catalog refinement & enrichment | In progress — Gate 8a complete pending merge ([#95](https://github.com/tswarren/shelfstack-5/issues/95)); next 8b ([#96](https://github.com/tswarren/shelfstack-5/issues/96)); plan [phase-08…](phases/phase-08-catalog-refinement-and-enrichment.md); decisions [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md); later extensions [deferred-capabilities.md](deferred-capabilities.md) | [deferred-work-register.md](deferred-work-register.md), [deferred-capabilities.md](deferred-capabilities.md) |
+| 8 | Catalog refinement & enrichment | Complete — Must 8a–8d accepted; Should/Nice 8e–8g deferred | [phases/phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md) |
+| 9 | Customer records (v1) | In progress — [phase-09…](phases/phase-09-customer-records.md); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md) | [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md) |
 
 ## Mapping to system-overview §1.8
 
@@ -101,7 +102,7 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 Completed: Phases 0–7 core delivery. Phase 7 Reporting and Reconciliation merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
 
-**Next:** No new delivery phase opened. Phase 8 Catalog refinement & enrichment **closed** (Must 8a–8d; Gate 8d PR [#118](https://github.com/tswarren/shelfstack-5/pull/118)). Should/Nice 8e–8g deferred (DWR-065 / DWR-022 / DWR-023 / DWR-027). Plan: [phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md). See [current-phase.md](current-phase.md).
+**Next:** Phase 9 Customer records (v1) — [phase-09-customer-records.md](phases/phase-09-customer-records.md); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md). Phase 8 Must gates closed; Should/Nice 8e–8g remain deferred. See [current-phase.md](current-phase.md).
 
 **Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, later extensions).
 

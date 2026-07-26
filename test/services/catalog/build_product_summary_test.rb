@@ -301,7 +301,7 @@ module Catalog
           requested_quantity: i + 1,
           priority: "normal",
           requested_by_user: @admin,
-          customer_reference: "HUB-COV-#{i}"
+          customer: customers(:jordan_lee)
         )
       end
 

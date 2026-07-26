@@ -35,7 +35,7 @@ class ReportsControllerTest < ActionDispatch::IntegrationTest
   test "lists customer request coverage" do
     get customer_requests_report_path
     assert_response :success
-    assert_select "body", text: /CUST-4471/
+    assert_select "body", text: /Jordan Lee/
   end
 
   test "lists allocation events" do

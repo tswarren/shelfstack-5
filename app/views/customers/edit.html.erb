@@ -1,0 +1,6 @@
+<%= render "shared/page_header", title: "Edit customer",
+      breadcrumbs: [ { label: "Customers", path: customers_path },
+                     { label: @customer.display_name.presence || @customer.customer_number, path: customer_path(@customer) },
+                     { label: "Edit" } ] %>
+
+<%= render "form", customer: @customer, form_url: customer_path(@customer), possible_duplicates: [] %>

@@ -11,7 +11,7 @@ class ProductRequestsController < ApplicationController
   before_action :set_product_request, only: %i[show edit update assign resolve cancel reserve]
 
   def index
-    scope = Current.store.product_requests.includes(:product, :product_variant, :assigned_buyer_user).order(created_at: :desc)
+    scope = Current.store.product_requests.includes(:product, :product_variant, :customer, :assigned_buyer_user).order(created_at: :desc)
     scope = scope.where(status: params[:status]) if ProductRequest::STATUSES.include?(params[:status])
     scope = scope.where(request_type: params[:request_type]) if ProductRequest::REQUEST_TYPES.include?(params[:request_type])
     @pagy, @product_requests = pagy(scope, limit: pagy_limit)
@@ -192,7 +192,7 @@ class ProductRequestsController < ApplicationController
   def product_request_params
     params.require(:product_request).permit(
       :request_type, :product_id, :product_variant_id, :requested_quantity, :priority,
-      :needed_by_on, :customer_reference, :assigned_buyer_user_id, :notes
+      :needed_by_on, :customer_id, :assigned_buyer_user_id, :notes
     )
   end
 end

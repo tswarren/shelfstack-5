@@ -175,5 +175,54 @@ module Requests
       assert_equal 5, request.reload.requested_quantity
       assert_equal 5, request.pos_held_reserved_quantity
     end
+
+    test "allows unrelated edits without customer lookup when customer_id unchanged" do
+      request = product_requests(:open_customer_request)
+      actor = request_editor_without_customer_access
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: actor, store: @store,
+        attributes: { notes: "Updated without touching customer" }
+      )
+
+      assert result.success?, result.error
+      assert_equal "Updated without touching customer", request.reload.notes
+      assert_equal customers(:jordan_lee).id, request.customer_id
+    end
+
+    test "denies customer reassignment without customer view or lookup" do
+      request = product_requests(:open_stock_replenishment)
+      actor = request_editor_without_customer_access
+
+      result = UpdateProductRequest.call(
+        product_request: request, actor: actor, store: @store,
+        attributes: { customer_id: customers(:jordan_lee).id }
+      )
+
+      assert_not result.success?
+      assert_match(/not permitted to assign customers/i, result.error)
+      assert_nil request.reload.customer_id
+    end
+
+    private
+
+    def request_editor_without_customer_access
+      user = User.create!(
+        username: "req_editor_#{SecureRandom.hex(2)}",
+        user_number: rand(10_000..99_999),
+        first_name: "Req", last_name: "Editor",
+        password: "password123",
+        active: true, default_store: @store
+      )
+      role = Role.create!(
+        organization: @store.organization,
+        code: "req_editor_#{user.username}",
+        name: "Request editor",
+        active: true
+      )
+      RolePermission.create!(role: role, permission: Permission.find_by!(code: "requests.product_request.edit"))
+      StoreMembership.create!(user: user, store: @store, role: role, active: true)
+      user
+    end
   end
 end

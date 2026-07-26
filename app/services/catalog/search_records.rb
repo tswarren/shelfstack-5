@@ -14,6 +14,7 @@ module Catalog
       product_variant
       vendor
       creator
+      customer
     ].freeze
 
     LIMIT = 25
@@ -39,16 +40,19 @@ module Catalog
       ],
       "creator" => %w[
         catalog.product.view catalog.product.create catalog.product.edit catalog.manage_creators
-      ]
+      ],
+      # Full view or narrower lookup — not pos.access / request edit alone.
+      "customer" => %w[customers.customer.view customers.customer.lookup]
     }.freeze
 
-    def initialize(organization:, record_type:, query: nil, include_inactive: false, product_id: nil, labeler: nil)
+    def initialize(organization:, record_type:, query: nil, include_inactive: false, product_id: nil, labeler: nil, default_phone_country: nil)
       @organization = organization
       @record_type = record_type.to_s
       @query = query.to_s.strip
       @include_inactive = include_inactive
       @product_id = product_id
       @labeler = labeler
+      @default_phone_country = default_phone_country
     end
 
     def call
@@ -77,6 +81,7 @@ module Catalog
       when "product_variant" then search_product_variants
       when "vendor" then search_vendors
       when "creator" then search_creators
+      when "customer" then search_customers
       end
     end
 
@@ -186,6 +191,25 @@ module Catalog
       scope.limit(LIMIT)
     end
 
+    # Delegates typed search to Customers::Search (Customers domain). Blank query
+    # returns a bounded active list for picker open. Caller-controlled
+    # include_inactive is ignored — inactive appears only via direct number match.
+    def search_customers
+      if @query.present?
+        result = Customers::Search.call(
+          organization: @organization,
+          query: @query,
+          include_inactive: false,
+          default_phone_country: @default_phone_country,
+          limit: LIMIT
+        )
+        customers = result.customers.select { |c| c.active? || result.inactive_direct_match&.id == c.id }
+        return customers.first(LIMIT)
+      end
+
+      @organization.customers.active.order(:last_name, :first_name, :organization_name).limit(LIMIT)
+    end
+
     def apply_name_or_code_filter(scope)
       return scope if @query.blank?
 
@@ -256,11 +280,17 @@ module Catalog
         [ record.name, record.code ].compact_blank.join(" — ")
       when "creator"
         creator_label(record)
+      when "customer"
+        customer_label(record)
       else
         name = record.name.to_s
         code = record.respond_to?(:code) ? record.code.to_s : ""
         code.present? ? "#{name} — #{code}" : name
       end
+    end
+
+    def customer_label(record)
+      record.picker_label(query: @query)
     end
 
     def path_label(record)

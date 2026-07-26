@@ -5,7 +5,7 @@ open_customer_request:
   product: sample_book
   requested_quantity: 2
   priority: high
-  customer_reference: "CUST-4471"
+  customer: jordan_lee
   requested_by_user: clerk
   created_at: <%= Time.current %>
   updated_at: <%= Time.current %>

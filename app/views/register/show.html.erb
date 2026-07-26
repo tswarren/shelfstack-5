@@ -70,6 +70,36 @@
       <%= form.submit "Scan to start", class: "button button-primary button-large" %>
     <% end %>
 
+    <% if @can_view_customers %>
+      <details class="pos-panel" style="margin-top: 1rem;" <%= "open" if @open_session.staged_customer.present? %>>
+        <summary>Customer for next transaction</summary>
+        <% if @open_session.staged_customer.present? %>
+          <p>
+            Staged:
+            <strong><%= @open_session.staged_customer.display_name %></strong>
+            <code><%= @open_session.staged_customer.customer_number %></code>
+            <% if @open_session.staged_customer_by_user_id != Current.user.id %>
+              <span class="muted">(staged by <%= @open_session.staged_customer_by_user&.username %> — only they can consume it)</span>
+            <% end %>
+          </p>
+          <% if @open_session.staged_customer_by_user_id == Current.user.id %>
+            <%= button_to "Remove staged customer", register_clear_staged_customer_path, method: :post, class: "button button-outline" %>
+          <% end %>
+        <% end %>
+        <%= form_with url: register_stage_customer_path, method: :post, class: "form" do %>
+          <%= render "shared/record_picker",
+                name: "customer_id",
+                id: "stage_customer_id",
+                record_type: "customer",
+                label: "Stage customer",
+                required: true,
+                include_blank: false,
+                hint: "Search by name, phone, email, or customer number." %>
+          <%= submit_tag "Use for next transaction", class: "button button-outline" %>
+        <% end %>
+      </details>
+    <% end %>
+
     <div class="action-group" style="margin-top: 1rem;">
       <%= button_to "New transaction", pos_transactions_path, class: "button button-outline button-large" %>
     </div>

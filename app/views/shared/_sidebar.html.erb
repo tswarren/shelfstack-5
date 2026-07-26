@@ -11,6 +11,10 @@
       <%= nav_item "Creators", creators_path, permission_key: "catalog.manage_creators" %>
     <% end %>
 
+    <%= nav_section "Customers" do %>
+      <%= nav_item "Customers", customers_path, permission_key: "customers.customer.view" %>
+    <% end %>
+
     <%= nav_section "Requests" do %>
       <%= nav_item "Product requests", product_requests_path, permission_key: "requests.product_request.view" %>
       <%= nav_item "Buyer review", buyer_review_index_path, permission_key: "requests.product_request.view" %>

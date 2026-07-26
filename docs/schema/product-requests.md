@@ -18,7 +18,7 @@ Request types: `customer_request`, `staff_suggestion`, `stock_replenishment`, `f
 Statuses: `open`, `fulfilled`, `declined`, `cancelled`, `closed`.  
 Priorities: `normal`, `high`, `urgent`.
 
-Customer identity in Phase 5 is a nullable opaque `customer_reference` only (no `customers` table).
+Customer identity is a nullable `customer_id` FK to `customers` (Phase 9 / ADR-0017). The Phase 5 opaque `customer_reference` column is dropped after backfill.
 
 Non-customer resolution uses columns on the request (`resolution`, `resolved_quantity`, `resolved_at`, `resolved_by_user_id`, `resolution_note`), not a separate event table. Optional `supersedes_product_request_id` links follow-up demand.
 

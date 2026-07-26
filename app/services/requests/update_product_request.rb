@@ -13,7 +13,7 @@ module Requests
     Result = Data.define(:product_request, :success?, :error)
 
     ATTRIBUTES = %w[
-      product_variant_id requested_quantity priority needed_by_on customer_reference notes
+      product_variant_id requested_quantity priority needed_by_on customer_id notes
     ].freeze
 
     def initialize(product_request:, attributes:, actor:, store:)
@@ -34,7 +34,9 @@ module Requests
         before = Administration::ChangeMetadata.snapshot(@product_request, ATTRIBUTES)
         previous_quantity = @product_request.requested_quantity
         previous_variant_id = @product_request.product_variant_id
+        previous_customer_id = @product_request.customer_id
         @product_request.assign_attributes(@attributes)
+        validate_customer_change!(previous_customer_id) if @product_request.customer_id_changed?
 
         if @product_request.product_variant_id_changed?
           enforce_variant_change!(previous_variant_id)
@@ -71,6 +73,34 @@ module Requests
 
     def authorized?
       Authorization::EvaluatePermission.call(user: @actor, store: @store, permission_key: "requests.product_request.edit") == :allow
+    end
+
+    # Contactability applies when creating/changing the customer on a
+    # customer_request — not on unrelated edits to backfilled requests.
+    # Lookup permission is required whenever customer_id changes.
+    def validate_customer_change!(previous_customer_id)
+      raise Error, "not permitted to assign customers" unless can_lookup_customers?
+
+      if @product_request.customer_request?
+        raise Error, "customer is required for customer requests" if @product_request.customer_id.blank?
+      end
+
+      return if @product_request.customer_id.blank?
+
+      customer = Customer.find_by(id: @product_request.customer_id)
+      raise Error, "customer not found" unless customer
+      raise Error, "customer belongs to another organization" unless customer.organization_id == @store.organization_id
+      raise Error, "inactive customers cannot be assigned to requests" unless customer.active?
+
+      if @product_request.customer_request? && @product_request.customer_id != previous_customer_id
+        unless Customers::Contactable.call(customer: customer)
+          raise Error, "customer must be contactable (preferred phone or email with a primary contact value)"
+        end
+      end
+    end
+
+    def can_lookup_customers?
+      Customers::AuthorizeLookup.call(user: @actor, store: @store)
     end
 
     def enforce_quantity_floor!

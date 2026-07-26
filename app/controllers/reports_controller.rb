@@ -66,7 +66,7 @@ class ReportsController < ApplicationController
 
   def customer_requests
     scope = Current.store.product_requests.where(request_type: "customer_request")
-      .includes(:product, :product_variant).order(created_at: :desc)
+      .includes(:product, :product_variant, :customer).order(created_at: :desc)
     @pagy, @product_requests = pagy(scope, limit: pagy_limit)
   end
 

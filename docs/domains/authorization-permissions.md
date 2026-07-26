@@ -227,6 +227,24 @@ Canonical keys for Product Requests. On-order allocation uses `purchasing.alloca
 - `create` covers all four Phase 5 types. Split into type-scoped create keys only if role design later requires different creators for customer vs buyer-decision demand.
 - Customer-only actions use `requests.customer_request.*`. Non-customer requests do not reserve or fulfil through those keys.
 
+## Customers (Phase 9)
+
+Canonical keys for the Customer master ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)).
+
+| Key | Description | Scope | Phase | Authority | Approvals | Audit |
+| --- | --- | --- | --- | --- | --- | --- |
+| `customers.customer.view` | View Customer records | store | 9 | — | no | no |
+| `customers.customer.lookup` | Look up customers for POS/PR | store | 9 | — | no | no |
+| `customers.customer.create` | Create Customer records | store | 9 | — | no | yes |
+| `customers.customer.edit` | Edit Customer records | store | 9 | — | no | yes |
+| `customers.customer.deactivate` | Deactivate Customer records | store | 9 | — | no | yes |
+
+### Customer evaluation
+
+- `view` grants full admin access. `lookup` grants search and limited association references for POS and Product Requests.
+- Create/edit/deactivate require `view` in addition to the action permission.
+- POS stage/attach and customer record-picker search accept `view` or `lookup`. Commercial POS permissions remain separate.
+
 ## Stored value (Phase 6)
 
 Canonical keys for Stored Value. Domain lists must match this catalog. Policy: [Phase 6 stored-value v1 operating policy](../implementation/decisions/phase-06-stored-value-v1-operating-policy.md).

@@ -85,6 +85,7 @@ ShelfStack-generated EAN-13 namespaces are:
 
 ```text
 21 — stored-value account
+22 — customer
 27 — inventory unit
 28 — product variant
 29 — locally identified product
@@ -188,6 +189,7 @@ Do not duplicate business records or rules across domains.
 
 - **Organization and Authorization:** organizations, stores, users, memberships, roles, permissions, authority limits, devices, drawers, approvals.
 - **Catalog and Products:** product identity, canonical identifiers, metadata, variants, SKUs, options, formats, conditions, tracking mode, sale-eligibility inputs.
+- **Customers:** customer master identity, customer numbers, contact facts, preferred contact method, active status (not loyalty/CRM).
 - **Classification and Configuration:** merchandise classes, departments, tax categories and rules, discount reasons, return policies and reasons, tender types, cash-movement types.
 - **Product Requests:** customer demand, staff suggestions, quantity, priority, needed-by dates, status, supply-allocation relationships.
 - **Vendors and Purchasing:** vendors, vendor sources, purchase orders and lines, expected supply, expected cost, on-order intent.

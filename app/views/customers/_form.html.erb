@@ -1,0 +1,117 @@
+<%= form_with model: customer, class: "form", url: form_url do |form| %>
+  <%= render "shared/form_errors", object: customer %>
+
+  <% if possible_duplicates.present? %>
+    <section class="banner banner-warning" role="status">
+      <h2 class="form-section-title">Possible duplicate customer</h2>
+      <p>This phone number or email is also associated with:</p>
+      <ul>
+        <% possible_duplicates.each do |dupe| %>
+          <li>
+            <%= link_to dupe.display_name.presence || dupe.customer_number, customer_path(dupe) %>
+            <code><%= dupe.customer_number %></code>
+          </li>
+        <% end %>
+      </ul>
+      <p>Open an existing customer, cancel, or create a new customer anyway.</p>
+      <%= hidden_field_tag :create_anyway, "true" %>
+    </section>
+  <% end %>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Identity</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :customer_type, class: "field-label" %>
+        <%= form.select :customer_type, Customer::CUSTOMER_TYPES.map { |t| [ t.humanize, t ] }, {}, class: "input", disabled: customer.persisted? %>
+      </div>
+      <div class="field">
+        <%= form.label :organization_name, class: "field-label" %>
+        <%= form.text_field :organization_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :first_name, class: "field-label" %>
+        <%= form.text_field :first_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :last_name, class: "field-label" %>
+        <%= form.text_field :last_name, class: "input" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Contact</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :preferred_contact_method, class: "field-label" %>
+        <%= form.select :preferred_contact_method, Customer::PREFERRED_CONTACT_METHODS.map { |m| [ m.humanize, m ] }, {}, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :primary_phone, class: "field-label" %>
+        <%= form.telephone_field :primary_phone, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :alternate_phone, class: "field-label" %>
+        <%= form.telephone_field :alternate_phone, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :primary_email, class: "field-label" %>
+        <%= form.email_field :primary_email, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :alternate_email, class: "field-label" %>
+        <%= form.email_field :alternate_email, class: "input" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Address</h2>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :address_line_1, class: "field-label" %>
+        <%= form.text_field :address_line_1, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :address_line_2, class: "field-label" %>
+        <%= form.text_field :address_line_2, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :city, class: "field-label" %>
+        <%= form.text_field :city, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :region, "State / province", class: "field-label" %>
+        <%= form.text_field :region, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :postal_code, class: "field-label" %>
+        <%= form.text_field :postal_code, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :country_code, "Country", class: "field-label" %>
+        <%= form.select :country_code,
+              country_code_options_for_select(selected: customer.country_code),
+              { include_blank: "—" },
+              class: "input" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Notes</h2>
+    <div class="field">
+      <%= form.text_area :notes, class: "input", rows: 3 %>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <% if possible_duplicates.present? %>
+      <%= form.submit "Create new customer anyway", class: "button button-primary" %>
+    <% else %>
+      <%= form.submit customer.persisted? ? "Update customer" : "Create customer", class: "button button-primary" %>
+    <% end %>
+    <%= link_to "Cancel", customer.persisted? ? customer_path(customer) : customers_path, class: "button button-outline" %>
+  </div>
+<% end %>

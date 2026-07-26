@@ -16,6 +16,7 @@ class ProductRequest < ApplicationRecord
   belongs_to :store
   belongs_to :product
   belongs_to :product_variant, optional: true
+  belongs_to :customer, optional: true
   belongs_to :requested_by_user, class_name: "User"
   belongs_to :assigned_buyer_user, class_name: "User", optional: true
   belongs_to :resolved_by_user, class_name: "User", optional: true

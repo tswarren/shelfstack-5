@@ -5,7 +5,7 @@
 class IdentifierSequence < ApplicationRecord
   self.primary_key = :namespace
 
-  NAMESPACES = %w[21 27 28 29].freeze
+  NAMESPACES = %w[21 22 27 28 29].freeze
 
   validates :namespace, presence: true, inclusion: { in: NAMESPACES }
   validates :next_value, numericality: { only_integer: true, greater_than_or_equal_to: 1 }

@@ -1,0 +1,32 @@
+jordan_lee:
+  organization: acme
+  customer_number: "2200000000019"
+  customer_type: individual
+  first_name: Jordan
+  last_name: Lee
+  primary_phone: "+15195550123"
+  primary_email: jordan.lee@example.com
+  preferred_contact_method: email
+  country_code: CA
+  active: true
+
+riverside_school:
+  organization: acme
+  customer_number: "2200000000026"
+  customer_type: organization
+  organization_name: Riverside Elementary School
+  first_name: Maria
+  last_name: Chen
+  primary_phone: "+15195550100"
+  preferred_contact_method: phone
+  country_code: CA
+  active: true
+
+inactive_patron:
+  organization: acme
+  customer_number: "2200000000033"
+  customer_type: individual
+  first_name: Inactive
+  last_name: Patron
+  preferred_contact_method: none
+  active: false

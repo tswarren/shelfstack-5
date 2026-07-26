@@ -30,7 +30,7 @@
           <tr>
             <td>
               <%= link_to request.product.name, request %>
-              <div class="muted"><%= request.customer_reference.presence || "—" %></div>
+              <div class="muted"><%= customer_association_label(request.customer, link_to_record: false) %></div>
             </td>
             <td><%= status_badge(request.status.titleize, variant: product_request_status_variant(request.status)) %></td>
             <td class="num"><%= request.requested_quantity %></td>

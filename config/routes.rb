@@ -33,6 +33,12 @@ Rails.application.routes.draw do
   resources :product_conditions, except: %i[destroy]
   resources :products, except: %i[destroy]
   resources :creators, except: %i[show destroy]
+  resources :customers, except: %i[destroy] do
+    member do
+      post :deactivate
+    end
+  end
+  get "customer_searches", to: "customer_searches#index", as: :customer_searches
   namespace :catalog do
     get "record_searches", to: "record_searches#index", as: :record_searches
     if Rails.env.test?
@@ -122,6 +128,8 @@ Rails.application.routes.draw do
   get "register", to: "register#show", as: :register
   post "register/scan_to_start", to: "register#scan_to_start", as: :register_scan_to_start
   post "register/lookup_receipt", to: "register#lookup_receipt", as: :register_lookup_receipt
+  post "register/stage_customer", to: "pos_customers#stage", as: :register_stage_customer
+  post "register/clear_staged_customer", to: "pos_customers#clear_stage", as: :register_clear_staged_customer
 
   resources :business_days, only: %i[index new create] do
     member do
@@ -152,6 +160,8 @@ Rails.application.routes.draw do
       post :approve_post_void
       post :clear_post_void_approval
       post :post_void
+      post :attach_customer, to: "pos_customers#attach"
+      post :remove_customer, to: "pos_customers#remove"
     end
     resources :pos_line_items, only: %i[create update destroy] do
       member do

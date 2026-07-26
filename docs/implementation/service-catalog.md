@@ -95,7 +95,7 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 7–8 cl
 | `Pos::CloseBusinessDay` | Point of Sale | 7c | Yes | Yes | Business Day / Store Z sequence (`lock`) | Business Day, actor, optional card evidence | Closed Business Day + Day Z; requires Session Z for every closed session; machine/batch evidence or `evidence_unavailable` when card tenders exist |
 | `Pos::OpenSession` | Point of Sale | 4a | Yes | No | Business Day (`lock`), then device/drawer open-session checks | Business Day, store, device, cashier, optional drawer, `opening_cash_cents` when drawer present | Open Session; day status rechecked under lock; opening cash count for cash-enabled sessions |
 | `Pos::CloseSession` | Point of Sale | 7b | Yes | Yes | Session / Store Z sequence (`lock`) | Session, actor, counted cash, optional card evidence | Closed Session + Session Z; enforces `pos.session.close`; cash-enabled sessions require closing count; MVP no session card prompt when grain=`business_day` |
-| `Pos::OpenTransaction` | Point of Sale | 4a | Yes | No | Session (`lock`) | Session, actor, optional cashier | Open Transaction with generated `public_id`; Session status rechecked under lock; origin/active session set |
+| `Pos::OpenTransaction` | Point of Sale | 4a / 9 | Yes | No | Session (`lock`) | Session, actor, optional cashier | Open Transaction with generated `public_id`; Session status rechecked under lock; origin/active session set; Phase 9 consumes owner-scoped staged customer when present |
 | `Pos::ResolveScan` | Point of Sale | 4a | No | Yes | None | Organization, scan/search query, store | `Pos::ResolveScanResult` (variant, ambiguity, blockers/warnings via `Catalog::SaleEligibility`) |
 | `Pos::AddLine` | Point of Sale | 4a | Yes | No | Reservation via `Inventory::Reserve` | Transaction, variant, quantity, actor | Pending product line; reserves only `quantity`-tracked variants |
 | `Pos::AddOpenRingLine` | Point of Sale | 4a | Caller | No | None | Transaction, department, price, optional description, actor | Pending open-ring line; no Variant/Reservation; blank description snapshots to Department name |
@@ -250,8 +250,8 @@ Add a row when a service lands in the codebase. Do not pre-design Phase 7–8 cl
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Requests::CreateProductRequest` | Product Requests | 5d | Yes | No | None | Store, actor, optional requesting user, attributes (`request_type`, product, optional variant, quantity, priority, needed-by, customer reference, notes, optional `supersedes_product_request_id`) | Persisted open `ProductRequest`; audit; never changes On Hand or On Order |
-| `Requests::UpdateProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open Product Request, actor, mutable attrs (variant, quantity, priority, needed-by, customer reference, notes) | Updated request while still `open`; rejected once no longer open; audit |
+| `Requests::CreateProductRequest` | Product Requests | 5d / 9 | Yes | No | None | Store, actor, optional requesting user, attributes (`request_type`, product, optional variant, quantity, priority, needed-by, `customer_id`, notes, optional `supersedes_product_request_id`) | Persisted open `ProductRequest`; audit; never changes On Hand or On Order; Phase 9: `customer_request` requires active org-compatible contactable Customer |
+| `Requests::UpdateProductRequest` | Product Requests | 5d / 9 | Yes | No | Product Request (`reload.lock!`) | Open Product Request, actor, mutable attrs (variant, quantity, priority, needed-by, `customer_id`, notes) | Updated request while still `open`; rejected once no longer open; audit; contactability enforced only when customer_id changes on a customer_request |
 | `Requests::AssignProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open Product Request, buyer user, actor | Updated `assigned_buyer_user`; rejected once no longer open; audit |
 | `Requests::ResolveProductRequest` | Product Requests | 5d | Yes | No | Product Request (`reload.lock!`) | Open non-customer Product Request, resolution code (`ordered`/`declined`/`deferred`/`duplicate`/`superseded`/`no_longer_needed`), optional resolved quantity/note, optional follow-up flag | `deferred` leaves status `open`; `declined` sets `declined`; all other codes `closed`; partial `ordered` quantity can create a linked follow-up `ProductRequest` (`supersedes_product_request_id` → original) via `Requests::CreateProductRequest`; refuses Customer Requests (fulfilment is a later phase); audit |
 | `Requests::CancelProductRequest` | Product Requests | 5d | Yes | Yes (replaying a cancelled request is a no-op) | Product Request (`reload.lock!`) | Open Product Request, actor, optional cancellation reason | `cancelled` status; distinct from buyer resolution (no resolution code recorded); audit |
@@ -397,7 +397,7 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 
 | Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`); Gate 8b adds the `creator` type |
+| `Catalog::SearchRecords` | Catalog and Products | 8a | No | Yes | None | Organization, record type, query, optional `include_inactive` / `product_id` / `default_phone_country`, optional labeler | Org-scoped typeahead results for the shared record picker (`ILIKE` with literal `%`/`_`); Gate 8b adds `creator`; Phase 9 adds `customer` (requires `customers.customer.view` or `customers.customer.lookup`; picker ignores `include_inactive`) |
 | `Catalog::ResolveRecordPickerSelection` | Catalog and Products | 8a | No | Yes | None | Organization, record type, id | In-org record or `nil` (prevents foreign-org label disclosure on validation rerender); Gate 8b adds the `creator` type (no active filter — inactive Creators already linked stay visible) |
 | `Catalog::LanguageCodes` | Catalog and Products | 8b (rev.) | No | Yes | None | raw language tag | Curated ISO 639-2/T normalize/label helpers (`eng` default for new UI); alpha-2 / BCP-47 → alpha-3 |
 | `Catalog::NormalizeCreatorName` | Catalog and Products | 8b | No | Yes | None | Raw Creator display name | Unicode-normalized, whitespace-collapsed, lowercased match key (punctuation/diacritics retained) |
@@ -423,6 +423,29 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 - Gate 8b Slice 1 (schema + Creators): `creators` / `product_creators` / `catalog_enrichment_events` tables; `Creator`, `ProductCreator`, `CatalogEnrichmentEvent` models (`CatalogEnrichmentEvent` is append-only like `AdministrativeAuditEvent` — table + immutability ship in 8b, writers arrive in 8c/8f); `CreatorsController` under the Catalog nav submenu.
 - Gate 8b Slice 2 (provider adapters): `Catalog::Enrichment::NormalizedResult` and friends are the sole provider-neutral contract both adapters produce; `Catalog::LookupExternalMetadata` is the only authorization-checking layer, so adapters/transport stay independently testable with an injected fake transport (no live network in any test). No lookup HTTP endpoint or result cache ships in 8b — both wait for the Gate 8c preview workflow. `compose.yml`'s `web` service loads `SHELFSTACK_ISBNDB_API_KEY` / `SHELFSTACK_GOOGLE_BOOKS_API_KEY` from a gitignored repo-root `.env` via `env_file` (`required: false`, no `dotenv` gem) — see [bootstrap-and-seed.md](bootstrap-and-seed.md#external-metadata-provider-credentials-gate-8b-slice-2).
 - Gate 8c (create-from-ISBN): `FindExistingProduct` / `PreviewProductImport` / `ProductImportPreviewToken` / `CreateFromEnrichment`; permission `catalog.create_from_enrichment` (persist still also needs `catalog.product.create`). Preview never writes; preview issues a signed token covering provider provenance, list price, and Creator suggestions; accept verifies the token and builds enrichment-event provenance / Creator resolutions only from the verified payload (operator-editable bibliographic fields and `require_selection` Creator IDs within the signed candidate set come from the form). Import forces `sellable: false` and `purchasable: false`. Create writes one enrichment event in the same transaction (requested vs canonical identifier both retained). Operator UI extends `ProductImportsController` (`POST /product_imports/preview`, `POST /product_imports/accept`) with Catalog nav “Create from ISBN”.
+
+## Phase 9 — Customer records
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Customers::NormalizePhone` | Customers | 9 | No | Yes | None | Raw phone, optional customer/default country | E.164 string or error; `+` never reinterpreted by context country |
+| `Customers::NormalizeEmail` | Customers | 9 | No | Yes | None | Raw email | Trimmed lowercased email (app policy) |
+| `Customers::Contactable` | Customers | 9 | No | Yes | None | Customer | True when preferred method is phone/email and matching **primary** field present |
+| `Customers::FindPossibleDuplicates` | Customers | 9 | No | Yes | None | Org, contact attrs | Matching customers across primary+alternate phone/email |
+| `Customers::AuthorizeLookup` | Customers | 9 | No | Yes | None | User, store | True when actor has `customers.customer.view` or `customers.customer.lookup` |
+| `Customers::Search` | Customers | 9 | No | Yes | None | Org, query, optional `default_phone_country` | Active-by-default matches; phone queries normalize to E.164; direct `22` number may surface inactive with warning |
+| `Customers::Create` | Customers | 9 | Yes | No | Identifier sequence `22` | Org, actor, attrs, optional store / `create_anyway` / default phone country | Customer with immutable `customer_number`; pre-persist duplicate gate unless `create_anyway` |
+| `Customers::Update` / `Deactivate` | Customers | 9 | Yes | No | None | Customer, actor, attrs / deactivate | Update excludes `customer_type`/`active`; invalid phone redisplays attempted attrs; deactivate + audit are one transaction; deactivate is the only inactive transition |
+| `Pos::StageCustomer` | Point of Sale | 9 | Yes | No | Session (`lock`) | Session, customer, actor | Owner-scoped stage triad; replace+warn |
+| `Pos::ClearStagedCustomer` | Point of Sale | 9 | Yes | No | Session (`lock`) | Session, actor (or force) | Clears stage triad |
+| `Pos::ConsumeStagedCustomer` | Point of Sale | 9 | Yes | No | Session + Transaction (`lock`) | Session, transaction, actor | Owner-only; attaches when txn has no customer; same customer clears stage; different customer preserves stage (`conflict?`) |
+| `Pos::AttachCustomer` / `RemoveCustomer` | Point of Sale | 9 | Yes | No | Transaction (`lock`) | Transaction, customer/actor | Commercially inert attach/remove; requires editable transaction; org + active checks |
+
+### Phase 9 notes
+
+- Namespace `22` extends ADR-0002 / `IdentifierSequence::NAMESPACES`.
+- Phone store-country context is passed through Customer services; the model validates stored E.164 only.
+- POS attachment does not recalculate price, tax, discounts, or tenders.
 
 ## Later phases (add when implemented)
 

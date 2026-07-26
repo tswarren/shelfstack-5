@@ -2,7 +2,7 @@
 
 **Status:** Implementer reference  
 **Authority:** [ADR-0002](../adr/0002-canonical-identifiers-and-namespaces.md)  
-**Needed by:** Phase 2 (catalog); Phase 4d (units); Phase 6 (stored value)
+**Needed by:** Phase 2 (catalog); Phase 4d (units); Phase 6 (stored value); Phase 9 (customers)
 
 This document specifies procedures. It does not replace ADR-0002.
 
@@ -11,6 +11,7 @@ This document specifies procedures. It does not replace ADR-0002.
 | Prefix | Record | Field |
 | --- | --- | --- |
 | `21` | Stored-value account | canonical account number |
+| `22` | Customer | `customer_number` |
 | `27` | Inventory unit | `unit_identifier` |
 | `28` | Product variant | `sku` |
 | `29` | Locally identified product | `products.identifier` when generated |
@@ -55,7 +56,7 @@ Valid: true
 
 ## Generated identifier procedure
 
-1. Allocate the next value from the installation-singleton `identifier_sequences` row for the namespace (`21` / `27` / `28` / `29`) — [OD-011 accepted](../implementation/open-decisions.md). Under INV-ORG-001 there is no per-organization sequence table.
+1. Allocate the next value from the installation-singleton `identifier_sequences` row for the namespace (`21` / `22` / `27` / `28` / `29`) — [OD-011 accepted](../implementation/open-decisions.md). Under INV-ORG-001 there is no per-organization sequence table.
 2. Build 12 digits: two-digit prefix + ten-digit zero-padded payload (no encoded business meaning). Fail if the payload would exceed ten digits.
 3. Append EAN-13 check digit.
 4. Persist with the consuming record. **Never reuse** means never reuse a successfully **committed** assignment; a rolled-back allocation may be regenerated.

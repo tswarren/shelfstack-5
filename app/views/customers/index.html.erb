@@ -1,0 +1,60 @@
+<%= render "shared/page_header", title: "Customers",
+      actions: capture {
+        if Current.user.can?("customers.customer.create", store: Current.store)
+          concat link_to("New customer", new_customer_path, class: "button button-primary")
+        end
+      } %>
+
+<form class="toolbar" role="search" action="<%= customers_path %>" method="get">
+  <div class="field">
+    <label class="field-label" for="customer-q">Search</label>
+    <input id="customer-q" class="input" type="search" name="q" value="<%= @query %>"
+           placeholder="Name, phone, email, or customer number">
+  </div>
+  <div class="toolbar-actions">
+    <button type="submit" class="button button-primary">Search</button>
+    <% if @query.present? %>
+      <%= link_to "Clear", customers_path, class: "button button-outline" %>
+    <% end %>
+  </div>
+</form>
+
+<% if @inactive_direct_match %>
+  <p class="banner banner-warning" role="status">This customer number belongs to an inactive customer.</p>
+<% end %>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Customer number</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>City</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% Array(@customers).each do |customer| %>
+        <tr>
+          <td><%= link_to customer.display_name.presence || "(unnamed)", customer_path(customer) %></td>
+          <td><%= customer.customer_type.humanize %></td>
+          <td><code><%= customer.customer_number %></code></td>
+          <td><%= customer.primary_phone.presence || "—" %></td>
+          <td><%= customer.primary_email.presence || "—" %></td>
+          <td><%= customer.city.presence || "—" %></td>
+          <td><%= customer.active? ? "Active" : "Inactive" %></td>
+        </tr>
+      <% end %>
+      <% if Array(@customers).empty? %>
+        <tr><td colspan="7">No customers found.</td></tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<% if defined?(@pagy) && @pagy %>
+  <%= render "shared/pagination", pagy: @pagy, item_name: "customer" %>
+<% end %>

@@ -28,7 +28,7 @@ class ProductRequestFulfillmentFlowTest < ApplicationSystemTestCase
       store: @store, actor: @admin,
       attributes: {
         request_type: "customer_request", product_id: @variant.product_id, product_variant_id: @variant.id,
-        requested_quantity: 2, priority: "high", customer_reference: "SYS-CR-1"
+        requested_quantity: 2, priority: "high", customer_id: customers(:jordan_lee).id
       }
     ).product_request
     assert request.persisted?

@@ -44,10 +44,20 @@ module Pos
             closed_by_user: @actor,
             expected_cash_cents: expected,
             counted_cash_cents: closing.total_cents,
-            cash_variance_cents: closing.total_cents - expected
+            cash_variance_cents: closing.total_cents - expected,
+            staged_customer: nil,
+            staged_customer_by_user: nil,
+            staged_customer_at: nil
           )
         else
-          session.update!(status: "closed", closed_at: Time.current, closed_by_user: @actor)
+          session.update!(
+            status: "closed",
+            closed_at: Time.current,
+            closed_by_user: @actor,
+            staged_customer: nil,
+            staged_customer_by_user: nil,
+            staged_customer_at: nil
+          )
         end
 
         record_session_card_evidence!(session) if session_card_evidence_required?(session)

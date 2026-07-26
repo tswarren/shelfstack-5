@@ -57,6 +57,7 @@ A conflict between implementation and an accepted ADR must be resolved explicitl
 | [ADR-0014](0014-hybrid-transaction-component-tax-calculation.md) | Use Hybrid Transaction-Component Tax Calculation with Largest-Remainder Allocation | Accepted                   |
 | [ADR-0015](0015-product-backed-demand-and-customer-supply-commitments.md) | Require Product-Backed Demand and Reserve Supply Allocations for Customer Commitments | Accepted                   |
 | [ADR-0016](0016-treat-standalone-credit-card-activity.md) | Treat Standalone Card Activity as Operator-Confirmed External Records | Accepted                   |
+| [ADR-0017](0017-customer-domain-and-namespace-22.md) | Introduce a Flat Customer Domain and Namespace 22 | Accepted |
 
 ---
 
