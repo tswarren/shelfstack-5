@@ -9,14 +9,19 @@
   </dl>
 
   <% if @pos_transaction.open? %>
-    <% if @balance_due_cents.negative? %>
+    <% if @balance_due_cents.zero? %>
+      <p>
+        <span class="muted">Settled</span><br>
+        <span class="pos-balance"><%= pos_money(0) %></span>
+      </p>
+    <% elsif @balance_due_cents.negative? %>
       <p>
         <span class="muted">Refund due</span><br>
         <span class="pos-balance"><%= pos_money(-@balance_due_cents) %></span>
       </p>
     <% else %>
       <p>
-        <span class="muted">Remaining balance</span><br>
+        <span class="muted">Amount due</span><br>
         <span class="pos-balance"><%= pos_money(@balance_due_cents) %></span>
       </p>
     <% end %>
