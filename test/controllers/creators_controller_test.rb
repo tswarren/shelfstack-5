@@ -53,6 +53,62 @@ class CreatorsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
   end
 
+  test "inline product-form create replaces only the creator picker and closes dialog" do
+    post session_path, params: { username: "admin", password: "password123" }
+
+    assert_difference "Creator.count", 1 do
+      post creators_url,
+           params: {
+             inline_product_form: "1",
+             row_index: "row42",
+             creator: { display_name: "Inline Stream Creator", active: true }
+           },
+           as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_match(
+      /turbo-stream[^>]*action="replace"[^>]*target="product_creator_assignment_row42_creator_picker"/,
+      response.body
+    )
+    assert_no_match(/creator-assignment-row-row42/, response.body)
+    assert_match(/turbo-stream[^>]*action="close_dialog"[^>]*target="inline-creator-dialog"/, response.body)
+    assert_no_match(/<script>/, response.body)
+  end
+
+  test "inline create for a dual-role creator targets only the invoking row picker" do
+    post session_path, params: { username: "admin", password: "password123" }
+    product = products(:sample_book)
+    creator = creators(:ray_bradbury)
+    author_link = ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+    illustrator_link = ProductCreator.create!(
+      product: product, creator: creator, role: "illustrator", position: 1, credited_as: "Maps"
+    )
+    author_key = "product_creator_#{author_link.id}"
+    illustrator_key = "product_creator_#{illustrator_link.id}"
+
+    assert_difference "Creator.count", 1 do
+      post creators_url,
+           params: {
+             inline_product_form: "1",
+             row_index: illustrator_key,
+             creator: { display_name: "Replacement Illustrator", active: true }
+           },
+           as: :turbo_stream
+    end
+
+    assert_response :success
+    assert_match(
+      /turbo-stream[^>]*action="replace"[^>]*target="product_creator_assignment_#{Regexp.escape(illustrator_key)}_creator_picker"/,
+      response.body
+    )
+    assert_no_match(
+      /turbo-stream[^>]*action="replace"[^>]*target="product_creator_assignment_#{Regexp.escape(author_key)}_creator_picker"/,
+      response.body
+    )
+    assert_match(/Replacement Illustrator/, response.body)
+  end
+
   test "update persists changes and records an audit diff" do
     post session_path, params: { username: "admin", password: "password123" }
     creator = creators(:ray_bradbury)

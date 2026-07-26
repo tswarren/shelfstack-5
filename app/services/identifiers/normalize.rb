@@ -80,6 +80,8 @@ module Identifiers
       check = stripped[9].upcase
 
       unless valid_isbn10_check?(body, check)
+        # Invalid ISBN-10 must not become a storable ISBN-13-typed canonical
+        # (ADR-0002). Check-digit override workflow uses EAN-13/UPC warnings.
         return NormalizedIdentifier.new(
           original: original,
           normalized: stripped,

@@ -46,6 +46,30 @@ Destructive actions use `--danger`, not brand secondary.
 
 Pair background, border, and text tokens for info / success / warning / danger. Status must not rely on color alone (see [accessibility.md](accessibility.md)).
 
+## Icons
+
+ShelfStack vendors a small **Phosphor Icons** subset (MIT; Regular weight) as inline SVG via `IconsHelper#icon_tag`.
+
+Rules:
+
+* Icons inherit `currentColor` — do not hard-code fill colors in the SVG paths.
+* Only allowlisted names may be rendered; unknown names raise (no arbitrary path lookup).
+* Decorative icons default to `aria-hidden="true"`. Pass `title:` when the icon is the sole accessible name.
+* Prefer **icon + text** for actions and navigation. Icon-only controls need an accessible name (`aria-label` / `title:`).
+* Do not grow this into a general-purpose icon system beyond page needs without an intentional design decision.
+
+Documented allowlist lives in `app/helpers/icons_helper.rb` (`IconsHelper::ICONS`).
+
+## Sticky form action bar
+
+Product create/edit (Phase 10b) uses `.form-actions--sticky`:
+
+* Sticky when viewport width is at least **701px** (above the narrow form-grid collapse) **and** viewport height is at least **640px**.
+* Collapses to normal in-flow positioning on narrower or shorter viewports.
+* Opaque background, top border, bottom safe-area padding; form content reserves bottom padding equal to the bar height so fields are never covered.
+* Sticky positioning is CSS-only; the bar remains a plain submit + cancel link without JavaScript.
+* Action rows (`.form-actions`) are right-aligned. Secondary actions (Cancel / outline / ghost) sit to the left of the primary action: `[Cancel] [Update product]`.
+
 ## Density
 
 - Back-office: comfortable tables and forms.

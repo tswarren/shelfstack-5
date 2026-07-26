@@ -1,6 +1,23 @@
 <% creator_rows = local_assigns[:creator_rows] || [] %>
-<%= form_with url: product.persisted? ? product_path(product) : products_path,
-      method: product.persisted? ? :patch : :post, class: "form" do |form| %>
+<% identifier_warning_normalized = local_assigns[:identifier_warning_normalized] || @identifier_warning_normalized %>
+<% identifier_warning_detail = local_assigns[:identifier_warning_detail] || @identifier_warning_detail %>
+<% identifier_value = local_assigns.key?(:identifier) ? local_assigns[:identifier] : (@identifier.nil? ? params[:identifier] : @identifier) %>
+<% accept_identifier_warning = ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning]) %>
+<%
+  price_sync_mode = params[:price_sync_mode].presence
+  unless %w[linked independent].include?(price_sync_mode)
+    price_sync_mode = (product.list_price_cents.present? &&
+      variant&.regular_price_cents.present? &&
+      product.list_price_cents != variant.regular_price_cents) ? "independent" : "linked"
+  end
+%>
+<%= form_with model: product,
+      url: product.persisted? ? product_path(product) : products_path,
+      method: product.persisted? ? :patch : :post,
+      class: "form form--with-sticky-actions",
+      data: { controller: "price-sync", price_sync_mode_value: price_sync_mode } do |form| %>
+  <%= hidden_field_tag :price_sync_mode, price_sync_mode,
+        data: { price_sync_target: "mode" } %>
   <%= render "shared/form_errors", object: product, id: "form-errors-product" %>
   <% if variant.present? && variant.errors.any? %>
     <%= render "shared/form_errors", object: variant, id: "form-errors-variant" %>
@@ -9,77 +26,96 @@
   <section class="form-section">
     <h2 class="form-section-title">Identity</h2>
     <% unless product.persisted? %>
-      <div class="form-grid">
-        <div class="field">
-          <label class="field-label" for="identifier">Identifier</label>
-          <input type="text" name="identifier" id="identifier" class="input"
-                 value="<%= params[:identifier] %>">
-          <p class="field-hint">Leave blank to generate a namespace 29 identifier.</p>
+      <% if identifier_warning_normalized.present? %>
+        <div class="identifier-warning-banner" role="status">
+          <p>
+            <strong>Identifier warning:</strong>
+            <%= identifier_warning_normalized %>
+            <% if identifier_warning_detail.present? %>
+              — <%= identifier_warning_detail %>
+            <% end %>
+          </p>
+          <p class="muted">
+            Acceptance applies only to this exact normalized identifier.
+            Changing the identifier requires a new confirmation.
+          </p>
+          <input type="hidden" name="accepted_identifier_normalized" value="<%= identifier_warning_normalized %>">
+          <div class="checkbox-group">
+            <label for="accept_identifier_warning">
+              <%= check_box_tag "accept_identifier_warning", "1", accept_identifier_warning,
+                    id: "accept_identifier_warning" %>
+              Accept this identifier warning and save anyway
+            </label>
+          </div>
+          <div class="button-row">
+            <button type="submit" class="button button-primary">
+              Save anyway
+            </button>
+            <a href="#product_identifier" class="button button-outline">Correct identifier</a>
+          </div>
         </div>
-      </div>
-      <div class="checkbox-group">
-        <label>
-          <input type="checkbox" name="accept_identifier_warning" id="accept_identifier_warning" value="1"
-            <%= "checked" if params[:accept_identifier_warning] == "1" %>>
-          Accept identifier warning (save despite an invalid check digit)
-        </label>
+      <% end %>
+      <div class="form-grid form-grid--2">
+        <div class="field">
+          <label class="field-label" for="product_identifier">Identifier</label>
+          <input type="text" name="identifier" id="product_identifier" class="input"
+                 value="<%= identifier_value %>">
+          <div class="field-meta">
+            <p class="field-hint">Leave blank to generate a namespace 29 identifier.</p>
+          </div>
+        </div>
       </div>
     <% else %>
       <%= render "shared/record_summary", rows: [ [ "Identifier", tag.code(product.identifier) ] ] %>
     <% end %>
 
-    <%= fields_for :product, product do |product_form| %>
-      <div class="form-grid">
-        <div class="field">
-          <%= product_form.label :name, class: "field-label" %>
-          <%= product_form.text_field :name, class: "input", required: true %>
-        </div>
-        <div class="field">
-          <%= product_form.label :subtitle, class: "field-label" %>
-          <%= product_form.text_field :subtitle, class: "input" %>
-        </div>
-        <div class="field">
-          <%= product_form.label :alternate_identifier, class: "field-label" %>
-          <%= product_form.text_field :alternate_identifier, class: "input" %>
-        </div>
-        <div class="field">
-          <%= product_form.label :product_type, class: "field-label" %>
-          <%= product_form.select :product_type, Product::PRODUCT_TYPES.map { |t| [ t.titleize, t ] } %>
-        </div>
-        <div class="field">
-          <%= product_form.label :publisher_or_manufacturer_name, "Publisher / manufacturer", class: "field-label" %>
-          <%= product_form.text_field :publisher_or_manufacturer_name, class: "input" %>
-        </div>
-        <div class="field">
-          <%= product_form.label :imprint_or_brand_name, "Imprint / brand", class: "field-label" %>
-          <%= product_form.text_field :imprint_or_brand_name, class: "input" %>
-        </div>
+    <div class="form-grid form-grid--2">
+      <div class="field">
+        <%= form.label :name, class: "field-label" %>
+        <%= form.text_field :name, class: "input", required: true %>
       </div>
-    <% end %>
+      <div class="field">
+        <%= form.label :subtitle, class: "field-label" %>
+        <%= form.text_field :subtitle, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :alternate_identifier, class: "field-label" %>
+        <%= form.text_field :alternate_identifier, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :product_type, class: "field-label" %>
+        <%= form.select :product_type, Product::PRODUCT_TYPES.map { |t| [ t.titleize, t ] } %>
+      </div>
+      <div class="field">
+        <%= form.label :publisher_or_manufacturer_name, "Publisher / manufacturer", class: "field-label" %>
+        <%= form.text_field :publisher_or_manufacturer_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :imprint_or_brand_name, "Imprint / brand", class: "field-label" %>
+        <%= form.text_field :imprint_or_brand_name, class: "input" %>
+      </div>
+    </div>
   </section>
 
   <section class="form-section">
     <h2 class="form-section-title">Bibliographic detail</h2>
-    <%= fields_for :product, product do |product_form| %>
-      <div class="form-grid">
-        <div class="field">
-          <%= product_form.label :edition_statement, "Edition", class: "field-label" %>
-          <%= product_form.text_field :edition_statement, class: "input" %>
-        </div>
-        <div class="field">
-          <%= product_form.label :language_code, "Language", class: "field-label" %>
-          <%= product_form.select :language_code,
-                options_for_select(Catalog::LanguageCodes::OPTIONS, product.language_code),
-                { include_blank: "—" },
-                class: "input" %>
-          <p class="field-hint">ISO 639-2 three-letter code. Defaults to English (eng) for new products.</p>
-        </div>
-        <div class="field">
-          <%= product_form.label :publication_date, "Publication date", class: "field-label" %>
-          <%= product_form.date_field :publication_date, class: "input" %>
-        </div>
+    <div class="form-grid form-grid--3">
+      <div class="field">
+        <%= form.label :edition_statement, "Edition", class: "field-label" %>
+        <%= form.text_field :edition_statement, class: "input" %>
       </div>
-    <% end %>
+      <div class="field">
+        <%= form.label :language_code, "Language", class: "field-label" %>
+        <%= form.select :language_code,
+              options_for_select(Catalog::LanguageCodes::OPTIONS, product.language_code),
+              { include_blank: "—" },
+              class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :publication_date, "Publication date", class: "field-label" %>
+        <%= form.date_field :publication_date, class: "input" %>
+      </div>
+    </div>
   </section>
 
   <section class="form-section" data-controller="creator-assignments">
@@ -88,81 +124,80 @@
     <input type="hidden" name="product[creator_assignments_provided]" value="1">
     <div data-creator-assignments-target="rows">
       <% creator_rows.each do |row| %>
-        <%= render "products/creator_assignment_row", index: row[:creator]&.id || SecureRandom.hex(4),
+        <%= render "products/creator_assignment_row",
+              index: row[:row_key].presence || SecureRandom.hex(4),
               creator: row[:creator], role: row[:role], credited_as: row[:credited_as] %>
       <% end %>
     </div>
     <template data-creator-assignments-target="template">
       <%= render "products/creator_assignment_row", index: "NEW_RECORD", creator: nil, role: nil, credited_as: nil %>
     </template>
-    <button type="button" class="button button-secondary" data-action="creator-assignments#addRow">Add creator</button>
+    <div class="action-group">
+      <button type="button" class="button button-secondary" data-action="creator-assignments#addRow">Add creator</button>
+    </div>
   </section>
 
-  <%= fields_for :product, product do |product_form| %>
-    <section class="form-section">
-      <h2 class="form-section-title">Description</h2>
+  <section class="form-section">
+    <h2 class="form-section-title">Description</h2>
+    <div class="field field--full">
+      <%= form.label :description, class: "field-label" %>
+      <%= form.text_area :description, class: "input", rows: 4 %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Classification</h2>
+    <div class="form-grid form-grid--2">
+      <%= render "shared/record_picker",
+            form: form,
+            method: :product_format_id,
+            record_type: "product_format",
+            selected: product.product_format,
+            label: "Format" %>
+      <%= render "products/merchandise_class_field",
+            form: form,
+            product: product %>
+      <%= render "shared/record_picker",
+            form: form,
+            method: :default_department_id,
+            record_type: "department",
+            selected: product.default_department,
+            label: "Default department",
+            hint: "Leave blank to inherit from the merchandise class when present." %>
+      <%= render "shared/record_picker",
+            form: form,
+            method: :default_tax_category_id,
+            record_type: "tax_category",
+            selected: product.default_tax_category,
+            label: "Default tax category",
+            hint: "Leave blank to inherit from merchandise class or department." %>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2 class="form-section-title">Pricing &amp; availability</h2>
+    <div class="form-grid form-grid--3">
+      <%= render "shared/money_field", name: "product[list_price]", label: "List price",
+            value_cents: product.list_price_cents, id: "product_list_price",
+            object: product, error_attr: :list_price,
+            value: params.dig(:product, :list_price),
+            hint: "Manufacturer list price. Enter dollars, e.g. 24.95.",
+            input_html: { data: { price_sync_target: "list", action: "input->price-sync#listChanged" } } %>
       <div class="field">
-        <%= product_form.label :description, class: "field-label" %>
-        <%= product_form.text_area :description, class: "input", rows: 4 %>
+        <%= form.label :available_from, class: "field-label" %>
+        <%= form.date_field :available_from, class: "input input-date" %>
       </div>
-    </section>
-
-    <section class="form-section">
-      <h2 class="form-section-title">Classification</h2>
-      <div class="form-grid">
-        <%= render "shared/record_picker",
-              form: product_form,
-              method: :product_format_id,
-              record_type: "product_format",
-              selected: product.product_format,
-              label: "Format" %>
-        <%= render "shared/record_picker",
-              form: product_form,
-              method: :merchandise_class_id,
-              record_type: "merchandise_class",
-              selected: product.merchandise_class,
-              label: "Merchandise class" %>
-        <%= render "shared/record_picker",
-              form: product_form,
-              method: :default_department_id,
-              record_type: "department",
-              selected: product.default_department,
-              label: "Default department",
-              hint: "Leave blank to inherit from the merchandise class when present." %>
-        <%= render "shared/record_picker",
-              form: product_form,
-              method: :default_tax_category_id,
-              record_type: "tax_category",
-              selected: product.default_tax_category,
-              label: "Default tax category",
-              hint: "Leave blank to inherit from merchandise class or department." %>
+      <div class="field">
+        <%= form.label :available_until, class: "field-label" %>
+        <%= form.date_field :available_until, class: "input input-date" %>
       </div>
-    </section>
-
-    <section class="form-section">
-      <h2 class="form-section-title">Pricing &amp; availability</h2>
-      <div class="form-grid">
-        <%= render "shared/money_field", name: "product[list_price]", label: "List price",
-              value_cents: product.list_price_cents, id: "product_list_price",
-              object: product, error_attr: :list_price,
-              value: params.dig(:product, :list_price),
-              hint: "Manufacturer list price. Enter dollars, e.g. 24.95." %>
-        <div class="field">
-          <%= product_form.label :available_from, class: "field-label" %>
-          <%= product_form.date_field :available_from, class: "input input-date" %>
-        </div>
-        <div class="field">
-          <%= product_form.label :available_until, class: "field-label" %>
-          <%= product_form.date_field :available_until, class: "input input-date" %>
-        </div>
-      </div>
-    </section>
-  <% end %>
+    </div>
+  </section>
 
   <section class="form-section">
     <h2 class="form-section-title">Standard variant</h2>
     <%= fields_for :product_variant, variant do |variant_form| %>
-      <div class="form-grid">
+      <div class="form-grid form-grid--3">
         <div class="field">
           <%= variant_form.label :inventory_tracking_mode, "Tracking mode", class: "field-label" %>
           <%= variant_form.select :inventory_tracking_mode, ProductVariant::INVENTORY_TRACKING_MODES.map { |m| [ m.titleize, m ] } %>
@@ -171,12 +206,19 @@
               value_cents: variant.regular_price_cents, id: "product_variant_regular_price",
               object: variant, error_attr: :regular_price,
               value: params.dig(:product_variant, :regular_price),
-              hint: "Required when the variant is sellable. Enter dollars, e.g. 12.95." %>
+              hint: "Required when the variant is sellable. Enter dollars, e.g. 12.95.",
+              input_html: { data: { price_sync_target: "regular", action: "input->price-sync#regularChanged" } } %>
         <div class="field">
           <%= variant_form.label :status, class: "field-label" %>
           <%= variant_form.select :status, ProductVariant::STATUSES.map { |s| [ s.titleize, s ] } %>
         </div>
       </div>
+      <p>
+        <button type="button" class="button button-ghost" data-price-sync-target="relink"
+                data-action="price-sync#useListPrice" hidden>
+          Use list price
+        </button>
+      </p>
       <div class="checkbox-group">
         <label><%= variant_form.check_box :sellable %> Variant is sellable</label>
       </div>
@@ -185,21 +227,23 @@
 
   <section class="form-section">
     <h2 class="form-section-title">Status</h2>
-    <%= fields_for :product, product do |product_form| %>
-      <div class="form-grid">
-        <div class="field">
-          <%= product_form.label :status, class: "field-label" %>
-          <%= product_form.select :status, Product::STATUSES.map { |s| [ s.titleize, s ] } %>
-        </div>
+    <div class="form-grid form-grid--2">
+      <div class="field">
+        <%= form.label :status, class: "field-label" %>
+        <%= form.select :status, Product::STATUSES.map { |s| [ s.titleize, s ] } %>
       </div>
-      <div class="checkbox-group">
-        <label><%= product_form.check_box :sellable %> Product is sellable</label>
-      </div>
-    <% end %>
+    </div>
+    <div class="checkbox-group">
+      <label><%= form.check_box :sellable %> Product is sellable</label>
+    </div>
   </section>
 
-  <div class="form-actions">
-    <%= form.submit product.persisted? ? "Update product" : "Create product", class: "button button-primary" %>
+  <div class="form-actions form-actions--sticky">
     <%= link_to "Cancel", product.persisted? ? product_path(product) : products_path, class: "button button-outline" %>
+    <%= form.submit product.persisted? ? "Update product" : "Create product", class: "button button-primary" %>
   </div>
+<% end %>
+
+<% if Current.user.can?("catalog.manage_creators", store: Current.store) %>
+  <%= render "products/inline_creator_dialog" %>
 <% end %>

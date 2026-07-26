@@ -19,13 +19,28 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     get product_path(product)
     assert_response :success
-    assert_match "Ops for Main Street", response.body
-    assert_match "Stock — Main Street", response.body
-    assert_match "Orders, receipts, and requests — Main Street", response.body
+    assert_match "Store status — Main Street", response.body
+    assert_match 'id="overview"', response.body
+    assert_match 'id="selling"', response.body
+    assert_match 'id="inventory"', response.body
+    assert_match 'id="supply"', response.body
+    assert_match "data-controller=\"tabs\"", response.body
     assert_match "Vendor sources — Organization-wide", response.body
     assert_no_match(/Stock — Organization/i, response.body)
-    assert_match "Standard item", response.body
+    assert_match "Selling configuration", response.body
     assert_match product.product_variants.first.sku, response.body
+  end
+
+  test "product show renders all tab panel content without JavaScript enhancement" do
+    product = products(:sample_book)
+
+    get product_path(product)
+    assert_response :success
+    assert_match 'href="#overview"', response.body
+    assert_match 'href="#inventory"', response.body
+    assert_match 'data-tabs-target="panel"', response.body
+    assert_no_match(/role="tablist"/, response.body)
+    assert_match product.name, response.body
   end
 
   test "product summary hub omits unauthorized stock section content" do
@@ -77,11 +92,19 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     get edit_product_path(product)
     assert_response :success
     assert_match "data-controller=\"record-picker\"", response.body
-    assert_match "data-record-picker-record-type-value=\"merchandise_class\"", response.body
+    assert_match "data-controller=\"merchandise-class-cascade\"", response.body
+    assert_match 'name="product[merchandise_class_id]"', response.body
     assert_match "data-record-picker-record-type-value=\"department\"", response.body
     assert_match "data-record-picker-record-type-value=\"product_format\"", response.body
     assert_match "data-record-picker-record-type-value=\"tax_category\"", response.body
-    assert_no_match(/name="product\[merchandise_class_id\]"[^>]*<option/m, response.body)
+  end
+
+  test "new product form defaults product and variant sellable to true" do
+    get new_product_path
+    assert_response :success
+    assert_select "input[name='product[sellable]'][type='checkbox'][checked]"
+    assert_select "input[name='product_variant[sellable]'][type='checkbox'][checked]"
+    assert_match "form-actions--sticky", response.body
   end
 
   test "searches by normalized ISBN-10 input" do
@@ -124,8 +147,10 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
         identifier: "9781786798986",
         product: {
           name: "Mavericks",
+          subtitle: "Kept on redisplay",
           product_type: "book",
           product_format_id: product_formats(:hardcover).id,
+          publisher_or_manufacturer_name: "Test Press",
           status: "active",
           sellable: true
         },
@@ -140,7 +165,97 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_match(/invalid EAN-13 check digit/, response.body)
-    assert_match(/Accept identifier warning/, response.body)
+    assert_match(/Save anyway/, response.body)
+    assert_match(/accept_identifier_warning/, response.body)
+    assert_match(/accepted_identifier_normalized/, response.body)
+    assert_match(/value="Mavericks"/, response.body)
+    assert_match(/value="Kept on redisplay"/, response.body)
+    assert_match(/value="Test Press"/, response.body)
+    assert_match(/value="9781786798986"/, response.body)
+  end
+
+  test "accepts warned identifier via checkbox and preserves create" do
+    assert_difference "Product.count", 1 do
+      post products_path, params: {
+        identifier: "9781786798986",
+        accept_identifier_warning: "1",
+        accepted_identifier_normalized: "9781786798986",
+        product: {
+          name: "Warned Accept",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          merchandise_class_id: merchandise_classes(:fiction_primary).id,
+          default_department_id: departments(:books_new).id,
+          default_tax_category_id: tax_categories(:physical_book).id,
+          status: "active",
+          sellable: true
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price_cents: 2495,
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    product = Product.order(:id).last
+    assert_redirected_to product_path(product)
+    assert_equal "9781786798986", product.identifier
+    assert_equal "warning", product.identifier_validation_status
+  end
+
+  test "invalid ISBN-10 check digit blocks without save-anyway override" do
+    assert_no_difference "Product.count" do
+      post products_path, params: {
+        identifier: "0-306-40615-3",
+        product: {
+          name: "ISBN10 Blocked",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          status: "active",
+          sellable: true
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price_cents: 1999,
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/invalid ISBN-10 check digit/, response.body)
+    assert_no_match(/Save anyway/, response.body)
+    assert_match(/value="ISBN10 Blocked"/, response.body)
+    assert_match(/value="0-306-40615-3"/, response.body)
+  end
+
+  test "price sync mode survives validation redisplay when regular price is cleared" do
+    assert_no_difference "Product.count" do
+      post products_path, params: {
+        price_sync_mode: "independent",
+        product: {
+          name: "",
+          list_price: "24.95",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          status: "active",
+          sellable: true
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price: "",
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/name="price_sync_mode"[^>]*value="independent"/, response.body)
+    assert_match(/data-price-sync-mode-value="independent"/, response.body)
   end
 
   test "denies clerk without catalog permission" do
@@ -326,6 +441,28 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to product_path(product)
     assert_empty product.product_creators.reload
+  end
+
+  test "edit form uses unique row keys when the same creator has multiple roles" do
+    product = products(:sample_book)
+    creator = creators(:ray_bradbury)
+    author_link = ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+    illustrator_link = ProductCreator.create!(
+      product: product, creator: creator, role: "illustrator", position: 1, credited_as: "Cover art"
+    )
+
+    get edit_product_path(product)
+    assert_response :success
+
+    author_key = "product_creator_#{author_link.id}"
+    illustrator_key = "product_creator_#{illustrator_link.id}"
+    assert_match(/id="creator-assignment-row-#{Regexp.escape(author_key)}"/, response.body)
+    assert_match(/id="creator-assignment-row-#{Regexp.escape(illustrator_key)}"/, response.body)
+    assert_match(/id="product_creator_assignment_#{Regexp.escape(author_key)}_creator_picker"/, response.body)
+    assert_match(/id="product_creator_assignment_#{Regexp.escape(illustrator_key)}_creator_picker"/, response.body)
+    assert_match(/id="inline-creator-opener-#{Regexp.escape(illustrator_key)}"/, response.body)
+    assert_match(/value="Cover art"/, response.body)
+    assert_select "option[value=illustrator][selected]", 1
   end
 
   test "validation rerender does not disclose a foreign-organization creator label" do

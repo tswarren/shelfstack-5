@@ -1,4 +1,4 @@
-<%# locals: name:, label:, value_cents: nil, id: nil, hint: nil, required: false, describedby: nil, error: nil, currency_code: nil, object: nil, error_attr: nil %>
+<%# locals: name:, label:, value_cents: nil, id: nil, hint: nil, required: false, describedby: nil, error: nil, currency_code: nil, object: nil, error_attr: nil, input_html: {} %>
 <%
   field_id = local_assigns[:id].presence || "mf_#{name.to_s.gsub(/\W+/, "_")}"
   raw_value = local_assigns[:value]
@@ -15,24 +15,38 @@
   describedby_ids << "#{field_id}_hint" if local_assigns[:hint].present?
   describedby_ids << "#{field_id}_error" if error_text.present?
   describedby_ids << local_assigns[:describedby] if local_assigns[:describedby].present?
+  input_html = (local_assigns[:input_html] || {}).deep_symbolize_keys
+  data_attrs = (input_html.delete(:data) || {}).deep_symbolize_keys
+  input_options = {
+    id: field_id,
+    type: "text",
+    inputmode: "decimal",
+    autocomplete: "off",
+    class: "input",
+    name: name,
+    value: value,
+    placeholder: "0.00",
+    data: data_attrs
+  }
+  input_options[:required] = true if local_assigns[:required]
+  input_options[:aria] = {}
+  input_options[:aria][:invalid] = true if error_text.present?
+  input_options[:aria][:describedby] = describedby_ids.join(" ") if describedby_ids.any?
 %>
 <div class="field">
   <label class="field-label" for="<%= field_id %>"><%= label %></label>
   <div class="input-affix">
     <span class="affix" aria-hidden="true"><%= unit %></span>
-    <input id="<%= field_id %>" type="text" inputmode="decimal" autocomplete="off"
-           class="input"
-           name="<%= name %>"
-           value="<%= value %>"
-           placeholder="0.00"
-           <%= "required" if local_assigns[:required] %>
-           <%= "aria-invalid=true" if error_text.present? %>
-           <%= "aria-describedby=\"#{describedby_ids.join(" ")}\"".html_safe if describedby_ids.any? %>>
+    <%= tag.input(**input_options) %>
   </div>
-  <% if local_assigns[:hint].present? %>
-    <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
-  <% end %>
-  <% if error_text.present? %>
-    <p class="field-error" id="<%= field_id %>_error"><%= error_text %></p>
+  <% if local_assigns[:hint].present? || error_text.present? %>
+    <div class="field-meta">
+      <% if local_assigns[:hint].present? %>
+        <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
+      <% end %>
+      <% if error_text.present? %>
+        <p class="field-error" id="<%= field_id %>_error"><%= error_text %></p>
+      <% end %>
+    </div>
   <% end %>
 </div>

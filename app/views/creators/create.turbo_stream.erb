@@ -1,0 +1,39 @@
+<% if @inline_product_form %>
+  <% if @creator.errors.any? %>
+    <%= turbo_stream.update "inline-creator-dialog-body" do %>
+      <%= form_with model: @creator, url: creators_path, class: "form",
+            data: { turbo_stream: true, action: "turbo:submit-start->inline-creator-dialog#disableSubmit turbo:submit-end->inline-creator-dialog#enableSubmit" } do |f| %>
+        <input type="hidden" name="inline_product_form" value="1">
+        <input type="hidden" name="row_index" id="inline_creator_row_index" value="<%= @row_index %>">
+        <%= render "shared/form_errors", object: @creator %>
+        <div class="field">
+          <%= f.label :display_name, class: "field-label" %>
+          <%= f.text_field :display_name, class: "input", required: true %>
+        </div>
+        <div class="field">
+          <%= f.label :sort_name, class: "field-label" %>
+          <%= f.text_field :sort_name, class: "input" %>
+        </div>
+        <div class="form-actions">
+          <%= f.submit "Create creator", class: "button button-primary", data: { inline_creator_dialog_target: "submit" } %>
+        </div>
+      <% end %>
+    <% end %>
+  <% else %>
+    <% row_index = @row_index.presence || "new" %>
+    <% picker_dom_id = "product_creator_assignment_#{row_index}_creator_picker" %>
+    <%# Replace only the creator picker — preserve role, credited-as, and opener button. %>
+    <%= turbo_stream.replace picker_dom_id do %>
+      <div id="<%= picker_dom_id %>">
+        <%= render "shared/record_picker",
+              name: "product[creator_assignments][][creator_id]",
+              id: "product_creator_assignment_#{row_index}_creator_id",
+              record_type: "creator",
+              selected_id: @creator.id,
+              label: "Creator",
+              required: true %>
+      </div>
+    <% end %>
+    <%= turbo_stream.action :close_dialog, "inline-creator-dialog" %>
+  <% end %>
+<% end %>

@@ -290,6 +290,86 @@ module Catalog
       assert summary.store_operations.open_po_lines.any? { |line| line.open_quantity.positive? }
     end
 
+    test "open order quantity and demand count use full totals beyond preview limits" do
+      9.times do |i|
+        po = PurchaseOrder.create!(
+          store: @store,
+          vendor: vendors(:acme_distributor),
+          purchase_order_number: "HUB-OPEN-#{i}-#{SecureRandom.hex(2)}",
+          status: "ordered",
+          currency_code: "USD",
+          ordered_on: Date.current,
+          ordered_at: i.minutes.ago,
+          ordered_by_user: @admin
+        )
+        po.purchase_order_lines.create!(
+          position: 0,
+          product_variant: @variant,
+          product_variant_vendor: product_variant_vendors(:sample_book_ingram),
+          description_snapshot: @variant.name,
+          identifier_snapshot: @product.identifier,
+          sku_snapshot: @variant.sku,
+          ordered_quantity: 3,
+          cancelled_quantity: 0,
+          received_quantity: 0,
+          cost_entry_method: "direct_net_cost",
+          expected_unit_cost_cents: 700,
+          cost_provenance: "manual_entry"
+        )
+      end
+
+      closed_po = PurchaseOrder.create!(
+        store: @store,
+        vendor: vendors(:acme_distributor),
+        purchase_order_number: "HUB-CLOSED-#{SecureRandom.hex(2)}",
+        status: "ordered",
+        currency_code: "USD",
+        ordered_on: 2.days.ago.to_date,
+        ordered_at: 2.days.ago,
+        ordered_by_user: @admin
+      )
+      closed_po.purchase_order_lines.create!(
+        position: 0,
+        product_variant: @variant,
+        product_variant_vendor: product_variant_vendors(:sample_book_ingram),
+        description_snapshot: @variant.name,
+        identifier_snapshot: @product.identifier,
+        sku_snapshot: @variant.sku,
+        ordered_quantity: 5,
+        cancelled_quantity: 0,
+        received_quantity: 5,
+        cost_entry_method: "direct_net_cost",
+        expected_unit_cost_cents: 700,
+        cost_provenance: "manual_entry"
+      )
+
+      21.times do |i|
+        ProductRequest.create!(
+          store: @store,
+          request_type: "staff_suggestion",
+          status: "open",
+          product: @product,
+          product_variant: @variant,
+          requested_quantity: 1,
+          priority: "normal",
+          requested_by_user: @admin
+        )
+      end
+
+      summary = BuildProductSummary.call(product: @product, store: @store, actor: @admin)
+      ops = summary.store_operations
+      preview_open_qty = ops.open_po_lines.sum(&:open_quantity)
+
+      assert_equal 8, ops.open_po_lines.size
+      assert_operator ops.open_order_quantity, :>=, 27
+      assert_operator ops.open_order_quantity, :>, preview_open_qty
+      assert_equal 20, ops.open_requests.size
+      assert_operator ops.open_demand_count, :>=, 21
+      assert_operator ops.open_demand_count, :>, ops.open_requests.size
+      assert ops.latest_po.label.start_with?("HUB-OPEN-0"),
+             "expected most recent PO overall, got #{ops.latest_po.label}"
+    end
+
     test "customer request coverage uses a bounded query count across many requests" do
       10.times do |i|
         ProductRequest.create!(

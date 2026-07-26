@@ -1,0 +1,68 @@
+<%# locals: summary: %>
+<% stock = summary.stock %>
+<% caps = summary.capabilities %>
+<% store_name = summary.store.name %>
+<article class="card card--nested store-status-panel" aria-label="Store status — <%= store_name %>">
+  <div class="card-header">
+    <h2>Store status — <%= store_name %></h2>
+    <% if stock&.tracking_mode == "quantity" && caps.stock_view %>
+      <%= status_badge("Available #{stock.available}", variant: stock.available.to_i.positive? ? :success : :warning) %>
+    <% end %>
+  </div>
+  <div class="card-body">
+    <% if !caps.stock_view %>
+      <p class="muted">Stock details are not available with your permissions.</p>
+    <% elsif stock.nil? %>
+      <p class="muted">Stock is unavailable for this product at <%= store_name %>.</p>
+    <% elsif stock.tracking_mode == "quantity" %>
+      <ul class="list-clean">
+        <li><span>Available</span><strong><%= stock.available %></strong></li>
+        <li><span>On hand</span><strong><%= stock.on_hand %></strong></li>
+        <li><span>Reserved</span><strong><%= stock.reserved %></strong></li>
+        <li><span>Unavailable</span><strong><%= stock.unavailable %></strong></li>
+        <% unless stock.on_order.nil? %>
+          <li><span>On order</span><strong><%= stock.on_order %></strong></li>
+        <% end %>
+        <li>
+          <span>Last received</span>
+          <strong>
+            <% if caps.receipt_view && stock.last_received_at %>
+              <%= formatted_datetime(stock.last_received_at, format: :short) %>
+            <% else %>
+              —
+            <% end %>
+          </strong>
+        </li>
+      </ul>
+    <% elsif stock.tracking_mode == "individual" %>
+      <ul class="list-clean">
+        <% unless stock.on_order.nil? %>
+          <li><span>On order</span><strong><%= stock.on_order %></strong></li>
+        <% end %>
+        <li>
+          <span>Last received</span>
+          <strong>
+            <% if caps.receipt_view && stock.last_received_at %>
+              <%= formatted_datetime(stock.last_received_at, format: :short) %>
+            <% else %>
+              —
+            <% end %>
+          </strong>
+        </li>
+      </ul>
+      <% if stock.unit_status_counts.present? %>
+        <p class="muted">Unit counts are summarized on the Inventory tab.</p>
+      <% end %>
+    <% else %>
+      <p class="muted">This item is not inventory-tracked.</p>
+      <% if caps.receipt_view %>
+        <ul class="list-clean">
+          <li>
+            <span>Last received</span>
+            <strong><%= stock&.last_received_at ? formatted_datetime(stock.last_received_at, format: :short) : "—" %></strong>
+          </li>
+        </ul>
+      <% end %>
+    <% end %>
+  </div>
+</article>

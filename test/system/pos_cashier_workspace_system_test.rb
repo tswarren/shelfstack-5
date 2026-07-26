@@ -32,10 +32,13 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     assert_button "Scan to start"
 
     before_count = PosTransaction.count
+    # Fill inside the ready section, but submit outside `within` — Turbo replaces
+    # the section on success and Chrome can raise a detached-node UnknownError
+    # while Capybara still holds the within scope.
     within("section[aria-label='Next action']") do
       fill_in "Scan or search", with: @variant.sku
-      click_button "Scan to start"
     end
+    click_button "Scan to start"
 
     assert_text(/Line added|available quantity/i, wait: 5)
     assert_equal before_count + 1, PosTransaction.count
@@ -58,7 +61,6 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     click_button "Complete transaction"
     assert_text(/Transaction complete|Receipt/i, wait: 5)
     assert transaction.reload.completed?
-    assert_link "Next transaction"
 
     click_link "Next transaction"
     assert_current_path register_path
@@ -85,8 +87,8 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     visit register_path
     within("section[aria-label='Next action']") do
       fill_in "Scan or search", with: @variant.sku
-      click_button "Scan to start"
     end
+    click_button "Scan to start"
     assert_text(/Line added|available quantity/i, wait: 5)
     transaction = PosTransaction.order(:id).last
 

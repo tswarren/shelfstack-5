@@ -1,0 +1,49 @@
+<%# locals: tabs: [{ id:, label: }], panel_contents: { id => html }, aside: optional html, panel_class: optional %>
+<% tabs = local_assigns.fetch(:tabs) %>
+<% panel_contents = local_assigns.fetch(:panel_contents) %>
+<% aside = local_assigns[:aside] %>
+<% default_id = tabs.first.fetch(:id) %>
+<% panel_class = local_assigns.fetch(:panel_class, "tabs-panel") %>
+
+<div class="tabs<%= " tabs--with-aside" if aside.present? %>" data-controller="tabs">
+  <div class="tabs-list" data-tabs-target="list">
+    <% tabs.each_with_index do |tab, index| %>
+      <a href="#<%= tab[:id] %>"
+         id="tab-<%= tab[:id] %>"
+         class="tabs-tab<%= " is-active" if index.zero? %>"
+         data-tabs-target="tab"
+         data-tabs-panel="<%= tab[:id] %>">
+        <%= tab[:label] %>
+      </a>
+    <% end %>
+  </div>
+
+  <div class="card-body tabs-body">
+    <% if aside.present? %>
+      <div class="split-layout">
+        <div class="tabs-main">
+          <% tabs.each_with_index do |tab, index| %>
+            <section id="<%= tab[:id] %>"
+                     class="<%= panel_class %><%= " is-active" if index.zero? %>"
+                     data-tabs-target="panel"
+                     data-tabs-default="<%= default_id %>">
+              <%= panel_contents.fetch(tab[:id]) %>
+            </section>
+          <% end %>
+        </div>
+        <aside class="tabs-aside">
+          <%= aside %>
+        </aside>
+      </div>
+    <% else %>
+      <% tabs.each_with_index do |tab, index| %>
+        <section id="<%= tab[:id] %>"
+                 class="<%= panel_class %><%= " is-active" if index.zero? %>"
+                 data-tabs-target="panel"
+                 data-tabs-default="<%= default_id %>">
+          <%= panel_contents.fetch(tab[:id]) %>
+        </section>
+      <% end %>
+    <% end %>
+  </div>
+</div>

@@ -70,6 +70,7 @@ flowchart TD
 | 7 | Reporting and reconciliation | Complete — core 7a–7d merged to `main` at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62)); 7e partial ([#94](https://github.com/tswarren/shelfstack-5/issues/94)) | [phases/phase-07-reporting-and-reconciliation.md](phases/phase-07-reporting-and-reconciliation.md) |
 | 8 | Catalog refinement & enrichment | Complete — Must 8a–8d accepted; Should/Nice 8e–8g deferred | [phases/phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md) |
 | 9 | Customer records (v1) | Complete — merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md) | [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md) |
+| 10 | Product record and form workflow refinement | Complete — Gates 10a–10e accepted (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128)) | [phases/phase-10-product-record-and-form-refinement.md](phases/phase-10-product-record-and-form-refinement.md) |
 
 ## Mapping to system-overview §1.8
 
@@ -85,7 +86,10 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 | Phase 8 Corrections / stored value | Delivery Phase 6 | Same |
 | — | Delivery Phase 6.5 | Cashier interaction gate (not a system-overview phase) |
 | Phase 9 Reporting | Delivery Phase 7 | Same |
-| Phase 10 Later extensions | Later extensions ([deferred-capabilities.md](deferred-capabilities.md)); delivery Phase 8 is catalog refinement | See [deferred-work-register.md](deferred-work-register.md) |
+| Phase 10 Later operational extensions | Later extensions ([deferred-capabilities.md](deferred-capabilities.md)) | Conceptual bucket only — **not** delivery Phase 10 |
+| — | Delivery Phase 8 | Catalog refinement & enrichment |
+| — | Delivery Phase 9 | Customer records (v1) |
+| — | Delivery Phase 10 | Product record and form workflow refinement (catalog UX) |
 
 ## Cross-cutting engineering rules
 
@@ -100,16 +104,16 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-Completed: Phases 0–9 core delivery. Phase 9 Customer records merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)). Phase 8 Must 8a–8d closed; Should/Nice 8e–8g deferred. Phase 7 at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
+**Active:** No delivery phase scheduled. Phase 10 fully complete (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128)). Next candidate: DWR-067 POS shell revamp ([phase-11 drafts](../temp_draft/phase-11/README.md); [current-phase.md](current-phase.md)).
 
-**Next:** Carry-forward / later extensions — no numbered Must phase open. See [current-phase.md](current-phase.md) and [deferred-work-register.md](deferred-work-register.md).
+Completed: Phases 0–10 core delivery. Phase 10 product record/form refinement (Gates 10a–10e) in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Phase 9 Customer records merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)). Phase 8 Must 8a–8d closed; Should/Nice 8e–8g deferred. Phase 7 at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
 
-**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, full CRM beyond Customer v1 (DWR-036), later extensions).
+**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, Phase 10 follow-on DWR-066, Phase 11 candidate DWR-067, full CRM beyond Customer v1 (DWR-036), later extensions). DWR-021 (multi-variant) and DWR-029 (request-coverage extraction) remain unscheduled.
 
-1. Prefer ops hardening or Phase 8 non-blocking cleanups; leave Phase 8.5 / multi-variant (DWR-021) unscheduled.
+1. Schedule next phase when ready (candidate DWR-067); resolve DWR-066 before independent receipt/PO/cost roles without `stock_view`.
 2. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
 3. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
-4. Optional ops hardening: [#51](https://github.com/tswarren/shelfstack-5/issues/51); DWR-018/019 control masters and store settings UI.
+4. Optional ops hardening: [#51](https://github.com/tswarren/shelfstack-5/issues/51) (absorb into DWR-067 Gate E when scheduled); DWR-018/019 control masters and store settings UI.
 
 
 

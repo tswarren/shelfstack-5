@@ -249,8 +249,9 @@ class CatalogInventoryUxBaselineTest < ActionDispatch::IntegrationTest
   test "product show renders the record-detail pattern" do
     get product_path(products(:sample_book))
     assert_response :success
-    assert_select "section.record-section", minimum: 3
-    assert_select "table.data-table"
+    assert_select "section.card.product-record-panel"
+    assert_select "[data-controller='tabs']"
+    assert_select "article.card", minimum: 3
   end
 
   test "stock balance show renders the summary strip and ledger section" do

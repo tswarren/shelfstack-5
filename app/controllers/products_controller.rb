@@ -34,7 +34,7 @@ class ProductsController < ApplicationController
   def new
     @product = Current.organization.products.new(
       status: "active",
-      sellable: false,
+      sellable: true,
       variant_structure: "single",
       product_type: "book",
       language_code: Catalog::LanguageCodes::DEFAULT
@@ -54,10 +54,8 @@ class ProductsController < ApplicationController
     variant_attrs = variant_params
 
     if human_readable_params_invalid?
-      @product.assign_attributes(product_attrs)
-      @variant.assign_attributes(variant_attrs)
+      prepare_create_form_redisplay!(product_attrs, variant_attrs)
       copy_human_readable_param_errors_for_product!
-      @creator_rows = submitted_creator_rows
       render :new, status: :unprocessable_entity
       return
     end
@@ -70,18 +68,14 @@ class ProductsController < ApplicationController
       variant_attrs: variant_attrs,
       identifier: params[:identifier],
       accept_identifier_warning: ActiveModel::Type::Boolean.new.cast(params[:accept_identifier_warning]),
+      accepted_identifier_normalized: params[:accepted_identifier_normalized],
       creator_assignments: creator_assignments_param
     )
 
     if service.call
       redirect_to service.product, notice: "Product created."
     else
-      @product = service.product || Current.organization.products.new(product_attrs)
-      @variant = service.variant || ProductVariant.new(variant_attrs)
-      @creator_rows = submitted_creator_rows
-      if @product.errors.empty? && @variant.errors.empty?
-        @product.errors.add(:base, "Could not create product.")
-      end
+      prepare_create_form_redisplay!(product_attrs, variant_attrs, service: service)
       render :new, status: :unprocessable_entity
     end
   end
@@ -200,7 +194,7 @@ class ProductsController < ApplicationController
       :default_department_id, :default_tax_category_id, :list_price_cents, :status, :sellable,
       :available_from, :available_until, :publisher_or_manufacturer_name, :imprint_or_brand_name,
       :alternate_identifier, :edition_statement, :language_code, :publication_date,
-      creator_assignments: [ :creator_id, :role, :credited_as ]
+      creator_assignments: [ :creator_id, :role, :credited_as, :row_key ]
     )
     # Prices are entered as decimal dollars (`12.95`) in the UI and converted
     # to integer cents before the service contract sees them. Direct `_cents`
@@ -224,12 +218,20 @@ class ProductsController < ApplicationController
   def creator_assignments_param
     return Catalog::ReplaceProductCreators::OMIT unless creator_assignments_provided?
 
-    Array(product_params[:creator_assignments]).map { |row| row.to_h.symbolize_keys }
+    # row_key is presentation-only (DOM identity); never pass it to the service.
+    Array(product_params[:creator_assignments]).map do |row|
+      row.to_h.symbolize_keys.slice(:creator_id, :role, :credited_as)
+    end
   end
 
   def current_creator_rows
     @product.product_creators.order(:position, :id).map do |product_creator|
-      { creator: product_creator.creator, role: product_creator.role, credited_as: product_creator.credited_as }
+      {
+        row_key: "product_creator_#{product_creator.id}",
+        creator: product_creator.creator,
+        role: product_creator.role,
+        credited_as: product_creator.credited_as
+      }
     end
   end
 
@@ -240,12 +242,13 @@ class ProductsController < ApplicationController
   def submitted_creator_rows
     return [] unless creator_assignments_provided?
 
-    Array(product_params[:creator_assignments]).map do |row|
+    Array(product_params[:creator_assignments]).each_with_index.map do |row, index|
       hash = row.to_h.symbolize_keys
       creator = Catalog::ResolveRecordPickerSelection.call(
         organization: Current.organization, record_type: "creator", id: hash[:creator_id]
       )
-      { creator: creator, role: hash[:role], credited_as: hash[:credited_as] }
+      row_key = hash[:row_key].to_s.presence || "submitted_#{index}"
+      { row_key: row_key, creator: creator, role: hash[:role], credited_as: hash[:credited_as] }
     end
   end
 
@@ -276,5 +279,33 @@ class ProductsController < ApplicationController
   def copy_human_readable_param_errors_for_product!
     Array(@product_money_errors).each { |attr, message| @product.errors.add(attr, message) }
     Array(@variant_money_errors).each { |attr, message| @variant.errors.add(attr, message) }
+  end
+
+  # Rebuild the create form from submitted params so a service rollback or
+  # temporary sellable:false shell cannot blank the redisplay.
+  def prepare_create_form_redisplay!(product_attrs, variant_attrs, service: nil)
+    @identifier = params[:identifier].to_s
+    @product = Current.organization.products.new
+    @product.assign_attributes(product_attrs)
+    @variant = ProductVariant.new(name: variant_attrs[:name].presence || variant_attrs["name"].presence || "Standard")
+    @variant.assign_attributes(variant_attrs)
+    @creator_rows = submitted_creator_rows
+
+    return unless service
+
+    copy_errors_from!(service.product, @product) if service.product
+    copy_errors_from!(service.variant, @variant) if service.variant
+    @identifier_warning_normalized = service.identifier_warning_normalized
+    @identifier_warning_detail = service.identifier_warning_detail
+
+    if @product.errors.empty? && @variant.errors.empty?
+      @product.errors.add(:base, "Could not create product.")
+    end
+  end
+
+  def copy_errors_from!(source, target)
+    source.errors.each do |error|
+      target.errors.add(error.attribute, error.message)
+    end
   end
 end

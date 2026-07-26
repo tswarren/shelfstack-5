@@ -4,22 +4,26 @@
                    attention.missing_standard_item ||
                    attention.eligibility_blockers.any? %>
 <% if has_attention %>
-  <section class="record-section" aria-label="Attention">
-    <h2>Attention</h2>
-    <% if attention.identifier_warning.present? %>
-      <div class="ss-alert ss-alert-warning" role="status">
-        <div><strong>Identifier warning:</strong> <%= attention.identifier_warning %></div>
-      </div>
-    <% end %>
-    <% if attention.missing_standard_item %>
-      <div class="ss-alert ss-alert-warning" role="status">
-        <div>This Product does not have a standard item.</div>
-      </div>
-    <% end %>
-    <% attention.eligibility_blockers.each do |code| %>
-      <div class="ss-alert ss-alert-danger" role="status">
-        <div><%= sale_eligibility_blocker_label(code) %></div>
-      </div>
-    <% end %>
-  </section>
+  <article class="card card--nested attention-panel" aria-label="Attention">
+    <div class="card-header">
+      <h2>Attention</h2>
+    </div>
+    <div class="card-body">
+      <% if attention.identifier_warning.present? %>
+        <div class="ss-alert ss-alert-warning" role="status">
+          <div><strong>Identifier warning:</strong> <%= attention.identifier_warning %></div>
+        </div>
+      <% end %>
+      <% if attention.missing_standard_item %>
+        <div class="ss-alert ss-alert-warning" role="status">
+          <div>This Product does not have a standard item.</div>
+        </div>
+      <% end %>
+      <% attention.eligibility_blockers.each do |code| %>
+        <div class="ss-alert ss-alert-danger" role="status">
+          <div><%= sale_eligibility_blocker_label(code) %></div>
+        </div>
+      <% end %>
+    </div>
+  </article>
 <% end %>

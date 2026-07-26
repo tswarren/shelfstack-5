@@ -65,3 +65,49 @@ Reuse path / option helpers:
 
 * Create-from-picker actions (optional later; keep deep links such as product import).
 * Nested PO/receipt line template re-init (foundation is Stimulus-compatible; adoption is a follow-on).
+
+## Tabs
+
+ShelfStack uses progressive-enhancement tabs for multi-section record pages (Phase 10 product show).
+
+### Baseline (no JavaScript)
+
+* Navigation is ordinary in-page anchors (`<a href="#inventory">`), not inert buttons.
+* All panel content is present and readable in the initial HTML (stacked).
+* Server markup provides stable tab and panel IDs plus `data-tabs-target` hooks. It does **not** apply `role="tablist"` / `role="tab"` / `role="tabpanel"` or hide inactive panels.
+
+### Enhancement (Stimulus `tabs`)
+
+When connected, Stimulus:
+
+* applies `role="tablist"`, `role="tab"`, and `role="tabpanel"`;
+* sets `aria-selected`, roving `tabindex`, and `aria-controls` / `aria-labelledby` as needed;
+* hides inactive panels;
+* synchronizes the URL fragment on activation;
+* supports Left/Right between tabs and Home/End to first/last;
+* on load / `popstate`, activates the fragment panel or **Overview** when the fragment is absent or unknown.
+
+### Implementation
+
+* Partial: `app/views/shared/_tabs.html.erb`
+* Stimulus: `tabs` (`app/javascript/controllers/tabs_controller.js`)
+
+Request/view tests assert IDs, fragments, content, and enhancement data attributes. System tests assert applied roles and synchronized ARIA state.
+
+## Dependent select (progressive enhancement)
+
+Used for hierarchical merchandise-class selection on the product form (Phase 10).
+
+### Canonical contract
+
+1. Render one ordinary hierarchical flat `<select name="product[merchandise_class_id]">` as the no-JavaScript baseline (path-ordered labels such as `Books › Nonfiction › History`).
+2. With Stimulus, enhance presentation with a three-level cascade (primary → secondary → minor).
+3. Exactly one field is submitted either way: `product[merchandise_class_id]`.
+4. Cascade selects are presentation-only (no `name` attributes); they synchronize the canonical select. The canonical select may be visually hidden when enhanced; enhancement failure leaves it visible and usable. JavaScript must never create a second successful field with the same parameter name.
+
+### Behavior
+
+* Stopping at primary or secondary is allowed — submit the deepest node actually selected.
+* Edit and validation-failure re-renders initialize correctly.
+* Include the currently assigned class **and ancestor path** even when inactive; exclude other inactive classes from new selection.
+* Clear child cascade selections when a parent changes.

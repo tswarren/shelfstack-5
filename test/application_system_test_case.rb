@@ -19,4 +19,18 @@ class ApplicationSystemTestCase < ActionDispatch::SystemTestCase
     driver_option.add_argument("--disable-dev-shm-usage")
     driver_option.add_argument("--disable-gpu")
   end
+
+  setup do
+    # Chrome/chromedriver race during Turbo navigation can raise UnknownError
+    # ("Node with given id does not belong to the document") instead of a stale
+    # element error. Treat it as retriable so Capybara re-finds the node.
+    # See https://github.com/teamcapybara/capybara/issues/2800
+    driver = page.driver
+    next unless driver.respond_to?(:invalid_element_errors)
+
+    errors = driver.invalid_element_errors
+    next if errors.include?(Selenium::WebDriver::Error::UnknownError)
+
+    errors << Selenium::WebDriver::Error::UnknownError
+  end
 end

@@ -12,10 +12,16 @@ export default class extends Controller {
 
   addRow(event) {
     event?.preventDefault()
-    const html = this.templateTarget.innerHTML.replaceAll("NEW_RECORD", `new_${Date.now()}_${this.rowCounter++}`)
+    const token = `new_${Date.now()}_${this.rowCounter++}`
+    const html = this.templateTarget.innerHTML.replaceAll("NEW_RECORD", token)
     const wrapper = document.createElement("div")
     wrapper.innerHTML = html.trim()
-    this.rowsTarget.appendChild(wrapper.firstElementChild)
+    const row = wrapper.firstElementChild
+    if (row) {
+      row.dataset.creatorRowIndex = token
+      row.id = `creator-assignment-row-${token}`
+      this.rowsTarget.appendChild(row)
+    }
   }
 
   removeRow(event) {

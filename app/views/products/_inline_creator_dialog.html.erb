@@ -1,0 +1,26 @@
+<dialog id="inline-creator-dialog" class="inline-creator-dialog" data-controller="inline-creator-dialog">
+  <form method="dialog" class="inline-creator-dialog-chrome">
+    <button type="submit" class="button button-ghost" value="cancel" aria-label="Close">Close</button>
+  </form>
+  <h2 id="inline-creator-dialog-title">New creator</h2>
+  <div id="inline-creator-dialog-body"
+       data-inline-creator-dialog-target="body">
+    <%= form_with model: Creator.new(active: true), url: creators_path, class: "form",
+          data: { turbo_stream: true, action: "turbo:submit-start->inline-creator-dialog#disableSubmit turbo:submit-end->inline-creator-dialog#enableSubmit" } do |f| %>
+      <input type="hidden" name="inline_product_form" value="1">
+      <input type="hidden" name="row_index" id="inline_creator_row_index" value="">
+      <div class="field">
+        <%= f.label :display_name, class: "field-label" %>
+        <%= f.text_field :display_name, class: "input", required: true %>
+      </div>
+      <div class="field">
+        <%= f.label :sort_name, class: "field-label" %>
+        <%= f.text_field :sort_name, class: "input" %>
+        <p class="field-hint">Optional. Defaults from display name when blank.</p>
+      </div>
+      <div class="form-actions">
+        <%= f.submit "Create creator", class: "button button-primary", data: { inline_creator_dialog_target: "submit" } %>
+      </div>
+    <% end %>
+  </div>
+</dialog>

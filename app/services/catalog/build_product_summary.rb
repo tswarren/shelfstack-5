@@ -63,7 +63,12 @@ module Catalog
 
     StoreInfo = Data.define(:id, :name)
 
-    StoreOperations = Data.define(:open_po_lines, :recent_receipt_lines, :open_requests)
+    LatestRecord = Data.define(:id, :label)
+
+    StoreOperations = Data.define(
+      :open_po_lines, :recent_receipt_lines, :open_requests,
+      :open_order_quantity, :latest_po, :latest_receipt, :open_demand_count
+    )
 
     Summary = Data.define(
       :product, :store, :capabilities, :attention, :identity,
@@ -267,27 +272,45 @@ module Catalog
     end
 
     def empty_store_operations
-      StoreOperations.new(open_po_lines: [], recent_receipt_lines: [], open_requests: [])
-    end
-
-    def build_store_operations(variant, caps)
       StoreOperations.new(
-        open_po_lines: caps.purchase_order_view ? open_po_lines(variant) : [],
-        recent_receipt_lines: caps.receipt_view ? recent_receipt_lines(variant) : [],
-        open_requests: caps.request_view ? open_requests(variant) : []
+        open_po_lines: [], recent_receipt_lines: [], open_requests: [],
+        open_order_quantity: nil, latest_po: nil, latest_receipt: nil, open_demand_count: nil
       )
     end
 
-    def open_po_lines(variant)
+    def build_store_operations(variant, caps)
+      po_lines = caps.purchase_order_view ? open_po_lines_preview(variant) : []
+      receipt_lines = caps.receipt_view ? recent_receipt_lines_preview(variant) : []
+      requests = caps.request_view ? open_requests_preview(variant) : []
+
+      StoreOperations.new(
+        open_po_lines: po_lines,
+        recent_receipt_lines: receipt_lines,
+        open_requests: requests,
+        # Totals / "most recent" use unbounded queries — preview limits stay display-only.
+        open_order_quantity: caps.purchase_order_view ? open_order_quantity_total(variant) : nil,
+        latest_po: caps.purchase_order_view ? latest_purchase_order(variant) : nil,
+        latest_receipt: caps.receipt_view ? latest_receipt_record(variant) : nil,
+        open_demand_count: caps.request_view ? open_request_count(variant) : nil
+      )
+    end
+
+    OPEN_PO_LINE_SQL = (
+      "purchase_order_lines.ordered_quantity - " \
+      "purchase_order_lines.received_quantity - " \
+      "purchase_order_lines.cancelled_quantity"
+    ).freeze
+
+    def open_po_lines_scope(variant)
       PurchaseOrderLine
-        .includes(:purchase_order)
         .joins(:purchase_order)
         .where(product_variant_id: variant.id, purchase_orders: { store_id: @store.id, status: "ordered" })
-        .where(
-          "purchase_order_lines.ordered_quantity - " \
-          "purchase_order_lines.received_quantity - " \
-          "purchase_order_lines.cancelled_quantity > 0"
-        )
+        .where("#{OPEN_PO_LINE_SQL} > 0")
+    end
+
+    def open_po_lines_preview(variant)
+      open_po_lines_scope(variant)
+        .includes(:purchase_order)
         .order("purchase_orders.ordered_at DESC NULLS LAST", "purchase_orders.id DESC", :id)
         .limit(8)
         .map do |line|
@@ -301,15 +324,25 @@ module Catalog
         end
     end
 
-    def recent_receipt_lines(variant)
-      ReceiptLine
+    def open_order_quantity_total(variant)
+      open_po_lines_scope(variant).sum(Arel.sql(OPEN_PO_LINE_SQL))
+    end
+
+    def latest_purchase_order(variant)
+      po = PurchaseOrder
+        .joins(:purchase_order_lines)
+        .where(store_id: @store.id, purchase_order_lines: { product_variant_id: variant.id })
+        .order(Arel.sql("purchase_orders.ordered_at DESC NULLS LAST"), id: :desc)
+        .select(:id, :purchase_order_number)
+        .first
+      return nil unless po
+
+      LatestRecord.new(id: po.id, label: po.purchase_order_number)
+    end
+
+    def recent_receipt_lines_preview(variant)
+      receipt_lines_scope(variant)
         .includes(:receipt)
-        .joins(:receipt)
-        .where(
-          product_variant_id: variant.id,
-          receipts: { store_id: @store.id, status: "posted" }
-        )
-        .where("receipt_lines.accepted_quantity > 0")
         .order("receipts.posted_at DESC", "receipts.id DESC", "receipt_lines.id DESC")
         .limit(5)
         .map do |line|
@@ -323,12 +356,41 @@ module Catalog
         end
     end
 
-    def open_requests(variant)
-      requests = ProductRequest
+    def receipt_lines_scope(variant)
+      ReceiptLine
+        .joins(:receipt)
+        .where(
+          product_variant_id: variant.id,
+          receipts: { store_id: @store.id, status: "posted" }
+        )
+        .where("receipt_lines.accepted_quantity > 0")
+    end
+
+    def latest_receipt_record(variant)
+      line = receipt_lines_scope(variant)
+        .includes(:receipt)
+        .order("receipts.posted_at DESC", "receipts.id DESC", "receipt_lines.id DESC")
+        .limit(1)
+        .first
+      return nil unless line
+
+      LatestRecord.new(id: line.receipt_id, label: line.receipt.receipt_number)
+    end
+
+    def open_requests_scope(variant)
+      ProductRequest
         .open_requests
-        .includes(:assigned_buyer_user)
         .where(store_id: @store.id, product_id: @product.id)
         .where("product_variant_id IS NULL OR product_variant_id = ?", variant.id)
+    end
+
+    def open_request_count(variant)
+      open_requests_scope(variant).count
+    end
+
+    def open_requests_preview(variant)
+      requests = open_requests_scope(variant)
+        .includes(:assigned_buyer_user)
         .order(:id)
         .limit(20)
         .to_a
