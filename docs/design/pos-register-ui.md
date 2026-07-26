@@ -3,6 +3,7 @@
 **Status:** Governing for Delivery Phase 11 POS shell (builds on Phase 6.5 cashier workspace; supersedes Phase 4-only interaction notes where they conflict)  
 **Prototype reference:** [prototypes/ui_mockup/pos.html](prototypes/ui_mockup/pos.html)  
 **Visual review package:** [pos/README.md](pos/README.md)  
+**Layout completion gates:** [pos/layout-completion-checklist.md](pos/layout-completion-checklist.md)  
 **Phase plan:** [../implementation/phases/phase-11-pos-shell-and-workspace-revamp.md](../implementation/phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Shipped baseline:** [../implementation/phases/phase-06.5-cashier-workspace.md](../implementation/phases/phase-06.5-cashier-workspace.md)  
 **Related:** [scanner-and-hotkeys.md](scanner-and-hotkeys.md); [accessibility.md](accessibility.md)  
