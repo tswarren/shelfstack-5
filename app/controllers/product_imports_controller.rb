@@ -199,8 +199,11 @@ class ProductImportsController < ApplicationController
     return nil if uri.scheme.present? || uri.host.present?
     return nil if uri.path.blank? || !uri.path.start_with?("/")
 
+    # Reject queries that URI.parse accepts but Rack cannot decode (DWR-028).
+    Rack::Utils.parse_nested_query(uri.query.to_s)
+
     raw
-  rescue URI::InvalidURIError
+  rescue URI::InvalidURIError, ArgumentError
     nil
   end
 
@@ -214,7 +217,7 @@ class ProductImportsController < ApplicationController
     else
       fallback || product_path(product)
     end
-  rescue URI::InvalidURIError
+  rescue URI::InvalidURIError, ArgumentError
     fallback || product_path(product)
   end
 

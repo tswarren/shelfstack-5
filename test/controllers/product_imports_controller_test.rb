@@ -187,6 +187,25 @@ class ProductImportsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to product_path(product)
   end
 
+  test "sanitize_return_to rejects queries Rack cannot decode" do
+    controller = ProductImportsController.new
+
+    assert_nil controller.send(:sanitize_return_to, "/product_requests/new?q=%E0%A4%A")
+    assert_equal "/product_requests/new", controller.send(:sanitize_return_to, "/product_requests/new")
+  end
+
+  test "return_path rescues ArgumentError from nested query decode" do
+    product = products(:upc_product)
+    controller = ProductImportsController.new
+    controller.define_singleton_method(:product_path) { |record| "/products/#{record.id}" }
+    controller.instance_variable_set(:@return_to, "/product_requests/new?q=%E0%A4%A")
+
+    assert_equal(
+      "/products/#{product.id}",
+      controller.send(:return_path, product, fallback: "/products/#{product.id}")
+    )
+  end
+
   test "accept with ISBN-10 requested identifier records both event columns" do
     token = preview_token(
       requested_identifier: "0316769487",

@@ -8,6 +8,7 @@ module Catalog
       test "parses full calendar days" do
         assert_equal Date.new(2014, 2, 11), ParseProviderDate.call("2014-02-11")
         assert_equal Date.new(2014, 2, 11), ParseProviderDate.call("2014-02-11T00:00:00Z")
+        assert_equal Date.new(2014, 2, 11), ParseProviderDate.call("2014-02-11 extra")
       end
 
       test "ignores year-only and month-only strings" do
@@ -20,6 +21,7 @@ module Catalog
         assert_nil ParseProviderDate.call("")
         assert_nil ParseProviderDate.call("February 2014")
         assert_nil ParseProviderDate.call("2014-02-31")
+        assert_nil ParseProviderDate.call("20140211")
       end
     end
   end

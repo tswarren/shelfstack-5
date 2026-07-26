@@ -175,4 +175,67 @@ class CatalogEnrichmentBuildNormalizedResultTest < ActiveSupport::TestCase
 
     assert_nil result.publication_date
   end
+
+  test "publication_date accepts Date and TimeWithZone calendar days" do
+    date_result = Catalog::Enrichment::BuildNormalizedResult.call(
+      requested_identifier: "9780316769488",
+      canonical_identifier: "9780316769488",
+      provider: "isbndb",
+      publication_date: Date.new(2014, 2, 11)
+    )
+    assert_equal Date.new(2014, 2, 11), date_result.publication_date
+
+    zone_result = Catalog::Enrichment::BuildNormalizedResult.call(
+      requested_identifier: "9780316769488",
+      canonical_identifier: "9780316769488",
+      provider: "isbndb",
+      publication_date: Time.zone.parse("2014-02-11 15:30:00")
+    )
+    assert_equal Date.new(2014, 2, 11), zone_result.publication_date
+  end
+
+  test "publication_date ISO day strings use ParseProviderDate" do
+    result = Catalog::Enrichment::BuildNormalizedResult.call(
+      requested_identifier: "9780316769488",
+      canonical_identifier: "9780316769488",
+      provider: "isbndb",
+      publication_date: "2014-02-11T00:00:00Z"
+    )
+
+    assert_equal Date.new(2014, 2, 11), result.publication_date
+  end
+
+  test "publication_date year-only and month-only strings stay nil" do
+    year_only = Catalog::Enrichment::BuildNormalizedResult.call(
+      requested_identifier: "9780316769488",
+      canonical_identifier: "9780316769488",
+      provider: "isbndb",
+      publication_date: "2014"
+    )
+    month_only = Catalog::Enrichment::BuildNormalizedResult.call(
+      requested_identifier: "9780316769488",
+      canonical_identifier: "9780316769488",
+      provider: "isbndb",
+      publication_date: "2014-02"
+    )
+
+    assert_nil year_only.publication_date
+    assert_nil month_only.publication_date
+  end
+
+  test "publication_date rejects duck-typed to_date objects" do
+    duck = Object.new
+    def duck.to_date
+      Date.new(2014, 1, 1)
+    end
+
+    result = Catalog::Enrichment::BuildNormalizedResult.call(
+      requested_identifier: "9780316769488",
+      canonical_identifier: "9780316769488",
+      provider: "isbndb",
+      publication_date: duck
+    )
+
+    assert_nil result.publication_date
+  end
 end
