@@ -282,6 +282,42 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "register and transaction show expose server presentation without mutating txn" do
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+
+    get register_path
+    assert_response :success
+    assert_select "body.layout-pos[data-pos-presentation=ready]"
+    assert_select ".pos-presentation-status", text: /Ready/
+
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+    post pos_transactions_path
+    transaction = PosTransaction.order(:id).last
+    post pos_transaction_pos_line_items_path(transaction), params: { query: @variant.sku, quantity: 1 }
+    before = transaction.reload.attributes.slice("status", "updated_at", "net_total_cents")
+
+    get pos_transaction_path(transaction)
+    assert_response :success
+    assert_select "body.layout-pos[data-pos-presentation=transaction]"
+    assert_select ".pos-presentation-status", text: /Transaction/
+    assert_equal before, transaction.reload.attributes.slice("status", "updated_at", "net_total_cents")
+
+    get tender_pos_transaction_path(transaction)
+    assert_response :success
+    assert_select "body.layout-pos[data-pos-presentation=tender]"
+    assert_equal before, transaction.reload.attributes.slice("status", "updated_at", "net_total_cents")
+  end
+
   private
 
   def open_inventory(variant, quantity:, unit_cost_cents:)

@@ -28,7 +28,15 @@
         <% if mode == :pos %>
           <%= link_to "Main workspace", root_path, class: "button button-small button-outline" %>
           <% active_txn = local_assigns[:active_transaction] %>
-          <% if active_txn %>
+          <% presentation_state = local_assigns[:presentation_state] %>
+          <% presentation_label = local_assigns[:presentation_label] %>
+          <% if presentation_state.present? %>
+            <span class="pos-presentation-status" role="status"
+                  data-pos-presentation="<%= presentation_state %>">
+              <%= status_badge presentation_label.presence || presentation_state.to_s.humanize,
+                    variant: (presentation_state == "recovery" ? :danger : (active_txn ? :warning : :neutral)) %>
+            </span>
+          <% elsif active_txn %>
             <%= status_badge "Open transaction", variant: :warning %>
           <% end %>
           <% if show_switch && !active_txn %>

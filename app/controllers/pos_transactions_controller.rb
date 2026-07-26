@@ -24,10 +24,18 @@ class PosTransactionsController < ApplicationController
   end
 
   def show
+    if @pos_transaction.cancelled?
+      return redirect_to register_path, notice: "That transaction was cancelled."
+    end
+
     assign_workspace_context!(presentation_param: params[:presentation])
   end
 
   def tender
+    if @pos_transaction.cancelled?
+      return redirect_to register_path, notice: "That transaction was cancelled."
+    end
+
     assign_workspace_context!(presentation_param: "tender")
     render :show
   end

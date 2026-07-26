@@ -1,5 +1,20 @@
 /* POS workspace — see docs/design/pos-register-ui.md */
 
+.layout-pos .pos-presentation-status {
+  display: inline-flex;
+  align-items: center;
+}
+
+.layout-pos[data-pos-presentation="recovery"] .pos-main {
+  --pos-presentation-accent: var(--danger-border, #b42318);
+}
+
+.layout-pos .pos-main {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 1.5rem;
+}
+
 .pos-panel {
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
