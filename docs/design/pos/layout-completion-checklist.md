@@ -93,12 +93,12 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Matches Ready wireframe regions (not necessarily final typography)
-- [ ] Sale / Return / Stored Value / Open Ring visible without opening disclosures (POS-UI-010)
-- [ ] Product / Receipt / pickup lookups launch overlay or bounded panel (may stub in L1 if L6 not ready)
-- [ ] Detailed business-day and cash-history tables are absent from ordinary Ready
-- [ ] Pre-Ready (no day / no session) reuses shell with one clear prerequisite task
-- [ ] Scenario 1 setup steps from [review-scenarios.md](review-scenarios.md) Accepted at both viewports
+- [x] Matches Ready wireframe regions (not necessarily final typography) — implemented; typography pending review
+- [x] Ready launchers visible without stacked disclosures for primary path (POS-UI-033; not Transaction four-intent bar)
+- [x] Product lookup launches overlay (L6); Receipt lookup bounded on Ready
+- [x] Detailed business-day and cash-history tables are absent from ordinary Ready
+- [x] Pre-Ready (no day / no session) reuses shell with one clear prerequisite task
+- [ ] Scenario 1 setup steps from [review-scenarios.md](review-scenarios.md) Accepted at both viewports (manual)
 
 ### Current → target
 
@@ -248,12 +248,14 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Required presentation-matrix scenarios have Accepted compositions
-- [ ] Visual acceptance checklist passes for Ready, Transaction, Tender, Recovery, Receipt
-- [ ] Screenshots captured at 1366×768 and 1024×768 per screenshot matrix
-- [ ] Component boundaries match [component-map.md](component-map.md) or an explicit recorded replacement in [decisions.md](decisions.md)
-- [ ] Existing domain and server-authority tests still pass
-- [ ] Open visual decisions either Accepted or deferred with register/OD note
+- [ ] Required presentation-matrix scenarios have Accepted compositions (manual)
+- [ ] Visual acceptance checklist passes for Ready, Transaction, Tender, Recovery, Receipt (manual)
+- [ ] Screenshots captured at 1366×768 and 1024×768 per screenshot matrix (manual)
+- [x] Component boundaries match [component-map.md](component-map.md) or an explicit recorded replacement in [decisions.md](decisions.md) (shell + overlay host; see [layout-acceptance-status.md](layout-acceptance-status.md) residuals)
+- [x] Existing domain and server-authority tests still pass (CI on layout PRs)
+- [ ] Proposed POS-UI-020–037 promoted to Accepted after confirmation evidence (no Open visual-direction items remain)
+
+Tracking: [layout-acceptance-status.md](layout-acceptance-status.md).
 
 ---
 

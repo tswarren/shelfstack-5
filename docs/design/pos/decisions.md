@@ -94,6 +94,8 @@ This is not an ADR replacement. Move a decision to an ADR when it changes system
 
 These decisions establish the default design direction. They become Accepted after the identified wireframe, screenshot, and workflow evidence is reviewed.
 
+**Implementation note (2026-07-26):** Layout Gates L0–L6 are implemented in PRs [#147](https://github.com/tswarren/shelfstack-5/pull/147)–[#148](https://github.com/tswarren/shelfstack-5/pull/148). Do not flip Proposed → Accepted until viewport review evidence is recorded per [layout-acceptance-status.md](layout-acceptance-status.md).
+
 ### POS-UI-020 — Supported register viewports
 
 **Status:** Proposed  

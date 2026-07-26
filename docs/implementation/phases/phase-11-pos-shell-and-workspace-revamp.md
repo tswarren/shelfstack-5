@@ -1,6 +1,6 @@
 # Phase 11 — POS Shell and Workspace Revamp
 
-**Status:** In progress — Gate 11A underway  
+**Status:** In progress — server gates 11A–11E delivered ([#146](https://github.com/tswarren/shelfstack-5/pull/146)); layout Gates L0–L6 implemented ([#147](https://github.com/tswarren/shelfstack-5/pull/147)–[#148](https://github.com/tswarren/shelfstack-5/pull/148)); viewport acceptance pending ([layout-acceptance-status.md](../../design/pos/layout-acceptance-status.md))  
 
 **Depends on:** Phase 10 fully complete; Phase 6.5 cashier workspace on `main`; Phase 9 Customer v1  
 **Primary register item:** [DWR-067](../deferred-work-register.md)  
