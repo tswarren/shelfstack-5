@@ -2,8 +2,9 @@
   One ordered Creator-assignment row on the product form (Gate 8b / 10e).
 
   Locals:
-    index:       unique token used to build distinct DOM ids per row
-                 ("NEW_RECORD" inside the client-side <template>)
+    index:       unique row key used to build distinct DOM ids per row
+                 (persisted: product_creator_<id>; submitted/client: token;
+                 "NEW_RECORD" inside the client-side <template>)
     creator:     currently selected Creator (or nil)
     role:        currently selected role string (or nil)
     credited_as: currently entered credited-as string (or nil)
@@ -12,6 +13,7 @@
      id="creator-assignment-row-<%= index %>"
      data-creator-assignments-target="row"
      data-creator-row-index="<%= index %>">
+  <input type="hidden" name="product[creator_assignments][][row_key]" value="<%= index %>">
   <div id="product_creator_assignment_<%= index %>_creator_picker">
     <%= render "shared/record_picker",
           name: "product[creator_assignments][][creator_id]",

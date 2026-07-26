@@ -53,6 +53,8 @@ It must **not**:
 | Demand / open request count | `request_view` |
 | Purchasing cost | `purchasing_cost_view` |
 
+**MVP interim:** quantity-tracked stock summary construction currently requires `stock_view`, which can underexpose independently authorized last-received / on-order / cost fields when those caps are granted without stock. MVP roles bundle these permissions. Follow-up: [DWR-066](../deferred-work-register.md).
+
 **Summary-service boundary.** `Catalog::BuildProductSummary` may be extended with bounded, capability-gated summary values required by §4. Views must not issue new catalog, inventory, purchasing, receiving, or request queries directly. Summary additions must:
 
 - remain store-scoped through `Current.store`;
@@ -256,8 +258,8 @@ Suppress only: alternate identifier, edition, imprint when blank; language when 
 ### 10e
 
 - [ ] "New creator" visible only with `catalog.manage_creators`
-- [ ] Dialog is row-aware; validation errors in-dialog; selects new creator in invoking row; focus return; focus trap; Escape when safe
-- [ ] In-flight disable + Turbo replace row; no Creator name dedup; no cross-request idempotency
+- [ ] Dialog is row-aware (unique `row_key` per assignment, including same creator with multiple roles); validation errors in-dialog; replaces only the invoking row’s creator picker; focus return; focus trap; Escape when safe
+- [ ] In-flight disable + Turbo replace picker (not whole row); no Creator name dedup; no cross-request idempotency
 
 ### Phase-level definition of done
 

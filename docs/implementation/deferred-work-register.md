@@ -156,6 +156,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-063 | Roadmap Phase 8 label vs catalog-refinement candidate | 8 | doc_hygiene | Resolved 2026-07-24 — Phase 8 is catalog refinement; deferred capabilities are later extensions | Promote temp draft to `phases/phase-08-…` when scoping accepted | Phase 8 | — |
 | DWR-064 | Harden `BuildNormalizedResult` publication_date input boundary | 8d | delivery_debt | Gate 8d / OD-P8-10 re-review — adapters use `ParseProviderDate` (day-only); builder still accepts any `to_date` | Accept only `Date` / date-time / ISO day strings; reject duck-typed `to_date`; unit tests | unscheduled | [#120](https://github.com/tswarren/shelfstack-5/issues/120) |
 | DWR-065 | Vendor-source linking workflow (Gate 8e) | 8 | delivery_debt | Phase 8 Must gates closed; Should gate deferred — [phase-08…](phases/phase-08-catalog-refinement-and-enrichment.md) §8e | Product/variant → vendor search → create/update source (code, cost, pack); keep Purchasing ownership | unscheduled | [#99](https://github.com/tswarren/shelfstack-5/issues/99) |
+| DWR-066 | Product show rail: build stock summary when any of stock/receipt/PO/cost caps is present | 10 | delivery_debt | Phase 10 MVP review — `BuildProductSummary#build_stock` returns nil without `stock_view`, so independently authorized last-received / on-order / cost rows are underexposed (not a leak). Current MVP roles bundle these permissions. | Return a stock summary object when any relevant capability exists; nil unauthorized fields; rail gates each row | unscheduled | — |
 
 ---
 
@@ -166,6 +167,7 @@ Open / deferred decisions:     DWR-001 … DWR-003 (+ DWR-007 near OD-009)
 Interim correction blocks:     DWR-004 … DWR-006
 Phase 6.5 / 7 carry-forward:   DWR-010 … DWR-019
 Catalog / Phase 8 follow-on:   DWR-020 … DWR-029, DWR-064, DWR-065 (021 / 8.5 unscheduled; 024 deferred; 8e–8g unscheduled; DWR-029 stays unscheduled during delivery Phase 10)
+Phase 10 follow-on:            DWR-066 (rail capability decoupling)
 Later extensions:              DWR-030 … DWR-052  (= deferred-capabilities.md)
 Doc hygiene:                   DWR-060 … DWR-063
 ```

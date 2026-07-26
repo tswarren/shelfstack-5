@@ -194,7 +194,7 @@ class ProductsController < ApplicationController
       :default_department_id, :default_tax_category_id, :list_price_cents, :status, :sellable,
       :available_from, :available_until, :publisher_or_manufacturer_name, :imprint_or_brand_name,
       :alternate_identifier, :edition_statement, :language_code, :publication_date,
-      creator_assignments: [ :creator_id, :role, :credited_as ]
+      creator_assignments: [ :creator_id, :role, :credited_as, :row_key ]
     )
     # Prices are entered as decimal dollars (`12.95`) in the UI and converted
     # to integer cents before the service contract sees them. Direct `_cents`
@@ -218,12 +218,20 @@ class ProductsController < ApplicationController
   def creator_assignments_param
     return Catalog::ReplaceProductCreators::OMIT unless creator_assignments_provided?
 
-    Array(product_params[:creator_assignments]).map { |row| row.to_h.symbolize_keys }
+    # row_key is presentation-only (DOM identity); never pass it to the service.
+    Array(product_params[:creator_assignments]).map do |row|
+      row.to_h.symbolize_keys.slice(:creator_id, :role, :credited_as)
+    end
   end
 
   def current_creator_rows
     @product.product_creators.order(:position, :id).map do |product_creator|
-      { creator: product_creator.creator, role: product_creator.role, credited_as: product_creator.credited_as }
+      {
+        row_key: "product_creator_#{product_creator.id}",
+        creator: product_creator.creator,
+        role: product_creator.role,
+        credited_as: product_creator.credited_as
+      }
     end
   end
 
@@ -234,12 +242,13 @@ class ProductsController < ApplicationController
   def submitted_creator_rows
     return [] unless creator_assignments_provided?
 
-    Array(product_params[:creator_assignments]).map do |row|
+    Array(product_params[:creator_assignments]).each_with_index.map do |row, index|
       hash = row.to_h.symbolize_keys
       creator = Catalog::ResolveRecordPickerSelection.call(
         organization: Current.organization, record_type: "creator", id: hash[:creator_id]
       )
-      { creator: creator, role: hash[:role], credited_as: hash[:credited_as] }
+      row_key = hash[:row_key].to_s.presence || "submitted_#{index}"
+      { row_key: row_key, creator: creator, role: hash[:role], credited_as: hash[:credited_as] }
     end
   end
 

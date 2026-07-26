@@ -443,6 +443,28 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_empty product.product_creators.reload
   end
 
+  test "edit form uses unique row keys when the same creator has multiple roles" do
+    product = products(:sample_book)
+    creator = creators(:ray_bradbury)
+    author_link = ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+    illustrator_link = ProductCreator.create!(
+      product: product, creator: creator, role: "illustrator", position: 1, credited_as: "Cover art"
+    )
+
+    get edit_product_path(product)
+    assert_response :success
+
+    author_key = "product_creator_#{author_link.id}"
+    illustrator_key = "product_creator_#{illustrator_link.id}"
+    assert_match(/id="creator-assignment-row-#{Regexp.escape(author_key)}"/, response.body)
+    assert_match(/id="creator-assignment-row-#{Regexp.escape(illustrator_key)}"/, response.body)
+    assert_match(/id="product_creator_assignment_#{Regexp.escape(author_key)}_creator_picker"/, response.body)
+    assert_match(/id="product_creator_assignment_#{Regexp.escape(illustrator_key)}_creator_picker"/, response.body)
+    assert_match(/id="inline-creator-opener-#{Regexp.escape(illustrator_key)}"/, response.body)
+    assert_match(/value="Cover art"/, response.body)
+    assert_select "option[value=illustrator][selected]", 1
+  end
+
   test "validation rerender does not disclose a foreign-organization creator label" do
     foreign = create_foreign_organization_catalog!
     product = products(:sample_book)

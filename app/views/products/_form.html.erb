@@ -124,7 +124,8 @@
     <input type="hidden" name="product[creator_assignments_provided]" value="1">
     <div data-creator-assignments-target="rows">
       <% creator_rows.each do |row| %>
-        <%= render "products/creator_assignment_row", index: row[:creator]&.id || SecureRandom.hex(4),
+        <%= render "products/creator_assignment_row",
+              index: row[:row_key].presence || SecureRandom.hex(4),
               creator: row[:creator], role: row[:role], credited_as: row[:credited_as] %>
       <% end %>
     </div>

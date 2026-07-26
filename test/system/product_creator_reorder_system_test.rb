@@ -16,21 +16,26 @@ class ProductCreatorReorderSystemTest < ApplicationSystemTestCase
     product = products(:sample_book)
     bradbury = creators(:ray_bradbury)
     le_guin = creators(:ursula_le_guin)
-    ProductCreator.create!(product: product, creator: bradbury, role: "author", position: 0)
-    ProductCreator.create!(product: product, creator: le_guin, role: "illustrator", position: 1)
+    link_a = ProductCreator.create!(product: product, creator: bradbury, role: "author", position: 0)
+    link_b = ProductCreator.create!(product: product, creator: le_guin, role: "illustrator", position: 1)
 
     visit edit_product_path(product)
 
     rows = all("[data-creator-assignments-target='row']")
     assert_equal 2, rows.size
-    assert_equal bradbury.id.to_s, find("#product_creator_assignment_#{bradbury.id}_creator_id", visible: :all).value
-    assert_equal le_guin.id.to_s, find("#product_creator_assignment_#{le_guin.id}_creator_id", visible: :all).value
+    assert_equal bradbury.id.to_s,
+                 find("#product_creator_assignment_product_creator_#{link_a.id}_creator_id", visible: :all).value
+    assert_equal le_guin.id.to_s,
+                 find("#product_creator_assignment_product_creator_#{link_b.id}_creator_id", visible: :all).value
 
     within rows.first do
       click_button "Move down"
     end
 
-    reordered_ids = all("[data-creator-assignments-target='row'] input[type=hidden]", visible: :all).map(&:value)
+    reordered_ids = all(
+      "[data-creator-assignments-target='row'] input[name='product[creator_assignments][][creator_id]']",
+      visible: :all
+    ).map(&:value)
     assert_equal [ le_guin.id.to_s, bradbury.id.to_s ], reordered_ids
 
     click_button "Update product"
