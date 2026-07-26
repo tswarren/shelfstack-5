@@ -145,7 +145,7 @@ Clearing the regular price field alone does **not** implicitly relink. Server-si
 - Service: `Catalog::CreateProduct` (`accept_identifier_warning:`)
 - Edit path is out of scope: edit form shows identifier as read-only; `Catalog::UpdateProduct` / `Catalog::UpdateProductWithStandardVariant` reject `identifier` attrs.
 
-When identifier normalization returns an overridable `warning`, an inline banner offers **Save anyway** or **Correct identifier**, with entered form data preserved either way.
+When identifier normalization returns an overridable `warning` (including invalid ISBN-10 / EAN-13 / UPC check digits), an inline banner offers an accept checkbox plus **Save anyway** or **Correct identifier**, with entered form data preserved either way. The sticky create submit honors the checkbox.
 
 On resubmission, the server re-normalizes the currently submitted identifier. Warning acceptance is valid only when:
 

@@ -54,10 +54,8 @@ class ProductsController < ApplicationController
     variant_attrs = variant_params
 
     if human_readable_params_invalid?
-      @product.assign_attributes(product_attrs)
-      @variant.assign_attributes(variant_attrs)
+      prepare_create_form_redisplay!(product_attrs, variant_attrs)
       copy_human_readable_param_errors_for_product!
-      @creator_rows = submitted_creator_rows
       render :new, status: :unprocessable_entity
       return
     end
@@ -77,17 +75,7 @@ class ProductsController < ApplicationController
     if service.call
       redirect_to service.product, notice: "Product created."
     else
-      @product = service.product || Current.organization.products.new(product_attrs)
-      @variant = service.variant || ProductVariant.new(variant_attrs)
-      # CreateProduct builds sellable:false for safety; restore submitted form values for re-render.
-      @product.assign_attributes(product_attrs)
-      @variant.assign_attributes(variant_attrs)
-      @creator_rows = submitted_creator_rows
-      @identifier_warning_normalized = service.identifier_warning_normalized
-      @identifier_warning_detail = service.identifier_warning_detail
-      if @product.errors.empty? && @variant.errors.empty?
-        @product.errors.add(:base, "Could not create product.")
-      end
+      prepare_create_form_redisplay!(product_attrs, variant_attrs, service: service)
       render :new, status: :unprocessable_entity
     end
   end
@@ -282,5 +270,33 @@ class ProductsController < ApplicationController
   def copy_human_readable_param_errors_for_product!
     Array(@product_money_errors).each { |attr, message| @product.errors.add(attr, message) }
     Array(@variant_money_errors).each { |attr, message| @variant.errors.add(attr, message) }
+  end
+
+  # Rebuild the create form from submitted params so a service rollback or
+  # temporary sellable:false shell cannot blank the redisplay.
+  def prepare_create_form_redisplay!(product_attrs, variant_attrs, service: nil)
+    @identifier = params[:identifier].to_s
+    @product = Current.organization.products.new
+    @product.assign_attributes(product_attrs)
+    @variant = ProductVariant.new(name: variant_attrs[:name].presence || variant_attrs["name"].presence || "Standard")
+    @variant.assign_attributes(variant_attrs)
+    @creator_rows = submitted_creator_rows
+
+    return unless service
+
+    copy_errors_from!(service.product, @product) if service.product
+    copy_errors_from!(service.variant, @variant) if service.variant
+    @identifier_warning_normalized = service.identifier_warning_normalized
+    @identifier_warning_detail = service.identifier_warning_detail
+
+    if @product.errors.empty? && @variant.errors.empty?
+      @product.errors.add(:base, "Could not create product.")
+    end
+  end
+
+  def copy_errors_from!(source, target)
+    source.errors.each do |error|
+      target.errors.add(error.attribute, error.message)
+    end
   end
 end

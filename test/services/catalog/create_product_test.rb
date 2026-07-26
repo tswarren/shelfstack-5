@@ -148,6 +148,37 @@ class CatalogCreateProductTest < ActiveSupport::TestCase
     end
   end
 
+  test "accepts warned ISBN-10 check digit when flag and normalized value match" do
+    service = Catalog::CreateProduct.new(
+      organization: @organization,
+      actor: @actor,
+      store: @store,
+      identifier: "0-306-40615-3",
+      accept_identifier_warning: true,
+      accepted_identifier_normalized: "0306406153",
+      product_attrs: {
+        name: "ISBN10 Warned Accepted",
+        product_type: "book",
+        product_format_id: product_formats(:hardcover).id,
+        merchandise_class_id: @merchandise_class.id,
+        default_department_id: @department.id,
+        default_tax_category_id: @tax_category.id
+      },
+      variant_attrs: {
+        inventory_tracking_mode: "quantity",
+        regular_price_cents: 1000,
+        sellable: true
+      }
+    )
+
+    assert_difference "Product.count", 1 do
+      assert service.call
+    end
+
+    assert_equal "0306406153", service.product.identifier
+    assert_equal "warning", service.product.identifier_validation_status
+  end
+
   test "reports invalid identifier format explicitly" do
     service = Catalog::CreateProduct.new(
       organization: @organization,

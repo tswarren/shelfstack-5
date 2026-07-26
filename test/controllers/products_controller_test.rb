@@ -147,8 +147,10 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
         identifier: "9781786798986",
         product: {
           name: "Mavericks",
+          subtitle: "Kept on redisplay",
           product_type: "book",
           product_format_id: product_formats(:hardcover).id,
+          publisher_or_manufacturer_name: "Test Press",
           status: "active",
           sellable: true
         },
@@ -164,7 +166,70 @@ class ProductsControllerTest < ActionDispatch::IntegrationTest
     assert_response :unprocessable_entity
     assert_match(/invalid EAN-13 check digit/, response.body)
     assert_match(/Save anyway/, response.body)
+    assert_match(/accept_identifier_warning/, response.body)
     assert_match(/accepted_identifier_normalized/, response.body)
+    assert_match(/value="Mavericks"/, response.body)
+    assert_match(/value="Kept on redisplay"/, response.body)
+    assert_match(/value="Test Press"/, response.body)
+    assert_match(/value="9781786798986"/, response.body)
+  end
+
+  test "accepts warned identifier via checkbox and preserves create" do
+    assert_difference "Product.count", 1 do
+      post products_path, params: {
+        identifier: "9781786798986",
+        accept_identifier_warning: "1",
+        accepted_identifier_normalized: "9781786798986",
+        product: {
+          name: "Warned Accept",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          merchandise_class_id: merchandise_classes(:fiction_primary).id,
+          default_department_id: departments(:books_new).id,
+          default_tax_category_id: tax_categories(:physical_book).id,
+          status: "active",
+          sellable: true
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price_cents: 2495,
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    product = Product.order(:id).last
+    assert_redirected_to product_path(product)
+    assert_equal "9781786798986", product.identifier
+    assert_equal "warning", product.identifier_validation_status
+  end
+
+  test "invalid ISBN-10 check digit offers overridable warning and keeps form data" do
+    assert_no_difference "Product.count" do
+      post products_path, params: {
+        identifier: "0-306-40615-3",
+        product: {
+          name: "ISBN10 Warned",
+          product_type: "book",
+          product_format_id: product_formats(:hardcover).id,
+          status: "active",
+          sellable: true
+        },
+        product_variant: {
+          inventory_tracking_mode: "quantity",
+          regular_price_cents: 1999,
+          sellable: true,
+          status: "active"
+        }
+      }
+    end
+
+    assert_response :unprocessable_entity
+    assert_match(/invalid ISBN-10 check digit/, response.body)
+    assert_match(/Save anyway/, response.body)
+    assert_match(/value="ISBN10 Warned"/, response.body)
+    assert_match(/value="0-306-40615-3"/, response.body)
   end
 
   test "denies clerk without catalog permission" do

@@ -68,6 +68,7 @@ Product create/edit (Phase 10b) uses `.form-actions--sticky`:
 * Collapses to normal in-flow positioning on narrower or shorter viewports.
 * Opaque background, top border, bottom safe-area padding; form content reserves bottom padding equal to the bar height so fields are never covered.
 * Sticky positioning is CSS-only; the bar remains a plain submit + cancel link without JavaScript.
+* Action rows (`.form-actions`) are right-aligned. Secondary actions (Cancel / outline / ghost) sit to the left of the primary action: `[Cancel] [Update product]`.
 
 ## Density
 

@@ -39,10 +39,14 @@
     <span class="affix" aria-hidden="true"><%= unit %></span>
     <%= tag.input(**input_options) %>
   </div>
-  <% if local_assigns[:hint].present? %>
-    <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
-  <% end %>
-  <% if error_text.present? %>
-    <p class="field-error" id="<%= field_id %>_error"><%= error_text %></p>
+  <% if local_assigns[:hint].present? || error_text.present? %>
+    <div class="field-meta">
+      <% if local_assigns[:hint].present? %>
+        <p class="field-hint" id="<%= field_id %>_hint"><%= hint %></p>
+      <% end %>
+      <% if error_text.present? %>
+        <p class="field-error" id="<%= field_id %>_error"><%= error_text %></p>
+      <% end %>
+    </div>
   <% end %>
 </div>

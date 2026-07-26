@@ -19,11 +19,12 @@ class IdentifiersNormalizeTest < ActiveSupport::TestCase
     assert_equal "9780306406157", result.canonical
   end
 
-  test "invalid ISBN-10-shaped input is invalid with warning" do
+  test "invalid ISBN-10-shaped input warns without inventing ISBN-13" do
     result = Identifiers::Normalize.call("0-306-40615-3")
 
     assert_equal :isbn13, result.type
-    assert_equal :invalid, result.validation_status
+    assert_equal :warning, result.validation_status
+    assert_equal "0306406153", result.canonical
     assert_includes result.warnings, "invalid ISBN-10 check digit"
   end
 

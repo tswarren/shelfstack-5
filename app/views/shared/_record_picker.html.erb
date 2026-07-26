@@ -111,8 +111,10 @@
       hidden
       data-record-picker-target="listbox"></ul>
 
-  <p class="field-hint record-picker-status" data-record-picker-target="status" role="status" aria-live="polite"></p>
-  <% if hint.present? %>
-    <p class="field-hint"><%= hint %></p>
-  <% end %>
+  <div class="field-meta">
+    <p class="field-hint record-picker-status" data-record-picker-target="status" role="status" aria-live="polite"></p>
+    <% if hint.present? %>
+      <p class="field-hint"><%= hint %></p>
+    <% end %>
+  </div>
 </div>

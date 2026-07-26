@@ -80,12 +80,14 @@ module Identifiers
       check = stripped[9].upcase
 
       unless valid_isbn10_check?(body, check)
+        # Check-digit failure is an overridable warning (ADR-0002). Do not
+        # invent a checksum-valid ISBN-13 from the invalid ISBN-10 body.
         return NormalizedIdentifier.new(
           original: original,
           normalized: stripped,
           canonical: stripped,
           type: :isbn13,
-          validation_status: :invalid,
+          validation_status: :warning,
           warnings: [ "invalid ISBN-10 check digit" ]
         )
       end

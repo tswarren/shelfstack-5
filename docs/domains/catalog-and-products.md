@@ -173,7 +173,7 @@ Canonical identifiers are normalized, indexed, unique within the Organization, a
 
 ### ISBN normalization
 
-A valid ISBN-10 input is validated and converted to ISBN-13 for canonical storage and search. An invalid ISBN-10-shaped value is not silently converted.
+A valid ISBN-10 input is validated and converted to ISBN-13 for canonical storage and search. An invalid ISBN-10 check digit produces an overridable warning and keeps the stripped ISBN-10-shaped value (it is not silently converted into a valid-looking ISBN-13).
 
 ### UPC and EAN equivalence
 
