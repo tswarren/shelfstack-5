@@ -50,7 +50,7 @@ These types share account and Ledger infrastructure but remain distinct for poli
 - POS Line Item;
 - POS Tender;
 - User and Approval;
-- future Customer;
+- Customer (optional account linkage remains deferred);
 - future Buyback transaction;
 - report definitions.
 
@@ -77,7 +77,7 @@ active
 suspended
 ```
 
-`depleted` is derived from balance rather than persisted. `closed` and `replaced` remain deferred with their workflows. Optional Customer identity remains deferred with the Customer domain.
+`depleted` is derived from balance rather than persisted. `closed` and `replaced` remain deferred with their workflows. Optional Customer linkage on stored-value accounts remains deferred after Phase 9 Customer v1.
 
 ## Stored-Value Ledger
 

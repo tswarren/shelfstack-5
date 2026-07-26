@@ -133,7 +133,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-033 | Complete RTV | — | deferred_capability | deferred-capabilities; reserved unit statuses | RTV documents | later_extensions | — |
 | DWR-034 | Optional shelf-location tracking | — | deferred_capability | deferred-capabilities | Must not fragment store inventory | later_extensions | — |
 | DWR-035 | Weighted / decimal quantities | — | deferred_capability | deferred-capabilities | Explicit quantity model change | later_extensions | — |
-| DWR-036 | Full customer CRM | 5 | deferred_capability | OD-006 v1 opaque `customer_reference` | Customer domain design | later_extensions | — |
+| DWR-036 | Full customer CRM | 5 / 9 | deferred_capability | Phase 9 flat Customer v1 shipped ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)); loyalty, households, merge, notifications, multi-contact remain deferred | Remaining CRM design | later_extensions | — |
 | DWR-037 | Customer notifications platform | — | deferred_capability | deferred-capabilities | After customer domain | later_extensions | — |
 | DWR-038 | Richer customer holds / special orders beyond requests | 5 | deferred_capability | deferred-capabilities | Extend Product Requests carefully | later_extensions | — |
 | DWR-039 | Loyalty | — | deferred_capability | deferred-capabilities | Separate domain | later_extensions | — |

@@ -103,13 +103,21 @@ Receipt numbers are assigned only during successful completion (ADR-0009).
 - Temporary assignment rule: **reporting date = the operating date selected when the business day is opened** (defaults to the store-local calendar date at open).
 - Policy remains configurable later without rewriting history, because the date is stored.
 
-## Customer identity before customer requests
+## Customer identity (Phase 9)
 
-Phase 5 Customer Requests use a nullable opaque `customer_reference` on the Product Request. Phase 5 does **not** introduce a `customers` table or Customer master shell.
+Phase 9 introduces an organization-scoped `customers` table with immutable namespace-`22` `customer_number` ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)). Product Requests and POS transactions reference `customer_id`. The Phase 5 opaque `customer_reference` interim (OD-006) is superseded.
 
-Deferred until a later Customer domain: stable Customer identity, loyalty, householding, full purchase history, CRM, notifications platform, and migration of `customer_reference` values.
+**Phase 9 locks:**
 
-See [product-requests.md](../domains/product-requests.md) and [ordering-and-acquisition-planning.md](../domains/ordering-and-acquisition-planning.md).
+- POS attach/replace/remove is commercially inert (no price, discount, promotion, tax, tender, or total changes).
+- Preferred contact uses primary phone/email only.
+- Staged customers on shared sessions are owned by the staging user.
+- Inactive customers cannot be newly staged, attached, or assigned.
+- Lookup/stage/attach/request assign require `customer.organization_id == store.organization_id`.
+
+Still deferred (DWR-036 / deferred-capabilities): loyalty, householding, full CRM, notifications platform, merge workflows, `customer_contact_methods`.
+
+See [customers.md](../domains/customers.md), [product-requests.md](../domains/product-requests.md).
 
 ## Purchase-order and receipt linkage
 

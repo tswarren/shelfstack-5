@@ -18,7 +18,8 @@ Use the shared record picker for organization-scoped links such as:
 * product;
 * product variant;
 * vendor;
-* creator (Gate 8b+).
+* creator (Gate 8b+);
+* customer (Phase 9 — POS attach/stage and product requests).
 
 Do **not** use it for small closed enums (`status`, `product_type`, tracking mode).
 
@@ -50,6 +51,7 @@ Reuse path / option helpers:
 
 * hierarchical records → `hierarchy_path_label`
 * variants → `variant_option_label`
+* customers → `customer_option_label` / `record_picker_label`
 * other masters → `record_option_label` / `record_picker_label`
 
 ### Accessibility

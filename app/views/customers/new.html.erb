@@ -1,0 +1,4 @@
+<%= render "shared/page_header", title: "New customer",
+      breadcrumbs: [ { label: "Customers", path: customers_path }, { label: "New" } ] %>
+
+<%= render "form", customer: @customer, form_url: customers_path, possible_duplicates: @possible_duplicates %>

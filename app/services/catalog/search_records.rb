@@ -14,6 +14,7 @@ module Catalog
       product_variant
       vendor
       creator
+      customer
     ].freeze
 
     LIMIT = 25
@@ -39,6 +40,11 @@ module Catalog
       ],
       "creator" => %w[
         catalog.product.view catalog.product.create catalog.product.edit catalog.manage_creators
+      ],
+      "customer" => %w[
+        customers.customer.view customers.customer.create customers.customer.edit
+        requests.product_request.create requests.product_request.edit
+        pos.access
       ]
     }.freeze
 
@@ -77,6 +83,7 @@ module Catalog
       when "product_variant" then search_product_variants
       when "vendor" then search_vendors
       when "creator" then search_creators
+      when "customer" then search_customers
       end
     end
 
@@ -186,6 +193,28 @@ module Catalog
       scope.limit(LIMIT)
     end
 
+    # Delegates typed search to Customers::Search (Customers domain). Blank query
+    # returns a bounded active list for picker open.
+    def search_customers
+      if @query.present?
+        result = Customers::Search.call(
+          organization: @organization,
+          query: @query,
+          include_inactive: @include_inactive,
+          limit: LIMIT
+        )
+        customers = result.customers
+        unless @include_inactive
+          customers = customers.select { |c| c.active? || result.inactive_direct_match&.id == c.id }
+        end
+        return customers.first(LIMIT)
+      end
+
+      scope = @organization.customers.order(:last_name, :first_name, :organization_name)
+      scope = scope.active unless @include_inactive
+      scope.limit(LIMIT)
+    end
+
     def apply_name_or_code_filter(scope)
       return scope if @query.blank?
 
@@ -256,11 +285,18 @@ module Catalog
         [ record.name, record.code ].compact_blank.join(" — ")
       when "creator"
         creator_label(record)
+      when "customer"
+        customer_label(record)
       else
         name = record.name.to_s
         code = record.respond_to?(:code) ? record.code.to_s : ""
         code.present? ? "#{name} — #{code}" : name
       end
+    end
+
+    def customer_label(record)
+      name = record.display_name.presence || "Customer"
+      "#{name} · #{record.customer_number}"
     end
 
     def path_label(record)

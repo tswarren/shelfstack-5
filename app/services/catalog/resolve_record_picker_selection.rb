@@ -35,6 +35,10 @@ module Catalog
         # No active filter: inactive Creators already linked to a Product
         # must remain visible on that Product's form (phase-08 §5).
         @organization.creators.find_by(id: @id)
+      when "customer"
+        # No active filter: inactive Customers already linked to a request/txn
+        # must remain visible on those forms.
+        @organization.customers.find_by(id: @id)
       end
     end
   end

@@ -4,6 +4,7 @@ class PosTransaction < ApplicationRecord
   STATUSES = %w[open suspended completed cancelled].freeze
 
   belongs_to :store
+  belongs_to :customer, optional: true
   belongs_to :origin_pos_session, class_name: "PosSession", inverse_of: :pos_transactions
   belongs_to :active_pos_session, class_name: "PosSession", optional: true, inverse_of: :active_pos_transactions
   belongs_to :completed_pos_session, class_name: "PosSession", optional: true

@@ -4,6 +4,7 @@ module Identifiers
   class Normalize < ApplicationService
     GENERATED_PREFIXES = {
       "21" => :generated_21,
+      "22" => :generated_22,
       "27" => :generated_27,
       "28" => :generated_28,
       "29" => :generated_29

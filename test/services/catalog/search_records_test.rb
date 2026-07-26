@@ -191,4 +191,45 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     assert_not_includes underscore_ids, ordinary.id,
                         "bare _ must not match arbitrary single characters"
   end
+
+  test "searches customers by name and labels with customer number" do
+    customer = customers(:jordan_lee)
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization, record_type: "customer", query: "Jordan"
+    )
+
+    match = results.find { |r| r.id == customer.id }
+    assert match
+    assert_equal "Jordan Lee · #{customer.customer_number}", match.label
+  end
+
+  test "blank customer query returns a bounded active list" do
+    results = Catalog::SearchRecords.call(
+      organization: @organization, record_type: "customer", query: ""
+    )
+
+    assert results.any?
+    assert_includes results.map(&:id), customers(:jordan_lee).id
+    assert_not_includes results.map(&:id), customers(:inactive_patron).id
+  end
+
+  test "customer number match surfaces inactive customer without include_inactive" do
+    inactive = customers(:inactive_patron)
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "customer",
+      query: inactive.customer_number
+    )
+
+    assert_includes results.map(&:id), inactive.id
+  end
+
+  test "authorized? allows customer search for product request create" do
+    admin = users(:admin)
+    store = stores(:main_street)
+
+    assert Catalog::SearchRecords.authorized?(user: admin, store: store, record_type: "customer")
+  end
 end

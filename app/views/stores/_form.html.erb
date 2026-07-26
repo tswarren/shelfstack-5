@@ -28,6 +28,24 @@
     </div>
   </section>
 
+  <section class="form-section">
+    <h2 class="form-section-title">Location</h2>
+    <p class="field-hint">Used as defaults for new customer addresses and phone parsing.</p>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :region, "State / province", class: "field-label" %>
+        <%= form.text_field :region, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :country_code, "Country", class: "field-label" %>
+        <%= form.select :country_code,
+              country_code_options_for_select(selected: store.country_code),
+              { include_blank: "—" },
+              class: "input" %>
+      </div>
+    </div>
+  </section>
+
   <div class="form-actions">
     <%= form.submit store.persisted? ? "Update store" : "Create store", class: "button button-primary" %>
     <%= link_to "Cancel", store.persisted? ? store_path(store) : stores_path, class: "button button-outline" %>

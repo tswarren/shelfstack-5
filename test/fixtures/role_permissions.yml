@@ -549,3 +549,21 @@ admin_catalog_manage_creators:
 catalog_editor_manage_creators:
   role: catalog_editor
   permission: catalog_manage_creators
+
+# Phase 9
+
+admin_customers_customer_view:
+  role: administrator
+  permission: customers_customer_view
+
+admin_customers_customer_create:
+  role: administrator
+  permission: customers_customer_create
+
+admin_customers_customer_edit:
+  role: administrator
+  permission: customers_customer_edit
+
+admin_customers_customer_deactivate:
+  role: administrator
+  permission: customers_customer_deactivate

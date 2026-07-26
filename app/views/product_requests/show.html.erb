@@ -21,7 +21,7 @@
     [ "Product variant", @product_request.product_variant ? variant_option_label(@product_request.product_variant) : "Not yet resolved" ],
     [ "Requested quantity", @product_request.requested_quantity ],
     [ "Needed by", @product_request.needed_by_on ? formatted_store_date(@product_request.needed_by_on) : "—" ],
-    [ "Customer reference", @product_request.customer_reference.presence || "—" ],
+    [ "Customer", (@product_request.customer ? link_to(@product_request.customer.display_name, customer_path(@product_request.customer)) : "—") ],
     [ "Requested by", @product_request.requested_by_user.username ],
     [ "Assigned buyer", @product_request.assigned_buyer_user&.username || "—" ],
     [ "Notes", @product_request.notes.presence || "—" ]

@@ -7,8 +7,8 @@ class IdentifierSequenceTest < ActiveSupport::TestCase
     IdentifierSequence.delete_all
 
     IdentifierSequence.ensure_defaults!
-    assert_equal %w[21 27 28 29], IdentifierSequence.order(:namespace).pluck(:namespace)
-    assert_equal [ 1, 1, 1, 1 ], IdentifierSequence.order(:namespace).pluck(:next_value)
+    assert_equal %w[21 22 27 28 29], IdentifierSequence.order(:namespace).pluck(:namespace)
+    assert_equal [ 1, 1, 1, 1, 1 ], IdentifierSequence.order(:namespace).pluck(:next_value)
 
     seq = IdentifierSequence.find("28")
     seq.update!(next_value: 42)

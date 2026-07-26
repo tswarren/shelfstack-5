@@ -30,7 +30,7 @@ Every acquisition-demand record references an existing ShelfStack Product (ADR-0
 - priority;
 - needed-by date;
 - requesting User;
-- nullable opaque Customer reference for v1;
+- nullable Customer reference (`customer_id`) per ADR-0017;
 - request notes;
 - request lifecycle and non-customer buyer resolution;
 - fulfilment summary and buyer-review state;
@@ -76,7 +76,7 @@ Suggested attributes:
 
 - Store;
 - request type;
-- nullable `customer_reference` for Customer Requests;
+- nullable `customer_id` for Customer Requests (required for new `customer_request` records);
 - required Product;
 - optional Product Variant;
 - requested / proposed quantity;
@@ -119,9 +119,9 @@ no_longer_needed
 
 `deferred` may leave the request open. Whether resolution fields live on the request or a resolution-event table remains an implementation detail (ADR-0015 open details).
 
-## V1 Customer reference
+## Customer identity
 
-No `customers` table in Phase 5. Customer Requests may store a nullable opaque `customer_reference`. See [architectural-locks.md](../implementation/architectural-locks.md).
+Phase 9 associates Customer Requests with `customers` via `customer_id` ([ADR-0017](../adr/0017-customer-domain-and-namespace-22.md)). New `customer_request` records require an active, organization-compatible, contactable Customer (enforced in request services). Non-customer request types may omit `customer_id`.
 
 ## Supply coverage (Customer Requests)
 
@@ -209,7 +209,7 @@ Audit Request creation, Product/quantity changes, priority and needed-by changes
 - Inventory Reservations commit physically present supply; in-house holds require physical confirmation.
 - Staff Suggestions, stock replenishment, and frontlist selections do not ordinarily create customer obligations or allocations.
 - Active coverage must not exceed requested quantity without an explicit change.
-- V1 Customer Requests use `customer_reference` only.
+- Customer Requests use `customer_id` (ADR-0017); new customer requests require a contactable Customer.
 
 ## Open questions
 

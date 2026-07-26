@@ -82,6 +82,8 @@ Optional variables (all environments):
 | `SHELFSTACK_BOOTSTRAP_STORE_NUMBER` | Store number | `1` |
 | `SHELFSTACK_BOOTSTRAP_TIMEZONE` | Organization/store timezone | `America/New_York` |
 | `SHELFSTACK_BOOTSTRAP_CURRENCY` | Default currency code | `USD` |
+| `SHELFSTACK_BOOTSTRAP_STORE_COUNTRY` | Store country code (customer address / phone defaults) | `US` |
+| `SHELFSTACK_BOOTSTRAP_STORE_REGION` | Store state / province | unset |
 | `SHELFSTACK_BOOTSTRAP_RESET_PASSWORD` | When `1` in development/test, reset the bootstrap user’s password on re-run | unset |
 
 Do not commit environment overrides that contain real credentials.

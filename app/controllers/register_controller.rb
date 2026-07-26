@@ -77,10 +77,13 @@ class RegisterController < ApplicationController
 
   def load_register_context!
     @business_day = Current.store.business_days.find_by(status: "open")
-    @open_session = @business_day && Current.store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
+    @open_session = @business_day && Current.store.pos_sessions.open_sessions
+      .includes(:staged_customer, :staged_customer_by_user)
+      .find_by(cashier_user: Current.user)
     @open_transaction = @open_session && PosTransaction.open_transactions.find_by(active_pos_session: @open_session)
     @suspended_transactions = @business_day ? Current.store.pos_transactions.suspended.order(suspended_at: :desc) : PosTransaction.none
     @cash_movement_types = Current.organization.cash_movement_types.where(active: true).order(:name)
+    @can_view_customers = Current.user.can?("customers.customer.view", store: Current.store)
   end
 
   def load_register_reporting!

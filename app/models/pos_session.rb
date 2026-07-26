@@ -11,6 +11,8 @@ class PosSession < ApplicationRecord
   belongs_to :opened_by_user, class_name: "User"
   belongs_to :closed_by_user, class_name: "User", optional: true
   belongs_to :reconciled_by_user, class_name: "User", optional: true
+  belongs_to :staged_customer, class_name: "Customer", optional: true
+  belongs_to :staged_customer_by_user, class_name: "User", optional: true
   has_one :reconciliation, dependent: :restrict_with_exception
   has_many :pos_transactions, foreign_key: :origin_pos_session_id, inverse_of: :origin_pos_session,
            dependent: :restrict_with_exception

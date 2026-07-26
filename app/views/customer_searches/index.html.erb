@@ -1,0 +1,21 @@
+<% if @customers.empty? %>
+  <p class="field-hint">No matching customers.</p>
+<% else %>
+  <ul class="lookup-results" role="listbox">
+    <% @customers.each do |customer| %>
+      <li>
+        <button type="button"
+                class="lookup-result"
+                data-customer-id="<%= customer.id %>"
+                data-customer-label="<%= customer.display_name %> (<%= customer.customer_number %>)"
+                data-action="click->customer-picker#select">
+          <strong><%= customer.display_name %></strong>
+          <span class="muted"><%= customer.customer_number %></span>
+          <% unless customer.active? %>
+            <span class="banner-warning">Inactive</span>
+          <% end %>
+        </button>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

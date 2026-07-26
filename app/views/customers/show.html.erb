@@ -1,0 +1,62 @@
+<%= render "shared/page_header", title: @customer.display_name.presence || "Customer",
+      breadcrumbs: [ { label: "Customers", path: customers_path }, { label: @customer.customer_number } ],
+      actions: capture {
+        if Current.user.can?("customers.customer.edit", store: Current.store)
+          concat link_to("Edit", edit_customer_path(@customer), class: "button button-primary")
+        end
+        if @customer.active? && Current.user.can?("customers.customer.deactivate", store: Current.store)
+          concat button_to("Deactivate", deactivate_customer_path(@customer), method: :post,
+                           class: "button button-outline",
+                           form: { data: { turbo_confirm: "Deactivate this customer?" } })
+        end
+      } %>
+
+<% unless @customer.active? %>
+  <p class="banner banner-warning" role="status">This customer is inactive.</p>
+<% end %>
+
+<section class="detail-section">
+  <h2 class="form-section-title">Identity</h2>
+  <dl class="detail-list">
+    <div><dt>Customer number</dt><dd><code><%= @customer.customer_number %></code></dd></div>
+    <div><dt>Type</dt><dd><%= @customer.customer_type.humanize %></dd></div>
+    <% if @customer.organization_customer? %>
+      <div><dt>Organization</dt><dd><%= @customer.organization_name %></dd></div>
+      <div><dt>Primary contact</dt><dd><%= [ @customer.first_name, @customer.last_name ].compact_blank.join(" ").presence || "—" %></dd></div>
+    <% else %>
+      <div><dt>First name</dt><dd><%= @customer.first_name.presence || "—" %></dd></div>
+      <div><dt>Last name</dt><dd><%= @customer.last_name.presence || "—" %></dd></div>
+    <% end %>
+  </dl>
+</section>
+
+<section class="detail-section">
+  <h2 class="form-section-title">Contact</h2>
+  <dl class="detail-list">
+    <div><dt>Preferred method</dt><dd><%= @customer.preferred_contact_method.humanize %></dd></div>
+    <div><dt>Primary phone</dt><dd><%= @customer.primary_phone.presence || "—" %></dd></div>
+    <div><dt>Alternate phone</dt><dd><%= @customer.alternate_phone.presence || "—" %></dd></div>
+    <div><dt>Primary email</dt><dd><%= @customer.primary_email.presence || "—" %></dd></div>
+    <div><dt>Alternate email</dt><dd><%= @customer.alternate_email.presence || "—" %></dd></div>
+  </dl>
+</section>
+
+<section class="detail-section">
+  <h2 class="form-section-title">Address</h2>
+  <dl class="detail-list">
+    <div><dt>Address</dt>
+      <dd>
+        <%= [ @customer.address_line_1, @customer.address_line_2 ].compact_blank.join(", ").presence || "—" %><br>
+        <%= [ @customer.city, @customer.region, @customer.postal_code ].compact_blank.join(", ") %>
+        <%= country_code_label(@customer.country_code) if @customer.country_code.present? %>
+      </dd>
+    </div>
+  </dl>
+</section>
+
+<% if @customer.notes.present? %>
+  <section class="detail-section">
+    <h2 class="form-section-title">Notes</h2>
+    <p><%= simple_format @customer.notes %></p>
+  </section>
+<% end %>

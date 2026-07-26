@@ -29,10 +29,13 @@ ShelfStack will assign one canonical identifier to each applicable record and us
 
 ```
 21 — stored-value account
+22 — customer
 27 — inventory unit
 28 — product variant
 29 — locally identified product
 ```
+
+Namespace `22` is established by [ADR-0017](0017-customer-domain-and-namespace-22.md).
 
 Internally generated identifiers will:
 

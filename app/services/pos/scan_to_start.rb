@@ -83,6 +83,13 @@ module Pos
             next failure(open.error, outcome: "failed")
           end
           transaction = open.pos_transaction
+        else
+          ConsumeStagedCustomer.call(
+            pos_session: session,
+            pos_transaction: transaction,
+            actor: @actor
+          )
+          transaction.reload
         end
 
         add = AddLine.call(

@@ -14,6 +14,10 @@
       <h2>Transaction complete</h2>
       <p class="pos-receipt-number">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
       <p class="muted">Completed <%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></p>
+      <% if @pos_transaction.customer.present? %>
+        <p>Customer: <strong><%= @pos_transaction.customer.display_name %></strong>
+          <code><%= @pos_transaction.customer.customer_number %></code></p>
+      <% end %>
 
       <dl class="definition-grid pos-totals">
         <div class="definition-item"><dt>Final total</dt><dd class="pos-balance"><%= pos_money(@net_total_cents) %></dd></div>
@@ -104,6 +108,7 @@
     </section>
 
     <aside class="pos-payment-panel" aria-label="Payment">
+      <%= render "customer_panel" %>
       <%= render "totals" %>
       <%= render "readiness_summary" %>
       <%= render "primary_cta" %>

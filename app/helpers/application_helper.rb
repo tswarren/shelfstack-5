@@ -297,9 +297,26 @@ module ApplicationHelper
       record_option_label(record, code_attr: :code, name_attr: :name)
     when "creator"
       creator_option_label(record)
+    when "customer"
+      customer_option_label(record)
     else
       record_option_label(record)
     end
+  end
+
+  def customer_option_label(customer)
+    return "—" if customer.blank?
+
+    name = customer.display_name.presence || "Customer"
+    "#{name} · #{customer.customer_number}"
+  end
+
+  def country_code_options_for_select(selected: nil)
+    CountryCode.options_for_select(selected: selected)
+  end
+
+  def country_code_label(code)
+    CountryCode.name_for(code).presence || "—"
   end
 
   # Jane Smith — Smith, Jane (sort_name differs) or Jane Smith — Creator 142

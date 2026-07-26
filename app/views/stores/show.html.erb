@@ -16,6 +16,8 @@
     [ "Legal name", @store.legal_name.presence || "—" ],
     [ "Time zone", @store.timezone.presence || "—" ],
     [ "Currency", @store.currency_code.presence || "—" ],
+    [ "State / province", @store.region.presence || "—" ],
+    [ "Country", country_code_label(@store.country_code) ],
     [ "Status", boolean_status(@store.active?) ]
   ] %>
 </section>

@@ -119,7 +119,9 @@ suspended → cancelled
 
 A Completed Transaction does not transition.
 
-Suggested attributes include public identifier, Store, origin/active/completion Session, Customer when applicable, cashier, salesperson, Receipt Number, timestamps, reversal references, monetary totals, and completion idempotency key.
+Suggested attributes include public identifier, Store, origin/active/completion Session, optional Customer (`customer_id`; Phase 9 / ADR-0017), cashier, salesperson, Receipt Number, timestamps, reversal references, monetary totals, and completion idempotency key.
+
+Phase 9 Customer attachment is commercially inert: attach, replace, or remove does not change price, discounts, promotions, tax, tender eligibility, or totals. Shared-session staging records `staged_customer_id`, `staged_customer_by_user_id`, and `staged_customer_at`; only the staging user may consume the staged Customer.
 
 A Transaction may open in one Session and complete in another.
 

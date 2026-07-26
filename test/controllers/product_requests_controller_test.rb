@@ -18,6 +18,7 @@ class ProductRequestsControllerTest < ActionDispatch::IntegrationTest
     assert_match "data-controller=\"record-picker\"", response.body
     assert_match "data-record-picker-record-type-value=\"product\"", response.body
     assert_match "data-record-picker-record-type-value=\"product_variant\"", response.body
+    assert_match "data-record-picker-record-type-value=\"customer\"", response.body
 
     request = product_requests(:open_stock_replenishment)
     get product_request_path(request)
@@ -26,6 +27,11 @@ class ProductRequestsControllerTest < ActionDispatch::IntegrationTest
     get edit_product_request_path(request)
     assert_response :success
     assert_match ApplicationController.helpers.record_picker_label(request.product, "product"), response.body
+
+    customer_request = product_requests(:open_customer_request)
+    get edit_product_request_path(customer_request)
+    assert_response :success
+    assert_match ApplicationController.helpers.record_picker_label(customer_request.customer, "customer"), response.body
   end
 
   test "creates a product request through the service" do

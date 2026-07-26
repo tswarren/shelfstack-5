@@ -1,0 +1,27 @@
+<section class="pos-panel" aria-label="Customer">
+  <h2>Customer</h2>
+  <% if @pos_transaction.customer.present? %>
+    <p>
+      <strong><%= @pos_transaction.customer.display_name %></strong>
+      <code><%= @pos_transaction.customer.customer_number %></code>
+    </p>
+    <% if @pos_transaction.editable? && Current.user.can?("customers.customer.view", store: Current.store) %>
+      <%= button_to "Remove customer", remove_customer_pos_transaction_path(@pos_transaction),
+            method: :post, class: "button button-outline" %>
+    <% end %>
+  <% elsif @pos_transaction.editable? && Current.user.can?("customers.customer.view", store: Current.store) %>
+    <%= form_with url: attach_customer_pos_transaction_path(@pos_transaction), method: :post, class: "form" do %>
+      <%= render "shared/record_picker",
+            name: "customer_id",
+            id: "attach_customer_id",
+            record_type: "customer",
+            label: "Attach customer",
+            required: true,
+            include_blank: false,
+            hint: "Search by name, phone, email, or customer number." %>
+      <%= submit_tag "Attach", class: "button button-outline" %>
+    <% end %>
+  <% else %>
+    <p class="muted">No customer attached.</p>
+  <% end %>
+</section>

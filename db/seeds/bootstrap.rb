@@ -23,6 +23,8 @@ store_name = ENV.fetch("SHELFSTACK_BOOTSTRAP_STORE_NAME") do
 end
 timezone = ENV.fetch("SHELFSTACK_BOOTSTRAP_TIMEZONE", "America/New_York")
 currency = ENV.fetch("SHELFSTACK_BOOTSTRAP_CURRENCY", "USD")
+store_country = ENV.fetch("SHELFSTACK_BOOTSTRAP_STORE_COUNTRY", "US").to_s.strip.upcase.presence
+store_region = ENV["SHELFSTACK_BOOTSTRAP_STORE_REGION"].to_s.strip.presence
 
 bootstrap_username = ENV.fetch("SHELFSTACK_BOOTSTRAP_USERNAME") do
   raise "SHELFSTACK_BOOTSTRAP_USERNAME is required outside development" unless development_like
@@ -60,6 +62,8 @@ if store.new_record?
     store_number: ENV.fetch("SHELFSTACK_BOOTSTRAP_STORE_NUMBER", "1"),
     timezone: organization.default_timezone,
     currency_code: organization.default_currency_code,
+    country_code: store_country,
+    region: store_region,
     active: true
   )
   store.save!

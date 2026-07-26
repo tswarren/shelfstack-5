@@ -29,7 +29,13 @@ module Pos
           opened_at: Time.current
         )
 
-        Result.new(pos_transaction: transaction, success?: true, error: nil)
+        ConsumeStagedCustomer.call(
+          pos_session: session,
+          pos_transaction: transaction,
+          actor: @actor
+        )
+
+        Result.new(pos_transaction: transaction.reload, success?: true, error: nil)
       end
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_transaction: nil, success?: false, error: e.message)

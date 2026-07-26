@@ -2,6 +2,10 @@ seq_21:
   namespace: "21"
   next_value: 1
 
+seq_22:
+  namespace: "22"
+  next_value: 10
+
 seq_27:
   namespace: "27"
   next_value: 1
