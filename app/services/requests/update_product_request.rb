@@ -77,7 +77,10 @@ module Requests
 
     # Contactability applies when creating/changing the customer on a
     # customer_request — not on unrelated edits to backfilled requests.
+    # Lookup permission is required whenever customer_id changes.
     def validate_customer_change!(previous_customer_id)
+      raise Error, "not permitted to assign customers" unless can_lookup_customers?
+
       if @product_request.customer_request?
         raise Error, "customer is required for customer requests" if @product_request.customer_id.blank?
       end
@@ -94,6 +97,10 @@ module Requests
           raise Error, "customer must be contactable (preferred phone or email with a primary contact value)"
         end
       end
+    end
+
+    def can_lookup_customers?
+      Customers::AuthorizeLookup.call(user: @actor, store: @store)
     end
 
     def enforce_quantity_floor!

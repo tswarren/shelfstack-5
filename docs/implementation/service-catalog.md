@@ -432,6 +432,7 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 | `Customers::NormalizeEmail` | Customers | 9 | No | Yes | None | Raw email | Trimmed lowercased email (app policy) |
 | `Customers::Contactable` | Customers | 9 | No | Yes | None | Customer | True when preferred method is phone/email and matching **primary** field present |
 | `Customers::FindPossibleDuplicates` | Customers | 9 | No | Yes | None | Org, contact attrs | Matching customers across primary+alternate phone/email |
+| `Customers::AuthorizeLookup` | Customers | 9 | No | Yes | None | User, store | True when actor has `customers.customer.view` or `customers.customer.lookup` |
 | `Customers::Search` | Customers | 9 | No | Yes | None | Org, query, optional `default_phone_country` | Active-by-default matches; phone queries normalize to E.164; direct `22` number may surface inactive with warning |
 | `Customers::Create` | Customers | 9 | Yes | No | Identifier sequence `22` | Org, actor, attrs, optional store / `create_anyway` / default phone country | Customer with immutable `customer_number`; pre-persist duplicate gate unless `create_anyway` |
 | `Customers::Update` / `Deactivate` | Customers | 9 | Yes | No | None | Customer, actor, attrs / deactivate | Update excludes `customer_type`/`active`; invalid phone redisplays attempted attrs; deactivate + audit are one transaction; deactivate is the only inactive transition |

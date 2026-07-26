@@ -82,6 +82,24 @@ module Requests
       assert_match(/not permitted/i, result.error)
     end
 
+    test "denies customer assignment without customer view or lookup" do
+      actor = request_writer_without_customer_access
+
+      result = CreateProductRequest.call(
+        store: @store,
+        actor: actor,
+        attributes: {
+          request_type: "staff_suggestion",
+          product_id: @product.id,
+          requested_quantity: 1,
+          customer_id: customers(:jordan_lee).id
+        }
+      )
+
+      assert_not result.success?
+      assert_match(/not permitted to assign customers/i, result.error)
+    end
+
     test "records an audit event" do
       result = CreateProductRequest.call(
         store: @store,
@@ -93,6 +111,29 @@ module Requests
       event = AdministrativeAuditEvent.where(action: "requests.product_request.created", subject_id: result.product_request.id).last
       assert event
       assert_equal @admin, event.actor_user
+    end
+
+    private
+
+    def request_writer_without_customer_access
+      user = User.create!(
+        username: "req_writer_#{SecureRandom.hex(2)}",
+        user_number: rand(10_000..99_999),
+        first_name: "Req", last_name: "Writer",
+        password: "password123",
+        active: true, default_store: @store
+      )
+      role = Role.create!(
+        organization: @store.organization,
+        code: "req_writer_#{user.username}",
+        name: "Request writer",
+        active: true
+      )
+      %w[requests.product_request.create requests.product_request.edit].each do |code|
+        RolePermission.create!(role: role, permission: Permission.find_by!(code: code))
+      end
+      StoreMembership.create!(user: user, store: @store, role: role, active: true)
+      user
     end
   end
 end

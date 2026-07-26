@@ -45,6 +45,26 @@ module Pos
       assert_operator second.pos_transaction.pos_line_items.pending.count, :>=, 2
     end
 
+    test "stops before add line when staged customer conflicts with transaction customer" do
+      attached = customers(:jordan_lee)
+      staged = customers(:riverside_school)
+      open = OpenTransaction.call(pos_session: @session, actor: @admin)
+      txn = open.pos_transaction
+      AttachCustomer.call(pos_transaction: txn, customer: attached, actor: @admin)
+      StageCustomer.call(pos_session: @session, customer: staged, actor: @admin)
+
+      before_lines = txn.pos_line_items.count
+      result = ScanToStart.call(pos_session: @session.reload, actor: @admin, query: @variant.sku)
+
+      assert_not result.success?
+      assert_equal "customer_conflict", result.outcome
+      assert_equal txn.id, result.pos_transaction.id
+      assert_match(/different customer/i, result.error)
+      assert_equal before_lines, txn.reload.pos_line_items.count
+      assert_equal staged.id, @session.reload.staged_customer_id
+      assert_equal attached.id, txn.customer_id
+    end
+
     private
 
     def open_inventory(variant, quantity:, unit_cost_cents:)

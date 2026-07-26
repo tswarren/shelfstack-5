@@ -63,22 +63,28 @@ module Requests
       request_type = @attributes["request_type"].to_s
       customer_id = @attributes["customer_id"].presence
 
-      if request_type == "customer_request"
-        raise Error, "customer is required for customer requests" if customer_id.blank?
+      if customer_id.present?
+        raise Error, "not permitted to assign customers" unless can_lookup_customers?
+      elsif request_type == "customer_request"
+        raise Error, "customer is required for customer requests"
+      else
+        return
+      end
 
-        customer = Customer.find_by(id: customer_id)
-        raise Error, "customer not found" unless customer
-        raise Error, "customer belongs to another organization" unless customer.organization_id == @store.organization_id
-        raise Error, "inactive customers cannot be assigned to new requests" unless customer.active?
+      customer = Customer.find_by(id: customer_id)
+      raise Error, "customer not found" unless customer
+      raise Error, "customer belongs to another organization" unless customer.organization_id == @store.organization_id
+      raise Error, "inactive customers cannot be assigned to new requests" unless customer.active?
+
+      if request_type == "customer_request"
         unless Customers::Contactable.call(customer: customer)
           raise Error, "customer must be contactable (preferred phone or email with a primary contact value)"
         end
-      elsif customer_id.present?
-        customer = Customer.find_by(id: customer_id)
-        raise Error, "customer not found" unless customer
-        raise Error, "customer belongs to another organization" unless customer.organization_id == @store.organization_id
-        raise Error, "inactive customers cannot be assigned to new requests" unless customer.active?
       end
+    end
+
+    def can_lookup_customers?
+      Customers::AuthorizeLookup.call(user: @actor, store: @store)
     end
   end
 end

@@ -94,6 +94,7 @@ customers.customer.deactivate
 - `view` — full Customer admin (index/show/forms) and search.
 - `lookup` — search plus limited name/number/contact references for POS and Product Requests.
 - `create` / `edit` / `deactivate` require `view` in addition to the action permission.
+- Product Request create/update require `view` or `lookup` whenever `customer_id` is supplied or changed; unrelated request edits do not.
 
 ## Invariants
 

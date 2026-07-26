@@ -50,6 +50,10 @@ class RegisterController < ApplicationController
       flash[:alert] = result.error
       # Offer opening an empty transaction so cashier can resolve candidates there.
       redirect_to register_path
+    elsif result.outcome == "customer_conflict"
+      flash[:scan_outcome] = "customer_conflict"
+      flash[:scan_query] = params[:query].to_s
+      redirect_to pos_transaction_path(result.pos_transaction), alert: result.error
     else
       flash[:scan_outcome] = result.outcome
       flash[:scan_query] = params[:query].to_s
