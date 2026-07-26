@@ -3,18 +3,32 @@ import { Controller } from "@hotwired/stimulus"
 // Progressive-enhancement tabs: server renders anchors + all panels;
 // this controller adds tablist semantics, panel hiding, keyboard nav, and
 // fragment synchronization.
+//
+// History updates go through Turbo.navigator.history when available so
+// tab fragment changes do not desync Turbo Drive (native pushState alone
+// can leave the URL updated while the next visit fails to swap content).
 export default class extends Controller {
   static targets = ["tab", "panel"]
 
   connect() {
     this.enhance()
     this.activateFromFragment()
-    this._onPopState = () => this.activateFromFragment()
+    this._onPopState = () => {
+      if (!this.element.isConnected) return
+      this.activateFromFragment()
+    }
+    this._onBeforeCache = () => this.revealAllPanels()
+    this._onBeforeVisit = (event) => this.prepareForVisit(event)
+
     window.addEventListener("popstate", this._onPopState)
+    document.addEventListener("turbo:before-cache", this._onBeforeCache)
+    document.addEventListener("turbo:before-visit", this._onBeforeVisit)
   }
 
   disconnect() {
     window.removeEventListener("popstate", this._onPopState)
+    document.removeEventListener("turbo:before-cache", this._onBeforeCache)
+    document.removeEventListener("turbo:before-visit", this._onBeforeVisit)
   }
 
   enhance() {
@@ -99,10 +113,46 @@ export default class extends Controller {
       panel.classList.toggle("is-active", selected)
     })
 
-    if (updateHistory) {
-      const url = new URL(window.location.href)
-      url.hash = activeId
-      history.pushState(null, "", url)
+    if (updateHistory) this.updateFragment(activeId)
+  }
+
+  updateFragment(activeId) {
+    const url = new URL(window.location.href)
+    const nextHash = `#${activeId}`
+    if (url.hash === nextHash) return
+    url.hash = activeId
+
+    const turboHistory = window.Turbo?.navigator?.history
+    if (turboHistory && typeof turboHistory.push === "function") {
+      turboHistory.push(url)
+      return
     }
+
+    // Fallback: replaceState avoids stacking entries that desync Turbo Drive.
+    history.replaceState(history.state, "", url)
+  }
+
+  // Leaving for another page: restore panels so Turbo's snapshot is complete,
+  // and strip a dangling fragment that can confuse same-document handling.
+  prepareForVisit(event) {
+    const location = event.detail?.url
+    if (!location) return
+
+    try {
+      const next = new URL(location, window.location.origin)
+      if (next.pathname === window.location.pathname && next.search === window.location.search) {
+        return
+      }
+    } catch (_error) {
+      return
+    }
+
+    this.revealAllPanels()
+  }
+
+  revealAllPanels() {
+    this.panelTargets.forEach((panel) => {
+      panel.hidden = false
+    })
   }
 }
