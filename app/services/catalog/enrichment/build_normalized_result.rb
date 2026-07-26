@@ -77,11 +77,19 @@ module Catalog
       private
 
       def normalize_publication_date
-        return nil if @raw_publication_date.nil?
-        return @raw_publication_date if @raw_publication_date.is_a?(Date)
-        return @raw_publication_date.to_date if @raw_publication_date.respond_to?(:to_date)
-
-        nil
+        case @raw_publication_date
+        when nil
+          nil
+        when Date
+          @raw_publication_date
+        when DateTime, Time, ActiveSupport::TimeWithZone
+          @raw_publication_date.to_date
+        when String
+          Catalog::Providers::ParseProviderDate.call(@raw_publication_date)
+        else
+          # Reject duck-typed `to_date` (DWR-064 / OD-P8-10 exact-day boundary).
+          nil
+        end
       rescue ArgumentError, TypeError
         nil
       end
