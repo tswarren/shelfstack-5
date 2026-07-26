@@ -33,5 +33,13 @@ module Customers
 
       assert_includes result.customers.map(&:id), @customer.id
     end
+
+    test "finds customers by city" do
+      @customer.update!(city: "Waterloo")
+
+      result = Search.call(organization: @organization, query: "Waterloo")
+
+      assert_includes result.customers.map(&:id), @customer.id
+    end
   end
 end

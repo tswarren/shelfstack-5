@@ -35,6 +35,7 @@ class CustomerSearchesController < ApplicationController
       primary_phone: customer.primary_phone,
       primary_email: customer.primary_email,
       city: customer.city,
+      label: customer.picker_label,
       preferred_contact_method: customer.preferred_contact_method,
       contactable: customer.contactable?,
       active: customer.active?

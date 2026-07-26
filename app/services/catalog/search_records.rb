@@ -290,8 +290,7 @@ module Catalog
     end
 
     def customer_label(record)
-      name = record.display_name.presence || "Customer"
-      "#{name} · #{record.customer_number}"
+      record.picker_label
     end
 
     def path_label(record)

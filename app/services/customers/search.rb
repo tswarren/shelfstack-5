@@ -42,6 +42,7 @@ module Customers
           OR concat_ws(' ', first_name, last_name) ILIKE :q
           OR primary_email ILIKE :q
           OR alternate_email ILIKE :q
+          OR city ILIKE :q
           OR customer_number = :exact
           OR primary_phone = :e164
           OR alternate_phone = :e164

@@ -30,7 +30,9 @@
         <th>Name</th>
         <th>Type</th>
         <th>Customer number</th>
-        <th>Preferred contact</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>City</th>
         <th>Status</th>
       </tr>
     </thead>
@@ -40,20 +42,14 @@
           <td><%= link_to customer.display_name.presence || "(unnamed)", customer_path(customer) %></td>
           <td><%= customer.customer_type.humanize %></td>
           <td><code><%= customer.customer_number %></code></td>
-          <td>
-            <% if customer.preferred_contact_method == "phone" %>
-              <%= customer.primary_phone %>
-            <% elsif customer.preferred_contact_method == "email" %>
-              <%= customer.primary_email %>
-            <% else %>
-              —
-            <% end %>
-          </td>
+          <td><%= customer.primary_phone.presence || "—" %></td>
+          <td><%= customer.primary_email.presence || "—" %></td>
+          <td><%= customer.city.presence || "—" %></td>
           <td><%= customer.active? ? "Active" : "Inactive" %></td>
         </tr>
       <% end %>
       <% if Array(@customers).empty? %>
-        <tr><td colspan="5">No customers found.</td></tr>
+        <tr><td colspan="7">No customers found.</td></tr>
       <% end %>
     </tbody>
   </table>

@@ -38,6 +38,19 @@ class Customer < ApplicationRecord
     end
   end
 
+  # Search/picker label: identity plus phone, email, and city when present.
+  def picker_label
+    phone = primary_phone.presence || alternate_phone.presence
+    email = primary_email.presence || alternate_email.presence
+    [
+      display_name.presence || "Customer",
+      customer_number,
+      phone,
+      email,
+      city.presence
+    ].compact.join(" · ")
+  end
+
   def individual?
     customer_type == "individual"
   end

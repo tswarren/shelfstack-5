@@ -192,8 +192,9 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
                         "bare _ must not match arbitrary single characters"
   end
 
-  test "searches customers by name and labels with customer number" do
+  test "searches customers by name and labels with phone email and city" do
     customer = customers(:jordan_lee)
+    customer.update!(city: "London")
 
     results = Catalog::SearchRecords.call(
       organization: @organization, record_type: "customer", query: "Jordan"
@@ -201,7 +202,11 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
 
     match = results.find { |r| r.id == customer.id }
     assert match
-    assert_equal "Jordan Lee · #{customer.customer_number}", match.label
+    assert_equal customer.picker_label, match.label
+    assert_match customer.customer_number, match.label
+    assert_match customer.primary_phone, match.label
+    assert_match customer.primary_email, match.label
+    assert_match "London", match.label
   end
 
   test "blank customer query returns a bounded active list" do

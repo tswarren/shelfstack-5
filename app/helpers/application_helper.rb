@@ -307,8 +307,7 @@ module ApplicationHelper
   def customer_option_label(customer)
     return "—" if customer.blank?
 
-    name = customer.display_name.presence || "Customer"
-    "#{name} · #{customer.customer_number}"
+    customer.picker_label
   end
 
   def country_code_options_for_select(selected: nil)
