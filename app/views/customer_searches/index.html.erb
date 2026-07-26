@@ -3,6 +3,9 @@
 <% else %>
   <ul class="lookup-results" role="listbox">
     <% @customers.each do |customer| %>
+      <% phone = customer.primary_phone.presence || customer.alternate_phone.presence %>
+      <% email = customer.primary_email.presence || customer.alternate_email.presence %>
+      <% references = [customer.customer_number, phone, email, customer.city].compact_blank %>
       <li>
         <button type="button"
                 class="lookup-result"
@@ -10,7 +13,7 @@
                 data-customer-label="<%= customer.display_name %> (<%= customer.customer_number %>)"
                 data-action="click->customer-picker#select">
           <strong><%= customer.display_name %></strong>
-          <span class="muted"><%= customer.customer_number %></span>
+          <span class="muted"><%= references.join(" · ") %></span>
           <% unless customer.active? %>
             <span class="banner-warning">Inactive</span>
           <% end %>
