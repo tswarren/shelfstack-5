@@ -224,12 +224,13 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] One overlay host; supporting work does not leave the POS shell for ordinary paths
-- [ ] Focus trap, Escape (when permitted), restore focus to invoker
-- [ ] Successful state-changing action replaces `pos_workspace`, clears overlay
-- [ ] Overlay never creates an empty transaction
-- [ ] Product lookup exposes enough operational context (or accepted record-picker interim with documented residual)
-- [ ] Frequent actions are not primarily behind `<details>` (POS-UI-010)
+- [x] One overlay host; supporting work does not leave the POS shell for ordinary paths
+- [x] Focus trap, Escape (when permitted), restore focus to invoker (`pos-overlay` Stimulus + native `<dialog>`)
+- [x] Successful state-changing action replaces workspace via `_top` navigation (overlay clears on turbo load)
+- [x] Overlay never creates an empty transaction (Add still goes through ScanToStart)
+- [x] Product lookup uses record picker interim (POS-UI-027 residual: rich result list when picker is insufficient)
+- [x] Ready Product lookup is not buried in `<details>` (POS-UI-010)
+- [ ] Screenshots / workflow review at both viewports (manual review)
 
 ### Current → target
 

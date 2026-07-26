@@ -138,14 +138,44 @@
   display: none;
 }
 
-.pos-overlay-frame:not(:empty) {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  background: rgb(0 0 0 / 0.35);
-  padding: 1rem;
+.pos-overlay-dialog {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 0;
+  max-width: min(40rem, calc(100vw - 2rem));
+  width: 100%;
+  background: var(--surface-primary);
+  color: var(--text-primary);
+}
+
+.pos-overlay-dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+.pos-overlay-dialog__chrome {
+  display: flex;
+  flex-direction: column;
+  max-height: min(80dvh, 40rem);
+}
+
+.pos-overlay-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.pos-overlay-dialog__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.pos-overlay-dialog__body {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.85rem;
 }
 
 /* --- Shared POS components --- */

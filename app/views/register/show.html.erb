@@ -68,31 +68,11 @@
       <% end %>
 
       <div class="pos-ready-launchers" aria-label="Primary Ready actions">
-        <a class="button button-outline" href="#ready_product_lookup_details">Product lookup</a>
+        <button type="button" class="button button-outline" data-action="pos-overlay#open">
+          Product lookup
+        </button>
         <%= link_to "Start return", register_path(anchor: "ready-receipt-lookup"), class: "button button-outline" %>
       </div>
-
-      <details class="pos-panel" id="ready_product_lookup_details">
-        <summary>Product lookup</summary>
-        <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
-        <%= form_with url: register_scan_to_start_path, method: :post, class: "form" do %>
-          <%= render "shared/record_picker",
-                name: "product_variant_id",
-                id: "ready_product_variant_id",
-                record_type: "product_variant",
-                label: "Product variant",
-                required: true,
-                include_blank: false,
-                hint: "Search by name, ISBN, SKU, or identifier." %>
-          <div class="field">
-            <label class="field-label" for="ready_lookup_quantity">Qty</label>
-            <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>
-          </div>
-          <div class="form-actions">
-            <%= submit_tag "Add from Ready", class: "button button-outline" %>
-          </div>
-        <% end %>
-      </details>
 
       <div class="pos-ready-supporting" aria-label="Supporting Ready actions">
         <% if @can_view_customers %>
@@ -221,6 +201,30 @@
   <span class="button button-outline button-small" aria-disabled="true" title="No-sale workflow uses cash movement types when configured">No Sale</span>
   <%= link_to "Store Operations", root_path, class: "button button-outline button-small",
         data: { turbo_frame: "_top" } %>
+<% end %>
+
+<% content_for :pos_overlay do %>
+  <%= render layout: "pos/overlays/frame", locals: { id: "pos-product-lookup", title: "Product lookup" } do %>
+    <p class="muted">Search and deliberately Add. Exact matches are never auto-added. Does not create an empty transaction.</p>
+    <%= form_with url: register_scan_to_start_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do %>
+      <%= render "shared/record_picker",
+            name: "product_variant_id",
+            id: "ready_product_variant_id",
+            record_type: "product_variant",
+            label: "Product variant",
+            required: true,
+            include_blank: false,
+            hint: "Search by name, ISBN, SKU, or identifier." %>
+      <div class="field">
+        <label class="field-label" for="ready_lookup_quantity">Qty</label>
+        <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Add from Ready", class: "button button-primary" %>
+      </div>
+    <% end %>
+  <% end %>
 <% end %>
 
 <%= render "pos/shell",

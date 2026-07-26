@@ -1,0 +1,19 @@
+<%# locals: id:, title: %>
+<% id = local_assigns.fetch(:id) %>
+<% title = local_assigns.fetch(:title) %>
+<dialog class="pos-overlay-dialog"
+        id="<%= id %>"
+        data-pos-overlay-target="dialog"
+        data-action="cancel->pos-overlay#onCancel"
+        aria-labelledby="<%= id %>-title">
+  <div class="pos-overlay-dialog__chrome">
+    <div class="pos-overlay-dialog__header">
+      <h2 id="<%= id %>-title" class="pos-overlay-dialog__title"><%= title %></h2>
+      <button type="button" class="button button-ghost button-small"
+              data-action="pos-overlay#close">Close</button>
+    </div>
+    <div class="pos-overlay-dialog__body" data-pos-overlay-target="content">
+      <%= yield %>
+    </div>
+  </div>
+</dialog>
