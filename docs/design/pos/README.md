@@ -25,6 +25,7 @@ Review them in that order. A technically clean partial hierarchy does not compen
 | --- | --- |
 | [visual-contract.md](visual-contract.md) | Supported viewports, shell geometry, density, scrolling, hierarchy, and visual invariants |
 | [presentation-matrix.md](presentation-matrix.md) | Required Ready, Transaction, Tender, Recovery, and Receipt scenarios |
+| [wireframes.md](wireframes.md) | Annotated low-fidelity compositions for the shell, presentations, and primary overlays |
 | [component-map.md](component-map.md) | Partials, forms, Turbo boundaries, Stimulus responsibilities, and current-to-target mapping |
 | [review-scenarios.md](review-scenarios.md) | Scripted cashier walkthroughs and acceptance procedure |
 | [decisions.md](decisions.md) | Accepted, proposed, and open visual decisions |
@@ -66,6 +67,7 @@ A prototype may demonstrate composition, but it must not redefine pricing, tax, 
 ## Maintenance rules
 
 - Update the presentation matrix when a new cashier-visible state or materially different scenario is introduced.
+- Update [wireframes.md](wireframes.md) when accepted hierarchy or region placement changes.
 - Record accepted layout choices in [decisions.md](decisions.md).
 - Update the component map when Turbo boundaries or partial responsibilities change.
 - Capture deterministic screenshots for visual changes that alter hierarchy, density, scrolling, or primary actions.
