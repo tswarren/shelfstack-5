@@ -10,7 +10,10 @@
       <h2>Scan / search</h2>
       <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post,
             class: "pos-inline-form",
-            data: { "pos-register-target": "scanForm" } do |form| %>
+            data: {
+              "pos-register-target": "scanForm",
+              action: "submit->pos-register#startScanProcessing"
+            } do |form| %>
         <%= hidden_field_tag :intent, intent %>
         <div class="field">
           <label class="field-label" for="scan_query">Scan or search</label>

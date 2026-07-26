@@ -61,9 +61,31 @@ export default class extends Controller {
     })
   }
 
+  startScanProcessing(event) {
+    const form = event.target
+    const button = form?.querySelector?.('[type="submit"]')
+    if (!button) return
+
+    queueMicrotask(() => {
+      button.disabled = true
+      if (button.tagName === "INPUT") {
+        button.dataset.posOriginalValue ||= button.value
+        button.value = "Adding…"
+      }
+    })
+  }
+
   handleSubmitEnd(event) {
     const form = event.target
-    if (form && this.hasScanFormTarget && form !== this.scanFormTarget) return
+    if (!form || !this.hasScanFormTarget || form !== this.scanFormTarget) return
+
+    const button = form.querySelector('[type="submit"]')
+    if (button) {
+      button.disabled = false
+      if (button.tagName === "INPUT" && button.dataset.posOriginalValue) {
+        button.value = button.dataset.posOriginalValue
+      }
+    }
 
     this.focusScanInput()
   }
