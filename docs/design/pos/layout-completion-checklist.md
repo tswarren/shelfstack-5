@@ -62,12 +62,12 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] `layouts/pos` hosts `pos_workspace` and `pos_overlay`; no presentation business markup in the layout
-- [ ] Interactive POS does not use the normal back-office page header / large page title pattern
-- [ ] Shell CSS implements bounded height (`100dvh` grid: header · workspace · command)
-- [ ] Summary rail and command bar remain visible while primary content scrolls internally
-- [ ] Empty / stub content in regions is acceptable in L0 if geometry matches the wireframe
-- [ ] Screenshots at 1366×768 and 1024×768 attached for Ready stub and Transaction stub
+- [x] `layouts/pos` hosts `pos_workspace` and `pos_overlay`; no presentation business markup in the layout
+- [x] Interactive POS does not use the normal back-office page header / large page title pattern
+- [x] Shell CSS implements bounded height (`100dvh` grid: header · workspace · command)
+- [x] Summary rail and command bar remain visible while primary content scrolls internally
+- [x] Empty / stub content in regions is acceptable in L0 if geometry matches the wireframe
+- [ ] Screenshots at 1366×768 and 1024×768 attached for Ready stub and Transaction stub (manual review)
 
 ### Current → target (L0 focus)
 
@@ -260,16 +260,20 @@ L7  Viewport + scenario acceptance
 
 Keep PRs short-lived and reviewable as compositions, not as “more POS features.”
 
+**Process:** one PR per gate against `main` (`feat/phase-11-layout-l0` … `feat/phase-11-layout-l7`). After CI is green, pause for manual viewport review (1366×768 and 1024×768). Score **Accepted** / **Needs refinement** / **Fail** using [review-scenarios.md](review-scenarios.md). Do not open the next gate until the prior gate is Accepted (or Accepted with an explicit residual in [decisions.md](decisions.md)).
+
 | PR | Gate | Scope |
 | --- | --- | --- |
 | Layout 0 | L0 | Shell geometry, register header, `pos_workspace` / `pos_overlay`, stub regions |
 | Layout 1 | L1 | Ready composition through shell |
 | Layout 2 | L2 | Transaction entry + lines + summary + command bar |
-| Layout 3 | L3–L4 | Tender + Recovery dedicated compositions |
-| Layout 4 | L5–L6 | Receipt composition + overlay host workflows |
-| Layout 5 | L7 | Scenario walkthrough evidence + residual decisions |
+| Layout 3 | L3 | Tender dedicated composition |
+| Layout 4 | L4 | Recovery dedicated composition |
+| Layout 5 | L5 | Receipt completion composition |
+| Layout 6 | L6 | Overlay host workflows |
+| Layout 7 | L7 | Scenario walkthrough evidence + promote Proposed POS-UI decisions |
 
-Mechanics already on `main` / [#146](https://github.com/tswarren/shelfstack-5/pull/146) should not be re-litigated in these PRs unless a layout change forces a contract tweak.
+Mechanics from [#146](https://github.com/tswarren/shelfstack-5/pull/146) should not be re-litigated in these PRs unless a layout change forces a contract tweak.
 
 ## Explicit non-goals
 

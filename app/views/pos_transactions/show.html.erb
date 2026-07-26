@@ -2,15 +2,8 @@
   <% content_for :head do %>
     <meta name="turbo-cache-control" content="no-cache">
   <% end %>
-  <div class="pos-workspace pos-completed-workspace" data-controller="pos-register"
-       data-pos-register-completed-value="true">
-    <span hidden data-pos-register-target="announce">
-      <%= flash[:notice].presence || "Transaction complete. Receipt #{@pos_transaction.receipt_number}." %>
-    </span>
-    <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
-
+  <% primary = capture do %>
     <section class="pos-panel pos-completed-summary" aria-label="Completed transaction">
-      <p class="muted">State: Receipt</p>
       <h2>Transaction complete</h2>
       <p class="pos-receipt-number">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
       <p class="muted">Completed <%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></p>
@@ -23,18 +16,9 @@
         <% end %>
       <% end %>
 
-      <dl class="definition-grid pos-totals">
-        <div class="definition-item"><dt>Final total</dt><dd class="pos-balance"><%= pos_money(@net_total_cents) %></dd></div>
-        <div class="definition-item"><dt>Tendered</dt><dd><%= pos_money(@tendered_total_cents) %></dd></div>
-        <% if @change_due_cents.to_i.positive? %>
-          <div class="definition-item">
-            <dt>Change due</dt>
-            <dd class="pos-balance pos-change"><%= pos_money(@change_due_cents) %></dd>
-          </div>
-        <% end %>
-      </dl>
-
-      <%= render "void_required_tenders" %>
+      <% if @change_due_cents.to_i.positive? %>
+        <p class="pos-balance pos-change">Change due <%= pos_money(@change_due_cents) %></p>
+      <% end %>
 
       <% if @pos_tenders.any? %>
         <h3>Tenders</h3>
@@ -51,98 +35,124 @@
         </ul>
       <% end %>
 
-      <div class="form-actions">
+      <div class="form-actions pos-summary-cta">
         <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
               data: { "pos-register-target": "backToRegister" },
               autofocus: true %>
-        <%= link_to "Print receipt", customer_receipt_pos_transaction_path(@pos_transaction),
-              class: "button button-outline button-large", target: "_blank", rel: "noopener" %>
-        <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
-              class: "button button-ghost button-large", target: "_blank", rel: "noopener" %>
-        <% returnable = @pos_transaction.pos_line_items
-             .where(status: "completed", direction: "sale")
-             .where.not(line_kind: "stored_value")
-             .any? { |line| line.remaining_returnable_quantity.positive? } %>
-        <% if returnable && Current.user.can?("pos.return.create", store: Current.store) %>
-          <%= button_to "Start linked return", start_linked_return_pos_transaction_path(@pos_transaction),
-                method: :post, class: "button button-outline button-large" %>
-        <% end %>
-        <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
-          <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
-                class: "button button-ghost button-large" %>
-        <% end %>
       </div>
-      <p class="field-hint">Press Enter to start the next transaction from Ready. Print uses the browser print path.</p>
+      <p class="field-hint">Press Enter to start the next transaction from Ready.</p>
     </section>
+  <% end %>
 
-    <details class="pos-panel">
-      <summary>Transaction detail</summary>
+  <% commands = capture do %>
+    <%= link_to "Print", customer_receipt_pos_transaction_path(@pos_transaction),
+          class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+    <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
+          class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+    <details class="pos-panel" style="display: inline-block; margin: 0;">
+      <summary class="button button-ghost button-small">View detail</summary>
       <%= render "line_items" %>
       <%= render "totals" %>
     </details>
-  </div>
+    <% returnable = @pos_transaction.pos_line_items
+         .where(status: "completed", direction: "sale")
+         .where.not(line_kind: "stored_value")
+         .any? { |line| line.remaining_returnable_quantity.positive? } %>
+    <% if returnable && Current.user.can?("pos.return.create", store: Current.store) %>
+      <%= button_to "Start linked return", start_linked_return_pos_transaction_path(@pos_transaction),
+            method: :post, class: "button button-outline button-small" %>
+    <% end %>
+    <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
+      <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
+            class: "button button-ghost button-small" %>
+    <% end %>
+  <% end %>
+
+  <%= render "pos/shell",
+        presentation: "receipt",
+        presentation_label: "Receipt",
+        session: pos_shell_session,
+        primary: primary,
+        summary: "".html_safe,
+        commands: commands,
+        hide_summary: true %>
 <% else %>
-  <% tender_mode = @presentation_state == "tender" || @presentation_state == "recovery" %>
   <% content_for :head do %>
     <meta name="turbo-cache-control" content="no-cache">
   <% end %>
-  <%= render "session_context" %>
-  <%= render "transaction_status" %>
-  <%= render "recall_summary" %>
+  <% tender_mode = @presentation_state == "tender" || @presentation_state == "recovery" %>
+  <% recovery_mode = @presentation_state == "recovery" || @completion_outcome == "failed" %>
 
-  <div class="pos-workspace" data-controller="pos-register"
-       data-pos-register-scan-outcome-value="<%= @scan_outcome %>"
-       data-pos-register-focus-target-value="<%= @focus_target %>">
-    <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
-    <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
-
-    <div class="pos-workspace-banner">
-      <p class="muted" role="status">
-        State: <strong><%= @workspace.label %></strong>
-        · Intent: <strong><%= (@entry_intent || "sale").humanize %></strong>
-      </p>
-
-      <% if @presentation_state == "recovery" || @completion_outcome == "failed" %>
-        <%= render "recovery_panel" %>
-      <% end %>
-    </div>
-
-    <section class="pos-sale-panel" aria-label="Sale" <% if tender_mode %>hidden<% end %>>
-      <%= render "entry_intents" %>
-      <%= render "scan_form" %>
-      <%= render "line_items" %>
-      <%= render "selected_line_actions" %>
-      <%= render "secondary_actions" %>
-    </section>
-
-    <aside class="pos-payment-panel" aria-label="Payment">
-      <%= render "customer_panel" %>
-      <%= render "totals" %>
-      <%= render "readiness_summary" %>
-      <%= render "primary_cta" %>
-      <% if tender_mode || !@pos_transaction.editable? || @pos_tenders.any? %>
+  <% primary = capture do %>
+    <% if recovery_mode %>
+      <%= render "recovery_panel" %>
+      <%= render "void_required_tenders" %>
+    <% elsif tender_mode %>
+      <section class="pos-panel" aria-label="Payment">
+        <h2>Payment</h2>
+        <p class="pos-balance">
+          <% if @balance_due_cents.to_i.positive? %>
+            Amount due <%= pos_money(@balance_due_cents) %>
+          <% elsif @balance_due_cents.to_i.negative? %>
+            Refund due <%= pos_money(-@balance_due_cents) %>
+          <% else %>
+            Settled
+          <% end %>
+        </p>
         <%= render "tenders" %>
         <%= render "tender_entry" %>
-      <% else %>
-        <details class="pos-panel">
-          <summary>Tender entry</summary>
-          <%= render "tenders" %>
-          <%= render "tender_entry" %>
-        </details>
+      </section>
+    <% else %>
+      <section class="pos-sale-panel" aria-label="Transaction">
+        <%= render "entry_intents" %>
+        <%= render "scan_form" %>
+        <div class="pos-lines">
+          <%= render "line_items" %>
+        </div>
+      </section>
+    <% end %>
+  <% end %>
+
+  <% summary = capture do %>
+    <%= render "customer_panel" %>
+    <%= render "totals" %>
+    <%= render "readiness_summary" %>
+    <div class="pos-summary-cta">
+      <%= render "primary_cta" %>
+    </div>
+    <% unless tender_mode || recovery_mode %>
+      <details class="pos-panel">
+        <summary>Secondary</summary>
+        <%= render "secondary_actions" %>
+      </details>
+    <% end %>
+  <% end %>
+
+  <% commands = capture do %>
+    <% if recovery_mode %>
+      <span class="muted">Resolve Recovery in the primary workspace.</span>
+    <% elsif tender_mode %>
+      <% if @pos_transaction.editable? && !@workspace.forced_tender %>
+        <%= link_to "Return to Transaction",
+              pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
+              class: "button button-outline button-small" %>
+      <% elsif @workspace.forced_tender %>
+        <span class="muted" role="status">Return to Transaction is blocked while tender activity is unresolved.</span>
       <% end %>
       <%= render "transaction_actions" %>
-      <% if tender_mode && @pos_transaction.editable? && !@workspace.forced_tender %>
-        <p>
-          <%= link_to "Return to Transaction",
-                pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-                class: "button button-ghost button-small" %>
-        </p>
-        <p class="field-hint">Commercial editing reopens only while settlement state is safe.</p>
-      <% elsif tender_mode && @workspace.forced_tender %>
-        <p class="muted" role="status">Return to Transaction is blocked while tender activity is unresolved.</p>
-      <% end %>
-    </aside>
-  </div>
+    <% else %>
+      <%= render "selected_line_actions" %>
+      <%= render "transaction_actions" %>
+      <%= link_to "Back to register", register_path, class: "button button-ghost button-small" %>
+    <% end %>
+  <% end %>
 
-  <p><%= link_to "Back to register", register_path, class: "button button-ghost button-small" %></p>
+  <%= render "pos/shell",
+        presentation: pos_shell_presentation,
+        presentation_label: pos_shell_presentation_label,
+        session: pos_shell_session,
+        primary: primary,
+        summary: summary,
+        commands: commands,
+        hide_commands: recovery_mode %>
 <% end %>

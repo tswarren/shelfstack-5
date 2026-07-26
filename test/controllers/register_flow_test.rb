@@ -11,7 +11,7 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     @variant = product_variants(:sample_book_standard)
   end
 
-  test "register day and session details link to X reports with live totals" do
+  test "register Ready omits day session tables and offers Store Operations" do
     post session_path, params: { username: "admin", password: "password123" }
     post business_days_path, params: { business_day: { reporting_date: Date.current } }
     business_day = BusinessDay.order(:id).last
@@ -23,14 +23,13 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
         opening_cash_cents: 0
       }
     }
-    session = PosSession.order(:id).last
 
     get register_path
     assert_response :success
-    assert_select "a[href=?]", business_day_x_report_business_day_path(business_day), text: "Day X"
-    assert_select "a[href=?]", session_x_report_pos_session_path(session), text: "Session X"
-    assert_select "a[href=?]", close_form_business_day_path(business_day), text: "Close business day"
-    assert_match(/Sales, tender, and cash-variance totals live on/, response.body)
+    assert_select ".pos-shell"
+    assert_select "a[href=?]", root_path, text: "Store Operations"
+    assert_select "a", text: "Day X", count: 0
+    assert_select "a", text: "Close business day", count: 0
     refute_match(/Net sales/, response.body)
     refute_match(/cash variance/i, response.body)
   end
@@ -249,8 +248,8 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
 
     get tender_pos_transaction_path(transaction)
     assert_response :success
-    assert_match(/State:.*Tender/m, response.body)
-    assert_select "aside[aria-label='Payment']"
+    assert_select "[data-pos-presentation='tender']"
+    assert_select "#pos-primary [aria-label='Payment']"
   end
 
   test "completed next transaction link does not create a record" do

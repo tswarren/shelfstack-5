@@ -29,7 +29,8 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_select "body.layout-pos"
-    assert_select ".workspace-landing"
+    assert_select ".pos-shell"
+    assert_select ".pos-register-header"
   end
 
   test "a cash tender posts integer cents exactly as the currency mask submits them" do
@@ -72,12 +73,12 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_match(/amount/i, flash[:alert])
   end
 
-  test "the transaction show page uses the two-panel workspace" do
+  test "the transaction show page uses the shell primary and summary regions" do
     get pos_transaction_path(@transaction)
 
     assert_response :success
-    assert_select ".pos-workspace .pos-sale-panel"
-    assert_select ".pos-workspace .pos-payment-panel"
+    assert_select ".pos-shell #pos-primary .pos-sale-panel"
+    assert_select ".pos-shell #pos-summary"
     assert_select "[data-controller='pos-register']"
     assert_select "input.input-currency"
   end
@@ -134,17 +135,15 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_redirected_to new_session_path
   end
 
-  test "register shows one primary CTA and POS header links to Main workspace" do
+  test "register shows scan-to-start and Store Operations without New transaction" do
     post suspend_pos_transaction_path(@transaction)
 
     get register_path
     assert_response :success
-    assert_select ".workspace-primary"
-    assert_select ".workspace-primary input.button-primary[value=?]", "Scan to start"
-    assert_select ".workspace-primary", text: /empty transaction is never opened/i
-    assert_select ".workspace-primary .button-outline", text: "New transaction", count: 0
-    assert_select "a", text: "Main workspace"
-    assert_select "a[href=?]", root_path, text: "Main workspace"
+    assert_select "#pos-primary input.button-primary[value=?]", "Scan to start"
+    assert_select "#pos-primary", text: /empty transaction is never opened/i
+    assert_select "a", text: "New transaction", count: 0
+    assert_select "a[href=?]", root_path, text: "Store Operations"
   end
 
   test "open-ring fields appear in department price quantity description order" do
@@ -201,7 +200,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select ".pos-completed-summary"
     assert_match "Change due", response.body
     assert_select "a", text: "Next transaction"
-    assert_select "a", text: "Print receipt"
+    assert_match(/Print/i, response.body)
   end
 
   test "receipt lookup loads returnable lines for selection" do
@@ -429,10 +428,11 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     get pos_transaction_path(@transaction)
     assert_response :success
-    assert_select ".pos-completed-workspace"
+    assert_select ".pos-shell[data-pos-presentation='receipt']"
+    assert_select ".pos-completed-summary"
     # Expanded transaction detail must retain historical discount/tax (not $0.00).
     body = response.body
-    detail_start = body.index("Transaction detail")
+    detail_start = body.index("View detail")
     assert detail_start, "expected transaction detail section"
     detail = body[detail_start..]
     assert_includes detail, format("$%.2f", discount_cents / 100.0)

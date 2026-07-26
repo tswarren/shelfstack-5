@@ -1,11 +1,13 @@
 # Current Phase
 
 **Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** In progress — combined delivery PR [#146](https://github.com/tswarren/shelfstack-5/pull/146) (Step 0 + Gates 11A–11E; supersedes #138–#145)  
+**Status:** In progress — server mechanics + design package merged in [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout completion via Gates L0–L7  
 
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
+**Layout gates:** [../design/pos/layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)  
+**Visual decisions:** [../design/pos/decisions.md](../design/pos/decisions.md)  
 **Epic:** [#130](https://github.com/tswarren/shelfstack-5/issues/130)  
-**Gates:** [#131](https://github.com/tswarren/shelfstack-5/issues/131) (11A) · [#132](https://github.com/tswarren/shelfstack-5/issues/132) (11B) · [#133](https://github.com/tswarren/shelfstack-5/issues/133) (11C) · [#134](https://github.com/tswarren/shelfstack-5/issues/134) (11D) · [#135](https://github.com/tswarren/shelfstack-5/issues/135) (11E)
+**Server gates:** [#131](https://github.com/tswarren/shelfstack-5/issues/131) (11A) · [#132](https://github.com/tswarren/shelfstack-5/issues/132) (11B) · [#133](https://github.com/tswarren/shelfstack-5/issues/133) (11C) · [#134](https://github.com/tswarren/shelfstack-5/issues/134) (11D) · [#135](https://github.com/tswarren/shelfstack-5/issues/135) (11E)
 
 **Last completed delivery phase:** Phase 10 — Product record and form workflow refinement (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))
 
@@ -21,8 +23,8 @@
 
 ## Immediate next work
 
-1. Start Gate 11A ([#131](https://github.com/tswarren/shelfstack-5/issues/131)) — stable register foundation (shell, Ready, core Transaction).
-2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006.
+1. Layout Gate L0 — shared POS shell (`feat/phase-11-layout-l0`); then L1–L7 one PR each with manual viewport review between gates ([layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)).
+2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
 3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
 4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.
 5. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.

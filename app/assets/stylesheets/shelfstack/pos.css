@@ -1,9 +1,154 @@
-/* POS workspace — see docs/design/pos-register-ui.md */
+/* POS workspace — see docs/design/pos/visual-contract.md and docs/design/pos/decisions.md */
+
+.layout-pos {
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  background: var(--surface-secondary, #f6f5f2);
+}
+
+.layout-pos .pos-main {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+}
 
 .layout-pos .pos-presentation-status {
   display: inline-flex;
   align-items: center;
 }
+
+.layout-pos[data-pos-presentation="recovery"] {
+  --pos-presentation-accent: var(--danger-border, #b42318);
+}
+
+/* --- Shell geometry (POS-UI-021 / 022 / 023) --- */
+
+.pos-workspace-frame {
+  display: block;
+  min-height: 100dvh;
+}
+
+.pos-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.pos-register-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3rem; /* ~48px */
+  max-height: 4rem; /* ~64px */
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-primary);
+}
+
+.pos-register-header__brand {
+  flex: 0 0 auto;
+}
+
+.pos-register-header__brand-link {
+  font-weight: 750;
+  text-decoration: none;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.pos-register-header__context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.85rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.pos-register-header__item {
+  white-space: nowrap;
+}
+
+.pos-register-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.pos-shell__workspace {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(20rem, 26vw, 22.5rem);
+  gap: 0;
+}
+
+.pos-shell--no-summary .pos-shell__workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pos-shell__primary {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pos-shell__summary {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem 0.85rem;
+  border-left: 1px solid var(--border-default);
+  background: var(--surface-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pos-shell__commands {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 3.5rem; /* ~56px */
+  max-height: 4.5rem; /* ~72px when single row */
+  padding: 0.45rem 0.75rem;
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-primary);
+}
+
+.pos-shell__commands .pos-commands-primary {
+  margin-left: auto;
+}
+
+.pos-lines {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.pos-overlay-frame:empty {
+  display: none;
+}
+
+.pos-overlay-frame:not(:empty) {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 0.35);
+  padding: 1rem;
+}
+
+/* --- Shared POS components --- */
 
 .layout-pos-receipt {
   background: var(--surface-secondary, #f6f5f2);
@@ -42,19 +187,9 @@
   margin: 1rem 0;
 }
 
-.layout-pos[data-pos-presentation="recovery"] .pos-main {
-  --pos-presentation-accent: var(--danger-border, #b42318);
-}
-
-.layout-pos .pos-main {
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 0.75rem 1rem 1.5rem;
-}
-
 .pos-panel {
-  margin: 0 0 1rem;
-  padding: 0.85rem 1rem;
+  margin: 0;
+  padding: 0.75rem 0.85rem;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   background: var(--surface-primary);
@@ -64,7 +199,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .pos-inline-form {
@@ -76,8 +211,8 @@
 }
 
 .pos-totals {
-  margin: 0.5rem 0 1rem;
-  padding: 0.5rem 0;
+  margin: 0.25rem 0;
+  padding: 0.25rem 0;
 }
 
 .pos-totals p {
@@ -88,41 +223,6 @@
   background: var(--surface-warning);
 }
 
-.pos-workspace {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.9fr);
-  align-items: start;
-}
-
-/* Banner, live region, and announce are not column cells — only sale | payment. */
-.pos-workspace > .pos-workspace-banner,
-.pos-workspace > .pos-live-region,
-.pos-workspace > [hidden],
-.pos-workspace > [data-pos-register-target="announce"] {
-  grid-column: 1 / -1;
-}
-
-.pos-workspace-banner {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.pos-workspace-banner > p {
-  margin: 0;
-}
-
-.pos-sale-panel,
-.pos-payment-panel {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.pos-payment-panel {
-  position: sticky;
-  top: calc(var(--header-height) + 0.75rem);
-}
-
 .pos-balance {
   font-size: 1.35rem;
   font-weight: 750;
@@ -131,13 +231,6 @@
 
 .pos-change {
   color: var(--success-text, var(--text-primary));
-}
-
-.workspace-primary {
-  margin-bottom: 1rem;
-  padding: 1.25rem 1.35rem;
-  border-width: 2px;
-  border-color: var(--brand-primary, var(--border-strong));
 }
 
 .button-large {
@@ -240,6 +333,25 @@
   border-width: 2px;
 }
 
+.pos-summary-cta {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.pos-ready-launchers,
+.pos-ready-supporting {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pos-entry-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -252,12 +364,38 @@
   border: 0;
 }
 
-@media (max-width: 960px) {
-  .pos-workspace {
-    grid-template-columns: 1fr;
+/* Legacy two-column workspace still used inside primary during transition */
+.pos-workspace {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.9fr);
+  align-items: start;
+}
+
+.pos-workspace > .pos-workspace-banner,
+.pos-workspace > .pos-live-region,
+.pos-workspace > [hidden],
+.pos-workspace > [data-pos-register-target="announce"] {
+  grid-column: 1 / -1;
+}
+
+.pos-sale-panel,
+.pos-payment-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (max-width: 1023px) {
+  .pos-shell__workspace {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .pos-payment-panel {
-    position: static;
+  .pos-shell__summary {
+    border-left: 0;
+    border-top: 1px solid var(--border-default);
+  }
+
+  .pos-workspace {
+    grid-template-columns: 1fr;
   }
 }
