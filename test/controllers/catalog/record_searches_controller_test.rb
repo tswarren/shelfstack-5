@@ -83,13 +83,21 @@ class Catalog::RecordSearchesControllerTest < ActionDispatch::IntegrationTest
     assert_response :forbidden
   end
 
-  test "customer phone search matches formatted national numbers" do
+  test "customer phone search matches formatted numbers and shows identifying references" do
+    customer = customers(:jordan_lee)
+    customer.update!(city: "Waterloo")
+
     get catalog_record_searches_path,
         params: { type: "customer", q: "(519) 555-0123" }, as: :json
     assert_response :success
 
     body = JSON.parse(response.body)
-    assert body["results"].any? { |r| r["id"] == customers(:jordan_lee).id }
+    row = body["results"].find { |result| result["id"] == customer.id }
+    assert row
+    assert_includes row["label"], customer.customer_number
+    assert_includes row["label"], customer.primary_phone
+    assert_includes row["label"], customer.primary_email
+    assert_includes row["label"], "Waterloo"
   end
 
   test "isolates results to current organization" do
