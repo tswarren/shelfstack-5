@@ -19,7 +19,9 @@ module Catalog
         include_inactive: ActiveModel::Type::Boolean.new.cast(params[:include_inactive]),
         product_id: params[:product_id].presence,
         default_phone_country: Current.store&.country_code,
-        labeler: ->(record, type) { helpers.record_picker_label(record, type) }
+        labeler: lambda { |record, type|
+          type.to_s == "customer" ? customer_search_label(record) : helpers.record_picker_label(record, type)
+        }
       )
 
       render json: {
@@ -32,6 +34,16 @@ module Catalog
           }
         }
       }
+    end
+
+    private
+
+    def customer_search_label(customer)
+      phone = customer.primary_phone.presence || customer.alternate_phone.presence
+      email = customer.primary_email.presence || customer.alternate_email.presence
+      references = [ customer.customer_number, phone, email, customer.city ].compact_blank
+
+      ([ customer.display_name.presence || "Customer" ] + references).join(" · ")
     end
   end
 end
