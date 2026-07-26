@@ -52,17 +52,17 @@ Ready, Transaction, Tender, and Recovery use this high-level composition:
 └──────────────────────────────────────────────────────────────┘
 ```
 
-The implementation may vary the column ratio by presentation, but the regions must be deliberate and recognizable.
+Regions must be deliberate and recognizable. Summary-rail location is stable across Ready, Transaction, Tender, and Recovery; presentation differences are expressed in the primary region (see [decisions.md](decisions.md) POS-UI-022 / POS-UI-030).
 
 ### Target geometry
 
-These values are initial design targets, not immutable pixel specifications:
+These values are design targets confirmed via [decisions.md](decisions.md):
 
 | Region | Target |
 | --- | --- |
-| Register header | Approximately 48–64px high |
-| Summary rail | Approximately 320–380px, or 28–32% of usable width |
-| Command bar | Approximately 52–72px high |
+| Register header | Approximately 48–56px at 1366 × 768; at most 64px at 1024 × 768 |
+| Summary rail | Approximately 320px at 1024 × 768; 340–360px at 1366 × 768; 368px hard cap |
+| Command bar | Approximately 56–72px high |
 | Primary workspace | Consumes remaining width and height |
 | Line/results region | `min-height: 0`; internal overflow when needed |
 
@@ -94,7 +94,7 @@ The primary workspace contains the cashier’s immediate task.
 
 | Presentation | Primary workspace |
 | --- | --- |
-| Ready | Scan-to-start and visible work intents |
+| Ready | Scan-to-start plus tiered Ready launchers (not Transaction entry intents) |
 | Transaction | Entry bar, transaction lines, selected-line context |
 | Tender | Tender method, amount entry, recorded tenders |
 | Recovery | Incident explanation, verification steps, allowed resolution |
@@ -104,7 +104,7 @@ The primary workspace must not become a collection of unrelated bordered cards. 
 
 ## Summary rail
 
-The summary rail provides persistent context and the next authoritative progression action.
+The summary rail provides persistent context. When present, it also hosts the state-aware progression CTA at the bottom of the rail (POS-UI-023).
 
 Typical contents:
 
@@ -112,34 +112,35 @@ Typical contents:
 - transaction totals;
 - amount due or refundable;
 - readiness or settlement state;
-- dynamic primary action;
+- dynamic progression CTA (Transaction and Tender);
 - compact presentation-specific context.
 
 The rail must remain visible while transaction lines or lookup results scroll.
 
 Tender and Recovery must have intentionally composed primary regions. They must not be produced solely by hiding the Transaction primary column and allowing the former summary rail to become the whole screen.
 
+Recovery’s required resolution lives in the primary Recovery workspace. Receipt’s `Next transaction` lives in the Receipt completion area. Neither duplicates that control in the command bar.
+
 ## Command bar
 
-The command bar contains contextual actions that should remain predictably located.
+The command bar contains contextual and secondary actions that should remain predictably located. It must not duplicate the progression CTA.
 
 Examples:
 
-- selected-line commands;
+- selected-line commands (Quantity, Remove, Discount, Price override);
 - Suspend;
 - Cancel transaction;
 - Return to Transaction when safe;
-- Complete Transaction;
-- Recovery resolution controls;
-- Next Transaction and Print Receipt.
+- Print / Reprint / View detail on Receipt;
+- overflow (More) for uncommon actions.
 
 The command bar must distinguish:
 
-- dominant progression action;
 - ordinary contextual actions;
-- destructive or exceptional actions.
+- destructive or exceptional actions;
+- overflow actions.
 
-Destructive and infrequent actions must not visually compete with the normal next step.
+Destructive and infrequent actions must not visually compete with the normal next step. On Recovery, the command bar is normally absent or extremely limited.
 
 ## Scrolling contract
 
@@ -210,13 +211,31 @@ Avoid:
 
 In Ready and Transaction, scan or exact identifier entry is the dominant control and default focus target.
 
-Visible work intents:
+Ready launchers are not the same hierarchy as Transaction entry intents (POS-UI-033).
+
+**Ready — primary work area:**
 
 ```text
-Sale | Return | Stored value | Open ring
+Scan / exact identifier                         [ Scan to start ]
+[ Product lookup ] [ Start return ]
 ```
 
-Receipt lookup is a Ready utility, not a transaction entry intent.
+**Ready — supporting customer-work actions:**
+
+```text
+[ Customer ] [ Receipt lookup ] [ Open Ring ]
+[ Stored Value ] [ Pickup / Product Request ]
+```
+
+Do not show a Ready-level Sale intent. Scanning already starts a sale by default.
+
+**Transaction — entry intents** (reload-safe; interpret the next line-entry operation):
+
+```text
+Sale | Return | Stored Value | Open Ring
+```
+
+Receipt lookup is a Ready utility, not a Transaction entry intent.
 
 Product lookup, Customer lookup, Receipt lookup, linked-return selection, Stored Value lookup, and compact editors should open as bounded POS-native overlays or workspace panels.
 
@@ -294,35 +313,37 @@ Required:
 ### Ready
 
 - Scan-to-start is dominant.
-- Entry intents are visible.
-- Staged Customer and suspended work are discoverable without dominating the screen.
-- Session operations are secondary.
+- Tiered Ready launchers are visible (no Ready-level Sale intent).
+- Staged Customer and suspended-work preview are discoverable without dominating the screen.
+- Cash Movement, No Sale, and Store Operations are secondary; Close Session lives inside Store Operations.
 - Detailed day/session tables do not appear in the ordinary Ready flow.
 
 ### Transaction
 
 - Lines dominate the primary region.
-- Totals and progression remain visible.
-- Selected-line actions have a stable location.
+- Totals and progression CTA remain visible in the summary rail.
+- Selected-line actions have a stable location in the command bar.
 - Tender-entry forms are not expanded in Transaction.
+- At least eight ordinary lines are fully visible at 1366 × 768; six at 1024 × 768 (POS-UI-031).
 
 ### Tender
 
 - Tender controls occupy the primary region.
 - Recorded tenders and remaining balance are easy to compare.
 - Commercial lines are read-only and subordinate.
-- Complete Transaction remains visible when settled.
+- Complete Transaction (or Add payment / Add refund) remains visible in the summary rail when applicable and is not duplicated in the command bar.
 
 ### Recovery
 
 - The blocker occupies the primary region.
-- Allowed actions are explicit.
+- Allowed actions are explicit and live with the Recovery instructions.
 - Unsafe actions are absent, not merely visually muted.
 - Normal tender-entry controls do not appear.
 
 ### Receipt
 
-- Completion, receipt number, change, Print, and Next Transaction dominate.
+- Completion, receipt number, change, and Next Transaction dominate the completion area.
+- Print, Reprint, and View detail are secondary (command bar or completion tools).
 - Returns, post-void, and detailed history remain secondary.
 - The browser-print receipt uses its separate print layout.
 

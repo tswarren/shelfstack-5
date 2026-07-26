@@ -15,12 +15,13 @@ Persistent cashier workspace with stable regions:
 
 ```text
 Header: store · device · session · cashier · presentation status
-Entry:  scan / identifier / search          [ current intent ]
-Lines:  transaction lines (selection)    | Summary: totals + readiness
-Action: selected-line or transaction actions     [ dynamic primary CTA ]
+Entry:  scan / identifier / search          [ Transaction intents when open ]
+Lines:  transaction lines (selection)    | Summary: totals + readiness + progression CTA
+Action: selected-line / secondary actions (command bar; no duplicate progression CTA)
 ```
 
 - Scan entry is primary; restore focus per the focus contract below.
+- When a summary rail is present, the state-aware progression CTA lives at the bottom of that rail (see [pos/decisions.md](pos/decisions.md) POS-UI-023).
 - Product / Product Variant / Inventory Unit remain distinguishable in resolution UI.
 - Labels may be cashier-friendly (for example “Register 2”) while the system records POS device and drawer separately.
 - Day/session open forms are **pre-Ready operational** states, not POS transaction presentation states.
@@ -71,11 +72,13 @@ After pending or authorized tenders exist, reload **must** force Tender (or Reco
 
 ### Entry intents (not transaction types)
 
-Within **Transaction**:
+Within **Transaction** only:
 
 ```text
 Sale (default) | Return | Stored value | Open ring
 ```
+
+Ready uses a separate launcher hierarchy (scan-to-start, Product lookup, Start return, supporting customer-work actions). Ready launchers are not Transaction entry intents, and Ready does not show a Sale intent control ([pos/decisions.md](pos/decisions.md) POS-UI-033).
 
 Receipt lookup from Ready is a **register utility**, not an entry intent.
 

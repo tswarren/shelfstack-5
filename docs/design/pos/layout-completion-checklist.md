@@ -87,9 +87,9 @@ L7  Viewport + scenario acceptance
 
 | Region | Must show | Must not show |
 | --- | --- | --- |
-| Primary | Scan-to-start (focus), visible work intents, lookup launchers | Empty “New transaction”; expanded day/session tables |
-| Summary | Staged Customer, suspended work count/launcher, compact session | Sensitive cash / reconciliation totals |
-| Command | Cash Movement, No Sale, session controls, Store Operations | Primary sale entry buried in `<details>` |
+| Primary | Scan-to-start (focus); Product lookup + Start return; supporting customer-work strip | Empty “New transaction”; Ready-level Sale; expanded day/session tables |
+| Summary | Staged Customer, suspended preview (≤3 + View all), compact session | Sensitive cash / reconciliation totals |
+| Command | Cash Movement, No Sale, Store Operations | Close Session / day tables on Ready; frequent actions in `<details>` |
 
 ### Exit criteria
 

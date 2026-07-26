@@ -27,7 +27,7 @@ For each scenario, verify:
 
 | ID | Scenario | Dominant task | Required visible content | Primary action / focus | Must not dominate |
 | --- | --- | --- | --- | --- | --- |
-| R-01 | Normal Ready | Start customer work | Scan field, quantity, visible intents, staged Customer summary, session identity | Scan field | Day/session tables, cash history |
+| R-01 | Normal Ready | Start customer work | Scan field, quantity, tiered Ready launchers (Product lookup, Start return, supporting strip), staged Customer summary, session identity | Scan field | Day/session tables, cash history, Ready-level Sale intent |
 | R-02 | Staged Customer | Start work for known Customer | Scan field, Customer identity, clear/change control | Scan field | Full Customer form |
 | R-03 | Suspended transactions | Start or recall work | Scan field, compact suspended-work list or launcher | Scan field; Recall is secondary | Full transaction history |
 | R-04 | Active transaction exists | Resume current work | Transaction identity and Resume | Resume Transaction | New empty transaction action |
@@ -37,24 +37,25 @@ For each scenario, verify:
 | R-08 | Ambiguous scan | Correct identifier | Preserved query, clear explanation, Product lookup action | Scan field or Lookup | Empty transaction |
 | R-09 | Unresolved scan | Retry or search | Preserved query and non-destructive error | Scan field | Generic exception text |
 
-### Ready utilities
+### Ready launchers versus Transaction entry intents
 
-These launch POS-native overlays or bounded utilities:
+Ready launchers and Transaction entry intents are different hierarchies (POS-UI-033).
 
-- Product lookup;
-- Customer lookup and compact creation;
-- Receipt lookup;
-- Product Request or pickup lookup;
-- Stored Value issue/reload;
-- Open Ring;
-- Return;
-- Cash Movement;
-- No Sale;
-- Session X;
-- Close Session;
-- Store Operations.
+**Ready — primary work area:** scan-to-start, Product lookup, Start return.
 
-Receipt lookup is a Ready utility, not a transaction entry intent.
+**Ready — supporting customer-work actions:** Customer lookup/staging, Receipt lookup, Open Ring, Stored Value issue/reload, Product Request or pickup lookup.
+
+**Ready — register utilities (command area):** Cash Movement, No Sale, Store Operations.
+
+Close Session, Session X detail, day close, and cash history live inside Store Operations (POS-UI-037), reached as `Ready → Store Operations → Close Session` with no extra navigation layer.
+
+Do not show a Ready-level Sale intent. Receipt lookup is a Ready utility, not a Transaction entry intent.
+
+**Transaction — entry intents** (only after a transaction exists):
+
+```text
+Sale | Return | Stored Value | Open Ring
+```
 
 ## Transaction
 
@@ -64,7 +65,7 @@ Receipt lookup is a Ready utility, not a transaction entry intent.
 | T-02 | One-line sale | Continue scanning | Entry bar, line, totals, Customer, readiness | Scan field | Operational day tables |
 | T-03 | Eight-line sale | Continue scanning or select line | Eight visible lines where practical, totals, CTA | Scan field | Document scroll |
 | T-04 | Twenty-line sale | Work within long transaction | Internally scrolling line region, persistent totals/CTA | Scan field or selected row | Summary scrolling away |
-| T-05 | Selected line | Edit selected merchandise line | Selected state, quantity/remove/discount/override actions | First selected-line action when requested | Full action set on every row |
+| T-05 | Selected line | Edit selected merchandise line | Selected state; Quantity, Remove, Discount, Price override; More for uncommon actions | First selected-line action when requested | Full action set on every row; generic Override label |
 | T-06 | Customer attached | Continue transaction | Compact Customer identity and change/remove action | Scan field | Full Customer record page |
 | T-07 | Individually tracked item | Resolve exact unit | Unit identity/status and required unit resolution | Affected line or overlay | Silent unresolved blocker |
 | T-08 | Warning present | Continue with awareness | Persistent warning associated with source | Scan field unless action opened | Warning modal that blocks progress |

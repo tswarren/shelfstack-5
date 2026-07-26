@@ -38,34 +38,37 @@ They are intentionally low fidelity. Typography, color, and exact spacing remain
 
 ## Ready
 
+Ready launchers are not Transaction entry intents (POS-UI-033). There is no Ready-level Sale control.
+
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ SHELFSTACK POS · Main Store · Register 2 · Alex · Session 104 · READY        │
 ├───────────────────────────────────────────────────┬──────────────────────────┤
 │ START CUSTOMER WORK                               │ NEXT TRANSACTION CONTEXT │
 │                                                   │                          │
-│ [ Sale ] [ Return ] [ Stored Value ] [ Open Ring ]│ Customer                │
-│                                                   │  No customer staged      │
-│ Scan / ISBN / SKU                                 │  [Find customer]         │
-│ ┌────────────────────────────────────┐ [Qty] [Add] │                          │
-│ │                                    │             │ Suspended work          │
-│ └────────────────────────────────────┘             │  2 transactions [View]  │
-│                                                   │                          │
-│ [Product lookup] [Receipt lookup] [Pickup lookup] │ Session                  │
+│ Scan / ISBN / SKU                                 │ Customer                │
+│ ┌────────────────────────────────────┐ [Qty]      │  No customer staged      │
+│ │                                    │ [Scan to   │                          │
+│ └────────────────────────────────────┘  start]    │ Suspended work          │
+│                                                   │  Txn … · 2 lines [Recall]│
+│ [ Product lookup ] [ Start return ]               │  Txn … · Pat   [Recall]  │
+│                                                   │  View all (N)            │
+│ [ Customer ] [ Receipt lookup ] [ Open Ring ]     │                          │
+│ [ Stored Value ] [ Pickup / Product Request ]     │ Session                  │
 │                                                   │  Drawer open             │
 │ Recent status/warning area                        │  Cash enabled            │
 ├───────────────────────────────────────────────────┴──────────────────────────┤
-│ [Cash Movement] [No Sale] [Session X] [Close Session]   [Store Operations] │
+│ [Cash Movement] [No Sale]                              [Store Operations]   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Ready annotations
 
 1. Scan-to-start is the dominant control and initial focus.
-2. Work intents are visible without opening disclosures.
-3. Customer, suspended work, and session context remain compact.
-4. Product, Receipt, and pickup lookups launch overlays.
-5. Detailed business-day/session tables and cash history are not part of this screen.
+2. Primary launchers are Product lookup and Start return; supporting customer-work actions remain visible without disclosures.
+3. Customer, suspended-work preview (up to three + View all), and session context remain compact in the summary rail.
+4. Lookups launch overlays.
+5. Detailed business-day/session tables, Close Session, and cash history are not part of ordinary Ready (POS-UI-037: Close Session is first-level inside Store Operations).
 6. Pre-Ready prerequisites reuse the shell but replace the start area with one clear operational task.
 
 ## Transaction
@@ -89,19 +92,20 @@ They are intentionally low fidelity. Typography, color, and exact spacing remain
 │ Warning/status associated with affected line      │                          │
 │                                                   │ [Tender $54.86]           │
 ├───────────────────────────────────────────────────┴──────────────────────────┤
-│ [Qty] [Remove] [Discount] [Override]       [Suspend] [Cancel] [More]       │
+│ [Qty] [Remove] [Discount] [Price override] [More]     [Suspend] [Cancel]   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Transaction annotations
 
-1. Entry and lines dominate the screen.
+1. Entry and lines dominate the screen. The four-intent Entry Bar applies only inside an active Transaction (not Ready).
 2. The line collection is the only ordinary scrolling region.
-3. Customer, totals, readiness, and progression remain visible.
-4. The selected line drives the command bar.
-5. Complex line actions open overlays while preserving the selected line.
-6. Tender forms do not appear expanded in Transaction.
-7. Sale and return lines are distinguishable without relying on color alone.
+3. Customer, totals, readiness, and the progression CTA remain visible in the summary rail.
+4. The selected line drives the command bar (Qty, Remove, Discount, Price override; More for uncommon actions).
+5. The progression CTA is not duplicated in the command bar (POS-UI-023).
+6. Complex line actions open overlays while preserving the selected line.
+7. Tender forms do not appear expanded in Transaction.
+8. Sale and return lines are distinguishable without relying on color alone.
 
 ## Tender — positive balance
 
@@ -124,7 +128,7 @@ They are intentionally low fidelity. Typography, color, and exact spacing remain
 │                                                   │                          │
 │ Compact read-only line review [View]              │                          │
 ├───────────────────────────────────────────────────┴──────────────────────────┤
-│ [Return to Transaction]                              [Complete disabled]     │
+│ [Return to Transaction] [Remove selected tender] [More]                    │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -143,7 +147,7 @@ They are intentionally low fidelity. Typography, color, and exact spacing remain
 │                                                   │                          │
 │                                                   │ [Complete Transaction]   │
 ├───────────────────────────────────────────────────┴──────────────────────────┤
-│ [Return to Transaction, only when safe]               [Complete Transaction]│
+│ [Return to Transaction, only when safe] [More]                             │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -154,7 +158,7 @@ They are intentionally low fidelity. Typography, color, and exact spacing remain
 3. Recorded tenders remain visible during split settlement.
 4. Commercial line editing is absent.
 5. Return to Transaction is absent when unresolved activity forces Tender.
-6. Complete Transaction remains visible when settled.
+6. Add payment / Add refund / Complete Transaction live only in the summary rail (never duplicated in the command bar).
 
 ## Tender — net refund
 
@@ -203,32 +207,34 @@ Do not rely only on negative-number notation to communicate direction.
 
 ## Receipt
 
+Receipt may use a focused completion composition rather than the ordinary operational summary rail (POS-UI-022). `Next transaction` lives only in the completion action area (POS-UI-023).
+
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │ SHELFSTACK POS · Main Store · Register 2 · Alex · Session 104 · RECEIPT      │
-├───────────────────────────────────────────────────┬──────────────────────────┤
-│ TRANSACTION COMPLETE                              │ FINAL SUMMARY            │
-│                                                   │ Customer: Pat Example    │
-│ Receipt 000184                                    │ Final total       $54.86 │
-│                                                   │ Tendered          $60.00 │
-│ CHANGE DUE $5.14                                  │ Change due         $5.14 │
-│                                                   │                          │
-│ Cash · $60.00                                     │ Receipt ready            │
-│                                                   │                          │
-│ Print status / customer copy                      │ [Next Transaction]       │
-│                                                   │                          │
-│ [Print Receipt] [Reprint]                         │                          │
-├───────────────────────────────────────────────────┴──────────────────────────┤
-│ [Next Transaction]           [Linked Return] [Post-void] [Transaction Detail]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ TRANSACTION COMPLETE                                                         │
+│                                                                              │
+│ Receipt 000184                                                               │
+│ CHANGE DUE $5.14                                                             │
+│                                                                              │
+│ Cash · $60.00                                                                │
+│ Customer: Pat Example · Final total $54.86 · Tendered $60.00                 │
+│                                                                              │
+│ [Next Transaction]                                                           │
+│                                                                              │
+│ Print status / customer copy                                                 │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ [Print] [Reprint] [View detail] [More]                                       │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Receipt annotations
 
-1. Completion, receipt number, change, Print, and Next Transaction dominate.
-2. Next Transaction receives focus after the completion announcement.
-3. Correction and history actions remain secondary.
-4. Detailed lines do not obscure completion.
+1. Completion, receipt number, change, and Next Transaction dominate the completion area.
+2. Next Transaction receives focus after the completion announcement and is not repeated in the command bar.
+3. Print, Reprint, View detail, linked return, and post-void remain secondary.
+4. Full line/tender detail opens via View detail overlay (POS-UI-036).
 5. Browser-print rendering uses a separate document layout.
 
 ## Product lookup overlay

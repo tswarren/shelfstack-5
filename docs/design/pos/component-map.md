@@ -168,28 +168,28 @@ It does not own domain calculations or duplicate `Pos::WorkspacePresentation` lo
 Primary:
 
 - Ready start area;
-- entry intent launchers;
-- scan-to-start.
+- scan-to-start;
+- Ready launcher tiers (`ready/_intent_launchers` — not Transaction entry intents).
 
 Summary:
 
 - staged Customer;
-- suspended work;
+- suspended-work preview;
 - session summary.
 
 Commands:
 
 - Cash Movement;
 - No Sale;
-- Session X;
-- Close Session;
 - Store Operations.
+
+Close Session and day/session administration are first-level actions inside Store Operations, not ordinary Ready command-bar items.
 
 ### Transaction
 
 Primary:
 
-- entry bar;
+- entry bar with `entry/_intent_selector` (`Sale | Return | Stored Value | Open Ring`);
 - line collection;
 - selected-line context.
 
@@ -198,14 +198,15 @@ Summary:
 - Customer;
 - totals;
 - readiness;
-- sign-aware progression CTA.
+- sign-aware progression CTA (not duplicated in the command bar).
 
 Commands:
 
-- selected-line commands;
+- Quantity, Remove, Discount, Price override;
+- More (tax override, unit selection, etc.);
 - Suspend;
 - Cancel;
-- tax exemption and other transaction actions.
+- other secondary transaction actions.
 
 ### Tender
 
@@ -227,8 +228,10 @@ Summary:
 Commands:
 
 - Return to Transaction when safe;
-- Complete Transaction;
-- permitted tender correction.
+- Remove selected tender;
+- More / permitted tender correction.
+
+Progression (`Add payment $X`, `Add refund $X`, `Complete transaction`) lives only in the summary rail.
 
 Tender must have intentional markup. It is not Transaction with the primary column hidden.
 
@@ -238,7 +241,7 @@ Primary:
 
 - incident summary;
 - numbered verification steps;
-- permitted resolution component.
+- permitted resolution component (dominant Recovery control).
 
 Summary:
 
@@ -249,7 +252,7 @@ Summary:
 
 Commands:
 
-- only allowed Recovery actions.
+- normally absent or extremely limited; do not move the required resolution solely into a generic command bar.
 
 ### Receipt
 
@@ -258,19 +261,21 @@ Primary:
 - completion identity;
 - receipt number;
 - change due;
-- print status;
-- final tender summary.
+- final tender summary;
+- Next Transaction (completion action area only).
 
 Summary:
 
-- compact final totals and Customer context.
+- optional compact final totals and Customer context; Receipt need not use the ordinary operational rail.
 
 Commands:
 
-- Next Transaction;
-- Print Receipt;
+- Print;
 - Reprint;
-- subordinate return/correction actions.
+- View detail;
+- subordinate return/correction actions under More.
+
+Do not duplicate Next Transaction in the command bar.
 
 ## Stable shared components
 
@@ -310,11 +315,13 @@ app/views/pos/entry/
   _lookup_launcher.html.erb
 ```
 
-The visible Entry Bar combines:
+The visible Transaction Entry Bar combines:
 
 ```text
 [ Sale | Return | Stored Value | Open Ring ] [ Scan / ISBN / SKU ] [Qty] [Add]
 ```
+
+`entry/_intent_selector` is used only inside an active Transaction. It is not the Ready launcher hierarchy.
 
 The operation implementations remain separate:
 
@@ -340,9 +347,11 @@ app/views/pos/ready/
   _register_unavailable.html.erb
 ```
 
+`ready/_intent_launchers` owns the Ready tiers from POS-UI-033 (Product lookup, Start return, supporting customer-work strip). It must not render a Ready-level Sale intent and must not reuse `entry/_intent_selector`.
+
 No-business-day, no-session, active-transaction, and insufficient-permission conditions are Ready substates. They remain inside the POS shell.
 
-Detailed day/session tables and cash-movement history belong in Store Operations, not the normal Ready composition.
+Detailed day/session tables, Close Session, and cash-movement history belong in Store Operations, not the normal Ready composition.
 
 ## Line components
 
@@ -560,7 +569,7 @@ Retain for simple record selection. Supplement it with richer POS-specific looku
 | `_session_context` | Move useful identity into register header |
 | `_transaction_status` | Fold into compact header/status region |
 | `_recall_summary` | Render only when operationally relevant |
-| `_entry_intents` | Retain behavior; move into compact Entry Bar |
+| `_entry_intents` | Move into Transaction `entry/_intent_selector`; do not reuse for Ready launchers |
 | `_scan_form` | Split by scan, Stored Value, Open Ring, and return responsibilities |
 | `_line_items` | Retain concept; convert to bounded central collection |
 | `_line_item` | Retain and refine selection/action hierarchy |
@@ -568,7 +577,7 @@ Retain for simple record selection. Supplement it with richer POS-specific looku
 | `_customer_panel` | Convert to compact Customer summary plus overlay launchers |
 | `_totals` | Retain as explicit-local shared totals component |
 | `_readiness_summary` | Retain separately from totals |
-| `_primary_cta` | Retain as state-driven action component |
+| `_primary_cta` | Retain as summary-rail progression CTA for Transaction/Tender; never duplicate in command bar |
 | `_tenders` | Split collection and row |
 | `_tender_entry` | Split by tender method |
 | `_recovery_panel` | Promote to Recovery primary workspace |
