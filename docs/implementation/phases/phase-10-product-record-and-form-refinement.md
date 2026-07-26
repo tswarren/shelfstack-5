@@ -1,6 +1,6 @@
 # Phase 10 — Product Record and Form Workflow Refinement
 
-**Status:** Scheduled — active delivery phase  
+**Status:** Fully complete — Gates 10a–10e accepted (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))  
 **Depends on:** Phase 9 closed (Gates 9a–9d merged, PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)); Gate 8a shared record picker  
 **Governing docs:** [visual-style-guide.md](../../design/visual-style-guide.md); [application-shell.md](../../design/application-shell.md); [interaction-patterns.md](../../design/interaction-patterns.md); [accessibility.md](../../design/accessibility.md); mockup reference [record.html](../../design/prototypes/ui_mockup/record.html)  
 **Design docs updated in this change set:** `interaction-patterns.md` gains **Tabs** and **Dependent select (progressive enhancement)** sections; `visual-style-guide.md` gains icon usage rules.  
@@ -53,7 +53,7 @@ It must **not**:
 | Demand / open request count | `request_view` |
 | Purchasing cost | `purchasing_cost_view` |
 
-**MVP interim:** quantity-tracked stock summary construction currently requires `stock_view`, which can underexpose independently authorized last-received / on-order / cost fields when those caps are granted without stock. MVP roles bundle these permissions. Follow-up: [DWR-066](../deferred-work-register.md).
+**MVP interim:** quantity-tracked stock summary construction currently requires `stock_view`, which can underexpose independently authorized last-received / on-order / cost fields when those caps are granted without stock. MVP roles bundle these permissions. Follow-up: [DWR-066](../deferred-work-register.md) — revisit before roles grant receipt, purchasing/on-order, or cost visibility independently of `stock_view`.
 
 **Summary-service boundary.** `Catalog::BuildProductSummary` may be extended with bounded, capability-gated summary values required by §4. Views must not issue new catalog, inventory, purchasing, receiving, or request queries directly. Summary additions must:
 
@@ -183,13 +183,13 @@ Cross-request Creator-creation idempotency is **not** introduced. Name-based `Cr
 | **10d** | Identifier-warning resubmission (§7.3) + new-product sellability default (§7.1) | Yes |
 | **10e** | Inline creator creation (§7.4) | Should |
 
-**Post-core roadmap status wording (required):**
+**Accepted status wording:**
 
 ```text
-Core complete — Gates 10a–10d accepted; Gate 10e deferred
+Fully complete — Gates 10a–10e accepted
 ```
 
-**Fully complete** only when 10e is also accepted (or 10e is explicitly descoped in the deferred-work register).
+(The earlier post-core wording `Core complete — Gates 10a–10d accepted; Gate 10e deferred` was unused; 10e shipped in the same delivery.)
 
 ## 9. Action-bar contract
 
@@ -230,44 +230,44 @@ Suppress only: alternate identifier, edition, imprint when blank; language when 
 
 ### 10a
 
-- [ ] `_tabs` partial + `tabs_controller.js` meet the §5 progressive-enhancement contract
-- [ ] `interaction-patterns.md` documents the Tabs contract
-- [ ] Icon helper: inline SVG inheriting `currentColor`; documented Phosphor subset source/license; allowlist; rejects unknown names; decorative icons default `aria-hidden="true"`; icon usage rule in `visual-style-guide.md`
-- [ ] Header: title, subtitle, creator byline, format/publisher/date phrase, status badges — composed subtitle removed
-- [ ] Operational rail headed "Store status — {store}", outside tab panels, contains exactly the §4 measures; cost not in rail
-- [ ] Every moved field/section and every new aggregate traced to its `caps.*` flag
-- [ ] Classification breadcrumb; provenance as visible label + decorative icon + visually-hidden detail
-- [ ] Summary links resolve only to existing authorized routes
+- [x] `_tabs` partial + `tabs_controller.js` meet the §5 progressive-enhancement contract
+- [x] `interaction-patterns.md` documents the Tabs contract
+- [x] Icon helper: inline SVG inheriting `currentColor`; documented Phosphor subset source/license; allowlist; rejects unknown names; decorative icons default `aria-hidden="true"`; icon usage rule in `visual-style-guide.md`
+- [x] Header: title, subtitle, creator byline, format/publisher/date phrase, status badges — composed subtitle removed
+- [x] Operational rail headed "Store status — {store}", outside tab panels, contains exactly the §4 measures; cost not in rail
+- [x] Every moved field/section and every new aggregate traced to its `caps.*` flag
+- [x] Classification breadcrumb; provenance as visible label + decorative icon + visually-hidden detail
+- [x] Summary links resolve only to existing authorized routes
 
 ### 10b
 
-- [ ] `.form-grid`/`.definition-grid` modifiers (`--2`, `--3`, `--full`) exist and are applied per-section
-- [ ] Action bar meets every bullet in §9; sticky conditions documented in the design guide
+- [x] `.form-grid`/`.definition-grid` modifiers (`--2`, `--3`, `--full`) exist and are applied per-section
+- [x] Action bar meets every bullet in §9; sticky conditions documented in the design guide
 
 ### 10c
 
-- [ ] Merchandise-class control meets the §6 canonical contract
-- [ ] Cascade permits stopping at primary/secondary; inactive assigned path included; children clear on parent change
-- [ ] Price synchronization matches the §7.2 state machine exactly
+- [x] Merchandise-class control meets the §6 canonical contract
+- [x] Cascade permits stopping at primary/secondary; inactive assigned path included; children clear on parent change
+- [x] Price synchronization matches the §7.2 state machine exactly
 
 ### 10d
 
-- [ ] New-product form pre-selects `sellable: true` only in `#new`; submitted values survive validation re-render; edit never overrides; `CreateProduct` non-sellable-first persistence unchanged
-- [ ] Identifier `warning` Save-anyway binding on `ProductsController#create` → `Catalog::CreateProduct` as specified in §7.3; `invalid` remains blocking
+- [x] New-product form pre-selects `sellable: true` only in `#new`; submitted values survive validation re-render; edit never overrides; `CreateProduct` non-sellable-first persistence unchanged
+- [x] Identifier `warning` Save-anyway binding on `ProductsController#create` → `Catalog::CreateProduct` as specified in §7.3; `invalid` remains blocking
 
 ### 10e
 
-- [ ] "New creator" visible only with `catalog.manage_creators`
-- [ ] Dialog is row-aware (unique `row_key` per assignment, including same creator with multiple roles); validation errors in-dialog; replaces only the invoking row’s creator picker; focus return; focus trap; Escape when safe
-- [ ] In-flight disable + Turbo replace picker (not whole row); no Creator name dedup; no cross-request idempotency
+- [x] "New creator" visible only with `catalog.manage_creators`
+- [x] Dialog is row-aware (unique `row_key` per assignment, including same creator with multiple roles); validation errors in-dialog; replaces only the invoking row’s creator picker; focus return; focus trap; Escape when safe
+- [x] In-flight disable + Turbo replace picker (not whole row); no Creator name dedup; no cross-request idempotency
 
 ### Phase-level definition of done
 
-- [ ] Core gates 10a–10d accepted; roadmap status set to `Core complete — Gates 10a–10d accepted; Gate 10e deferred` (or Fully complete if 10e also accepted)
-- [ ] `interaction-patterns.md` and `visual-style-guide.md` updated in the same change set
-- [ ] No schema change introduced
-- [ ] `bin/ci` green
-- [ ] Accessibility and responsive walkthrough complete (§13)
+- [x] Gates 10a–10e accepted; roadmap / current-phase set to Fully complete (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))
+- [x] `interaction-patterns.md` and `visual-style-guide.md` updated in the same change set
+- [x] No schema change introduced
+- [x] `bin/ci` green
+- [x] Accessibility and responsive walkthrough complete (§13)
 
 ## 12. Test strategy
 
@@ -296,7 +296,7 @@ Suppress only: alternate identifier, edition, imprint when blank; language when 
 - [x] Confirm no residual `9.5a`–`9.5e` identifiers
 - [x] Cross-check `deferred-work-register.md`; keep DWR-021 / DWR-029 unscheduled
 - [x] Create gate issues (10a–10e) that **copy** contracts and exit criteria from this document — [#123](https://github.com/tswarren/shelfstack-5/issues/123)–[#127](https://github.com/tswarren/shelfstack-5/issues/127)
-- [ ] On core-gate completion, set status to `Core complete — Gates 10a–10d accepted; Gate 10e deferred`
+- [x] On completion, set status to `Fully complete — Gates 10a–10e accepted` (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))
 
 ## 15. Related
 
