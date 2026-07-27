@@ -89,5 +89,96 @@ module Pos
       assert result.forced_tender?
       refute result.return_safe?
     end
+
+    test "zero balance is settled even without tender rows" do
+      result = TenderPresentation.for(
+        pos_transaction: @transaction,
+        balance_due_cents: 0,
+        tender_types: @tender_types,
+        pos_tenders: [],
+        actor: @admin,
+        store: @store,
+        ready_for_completion: false
+      )
+
+      assert result.settled?
+      refute result.completable?
+      assert_nil result.selected_method
+      refute result.cta_submits_form?
+    end
+
+    test "settled and ready is completable" do
+      result = TenderPresentation.for(
+        pos_transaction: @transaction,
+        balance_due_cents: 0,
+        tender_types: @tender_types,
+        pos_tenders: [],
+        actor: @admin,
+        store: @store,
+        ready_for_completion: true
+      )
+
+      assert result.settled?
+      assert result.completable?
+      assert_equal "Complete transaction", result.cta_label
+    end
+
+    test "selected card type drives form metadata" do
+      visa = TenderType.create!(
+        organization: @store.organization,
+        code: "card_visa_meta",
+        name: "Visa terminal",
+        tender_category: "card",
+        payment_enabled: true,
+        refund_enabled: true,
+        allows_over_tender: false,
+        provides_change: false,
+        reference_1_requirement: "required",
+        reference_1_label: "Visa auth",
+        reference_2_requirement: "none",
+        active: true
+      )
+      amex = TenderType.create!(
+        organization: @store.organization,
+        code: "card_amex_meta",
+        name: "Amex terminal",
+        tender_category: "card",
+        payment_enabled: true,
+        refund_enabled: true,
+        allows_over_tender: false,
+        provides_change: false,
+        reference_1_requirement: "optional",
+        reference_1_label: "Amex auth",
+        reference_2_requirement: "required",
+        reference_2_label: "Amex batch",
+        active: true
+      )
+      types = [ visa, amex ]
+
+      defaulted = TenderPresentation.for(
+        pos_transaction: @transaction,
+        balance_due_cents: 1000,
+        tender_types: types,
+        pos_tenders: [],
+        tender_method_param: "card",
+        actor: @admin,
+        store: @store
+      )
+      assert_equal visa.id, defaulted.selected_card_type.id
+      assert_equal "Visa auth", defaulted.selected_card_type.reference_1_label
+
+      selected = TenderPresentation.for(
+        pos_transaction: @transaction,
+        balance_due_cents: 1000,
+        tender_types: types,
+        pos_tenders: [],
+        tender_method_param: "card",
+        tender_type_id_param: amex.id,
+        actor: @admin,
+        store: @store
+      )
+      assert_equal amex.id, selected.selected_card_type.id
+      assert_equal "required", selected.selected_card_type.reference_2_requirement
+    end
   end
 end

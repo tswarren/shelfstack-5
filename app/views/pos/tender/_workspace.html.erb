@@ -8,18 +8,26 @@
   <% else %>
     <div class="pos-region" role="status">
       <p class="pos-balance">Settled</p>
-      <p class="muted">Recorded tenders are final for this settlement. Complete the transaction from the summary rail.</p>
+      <% if tp.completable? %>
+        <p class="muted">Recorded tenders are final for this settlement. Complete the transaction from the summary rail.</p>
+      <% else %>
+        <p class="muted">Balance is settled. Resolve remaining blockers before Completing.</p>
+      <% end %>
     </div>
   <% end %>
 
   <%= render "pos/tender/recorded_tenders", presentation: tp %>
 
-  <% unless tp.settled? %>
-    <p class="pos-region">
-      <%= link_to "View transaction lines",
+  <p class="pos-region">
+    <%= link_to "View transaction lines",
+          pos_overlay_transaction_lines_path(pos_transaction_id: @pos_transaction.id, intent: @entry_intent),
+          class: "button button-ghost button-small",
+          data: pos_overlay_turbo %>
+    <% if tp.return_safe? %>
+      <%= link_to "Return to Transaction",
             pos_transaction_path(@pos_transaction, intent: @entry_intent),
-            class: "button button-ghost button-small",
+            class: "button button-outline button-small",
             data: { turbo_frame: "_top", turbo_action: "replace" } %>
-    </p>
-  <% end %>
+    <% end %>
+  </p>
 </section>

@@ -1,5 +1,5 @@
 <% tp = local_assigns.fetch(:presentation) %>
-<% card_type = tp.card_types.first %>
+<% card_type = tp.selected_card_type %>
 <% refundable_card = tp.refundable_original_tenders.select { |t| t.tender_type.tender_category == "card" } %>
 <%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post,
       class: "form", id: tp.active_form_id do |form| %>
@@ -10,7 +10,9 @@
   <div class="field">
     <%= form.label :tender_type_id, "Card type", class: "field-label" %>
     <%= form.collection_select :tender_type_id, tp.card_types, :id, :name,
-          { selected: card_type&.id }, class: "input" %>
+          { selected: card_type&.id },
+          class: "input",
+          onchange: "window.location = #{tender_pos_transaction_path(@pos_transaction, tender_method: "card", intent: @entry_intent, selected_tender_id: tp.selected_tender&.id).to_json} + '&tender_type_id=' + encodeURIComponent(this.value)" %>
   </div>
   <% if refundable_card.any? %>
     <div class="field">

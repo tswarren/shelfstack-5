@@ -6,10 +6,28 @@ class PosOverlaysController < ApplicationController
 
   before_action -> { require_permission!("pos.access") }
   before_action :load_register_session!
-  before_action :load_transaction!, only: %i[product_lookup line_actions receipt_detail]
+  before_action :load_transaction!, only: %i[product_lookup line_actions receipt_detail transaction_lines]
 
   def product_lookup
     @intent = params[:intent].presence || "sale"
+    @query = params[:q].to_s.strip
+    @view_only = %w[tender recovery].include?(params[:presentation].to_s)
+    @lookup_results = if @query.present?
+      Pos::ProductLookupResults.call(
+        organization: Current.organization,
+        store: Current.store,
+        query: @query
+      )
+    else
+      Pos::ProductLookupResults::Result.new(query: @query, groups: [], inventory_unit: nil)
+    end
+  end
+
+  def transaction_lines
+    return head :not_found if @pos_transaction.blank?
+
+    @entry_intent = params[:intent].presence || "sale"
+    @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position, :id)
   end
 
   def customer
@@ -31,17 +49,37 @@ class PosOverlaysController < ApplicationController
 
   def pickup
     return head :forbidden unless @open_session
-    return head :forbidden unless Current.user.can?("requests.product_request.view", store: Current.store) ||
-      Current.user.can?("pos.transaction.open", store: Current.store)
+    return head :forbidden unless Current.user.can?("pos.product_request.pickup", store: Current.store) ||
+      Current.user.can?("requests.product_request.view", store: Current.store)
 
-    @fulfillable_customer_requests = Current.store.product_requests.open_requests
+    @pickup_query = params[:q].to_s.strip
+    scope = Current.store.product_requests.open_requests
       .where(request_type: "customer_request")
       .includes(:product, :product_variant, :customer)
       .order(:created_at)
-      .select { |request| request.outstanding_quantity.positive? }
+    if @pickup_query.present?
+      pattern = "%#{ActiveRecord::Base.sanitize_sql_like(@pickup_query)}%"
+      scope = scope.left_joins(:customer).where(
+        "product_requests.id::text = :exact OR customers.customer_number ILIKE :q OR " \
+        "customers.first_name ILIKE :q OR customers.last_name ILIKE :q OR " \
+        "customers.organization_name ILIKE :q",
+        exact: @pickup_query, q: pattern
+      )
+    else
+      scope = scope.none
+    end
+
+    @fulfillable_customer_requests = scope.limit(25).select { |request| request.outstanding_quantity.positive? }
   end
 
   def receipt_lookup; end
+
+  def start_return
+    return head :forbidden unless Current.user.can?("pos.return.create", store: Current.store)
+
+    @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
+    @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
+  end
 
   def receipt_detail
     return head :not_found if @pos_transaction.blank?
@@ -84,7 +122,8 @@ class PosOverlaysController < ApplicationController
   end
 
   def no_sale
-    head :forbidden unless @open_session&.cash_enabled?
+    head :forbidden unless @open_session&.cash_enabled? &&
+      Current.user.can?("pos.no_sale.create", store: Current.store)
   end
 
   def suspended
@@ -96,7 +135,8 @@ class PosOverlaysController < ApplicationController
 
     @line = @pos_transaction.pos_line_items.find(params[:line_id])
     @section = params[:section].presence || "discount"
-    unless line_action_section_allowed?(@section, @line)
+    @line_actions = Pos::LineActions.new(user: Current.user, store: Current.store, line: @line)
+    unless line_action_section_allowed?(@section, @line, @line_actions)
       return render :unsupported_line_action, status: :unprocessable_entity
     end
 
@@ -110,12 +150,18 @@ class PosOverlaysController < ApplicationController
 
   private
 
-  def line_action_section_allowed?(section, line)
+  def line_action_section_allowed?(section, line, line_actions = nil)
     return false if line.line_kind == "stored_value"
     return false unless %w[discount price tax].include?(section)
     return false if section == "price" && line.line_kind != "product"
 
-    true
+    actions = line_actions || Pos::LineActions.new(user: Current.user, store: Current.store, line: line)
+    case section
+    when "discount" then actions.discount_available?
+    when "price" then actions.price_override_available?
+    when "tax" then actions.tax_override_available?
+    else false
+    end
   end
 
   def load_register_session!

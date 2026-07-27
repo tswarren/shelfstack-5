@@ -8,7 +8,7 @@ class PosLineItemTax < ApplicationRecord
   TREATMENTS = %w[taxable zero_rated exempt not_applicable].freeze
 
   belongs_to :pos_line_item
-  belongs_to :store_tax_rule
+  belongs_to :store_tax_rule, optional: true
   belongs_to :store_tax_rate, optional: true
   belongs_to :tax_category
 

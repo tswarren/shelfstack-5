@@ -18,12 +18,13 @@ Server mechanics baseline: [#146](https://github.com/tswarren/shelfstack-5/pull/
 
 ## Manual review disposition (2026-07-26)
 
-**Verdict: Needs refinement — block merge** until both issues clear:
+**Verdict: Needs refinement — block merge** until L7 viewport evidence Accepted:
 
-1. **Compact presentation** — flat primary/summary composition, single line scroller, pinned progression CTA, non-wrapping command bar + More, selected-line overrides in overlays.
-2. **Turbo contract** — `pos_workspace` defaults to `_top`; explicit `pos_workspace` for in-shell mutations; frame-loaded `pos_overlay`; leave-POS uses `_top`.
+1. Capture Ready / Transaction / Tender / Recovery / Receipt at **1366×768** and **1024×768**.
+2. **L2 Must criteria are merge blockers** (not optional polish): single ordinary line scroller, stable selected-line commands, pinned totals/progression CTA, keyboard line selection, eight-line 1366×768 composition.
+3. Financial Gates F1 (unlinked return tax/cost basis) and F2 (No Sale event) are PR review checkpoints — they do not replace L7.
 
-Do not mark POS-UI-020–037 **Accepted** until screenshots and [review-scenarios.md](review-scenarios.md) walks pass at **1366×768** and **1024×768**.
+Do not mark POS-UI-020–037 **Accepted** until screenshots and [review-scenarios.md](review-scenarios.md) walks pass at both viewports.
 
 Score each gate: **Accepted** / **Needs refinement** / **Fail**. Record scores on [#150](https://github.com/tswarren/shelfstack-5/pull/150).
 

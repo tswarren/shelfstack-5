@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_27_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -603,7 +603,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
     t.decimal "rate", precision: 10, scale: 8
     t.string "receipt_code_snapshot"
     t.bigint "store_tax_rate_id"
-    t.bigint "store_tax_rule_id", null: false
+    t.bigint "store_tax_rule_id"
     t.bigint "tax_category_id", null: false
     t.integer "taxable_amount_cents", default: 0, null: false
     t.decimal "taxable_fraction_snapshot", precision: 10, scale: 8, null: false
@@ -619,8 +619,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
 
   create_table "pos_line_items", force: :cascade do |t|
     t.datetime "completed_at"
+    t.string "cost_basis_source_snapshot"
+    t.string "cost_basis_type_snapshot"
+    t.datetime "cost_confirmed_at"
+    t.bigint "cost_confirmed_by_user_id"
+    t.integer "cost_confirmed_unit_cents"
     t.integer "cost_extended_cents"
     t.string "cost_method_snapshot"
+    t.integer "cost_proposed_unit_cents"
     t.string "cost_quality_snapshot"
     t.integer "cost_unit_cost_cents"
     t.datetime "created_at", null: false
@@ -628,6 +634,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
     t.bigint "department_id"
     t.string "description_snapshot"
     t.string "direction", default: "sale", null: false
+    t.integer "explicit_tax_amount_cents"
     t.string "identifier_snapshot"
     t.bigint "inventory_unit_id"
     t.string "line_kind", null: false
@@ -652,6 +659,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
     t.string "stored_value_account_number_snapshot"
     t.string "stored_value_account_type_snapshot"
     t.string "stored_value_operation"
+    t.datetime "tax_basis_confirmed_at"
+    t.bigint "tax_basis_confirmed_by_user_id"
+    t.string "tax_basis_snapshot"
     t.bigint "tax_category_id"
     t.datetime "tax_category_overridden_at"
     t.bigint "tax_category_overridden_by_user_id"
@@ -675,12 +685,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
     t.index ["tax_category_id"], name: "index_pos_line_items_on_tax_category_id"
     t.index ["tax_category_overridden_by_user_id"], name: "index_pos_line_items_on_tax_category_overridden_by_user_id"
     t.check_constraint "(line_kind::text = ANY (ARRAY['product'::character varying::text, 'open_ring'::character varying::text])) AND department_id IS NOT NULL OR line_kind::text = 'stored_value'::text AND department_id IS NULL", name: "pos_line_items_department_matches_kind"
+    t.check_constraint "cost_basis_type_snapshot IS NULL OR (cost_basis_type_snapshot::text = ANY (ARRAY['moving_average'::character varying, 'configured_estimate'::character varying]::text[]))", name: "pos_line_items_cost_basis_type_check"
+    t.check_constraint "cost_confirmed_unit_cents IS NULL OR cost_confirmed_unit_cents >= 0", name: "pos_line_items_cost_confirmed_unit_non_negative"
     t.check_constraint "cost_extended_cents IS NULL OR cost_extended_cents >= 0", name: "pos_line_items_cost_extended_non_negative"
     t.check_constraint "cost_method_snapshot IS NULL OR (cost_method_snapshot::text = ANY (ARRAY['explicit'::character varying::text, 'configured_estimate'::character varying::text, 'moving_average'::character varying::text, 'last_known'::character varying::text, 'unknown'::character varying::text]))", name: "pos_line_items_cost_method_snapshot_check"
+    t.check_constraint "cost_proposed_unit_cents IS NULL OR cost_proposed_unit_cents >= 0", name: "pos_line_items_cost_proposed_unit_non_negative"
     t.check_constraint "cost_quality_snapshot IS NULL OR (cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "pos_line_items_cost_quality_snapshot_check"
     t.check_constraint "cost_unit_cost_cents IS NULL OR cost_unit_cost_cents >= 0", name: "pos_line_items_cost_unit_cost_non_negative"
     t.check_constraint "direction::text = 'sale'::text OR reverses_pos_line_item_id IS NOT NULL OR return_reason_id IS NOT NULL AND return_disposition IS NOT NULL AND (original_pos_line_item_id IS NOT NULL OR (return_source::text = ANY (ARRAY['external_receipt'::character varying::text, 'gift_receipt'::character varying::text, 'no_receipt'::character varying::text])))", name: "pos_line_items_return_requires_link"
     t.check_constraint "direction::text = ANY (ARRAY['sale'::character varying::text, 'return'::character varying::text])", name: "pos_line_items_direction_check"
+    t.check_constraint "explicit_tax_amount_cents IS NULL OR explicit_tax_amount_cents >= 0", name: "pos_line_items_explicit_tax_amount_non_negative"
     t.check_constraint "inventory_unit_id IS NULL OR line_kind::text = 'product'::text", name: "pos_line_items_unit_matches_kind"
     t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "pos_line_items_unit_quantity_one"
     t.check_constraint "line_kind::text = 'product'::text AND product_variant_id IS NOT NULL OR line_kind::text = 'open_ring'::text AND product_variant_id IS NULL OR line_kind::text = 'stored_value'::text AND product_variant_id IS NULL AND inventory_unit_id IS NULL AND tax_category_id IS NULL AND department_id IS NULL AND stored_value_account_id IS NOT NULL AND (stored_value_operation::text = ANY (ARRAY['issue'::character varying::text, 'reload'::character varying::text])) AND quantity = 1 AND direction::text = 'sale'::text", name: "pos_line_items_product_variant_matches_kind"
@@ -689,7 +703,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
     t.check_constraint "return_disposition IS NULL OR (return_disposition::text = ANY (ARRAY['return_to_stock'::character varying::text, 'inspection_required'::character varying::text, 'damaged'::character varying::text, 'return_to_vendor'::character varying::text, 'discard'::character varying::text, 'non_inventory'::character varying::text]))", name: "pos_line_items_return_disposition_check"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'completed'::character varying::text, 'removed'::character varying::text])", name: "pos_line_items_status_check"
+    t.check_constraint "tax_basis_snapshot IS NULL OR (tax_basis_snapshot::text = ANY (ARRAY['current_configured_rules'::character varying, 'external_receipt_tax'::character varying, 'no_tax_refund'::character varying]::text[]))", name: "pos_line_items_tax_basis_snapshot_check"
     t.check_constraint "unit_price_cents >= 0", name: "pos_line_items_unit_price_non_negative"
+  end
+
+  create_table "pos_no_sale_events", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.string "idempotency_key", null: false
+    t.datetime "occurred_at", null: false
+    t.bigint "organization_id", null: false
+    t.bigint "pos_session_id", null: false
+    t.string "reason", limit: 255, null: false
+    t.bigint "store_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_user_id"], name: "index_pos_no_sale_events_on_created_by_user_id"
+    t.index ["idempotency_key"], name: "index_pos_no_sale_events_on_idempotency_key", unique: true
+    t.index ["organization_id"], name: "index_pos_no_sale_events_on_organization_id"
+    t.index ["pos_session_id"], name: "index_pos_no_sale_events_on_pos_session_id"
+    t.index ["store_id"], name: "index_pos_no_sale_events_on_store_id"
+    t.check_constraint "char_length(btrim(reason::text)) > 0", name: "pos_no_sale_events_reason_present"
   end
 
   create_table "pos_session_cash_counts", force: :cascade do |t|
@@ -1755,10 +1788,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
   add_foreign_key "pos_line_items", "stored_value_accounts", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", column: "original_tax_category_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "tax_categories", on_delete: :restrict
+  add_foreign_key "pos_line_items", "users", column: "cost_confirmed_by_user_id", on_delete: :nullify
   add_foreign_key "pos_line_items", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "price_overridden_by_user_id", on_delete: :restrict
   add_foreign_key "pos_line_items", "users", column: "removed_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_line_items", "users", column: "tax_basis_confirmed_by_user_id", on_delete: :nullify
   add_foreign_key "pos_line_items", "users", column: "tax_category_overridden_by_user_id", on_delete: :restrict
+  add_foreign_key "pos_no_sale_events", "organizations", on_delete: :restrict
+  add_foreign_key "pos_no_sale_events", "pos_sessions", on_delete: :restrict
+  add_foreign_key "pos_no_sale_events", "stores", on_delete: :restrict
+  add_foreign_key "pos_no_sale_events", "users", column: "created_by_user_id", on_delete: :restrict
   add_foreign_key "pos_session_cash_counts", "pos_sessions", on_delete: :restrict
   add_foreign_key "pos_session_cash_counts", "users", column: "counted_by_user_id", on_delete: :restrict
   add_foreign_key "pos_session_z_reports", "pos_sessions"

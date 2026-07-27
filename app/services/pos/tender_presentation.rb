@@ -3,6 +3,10 @@
 module Pos
   # Cashier-facing Tender UI state derived from persisted facts + query params.
   # Presentational only — does not mutate the transaction (POS-UI-035).
+  #
+  # Settlement vs readiness are separate:
+  #   settled?     = balance_due_cents.zero?
+  #   completable? = settled? && completion readiness passes
   class TenderPresentation
     METHODS = %w[cash card stored_value].freeze
 
@@ -10,8 +14,10 @@ module Pos
       :direction,
       :refund_mode?,
       :settled?,
+      :completable?,
       :available_methods,
       :selected_method,
+      :selected_card_type,
       :method_labels,
       :remaining_cents,
       :recorded_tenders,
@@ -33,7 +39,7 @@ module Pos
 
     def initialize(pos_transaction:, balance_due_cents:, tender_types:, pos_tenders:,
                    refundable_original_tenders: [], tender_method_param: nil,
-                   selected_tender_id: nil, actor:, store:,
+                   tender_type_id_param: nil, selected_tender_id: nil, actor:, store:,
                    ready_for_completion: false)
       @pos_transaction = pos_transaction
       @balance_due_cents = balance_due_cents.to_i
@@ -41,6 +47,7 @@ module Pos
       @pos_tenders = Array(pos_tenders)
       @refundable_original_tenders = Array(refundable_original_tenders)
       @tender_method_param = tender_method_param.to_s.presence
+      @tender_type_id_param = tender_type_id_param.presence&.to_i
       @selected_tender_id = selected_tender_id.presence&.to_i
       @actor = actor
       @store = store
@@ -52,8 +59,10 @@ module Pos
         direction: refund_mode? ? "refund" : "payment",
         refund_mode?: refund_mode?,
         settled?: settled?,
+        completable?: completable?,
         available_methods: available_methods,
         selected_method: selected_method,
+        selected_card_type: selected_card_type,
         method_labels: method_labels,
         remaining_cents: remaining_cents,
         recorded_tenders: @pos_tenders,
@@ -77,7 +86,11 @@ module Pos
     end
 
     def settled?
-      @balance_due_cents.zero? && @pos_tenders.any? { |t| t.unresolved? || t.completed? }
+      @balance_due_cents.zero?
+    end
+
+    def completable?
+      settled? && @ready_for_completion
     end
 
     def remaining_cents
@@ -93,6 +106,8 @@ module Pos
     end
 
     def available_methods
+      return [] if settled?
+
       METHODS.select { |method| method_permitted?(method) }
     end
 
@@ -118,6 +133,15 @@ module Pos
       return @tender_method_param if available_methods.include?(@tender_method_param)
 
       default_method
+    end
+
+    def selected_card_type
+      return nil unless selected_method == "card"
+
+      types = types_for("card")
+      return nil if types.empty?
+
+      types.find { |type| type.id == @tender_type_id_param } || types.first
     end
 
     def default_method
@@ -153,7 +177,8 @@ module Pos
     end
 
     def cta_label
-      return "Complete transaction" if settled? && @ready_for_completion
+      return "Complete transaction" if completable?
+      return nil if settled?
       return nil unless cta_submits_form?
 
       money = format("$%.2f", remaining_cents / 100.0)

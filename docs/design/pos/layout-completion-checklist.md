@@ -231,7 +231,7 @@ L7  Viewport + scenario acceptance
 - [x] Focus trap, Escape (when permitted), restore focus to invoker (`pos-overlay` Stimulus + native `<dialog>`)
 - [x] Successful state-changing action replaces workspace via `_top` navigation (overlay clears on turbo load)
 - [x] Overlay never creates an empty transaction (Add still goes through ScanToStart)
-- [x] Product lookup uses record picker interim (POS-UI-027 residual: rich result list when picker is insufficient)
+- [x] Product lookup uses rich POS-specific results (`Pos::ProductLookupResults`; shared with `_scan_resolution`) — not thin picker-only
 - [x] Ready Product lookup is not buried in `<details>` (POS-UI-010)
 - [ ] Screenshots / workflow review at both viewports (manual review)
 

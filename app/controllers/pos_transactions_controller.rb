@@ -70,30 +70,13 @@ class PosTransactionsController < ApplicationController
   end
 
   def create
-    # Phase 11: Ready must not open empty transactions. First valid customer work
-    # uses ScanToStart (or later Product lookup Add). Keep this endpoint for
-    # in-shell reopen paths that already have an authorized session, but refuse
-    # bare create without accompanying work intent.
+    # Phase 11: Ready must never open an empty transaction. First valid work uses
+    # ScanToStart, Product lookup Add, StartPickup, StartOpenRing, or StartStoredValue.
     pos_session = current_open_session
     return unless pos_session
 
-    if params[:query].blank? && params[:product_request_id].blank?
-      return redirect_to register_path,
-                         alert: "Scan merchandise to start. Empty transactions are not opened from Ready."
-    end
-
-    result = Pos::OpenTransaction.call(pos_session: pos_session, actor: Current.user)
-    if result.success?
-      session[:pos_scan_resolution] = {
-        "transaction_id" => result.pos_transaction.id,
-        "query" => params[:query].to_s,
-        "quantity" => (params[:quantity].presence || 1).to_i,
-        "product_request_id" => params[:product_request_id].presence
-      }
-      redirect_to pos_transaction_path(result.pos_transaction)
-    else
-      redirect_to register_path, alert: result.error
-    end
+    redirect_to register_path,
+                alert: "Scan merchandise or use Product lookup to start. Empty transactions are not opened from Ready."
   end
 
   def suspend
@@ -384,6 +367,7 @@ class PosTransactionsController < ApplicationController
         pos_tenders: @pos_tenders.to_a,
         refundable_original_tenders: @refundable_original_tenders,
         tender_method_param: params[:tender_method],
+        tender_type_id_param: params[:tender_type_id],
         selected_tender_id: params[:selected_tender_id],
         actor: Current.user,
         store: Current.store,
@@ -524,24 +508,17 @@ class PosTransactionsController < ApplicationController
   end
 
   def rebuild_scan_resolution(stored)
-    lookup = Catalog::Lookup.call(organization: Current.organization, query: stored["query"])
-    candidates = lookup.products.first(10).map do |product|
-      {
-        "product_id" => product.id,
-        "title" => product.name,
-        "identifier" => product.identifier,
-        "variants" => product.product_variants.map { |v|
-          label = "#{v.name.presence || 'Standard'} · SKU #{v.sku}"
-          { "id" => v.id, "sku" => v.sku, "label" => label }
-        }
-      }
-    end
+    results = Pos::ProductLookupResults.call(
+      organization: Current.organization,
+      store: Current.store,
+      query: stored["query"]
+    )
 
     {
       "query" => stored["query"].to_s,
       "quantity" => (stored["quantity"].presence || 1).to_i,
       "product_request_id" => stored["product_request_id"],
-      "candidates" => candidates
+      "candidates" => Pos::ProductLookupResults.as_scan_candidates(results)
     }
   end
 

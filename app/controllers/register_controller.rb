@@ -7,14 +7,17 @@ class RegisterController < ApplicationController
 
   before_action -> { require_permission!("pos.access") }
   before_action -> { require_permission!("pos.transaction.open") },
-                only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value start_pickup]
+                only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value]
+  before_action -> { require_permission!("pos.return.create") }, only: :start_unlinked_return
+  before_action -> {
+                  require_any_permission!("pos.product_request.pickup", "requests.product_request.view")
+                }, only: :start_pickup
   before_action -> { require_permission!("pos.return.create") },
                 only: :lookup_receipt,
                 if: -> { ActiveModel::Type::Boolean.new.cast(params[:start_linked_return]) }
 
   def show
     load_register_context!
-    load_register_reporting!
     @scan_query = flash[:scan_query]
     @scan_quantity = flash[:scan_quantity].presence || 1
     @scan_outcome = flash[:scan_outcome]
@@ -22,11 +25,6 @@ class RegisterController < ApplicationController
       pos_transaction: nil,
       open_session: @open_session
     )
-    if @open_session.present?
-      @departments = Department.sorted_hierarchically(
-        Current.organization.departments.includes(:parent_department)
-      )
-    end
   end
 
   # POS-UI-037: session/day close and X/Z reports live here, not on Ready.
@@ -69,7 +67,6 @@ class RegisterController < ApplicationController
       flash[:scan_query] = params[:query].to_s
       flash[:scan_quantity] = (params[:quantity].presence || 1).to_i
       flash[:alert] = result.error
-      # Offer opening an empty transaction so cashier can resolve candidates there.
       redirect_to register_path
     elsif result.outcome == "customer_conflict"
       flash[:scan_outcome] = "customer_conflict"
@@ -124,6 +121,56 @@ class RegisterController < ApplicationController
       redirect_to register_path, alert: result.error
     end
   rescue ArgumentError => e
+    redirect_to register_path, alert: e.message
+  end
+
+  def start_unlinked_return
+    load_register_context!
+    return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
+
+    reason = Current.organization.return_reasons.find(params[:return_reason_id])
+    variant = params[:product_variant_id].presence &&
+      ProductVariant.joins(:product)
+        .where(products: { organization_id: Current.organization.id })
+        .find_by(id: params[:product_variant_id])
+    department = params[:department_id].presence &&
+      Current.organization.departments.find_by(id: params[:department_id])
+    approver = params[:approver_username].presence &&
+      User.find_by(username: params[:approver_username].to_s.strip.downcase)
+    tax_category = params[:tax_category_id].presence &&
+      Current.organization.tax_categories.find_by(id: params[:tax_category_id])
+    explicit_tax = if params[:explicit_tax_amount_cents].present?
+      money_param_to_cents(params[:explicit_tax_amount_cents], label: "Explicit tax amount", required: false)
+    end
+
+    result = Pos::StartUnlinkedReturn.call(
+      pos_session: @open_session,
+      actor: Current.user,
+      return_source: params[:return_source],
+      return_reason: reason,
+      return_disposition: params[:return_disposition],
+      unit_price_cents: money_param_to_cents(params[:unit_price_cents], label: "Refund unit price"),
+      quantity: params[:quantity].presence || 1,
+      product_variant: variant,
+      department: department,
+      description: params[:description],
+      tax_category: tax_category,
+      tax_basis: params[:tax_basis],
+      explicit_tax_amount_cents: explicit_tax,
+      confirm_cost_basis: params[:confirm_cost_basis],
+      confirmed_unit_cost_cents: nil,
+      approver: approver,
+      approver_pin: params[:approver_pin]
+    )
+    if result.success?
+      redirect_to pos_transaction_path(result.pos_transaction, intent: "return"),
+                  notice: "Unlinked return started."
+    elsif result.pos_transaction
+      redirect_to pos_transaction_path(result.pos_transaction, intent: "return"), alert: result.error
+    else
+      redirect_to register_path, alert: result.error
+    end
+  rescue ArgumentError, ActiveRecord::RecordNotFound => e
     redirect_to register_path, alert: e.message
   end
 
@@ -241,8 +288,9 @@ class RegisterController < ApplicationController
       .includes(:staged_customer, :staged_customer_by_user)
       .find_by(cashier_user: Current.user)
     @open_transaction = @open_session && PosTransaction.open_transactions.find_by(active_pos_session: @open_session)
-    @suspended_transactions = @business_day ? Current.store.pos_transactions.suspended.order(suspended_at: :desc) : PosTransaction.none
-    @cash_movement_types = Current.organization.cash_movement_types.where(active: true).order(:name)
+    suspended_scope = @business_day ? Current.store.pos_transactions.suspended.order(suspended_at: :desc) : PosTransaction.none
+    @suspended_count = suspended_scope.count
+    @suspended_transactions = suspended_scope.limit(3)
     @can_view_customers = Current.user.can?("customers.customer.view", store: Current.store) ||
       Current.user.can?("customers.customer.lookup", store: Current.store)
   end

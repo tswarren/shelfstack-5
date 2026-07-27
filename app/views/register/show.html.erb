@@ -77,7 +77,7 @@
       <div class="pos-ready-launchers" aria-label="Primary Ready actions">
         <%= link_to "Product lookup", pos_overlay_product_lookup_path,
               class: "button button-outline", data: pos_overlay_turbo %>
-        <%= link_to "Start return", pos_overlay_receipt_lookup_path,
+        <%= link_to "Start return", pos_overlay_start_return_path,
               class: "button button-outline", data: pos_overlay_turbo %>
       </div>
 
@@ -94,8 +94,11 @@
           <%= link_to "Stored Value", pos_overlay_stored_value_path,
                 class: "button button-ghost button-small", data: pos_overlay_turbo %>
         <% end %>
-        <%= link_to "Pickup / Product Request", pos_overlay_pickup_path,
-              class: "button button-ghost button-small", data: pos_overlay_turbo %>
+        <% if Current.user.can?("pos.product_request.pickup", store: Current.store) ||
+              Current.user.can?("requests.product_request.view", store: Current.store) %>
+          <%= link_to "Pickup / Product Request", pos_overlay_pickup_path,
+                class: "button button-ghost button-small", data: pos_overlay_turbo %>
+        <% end %>
       </div>
     </section>
   <% else %>
@@ -131,11 +134,11 @@
   <section class="pos-region" aria-label="Suspended work">
     <h3>Suspended work</h3>
     <% suspended = @suspended_transactions.to_a %>
-    <% if suspended.empty? %>
+    <% if @suspended_count.to_i.zero? %>
       <p class="muted">None</p>
     <% else %>
       <ul class="pos-readiness-list">
-        <% suspended.first(3).each do |transaction| %>
+        <% suspended.each do |transaction| %>
           <li>
             <%= link_to transaction.public_id, pos_transaction_path(transaction), data: { turbo_frame: "_top" } %>
             <span class="muted"><%= formatted_datetime(transaction.suspended_at, format: :short) %></span>
@@ -152,8 +155,8 @@
           </li>
         <% end %>
       </ul>
-      <% if suspended.size > 3 %>
-        <%= link_to "View all (#{suspended.size})", pos_overlay_suspended_path,
+      <% if @suspended_count > 3 %>
+        <%= link_to "View all (#{@suspended_count})", pos_overlay_suspended_path,
               class: "button button-ghost button-small", data: pos_overlay_turbo %>
       <% end %>
     <% end %>
@@ -179,7 +182,8 @@
     <%= link_to "Cash Movement", pos_overlay_cash_movement_path,
           class: "button button-outline button-small", data: pos_overlay_turbo %>
   <% end %>
-  <% if @open_session.present? && @open_session.cash_enabled? %>
+  <% if @open_session.present? && @open_session.cash_enabled? &&
+        Current.user.can?("pos.no_sale.create", store: Current.store) %>
     <%= link_to "No Sale", pos_overlay_no_sale_path,
           class: "button button-outline button-small", data: pos_overlay_turbo %>
   <% end %>

@@ -1,0 +1,35 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Start return" } do %>
+    <section class="pos-region" aria-label="Linked return">
+      <h3>Linked receipt</h3>
+      <p class="muted">Look up a completed receipt to start a linked return.</p>
+      <%= form_with url: register_lookup_receipt_path, method: :post, class: "form",
+            data: { turbo_frame: "_top" } do |form| %>
+        <div class="field">
+          <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
+          <%= text_field_tag :receipt_number, nil, class: "input", autocomplete: "off", autofocus: true %>
+        </div>
+        <%= hidden_field_tag :start_linked_return, "true" %>
+        <div class="form-actions">
+          <%= form.submit "Look up and start linked return", class: "button button-outline" %>
+        </div>
+      <% end %>
+    </section>
+
+    <% if Current.user.can?("pos.return.create", store: Current.store) %>
+      <section class="pos-region" aria-label="Unlinked return">
+        <h3>Unlinked return</h3>
+        <%= render "pos/unlinked_return_form",
+              form_url: register_start_unlinked_return_path,
+              form_id: "ready_unlinked_return_form",
+              submit_label: "Start with unlinked return",
+              return_reasons: @return_reasons,
+              tax_categories: @tax_categories,
+              price_field_id: "ready_unlinked_return_unit_price_cents",
+              tax_field_id: "ready_unlinked_return_explicit_tax_amount_cents",
+              confirm_id: "ready_unlinked_confirm_cost_basis",
+              turbo_frame: "_top" %>
+      </section>
+    <% end %>
+  <% end %>
+<% end %>

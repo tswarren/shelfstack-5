@@ -34,6 +34,15 @@ class Phase11LayoutL6OverlayTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "turbo-frame#pos_overlay"
     assert_select "dialog.pos-overlay-dialog"
-    assert_select "[data-controller='record-picker']"
+    assert_select "form[action=?]", pos_overlay_product_lookup_path
+    assert_select "#pos_product_lookup_q"
+  end
+
+  test "product lookup search renders rich POS results" do
+    variant = product_variants(:sample_book_standard)
+    get pos_overlay_product_lookup_path, params: { q: variant.sku }
+    assert_response :success
+    assert_select ".pos-resolution-list"
+    assert_match(/SKU #{Regexp.escape(variant.sku)}/, response.body)
   end
 end

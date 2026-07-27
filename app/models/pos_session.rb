@@ -21,6 +21,7 @@ class PosSession < ApplicationRecord
   has_many :completed_pos_transactions, class_name: "PosTransaction", foreign_key: :completed_pos_session_id,
            inverse_of: :completed_pos_session, dependent: :restrict_with_exception
   has_many :pos_cash_movements, dependent: :restrict_with_exception
+  has_many :pos_no_sale_events, dependent: :restrict_with_exception
   has_many :pos_session_cash_counts, dependent: :restrict_with_exception
   has_one :pos_session_z_report, dependent: :restrict_with_exception
   has_many :pos_close_card_evidences, dependent: :restrict_with_exception

@@ -43,6 +43,10 @@ class Phase11bPickupAndCustomerCreateTest < ActionDispatch::IntegrationTest
     get pos_overlay_pickup_path
     assert_response :success
     assert_select "turbo-frame#pos_overlay dialog"
+    assert_select "form[action=?]", register_start_pickup_path, count: 0
+
+    get pos_overlay_pickup_path, params: { q: request.id.to_s }
+    assert_response :success
     assert_select "form[action=?]", register_start_pickup_path
 
     assert_difference -> { PosTransaction.count }, 1 do

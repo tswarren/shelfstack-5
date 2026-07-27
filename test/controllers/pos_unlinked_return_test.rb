@@ -35,12 +35,15 @@ class PosUnlinkedReturnTest < ActionDispatch::IntegrationTest
         return_disposition: "return_to_stock",
         product_variant_id: @variant.id,
         unit_price_cents: format("%.2f", @variant.regular_price_cents / 100.0),
-        quantity: 1
+        quantity: 1,
+        tax_basis: "current_configured_rules",
+        confirm_cost_basis: "true"
       }
     end
     assert_redirected_to pos_transaction_path(txn, intent: "sale", focus_target: "scan")
     line = txn.pos_line_items.returns.last
     assert_equal "external_receipt", line.return_source
+    assert_equal "current_configured_rules", line.tax_basis_snapshot
     assert_nil line.original_pos_line_item_id
   end
 end

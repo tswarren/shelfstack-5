@@ -1,45 +1,35 @@
 <%= turbo_frame_tag "pos_overlay" do %>
   <%= render layout: "pos_overlays/dialog", locals: { title: "Product lookup" } do %>
-    <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
-    <% if @pos_transaction %>
-      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form",
-            data: { turbo_frame: "_top" } do %>
-        <%= hidden_field_tag :intent, @intent %>
-        <%= render "shared/record_picker",
-              name: "product_variant_id",
-              id: "overlay_product_variant_id",
-              record_type: "product_variant",
-              label: "Product variant",
-              required: true,
-              include_blank: false,
-              hint: "Search by name, ISBN, SKU, creator, or identifier. Exact inventory-unit IDs appear here; scan to add a specific unit." %>
-        <div class="field">
-          <label class="field-label" for="overlay_lookup_quantity">Qty</label>
-          <%= number_field_tag :quantity, 1, id: "overlay_lookup_quantity", min: 1, class: "input input-qty" %>
-        </div>
-        <div class="form-actions">
-          <%= submit_tag "Add from lookup", class: "button button-primary" %>
-        </div>
+    <p class="muted">
+      Search for POS-specific results. Exact matches are never auto-added —
+      choose Add deliberately.
+      <% if @view_only %>
+        View only in this presentation — Add is unavailable.
       <% end %>
-    <% else %>
-      <%= form_with url: register_scan_to_start_path, method: :post, class: "form",
-            data: { turbo_frame: "_top" } do %>
-        <%= render "shared/record_picker",
-              name: "product_variant_id",
-              id: "ready_product_variant_id",
-              record_type: "product_variant",
-              label: "Product variant",
-              required: true,
-              include_blank: false,
-              hint: "Search by name, ISBN, SKU, creator, or identifier. Exact inventory-unit IDs appear here; scan to add a specific unit." %>
-        <div class="field">
-          <label class="field-label" for="ready_lookup_quantity">Qty</label>
-          <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>
-        </div>
-        <div class="form-actions">
-          <%= submit_tag "Add from Ready", class: "button button-primary" %>
-        </div>
-      <% end %>
+    </p>
+
+    <%= form_with url: pos_overlay_product_lookup_path, method: :get, class: "form" do %>
+      <%= hidden_field_tag :intent, @intent %>
+      <%= hidden_field_tag :pos_transaction_id, @pos_transaction&.id if @pos_transaction %>
+      <%= hidden_field_tag :presentation, params[:presentation] if params[:presentation].present? %>
+      <div class="field">
+        <label class="field-label" for="pos_product_lookup_q">Search</label>
+        <%= text_field_tag :q, @query, id: "pos_product_lookup_q", class: "input",
+              autofocus: true, placeholder: "Name, ISBN, SKU, creator, or unit ID",
+              autocomplete: "off" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Search", class: "button button-primary" %>
+      </div>
+    <% end %>
+
+    <% if @query.present? %>
+      <%= render "pos/product_lookup_results",
+            results: @lookup_results,
+            view_only: @view_only,
+            pos_transaction: @pos_transaction,
+            intent: @intent,
+            quantity: 1 %>
     <% end %>
   <% end %>
 <% end %>

@@ -146,9 +146,10 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to register_path
   end
 
-  test "ambiguous ready scan open-to-resolve carries query into transaction candidates" do
+  test "ambiguous ready scan stays on Ready; explicit variant starts atomically" do
     products(:sample_book).update!(alternate_identifier: "SHAREDALT01")
     products(:upc_product).update!(alternate_identifier: "SHAREDALT01")
+    open_inventory(product_variants(:sample_book_standard), quantity: 3, unit_cost_cents: 500)
 
     post session_path, params: { username: "admin", password: "password123" }
     post business_days_path, params: { business_day: { reporting_date: Date.current } }
@@ -169,18 +170,20 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_equal "ambiguous", flash[:scan_outcome]
     assert_equal "SHAREDALT01", flash[:scan_query]
 
-    assert_difference -> { PosTransaction.count }, 1 do
+    assert_no_difference -> { PosTransaction.count } do
       post pos_transactions_path, params: { query: "SHAREDALT01", quantity: 2 }
+    end
+    assert_redirected_to register_path
+
+    variant = product_variants(:sample_book_standard)
+    assert_difference -> { PosTransaction.count }, 1 do
+      post register_scan_to_start_path, params: { product_variant_id: variant.id, quantity: 2 }
     end
     transaction = PosTransaction.order(:id).last
     assert_redirected_to pos_transaction_path(transaction)
-
-    get pos_transaction_path(transaction)
-    assert_response :success
-    assert_select ".pos-scan-resolution"
-    assert_match "The Illustrated Man", response.body
-    assert_match "UPC Sample", response.body
-    assert_select ".pos-scan-resolution input[name=quantity][value='2']"
+    line = transaction.pos_line_items.pending.last
+    assert_equal variant, line.product_variant
+    assert_equal 2, line.quantity
   end
 
   test "receipt lookup finds completed receipt" do

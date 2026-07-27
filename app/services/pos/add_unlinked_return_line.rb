@@ -1,14 +1,18 @@
 # frozen_string_literal: true
 
 module Pos
-  # Creates an unlinked customer-return line with an explicit refund and tax basis.
-  # Supports product (quantity/none tracking) and open-ring merchandise. Individually
-  # tracked variants are rejected in this Must slice (unit restoration needs a sold link).
+  # Creates an unlinked customer-return line with explicit refund, tax basis, and
+  # (for inventory-affecting quantity-tracked product returns) a confirmed cost basis.
+  # Individually tracked variants remain unsupported without a linked original.
   class AddUnlinkedReturnLine < ApplicationService
     Error = Class.new(StandardError)
     Result = Data.define(:pos_line_item, :success?, :error, :warnings, :pos_approval)
 
     UNLINKED_SOURCES = PosLineItem::UNLINKED_RETURN_SOURCES
+    TAX_BASES = %w[current_configured_rules external_receipt_tax no_tax_refund].freeze
+    INVENTORY_AFFECTING_DISPOSITIONS = %w[
+      return_to_stock inspection_required damaged return_to_vendor discard
+    ].freeze
 
     def initialize(
       pos_transaction:,
@@ -22,6 +26,10 @@ module Pos
       department: nil,
       description: nil,
       tax_category: nil,
+      tax_basis: nil,
+      explicit_tax_amount_cents: nil,
+      confirm_cost_basis: false,
+      confirmed_unit_cost_cents: nil,
       approver: nil,
       approver_pin: nil
     )
@@ -36,6 +44,10 @@ module Pos
       @department = department
       @description = description
       @tax_category = tax_category
+      @tax_basis = tax_basis.to_s.presence
+      @explicit_tax_amount_cents = explicit_tax_amount_cents
+      @confirm_cost_basis = ActiveModel::Type::Boolean.new.cast(confirm_cost_basis)
+      @confirmed_unit_cost_cents = confirmed_unit_cost_cents
       @approver = approver
       @approver_pin = approver_pin
     end
@@ -54,15 +66,19 @@ module Pos
       end
 
       line_shape = resolve_line_shape!
+      tax_basis = resolve_tax_basis!
+      cost_basis = resolve_cost_basis!(line_shape)
       refund_extended_cents = @quantity * @unit_price_cents
-      approval = authorize_no_receipt!(refund_extended_cents)
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
         raise Error, "commercial fields are locked by unresolved tenders" unless transaction.editable?
 
+        approval = authorize_no_receipt!(refund_extended_cents)
+
         position = (transaction.pos_line_items.maximum(:position) || -1) + 1
+        now = Time.current
         line = transaction.pos_line_items.create!(
           status: "pending",
           direction: "return",
@@ -79,10 +95,20 @@ module Pos
           return_disposition: @return_disposition,
           return_source: @return_source,
           created_by_user: @actor,
-          cost_unit_cost_cents: 0,
-          cost_extended_cents: 0,
-          cost_method_snapshot: "unknown",
-          cost_quality_snapshot: "unknown"
+          tax_basis_snapshot: tax_basis.fetch(:basis),
+          explicit_tax_amount_cents: tax_basis[:explicit_tax_amount_cents],
+          tax_basis_confirmed_by_user_id: @actor.id,
+          tax_basis_confirmed_at: now,
+          cost_unit_cost_cents: cost_basis&.fetch(:unit_cost_cents),
+          cost_extended_cents: cost_basis && (cost_basis.fetch(:unit_cost_cents) * @quantity),
+          cost_method_snapshot: cost_basis&.fetch(:method),
+          cost_quality_snapshot: cost_basis&.fetch(:quality),
+          cost_basis_type_snapshot: cost_basis&.fetch(:basis_type),
+          cost_basis_source_snapshot: cost_basis&.fetch(:source),
+          cost_proposed_unit_cents: cost_basis&.fetch(:proposed_unit_cents),
+          cost_confirmed_unit_cents: cost_basis&.fetch(:unit_cost_cents),
+          cost_confirmed_by_user_id: cost_basis && @actor.id,
+          cost_confirmed_at: cost_basis && now
         )
 
         recalc = Pos::RecalculateTransaction.call(pos_transaction: transaction)
@@ -99,6 +125,71 @@ module Pos
     end
 
     private
+
+    def resolve_tax_basis!
+      basis = @tax_basis.presence || default_tax_basis_for_source
+      raise Error, "tax basis is invalid" unless TAX_BASES.include?(basis)
+
+      explicit = nil
+      if basis == "external_receipt_tax"
+        explicit = @explicit_tax_amount_cents
+        raise Error, "explicit tax amount is required for external receipt tax basis" if explicit.nil?
+        raise Error, "explicit tax amount must not be negative" if explicit.to_i.negative?
+
+        explicit = explicit.to_i
+      elsif @explicit_tax_amount_cents.present?
+        raise Error, "explicit tax amount is only allowed for external_receipt_tax basis"
+      end
+
+      { basis: basis, explicit_tax_amount_cents: explicit }
+    end
+
+    def default_tax_basis_for_source
+      "current_configured_rules"
+    end
+
+    def resolve_cost_basis!(line_shape)
+      return nil unless line_shape.fetch(:line_kind) == "product"
+      return nil unless INVENTORY_AFFECTING_DISPOSITIONS.include?(@return_disposition)
+
+      variant = line_shape.fetch(:product_variant)
+      return nil if variant.inventory_tracking_mode == "none"
+
+      raise Error, "confirm the proposed inventory cost basis before adding this return" unless @confirm_cost_basis
+
+      store = @pos_transaction.store
+      balance = StockBalance.find_by(store_id: store.id, product_variant_id: variant.id)
+      mac = balance&.moving_average_cost_cents
+      if mac.present? && balance.cost_quality.to_s != "unknown"
+        proposed = mac
+        basis_type = "moving_average"
+        method = "moving_average"
+        source = "store_stock_balance_mac"
+      else
+        estimate = Inventory::DepartmentEstimate.call(product_variant: variant)
+        unless estimate.available
+          raise Error,
+                "no inventory cost basis available (MAC and department estimate missing); " \
+                "supply an authorized cost basis before inventory-affecting unlinked returns"
+        end
+        proposed = estimate.unit_cost_cents
+        basis_type = "configured_estimate"
+        method = "configured_estimate"
+        source = "department_estimate"
+      end
+
+      confirmed = @confirmed_unit_cost_cents.nil? ? proposed : @confirmed_unit_cost_cents.to_i
+      raise Error, "confirmed unit cost must not be negative" if confirmed.negative?
+
+      {
+        proposed_unit_cents: proposed,
+        unit_cost_cents: confirmed,
+        basis_type: basis_type,
+        method: method,
+        quality: "estimated",
+        source: source
+      }
+    end
 
     def resolve_line_shape!
       if @product_variant.present?

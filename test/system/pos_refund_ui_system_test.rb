@@ -140,13 +140,18 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     submit_active_tender!
     assert_text(/Confirm external void|not attachable|exceeds remaining/i)
 
+    assert txn.reload.void_required_tenders?, "expected durable void_required tender after mismatch"
+    void_required = txn.pos_tenders.find_by!(status: "void_required")
+    assert_equal "AUTH-MISMATCH", void_required.authorization_code
+
     within("section[aria-label='Recovery'], .pos-recovery-workspace") do
       check "External void confirmed on the terminal"
       accept_confirm { click_button "Void confirmed" }
     end
-    assert_text(/voided/i)
-    voided = txn.pos_tenders.where(status: "voided").last
-    assert_equal "AUTH-MISMATCH", voided.authorization_code
+    assert_text(/voided/i, wait: 5)
+    voided = txn.pos_tenders.where(status: "voided").find_by(authorization_code: "AUTH-MISMATCH")
+    assert voided.present?, "expected voided tender after Recovery confirmation"
+    refute txn.reload.void_required_tenders?
   end
 
   test "invalid stored-value account input is rejected on redeem" do

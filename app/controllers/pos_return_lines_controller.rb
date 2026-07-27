@@ -72,6 +72,12 @@ class PosReturnLinesController < ApplicationController
     approver = params[:approver_username].presence &&
       User.find_by(username: params[:approver_username].to_s.strip.downcase)
 
+    tax_category = params[:tax_category_id].presence &&
+      Current.organization.tax_categories.find_by(id: params[:tax_category_id])
+    explicit_tax = if params[:explicit_tax_amount_cents].present?
+      money_param_to_cents(params[:explicit_tax_amount_cents], label: "Explicit tax amount", required: false)
+    end
+
     result = Pos::AddUnlinkedReturnLine.call(
       pos_transaction: @pos_transaction,
       return_source: params[:return_source],
@@ -83,6 +89,11 @@ class PosReturnLinesController < ApplicationController
       product_variant: variant,
       department: department,
       description: params[:description],
+      tax_category: tax_category,
+      tax_basis: params[:tax_basis],
+      explicit_tax_amount_cents: explicit_tax,
+      confirm_cost_basis: params[:confirm_cost_basis],
+      confirmed_unit_cost_cents: nil,
       approver: approver,
       approver_pin: params[:approver_pin]
     )

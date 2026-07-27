@@ -1,4 +1,5 @@
 <% if @pos_transaction.editable? %>
+  <% line_actions = @selected_line.present? ? Pos::LineActions.new(user: Current.user, store: Current.store, line: @selected_line) : nil %>
   <div class="pos-commands-selected" aria-label="Selected line actions"
        data-pos-register-target="lineActions">
     <% if @selected_line.blank? %>
@@ -19,24 +20,26 @@
           <%= form.submit "Qty", class: "button button-small button-outline" %>
         <% end %>
       <% end %>
-      <% if Current.user.can?("pos.line.remove", store: Current.store) %>
+      <% if line_actions.remove_available? %>
         <%= button_to "Remove", pos_transaction_pos_line_item_path(@pos_transaction, line),
               method: :delete,
               class: "button button-small button-danger",
               params: { intent: @entry_intent, focus_target: "scan" },
               form: { data: pos_workspace_turbo } %>
       <% end %>
-      <% if line.sale? && line.line_kind != "stored_value" %>
+      <% if line_actions.discount_available? %>
         <%= link_to "Discount",
               pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "discount"),
               class: "button button-small button-outline",
               data: pos_overlay_turbo %>
-        <% if line.line_kind == "product" %>
-          <%= link_to "Price",
-                pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "price"),
-                class: "button button-small button-outline",
-                data: pos_overlay_turbo %>
-        <% end %>
+      <% end %>
+      <% if line_actions.price_override_available? %>
+        <%= link_to "Price",
+              pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "price"),
+              class: "button button-small button-outline",
+              data: pos_overlay_turbo %>
+      <% end %>
+      <% if line_actions.tax_override_available? %>
         <%= link_to "Tax",
               pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "tax"),
               class: "button button-small button-ghost",

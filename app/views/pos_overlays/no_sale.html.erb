@@ -1,11 +1,21 @@
 <%= turbo_frame_tag "pos_overlay" do %>
   <%= render layout: "pos_overlays/dialog", locals: { title: "No Sale" } do %>
     <p class="muted">
-      No Sale opens the cash drawer as an audited action without changing expected cash.
-      Drawer kick / No Sale posting is not available in this build yet.
+      Records an audited No Sale event for this cash-enabled session. Does not change
+      expected cash and does not send a drawer-kick command.
     </p>
-    <div class="form-actions">
-      <button type="button" class="button button-outline" data-action="pos-overlay#close">Close</button>
-    </div>
+    <%= form_with url: register_no_sale_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do |form| %>
+      <%= hidden_field_tag :idempotency_key, SecureRandom.uuid %>
+      <div class="field">
+        <%= form.label :reason, "Reason", class: "field-label" %>
+        <%= form.text_field :reason, class: "input", required: true, maxlength: 255,
+              autofocus: true, placeholder: "Why the drawer was opened" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Record No Sale", class: "button button-primary" %>
+        <button type="button" class="button button-ghost" data-action="pos-overlay#close">Cancel</button>
+      </div>
+    <% end %>
   <% end %>
 <% end %>
