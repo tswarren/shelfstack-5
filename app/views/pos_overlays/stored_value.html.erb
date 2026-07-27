@@ -1,0 +1,28 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Stored Value" } do %>
+    <p class="muted">Starts a transaction with a gift-card issue or reload line.</p>
+    <%= form_with url: register_start_stored_value_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do |form| %>
+      <div class="field">
+        <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
+        <%= form.select :stored_value_operation, @sv_operations, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "ready_sv_amount_cents" %>
+      <div class="field">
+        <%= form.label :account_number, "Existing account number", class: "field-label" %>
+        <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
+      </div>
+      <% if Current.user.can?("stored_value.account.create", store: Current.store) %>
+        <div class="field">
+          <label class="field-label">
+            <%= check_box_tag :create_account, "1" %>
+            Create new gift-card account
+          </label>
+        </div>
+      <% end %>
+      <div class="form-actions">
+        <%= form.submit "Start with stored value", class: "button button-primary" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

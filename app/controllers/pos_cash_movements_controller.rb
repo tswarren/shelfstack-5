@@ -21,10 +21,10 @@ class PosCashMovementsController < ApplicationController
     if result.success?
       redirect_to register_path, notice: "Cash movement recorded."
     else
-      redirect_to register_path(overlay: "pos-cash-movement"), alert: result.error
+      redirect_to register_path, alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to register_path(overlay: "pos-cash-movement"), alert: e.message
+    redirect_to register_path, alert: e.message
   end
 
   private

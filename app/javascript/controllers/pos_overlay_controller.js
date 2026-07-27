@@ -1,34 +1,34 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Focus-safe POS overlay host (POS-UI-008). Supports multiple static dialogs
-// opened via data-pos-overlay-id-param="<dialog-id>".
+// Focus-safe POS overlay host (POS-UI-008).
+// Dialogs are loaded into turbo-frame#pos_overlay and opened on turbo:frame-load.
 export default class extends Controller {
   static targets = ["dialog"]
-  static values = { openOnConnect: { type: String, default: "" } }
 
   connect() {
     this._returnFocusTo = null
     this._openDialog = null
+  }
 
-    const id = this.openOnConnectValue || new URLSearchParams(window.location.search).get("overlay")
-    if (id) {
-      // Defer so dialog targets and nested Stimulus controllers are connected.
-      requestAnimationFrame(() => this.openById(id))
-    }
+  onFrameLoad(event) {
+    const frame = event.target
+    if (!(frame instanceof HTMLElement) || frame.id !== "pos_overlay") return
+    const dialog = frame.querySelector("dialog")
+    if (!dialog) return
+    this.openDialog(dialog)
   }
 
   open(event) {
     event?.preventDefault()
     this._returnFocusTo = event?.currentTarget || document.activeElement
-    this.openById(event?.params?.id)
-  }
-
-  openById(id) {
+    const id = event?.params?.id
     const dialog = id
       ? this.element.querySelector(`#${CSS.escape(id)}`) || document.getElementById(id)
       : this.dialogTargets[0]
-    if (!dialog) return
+    if (dialog) this.openDialog(dialog)
+  }
 
+  openDialog(dialog) {
     this._openDialog = dialog
     try {
       if (typeof dialog.showModal === "function") {
@@ -40,8 +40,6 @@ export default class extends Controller {
       dialog.setAttribute("open", "")
     }
 
-    // Prefer body fields over the chrome Close button so open doesn't steal
-    // focus to a control that immediately dismisses the dialog.
     const body = dialog.querySelector(".pos-overlay-dialog__body") || dialog
     const focusable = body.querySelector(
       "input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [href]"
@@ -71,6 +69,9 @@ export default class extends Controller {
     }
     dialog.removeAttribute("open")
     this._openDialog = null
+
+    const frame = this.element.querySelector("turbo-frame#pos_overlay")
+    if (frame) frame.innerHTML = ""
 
     const restore = this._returnFocusTo
     this._returnFocusTo = null

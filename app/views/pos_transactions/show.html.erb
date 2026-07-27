@@ -35,7 +35,7 @@
         </ul>
       <% end %>
 
-      <div class="form-actions pos-summary-cta">
+      <div class="form-actions">
         <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
               data: { turbo_frame: "_top", "pos-register-target": "backToRegister" },
               autofocus: true %>
@@ -44,12 +44,15 @@
     </section>
   <% end %>
 
-  <% commands = capture do %>
+  <% primary_commands = capture do %>
     <%= link_to "Print", customer_receipt_pos_transaction_path(@pos_transaction),
           class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
     <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
           class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
-    <details class="pos-panel" style="display: inline-block; margin: 0;">
+  <% end %>
+
+  <% overflow_commands = capture do %>
+    <details>
       <summary class="button button-ghost button-small">View detail</summary>
       <%= render "line_items" %>
       <%= render "totals" %>
@@ -75,7 +78,8 @@
         session: pos_shell_session,
         primary: primary,
         summary: "".html_safe,
-        commands: commands,
+        primary_commands: primary_commands,
+        overflow_commands: overflow_commands,
         hide_summary: true %>
 <% else %>
   <% content_for :head do %>
@@ -89,27 +93,29 @@
       <%= render "recovery_panel" %>
       <%= render "void_required_tenders" %>
     <% elsif tender_mode %>
-      <section class="pos-panel" aria-label="Payment">
-        <h2>Payment</h2>
-        <p class="pos-balance">
-          <% if @balance_due_cents.to_i.positive? %>
-            Amount due <%= pos_money(@balance_due_cents) %>
-          <% elsif @balance_due_cents.to_i.negative? %>
-            Refund due <%= pos_money(-@balance_due_cents) %>
-          <% else %>
-            Settled
-          <% end %>
-        </p>
-        <%= render "tenders" %>
-        <%= render "tender_entry" %>
+      <section class="pos-sale-panel" aria-label="Payment">
+        <div class="pos-region">
+          <h2>Payment</h2>
+          <p class="pos-balance">
+            <% if @balance_due_cents.to_i.positive? %>
+              Amount due <%= pos_money(@balance_due_cents) %>
+            <% elsif @balance_due_cents.to_i.negative? %>
+              Refund due <%= pos_money(-@balance_due_cents) %>
+            <% else %>
+              Settled
+            <% end %>
+          </p>
+        </div>
+        <div class="pos-lines">
+          <%= render "tenders" %>
+          <%= render "tender_entry" %>
+        </div>
       </section>
     <% else %>
       <section class="pos-sale-panel" aria-label="Transaction">
         <%= render "entry_intents" %>
         <%= render "scan_form" %>
-        <div class="pos-lines">
-          <%= render "line_items" %>
-        </div>
+        <%= render "line_items" %>
       </section>
     <% end %>
   <% end %>
@@ -118,35 +124,38 @@
     <%= render "customer_panel" %>
     <%= render "totals" %>
     <%= render "readiness_summary" %>
-    <div class="pos-summary-cta">
-      <%= render "primary_cta" %>
-    </div>
     <% unless tender_mode || recovery_mode %>
-      <details class="pos-panel">
+      <details class="pos-region">
         <summary>Secondary</summary>
         <%= render "secondary_actions" %>
       </details>
     <% end %>
   <% end %>
 
-  <% commands = capture do %>
+  <% summary_cta = capture do %>
+    <%= render "primary_cta" %>
+  <% end %>
+
+  <% primary_commands = capture do %>
     <% if recovery_mode %>
       <span class="muted">Resolve Recovery in the primary workspace.</span>
     <% elsif tender_mode %>
       <% if @pos_transaction.editable? && !@workspace.forced_tender %>
         <%= link_to "Return to Transaction",
               pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-              class: "button button-outline button-small", data: { turbo_frame: "_top" } %>
+              class: "button button-outline button-small", data: pos_workspace_turbo %>
       <% elsif @workspace.forced_tender %>
-        <span class="muted" role="status">Return to Transaction is blocked while tender activity is unresolved.</span>
+        <span class="muted" role="status">Return blocked while tender is unresolved.</span>
       <% end %>
-      <%= render "transaction_actions" %>
     <% else %>
       <%= render "selected_line_actions" %>
-      <%= render "transaction_actions" %>
-      <%= link_to "Back to register", register_path, class: "button button-ghost button-small",
-            data: { turbo_frame: "_top" } %>
     <% end %>
+  <% end %>
+
+  <% overflow_commands = capture do %>
+    <%= render "transaction_actions" %>
+    <%= link_to "Back to register", register_path, class: "button button-ghost button-small",
+          data: { turbo_frame: "_top" } %>
   <% end %>
 
   <%= render "pos/shell",
@@ -155,6 +164,8 @@
         session: pos_shell_session,
         primary: primary,
         summary: summary,
-        commands: commands,
+        summary_cta: summary_cta,
+        primary_commands: primary_commands,
+        overflow_commands: (recovery_mode ? nil : overflow_commands),
         hide_commands: recovery_mode %>
 <% end %>

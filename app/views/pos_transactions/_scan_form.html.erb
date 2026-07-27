@@ -6,14 +6,13 @@
   %>
 
   <% if intent == "sale" %>
-    <section class="pos-panel" aria-label="Scan or search">
-      <h2>Scan / search</h2>
+    <section class="pos-region" aria-label="Scan or search">
       <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post,
-            class: "pos-inline-form",
-            data: {
+            class: "pos-entry-bar",
+            data: pos_workspace_turbo.merge(
               "pos-register-target": "scanForm",
               action: "submit->pos-register#startScanProcessing"
-            } do |form| %>
+            ) do |form| %>
         <%= hidden_field_tag :intent, intent %>
         <div class="field">
           <label class="field-label" for="scan_query">Scan or search</label>
@@ -28,45 +27,25 @@
         </div>
         <% if @fulfillable_customer_requests.present? %>
           <div class="field">
-            <label class="field-label" for="scan_product_request_id">Customer request (optional)</label>
+            <label class="field-label" for="scan_product_request_id">Request</label>
             <%= form.select :product_request_id,
                   @fulfillable_customer_requests.map { |request|
                     label = "##{request.id} — #{request.product.name}"
                     label += " / #{request.product_variant.name}" if request.product_variant
-                    label += " (#{request.outstanding_quantity} outstanding)"
+                    label += " (#{request.outstanding_quantity})"
                     [ label, request.id ]
                   },
                   { include_blank: "None" },
                   id: "scan_product_request_id", class: "input" %>
           </div>
         <% end %>
-        <%= form.submit "Add line", class: "button button-primary" %>
+        <%= form.submit "Add", class: "button button-primary" %>
+        <%= link_to "Lookup",
+              pos_overlay_product_lookup_path(pos_transaction_id: @pos_transaction.id, intent: intent),
+              class: "button button-outline",
+              data: pos_overlay_turbo %>
       <% end %>
       <%= render "scan_resolution" %>
-      <% if @pos_transaction.editable? %>
-        <details class="pos-panel" style="margin-top: 0.75rem;">
-          <summary>Product lookup</summary>
-          <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
-          <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do %>
-            <%= hidden_field_tag :intent, intent %>
-            <%= render "shared/record_picker",
-                  name: "product_variant_id",
-                  id: "txn_product_variant_id",
-                  record_type: "product_variant",
-                  label: "Product variant",
-                  required: true,
-                  include_blank: false,
-                  hint: "Search by name, ISBN, SKU, or identifier." %>
-            <div class="field">
-              <label class="field-label" for="txn_lookup_quantity">Qty</label>
-              <%= number_field_tag :quantity, 1, id: "txn_lookup_quantity", min: 1, class: "input input-qty" %>
-            </div>
-            <div class="form-actions">
-              <%= submit_tag "Add from lookup", class: "button button-outline" %>
-            </div>
-          <% end %>
-        </details>
-      <% end %>
     </section>
   <% elsif intent == "stored_value" %>
     <%
@@ -77,9 +56,10 @@
       sv_operations << [ "Reload", "reload" ] if can_reload
     %>
     <% if sv_operations.any? %>
-      <section class="pos-panel" aria-label="Gift card issue / reload">
-        <h2>Gift card issue / reload</h2>
-        <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <section class="pos-region" aria-label="Gift card issue / reload">
+        <h2>Stored value</h2>
+        <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form",
+              data: pos_workspace_turbo do |form| %>
           <%= hidden_field_tag :kind, "stored_value" %>
           <%= hidden_field_tag :intent, "stored_value" %>
           <div class="field">
@@ -106,9 +86,10 @@
       </section>
     <% end %>
   <% elsif intent == "open_ring" %>
-    <section class="pos-panel" aria-label="Open-ring line">
+    <section class="pos-region" aria-label="Open-ring line">
       <h2>Open-ring line</h2>
-      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form" do |form| %>
+      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form",
+            data: pos_workspace_turbo do |form| %>
         <%= hidden_field_tag :kind, "open_ring" %>
         <%= hidden_field_tag :intent, "open_ring" %>
         <div class="field">
@@ -132,7 +113,7 @@
       <% end %>
     </section>
   <% elsif intent == "return" && Current.user.can?("pos.return.create", store: Current.store) %>
-    <section class="pos-panel" aria-label="Linked return">
+    <section class="pos-region" aria-label="Linked return">
       <h2>Linked return</h2>
       <%= render "return_lookup_body" %>
     </section>

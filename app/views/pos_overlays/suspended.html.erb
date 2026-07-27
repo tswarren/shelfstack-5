@@ -1,0 +1,16 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Suspended transactions" } do %>
+    <% if @suspended_transactions.any? %>
+      <ul class="pos-readiness-list">
+        <% @suspended_transactions.each do |transaction| %>
+          <li>
+            <%= link_to transaction.public_id, pos_transaction_path(transaction), data: { turbo_frame: "_top" } %>
+            · <%= formatted_datetime(transaction.suspended_at, format: :short) %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="muted">None</p>
+    <% end %>
+  <% end %>
+<% end %>

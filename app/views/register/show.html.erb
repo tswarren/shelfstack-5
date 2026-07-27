@@ -4,9 +4,6 @@
 <%
   can_sv = Current.user.can?("stored_value.issue", store: Current.store) ||
            Current.user.can?("stored_value.reload", store: Current.store)
-  sv_operations = []
-  sv_operations << [ "Issue", "issue" ] if Current.user.can?("stored_value.issue", store: Current.store)
-  sv_operations << [ "Reload", "reload" ] if Current.user.can?("stored_value.reload", store: Current.store)
 %>
 
 <% primary = capture do %>
@@ -45,7 +42,7 @@
       </div>
     </section>
   <% elsif Current.user.can?("pos.transaction.open", store: Current.store) %>
-    <section class="pos-panel pos-ready-start" aria-label="Start customer work">
+    <section class="pos-region pos-ready-start" aria-label="Start customer work">
       <h2 class="sr-only">Register ready</h2>
       <p class="muted">Scan merchandise to start a transaction. An empty transaction is never opened from Ready.</p>
 
@@ -60,9 +57,9 @@
         </p>
       <% end %>
 
-      <%= form_with url: register_scan_to_start_path, method: :post, class: "pos-inline-form pos-entry-bar",
+      <%= form_with url: register_scan_to_start_path, method: :post, class: "pos-entry-bar",
             data: { "pos-register-target": "scanForm", turbo_frame: "_top" } do |form| %>
-        <div class="field" style="flex: 1 1 16rem;">
+        <div class="field">
           <label class="field-label" for="ready_scan_query">Scan or search</label>
           <%= form.text_field :query, id: "ready_scan_query", name: "query",
                 placeholder: "ISBN / SKU / unit ID",
@@ -78,42 +75,24 @@
       <% end %>
 
       <div class="pos-ready-launchers" aria-label="Primary Ready actions">
-        <button type="button" class="button button-outline"
-                data-action="pos-overlay#open"
-                data-pos-overlay-id-param="pos-product-lookup">
-          Product lookup
-        </button>
-        <button type="button" class="button button-outline"
-                data-action="pos-overlay#open"
-                data-pos-overlay-id-param="pos-receipt-lookup">
-          Start return
-        </button>
+        <%= link_to "Product lookup", pos_overlay_product_lookup_path,
+              class: "button button-outline", data: pos_overlay_turbo %>
+        <%= link_to "Start return", pos_overlay_receipt_lookup_path,
+              class: "button button-outline", data: pos_overlay_turbo %>
       </div>
 
       <div class="pos-ready-supporting" aria-label="Supporting Ready actions">
         <% if @can_view_customers %>
-          <button type="button" class="button button-ghost button-small"
-                  data-action="pos-overlay#open"
-                  data-pos-overlay-id-param="pos-customer">
-            Customer
-          </button>
+          <%= link_to "Customer", pos_overlay_customer_path,
+                class: "button button-ghost button-small", data: pos_overlay_turbo %>
         <% end %>
-        <button type="button" class="button button-ghost button-small"
-                data-action="pos-overlay#open"
-                data-pos-overlay-id-param="pos-receipt-lookup">
-          Receipt lookup
-        </button>
-        <button type="button" class="button button-ghost button-small"
-                data-action="pos-overlay#open"
-                data-pos-overlay-id-param="pos-open-ring">
-          Open Ring
-        </button>
-        <% if can_sv && sv_operations.any? %>
-          <button type="button" class="button button-ghost button-small"
-                  data-action="pos-overlay#open"
-                  data-pos-overlay-id-param="pos-stored-value">
-            Stored Value
-          </button>
+        <%= link_to "Receipt lookup", pos_overlay_receipt_lookup_path,
+              class: "button button-ghost button-small", data: pos_overlay_turbo %>
+        <%= link_to "Open Ring", pos_overlay_open_ring_path,
+              class: "button button-ghost button-small", data: pos_overlay_turbo %>
+        <% if can_sv %>
+          <%= link_to "Stored Value", pos_overlay_stored_value_path,
+                class: "button button-ghost button-small", data: pos_overlay_turbo %>
         <% end %>
         <%= link_to "Pickup / Product Request", product_requests_path,
               class: "button button-ghost button-small",
@@ -121,7 +100,7 @@
       </div>
     </section>
   <% else %>
-    <section class="pos-panel">
+    <section class="pos-region">
       <h2>Register ready</h2>
       <p class="muted">Session is open. You do not have permission to start a transaction.</p>
     </section>
@@ -129,7 +108,7 @@
 <% end %>
 
 <% summary = capture do %>
-  <section class="pos-panel" aria-label="Next transaction context">
+  <section class="pos-region" aria-label="Next transaction context">
     <h3>Customer</h3>
     <% if @open_session&.staged_customer.present? && @can_view_customers %>
       <p>
@@ -144,16 +123,13 @@
     <% else %>
       <p class="muted">No customer staged</p>
       <% if @can_view_customers && @open_session.present? %>
-        <button type="button" class="button button-ghost button-small"
-                data-action="pos-overlay#open"
-                data-pos-overlay-id-param="pos-customer">
-          Find customer
-        </button>
+        <%= link_to "Find customer", pos_overlay_customer_path,
+              class: "button button-ghost button-small", data: pos_overlay_turbo %>
       <% end %>
     <% end %>
   </section>
 
-  <section class="pos-panel" aria-label="Suspended work">
+  <section class="pos-region" aria-label="Suspended work">
     <h3>Suspended work</h3>
     <% suspended = @suspended_transactions.to_a %>
     <% if suspended.empty? %>
@@ -178,16 +154,13 @@
         <% end %>
       </ul>
       <% if suspended.size > 3 %>
-        <button type="button" class="button button-ghost button-small"
-                data-action="pos-overlay#open"
-                data-pos-overlay-id-param="pos-suspended-all">
-          View all (<%= suspended.size %>)
-        </button>
+        <%= link_to "View all (#{suspended.size})", pos_overlay_suspended_path,
+              class: "button button-ghost button-small", data: pos_overlay_turbo %>
       <% end %>
     <% end %>
   </section>
 
-  <section class="pos-panel" aria-label="Session">
+  <section class="pos-region" aria-label="Session">
     <h3>Session</h3>
     <% if @open_session %>
       <p>
@@ -202,194 +175,20 @@
   </section>
 <% end %>
 
-<% commands = capture do %>
+<% primary_commands = capture do %>
   <% if @open_session.present? && Current.user.can?("pos.cash_movement.create", store: Current.store) %>
-    <button type="button" class="button button-outline button-small"
-            data-action="pos-overlay#open"
-            data-pos-overlay-id-param="pos-cash-movement">
-      Cash Movement
-    </button>
+    <%= link_to "Cash Movement", pos_overlay_cash_movement_path,
+          class: "button button-outline button-small", data: pos_overlay_turbo %>
   <% end %>
   <% if @open_session.present? && @open_session.cash_enabled? %>
-    <button type="button" class="button button-outline button-small"
-            data-action="pos-overlay#open"
-            data-pos-overlay-id-param="pos-no-sale">
-      No Sale
-    </button>
+    <%= link_to "No Sale", pos_overlay_no_sale_path,
+          class: "button button-outline button-small", data: pos_overlay_turbo %>
   <% end %>
-  <%= link_to "Store Operations", root_path, class: "button button-outline button-small",
-        data: { turbo_frame: "_top" } %>
 <% end %>
 
-<% content_for :pos_overlay do %>
-  <%= render layout: "pos/overlays/frame", locals: { id: "pos-product-lookup", title: "Product lookup" } do %>
-    <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
-    <%= form_with url: register_scan_to_start_path, method: :post, class: "form",
-          data: { turbo_frame: "_top" } do %>
-      <%= render "shared/record_picker",
-            name: "product_variant_id",
-            id: "ready_product_variant_id",
-            record_type: "product_variant",
-            label: "Product variant",
-            required: true,
-            include_blank: false,
-            hint: "Search by name, ISBN, SKU, or identifier." %>
-      <div class="field">
-        <label class="field-label" for="ready_lookup_quantity">Qty</label>
-        <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>
-      </div>
-      <div class="form-actions">
-        <%= submit_tag "Add from Ready", class: "button button-primary" %>
-      </div>
-    <% end %>
-  <% end %>
-
-  <%= render layout: "pos/overlays/frame", locals: { id: "pos-receipt-lookup", title: "Receipt lookup" } do %>
-    <p class="muted">Look up a completed receipt to review or start a linked return from that sale.</p>
-    <%= form_with url: register_lookup_receipt_path, method: :post, class: "form",
-          data: { turbo_frame: "_top" } do |form| %>
-      <div class="field">
-        <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
-        <%= text_field_tag :receipt_number, nil, class: "input", autocomplete: "off", autofocus: true %>
-      </div>
-      <div class="form-actions">
-        <%= form.submit "Look up receipt", class: "button button-primary" %>
-      </div>
-    <% end %>
-  <% end %>
-
-  <% if @can_view_customers && @open_session.present? %>
-    <%= render layout: "pos/overlays/frame", locals: { id: "pos-customer", title: "Customer" } do %>
-      <p class="muted">Staging a customer does not create a transaction.</p>
-      <%= form_with url: register_stage_customer_path, method: :post, class: "form",
-            data: { turbo_frame: "_top" } do %>
-        <%= render "shared/record_picker",
-              name: "customer_id",
-              id: "stage_customer_id",
-              record_type: "customer",
-              label: "Stage customer",
-              required: true,
-              include_blank: false,
-              hint: "Search by name, phone, email, or customer number." %>
-        <%= submit_tag "Use for next transaction", class: "button button-primary" %>
-      <% end %>
-      <% if Current.user.can?("customers.customer.create", store: Current.store) %>
-        <p class="field-hint">
-          <%= link_to "Create customer", new_customer_path, class: "button button-small button-ghost",
-                data: { turbo_frame: "_top" } %>
-        </p>
-      <% end %>
-    <% end %>
-  <% end %>
-
-  <% if @open_session.present? && @departments.present? %>
-    <%= render layout: "pos/overlays/frame", locals: { id: "pos-open-ring", title: "Open Ring" } do %>
-      <p class="muted">Starts a transaction with the first open-ring line. Does not open an empty sale.</p>
-      <%= form_with url: register_start_open_ring_path, method: :post, class: "form",
-            data: { turbo_frame: "_top" } do |form| %>
-        <div class="field">
-          <%= form.label :department_id, "Department", class: "field-label" %>
-          <%= form.select :department_id,
-                @departments.map { |d| [ hierarchy_path_label(d), d.id ] },
-                {}, class: "input" %>
-        </div>
-        <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "ready_open_ring_unit_price_cents" %>
-        <div class="field">
-          <label class="field-label" for="ready_open_ring_quantity">Qty</label>
-          <%= number_field_tag :quantity, 1, id: "ready_open_ring_quantity", min: 1, class: "input input-qty" %>
-        </div>
-        <div class="field">
-          <%= form.label :description, "Description (optional)", class: "field-label" %>
-          <%= form.text_field :description, class: "input" %>
-        </div>
-        <div class="form-actions">
-          <%= form.submit "Start with open ring", class: "button button-primary" %>
-        </div>
-      <% end %>
-    <% end %>
-  <% end %>
-
-  <% if @open_session.present? && can_sv && sv_operations.any? %>
-    <%= render layout: "pos/overlays/frame", locals: { id: "pos-stored-value", title: "Stored Value" } do %>
-      <p class="muted">Starts a transaction with a gift-card issue or reload line.</p>
-      <%= form_with url: register_start_stored_value_path, method: :post, class: "form",
-            data: { turbo_frame: "_top" } do |form| %>
-        <div class="field">
-          <%= form.label :stored_value_operation, "Operation", class: "field-label" %>
-          <%= form.select :stored_value_operation, sv_operations, {}, class: "input" %>
-        </div>
-        <%= render "shared/currency_field", name: "amount_cents", label: "Amount", id: "ready_sv_amount_cents" %>
-        <div class="field">
-          <%= form.label :account_number, "Existing account number", class: "field-label" %>
-          <%= form.text_field :account_number, class: "input", autocomplete: "off" %>
-        </div>
-        <% if Current.user.can?("stored_value.account.create", store: Current.store) %>
-          <div class="field">
-            <label class="field-label">
-              <%= check_box_tag :create_account, "1" %>
-              Create new gift-card account
-            </label>
-          </div>
-        <% end %>
-        <div class="form-actions">
-          <%= form.submit "Start with stored value", class: "button button-primary" %>
-        </div>
-      <% end %>
-    <% end %>
-  <% end %>
-
-  <% if @open_session.present? && Current.user.can?("pos.cash_movement.create", store: Current.store) %>
-    <%= render layout: "pos/overlays/frame", locals: { id: "pos-cash-movement", title: "Cash movement" } do %>
-      <p class="muted">Record a paid-in, paid-out, float, or safe drop against this open session.</p>
-      <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "form",
-            data: { turbo_frame: "_top" } do |form| %>
-        <div class="field">
-          <%= form.label :cash_movement_type_id, "Type", class: "field-label" %>
-          <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name, {}, class: "input" %>
-        </div>
-        <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
-              id: "cash_movement_amount_cents", required: true, value_cents: nil, value: "",
-              autofocus: true, hint: "Enter an amount greater than zero." %>
-        <div class="field">
-          <%= form.label :reason, class: "field-label" %>
-          <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
-        </div>
-        <div class="field">
-          <%= form.label :reference, class: "field-label" %>
-          <%= form.text_field :reference, placeholder: "Reference", class: "input" %>
-        </div>
-        <%= render "shared/approval_fields", prefix: "cash_movement" %>
-        <div class="form-actions">
-          <%= form.submit "Record cash movement", class: "button button-primary" %>
-        </div>
-      <% end %>
-    <% end %>
-  <% end %>
-
-  <% if @open_session.present? && @open_session.cash_enabled? %>
-    <%= render layout: "pos/overlays/frame", locals: { id: "pos-no-sale", title: "No Sale" } do %>
-      <p class="muted">
-        No Sale opens the cash drawer as an audited action without changing expected cash.
-        Drawer kick / No Sale posting is not available in this build yet.
-      </p>
-      <div class="form-actions">
-        <button type="button" class="button button-outline" data-action="pos-overlay#close">Close</button>
-      </div>
-    <% end %>
-  <% end %>
-
-  <% if @open_session.present? && @suspended_transactions.size > 3 %>
-    <%= render layout: "pos/overlays/frame", locals: { id: "pos-suspended-all", title: "Suspended transactions" } do %>
-      <ul class="pos-readiness-list">
-        <% @suspended_transactions.each do |transaction| %>
-          <li>
-            <%= link_to transaction.public_id, pos_transaction_path(transaction), data: { turbo_frame: "_top" } %>
-            · <%= formatted_datetime(transaction.suspended_at, format: :short) %>
-          </li>
-        <% end %>
-      </ul>
-    <% end %>
-  <% end %>
+<% overflow_commands = capture do %>
+  <%= link_to "Store Operations", root_path, class: "button button-outline button-small",
+        data: { turbo_frame: "_top" } %>
 <% end %>
 
 <%= render "pos/shell",
@@ -398,4 +197,5 @@
       session: pos_shell_session,
       primary: primary,
       summary: summary,
-      commands: commands %>
+      primary_commands: primary_commands,
+      overflow_commands: overflow_commands %>

@@ -1,0 +1,11 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "No Sale" } do %>
+    <p class="muted">
+      No Sale opens the cash drawer as an audited action without changing expected cash.
+      Drawer kick / No Sale posting is not available in this build yet.
+    </p>
+    <div class="form-actions">
+      <button type="button" class="button button-outline" data-action="pos-overlay#close">Close</button>
+    </div>
+  <% end %>
+<% end %>

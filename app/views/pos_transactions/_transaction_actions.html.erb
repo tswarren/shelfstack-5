@@ -1,25 +1,20 @@
 <% if @pos_transaction.open? %>
-  <section class="pos-panel" aria-label="Transaction actions">
-    <% if @pos_transaction.void_required_tenders? %>
-      <p class="muted" role="status">
-        Resolve void-required card tenders before completing, suspending, or cancelling.
-      </p>
-    <% else %>
-      <div class="pos-actions">
-        <% if @pos_transaction.editable? && Current.user.can?("pos.transaction.suspend", store: Current.store) %>
-          <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction), class: "button button-outline" %>
-        <% end %>
-        <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>
-          <%= button_to "Cancel", cancel_pos_transaction_path(@pos_transaction), class: "button button-danger",
-                form: { data: { turbo_confirm: "Cancel this transaction?" } } %>
-        <% end %>
-      </div>
+  <% if @pos_transaction.void_required_tenders? %>
+    <span class="muted" role="status">Resolve void-required tenders first.</span>
+  <% else %>
+    <% if @pos_transaction.editable? && Current.user.can?("pos.transaction.suspend", store: Current.store) %>
+      <%= button_to "Suspend", suspend_pos_transaction_path(@pos_transaction),
+            class: "button button-outline button-small",
+            form: { data: pos_workspace_turbo.merge(turbo_frame: "_top") } %>
     <% end %>
-  </section>
+    <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>
+      <%= button_to "Cancel", cancel_pos_transaction_path(@pos_transaction),
+            class: "button button-danger button-small",
+            form: { data: { turbo_frame: "_top", turbo_confirm: "Cancel this transaction?" } } %>
+    <% end %>
+  <% end %>
 <% elsif @pos_transaction.suspended? && Current.user.can?("pos.transaction.recall", store: Current.store) %>
-
-  <section class="pos-panel" aria-label="Transaction actions">
-    <%= button_to "Recall", recall_pos_transaction_path(@pos_transaction), class: "button button-primary",
-          form: { data: { turbo_confirm: "Recall this suspended transaction?" } } %>
-  </section>
+  <%= button_to "Recall", recall_pos_transaction_path(@pos_transaction),
+        class: "button button-primary button-small",
+        form: { data: { turbo_frame: "_top", turbo_confirm: "Recall this suspended transaction?" } } %>
 <% end %>

@@ -1,0 +1,15 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Receipt lookup" } do %>
+    <p class="muted">Look up a completed receipt to review or start a linked return.</p>
+    <%= form_with url: register_lookup_receipt_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do |form| %>
+      <div class="field">
+        <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
+        <%= text_field_tag :receipt_number, nil, class: "input", autocomplete: "off", autofocus: true %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit "Look up receipt", class: "button button-primary" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

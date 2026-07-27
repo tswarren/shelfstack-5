@@ -133,6 +133,18 @@ Rails.application.routes.draw do
   post "register/stage_customer", to: "pos_customers#stage", as: :register_stage_customer
   post "register/clear_staged_customer", to: "pos_customers#clear_stage", as: :register_clear_staged_customer
 
+  scope path: "pos/overlays", as: :pos_overlay, controller: "pos_overlays" do
+    get :product_lookup
+    get :customer
+    get :receipt_lookup
+    get :open_ring
+    get :stored_value
+    get :cash_movement
+    get :no_sale
+    get :suspended
+    get :line_actions
+  end
+
   resources :business_days, only: %i[index new create] do
     member do
       get :close_form

@@ -16,7 +16,7 @@ class Phase11LayoutL0ShellTest < ActionDispatch::IntegrationTest
     assert_select "#pos-primary"
     assert_select "#pos-summary"
     assert_select "#pos-commands"
-    assert_select "turbo-frame#pos_workspace"
+    assert_select "turbo-frame#pos_workspace[target=_top]"
     assert_select "turbo-frame#pos_overlay"
     assert_select ".page-header", count: 0
     assert_select ".app-header", count: 0

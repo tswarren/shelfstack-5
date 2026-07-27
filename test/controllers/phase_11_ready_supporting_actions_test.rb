@@ -20,37 +20,29 @@ class Phase11ReadySupportingActionsTest < ActionDispatch::IntegrationTest
     }
   end
 
-  test "ready supporting actions open named overlays and product requests leave the frame" do
+  test "ready supporting actions target overlay frame and leave-POS uses _top" do
     get register_path
     assert_response :success
-    assert_select "button[data-pos-overlay-id-param='pos-customer']", text: "Customer"
-    assert_select "button[data-pos-overlay-id-param='pos-receipt-lookup']", text: "Receipt lookup"
-    assert_select "button[data-pos-overlay-id-param='pos-open-ring']", text: "Open Ring"
-    assert_select "button[data-pos-overlay-id-param='pos-cash-movement']", text: "Cash Movement"
-    assert_select "button[data-pos-overlay-id-param='pos-no-sale']", text: "No Sale"
-    assert_select "dialog#pos-customer"
-    assert_select "dialog#pos-receipt-lookup"
-    assert_select "dialog#pos-open-ring"
-    assert_select "dialog#pos-cash-movement"
-    assert_select "dialog#pos-no-sale"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_customer_path, text: "Customer"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_receipt_lookup_path, text: "Receipt lookup"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_open_ring_path, text: "Open Ring"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_cash_movement_path, text: "Cash Movement"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_no_sale_path, text: "No Sale"
     assert_select "a[href=?][data-turbo-frame=_top]", product_requests_path, text: "Pickup / Product Request"
   end
 
-  test "failed cash movement returns to register with overlay reopen hint" do
-    session = PosSession.open_sessions.order(:id).last
-    type = CashMovementType.find_by!(organization: stores(:main_street).organization, code: "additional_float")
+  test "overlay endpoints render dialog fragments" do
+    get pos_overlay_customer_path
+    assert_response :success
+    assert_select "turbo-frame#pos_overlay dialog"
 
-    assert_no_difference "PosCashMovement.count" do
-      post pos_session_pos_cash_movements_path(session), params: {
-        cash_movement_type_id: type.id,
-        amount_cents: "0.00",
-        reason: "zero"
-      }
-    end
-    assert_redirected_to register_path(overlay: "pos-cash-movement")
-    follow_redirect!
-    assert_select "[data-pos-overlay-open-on-connect-value='pos-cash-movement']"
-    assert_match(/amount must be positive/i, response.body)
+    get pos_overlay_open_ring_path
+    assert_response :success
+    assert_select "turbo-frame#pos_overlay dialog"
+
+    get pos_overlay_cash_movement_path
+    assert_response :success
+    assert_select "turbo-frame#pos_overlay dialog"
   end
 
   test "start open ring from ready creates first-valid-work transaction" do
@@ -66,5 +58,21 @@ class Phase11ReadySupportingActionsTest < ActionDispatch::IntegrationTest
     assert_redirected_to pos_transaction_path(txn, intent: "open_ring")
     assert_equal 1, txn.pos_line_items.pending.count
     assert_equal "open_ring", txn.pos_line_items.pending.last.line_kind
+  end
+
+  test "failed cash movement returns to register with alert" do
+    session = PosSession.open_sessions.order(:id).last
+    type = CashMovementType.find_by!(organization: stores(:main_street).organization, code: "additional_float")
+
+    assert_no_difference "PosCashMovement.count" do
+      post pos_session_pos_cash_movements_path(session), params: {
+        cash_movement_type_id: type.id,
+        amount_cents: "0.00",
+        reason: "zero"
+      }
+    end
+    assert_redirected_to register_path
+    follow_redirect!
+    assert_match(/amount must be positive/i, response.body)
   end
 end

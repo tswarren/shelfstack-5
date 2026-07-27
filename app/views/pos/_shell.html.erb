@@ -1,14 +1,18 @@
-<%# locals: presentation:, presentation_label:, session:, primary:, summary:, commands:, hide_summary: false, hide_commands: false %>
+<%# locals: presentation:, presentation_label:, session:, primary:, summary:, summary_cta: nil, commands:, primary_commands: nil, overflow_commands: nil, hide_summary: false, hide_commands: false %>
 <% presentation = local_assigns.fetch(:presentation) %>
 <% presentation_label = local_assigns.fetch(:presentation_label) %>
 <% session = local_assigns.fetch(:session, nil) %>
 <% hide_summary = local_assigns.fetch(:hide_summary, false) %>
 <% hide_commands = local_assigns.fetch(:hide_commands, false) %>
+<% summary_cta = local_assigns.fetch(:summary_cta, nil) %>
+<% primary_commands = local_assigns.fetch(:primary_commands, nil) %>
+<% overflow_commands = local_assigns.fetch(:overflow_commands, nil) %>
 <% shell_modifier = hide_summary ? "pos-shell--no-summary" : "pos-shell--with-summary" %>
 
-<div data-controller="pos-overlay"
-     data-pos-overlay-open-on-connect-value="<%= h(params[:overlay].to_s) %>">
-  <%= turbo_frame_tag "pos_workspace", class: "pos-workspace-frame" do %>
+<div data-controller="pos-overlay">
+  <%= turbo_frame_tag "pos_workspace",
+        target: "_top",
+        class: "pos-workspace-frame" do %>
     <div class="pos-shell <%= shell_modifier %>"
          data-controller="pos-register"
          data-pos-presentation="<%= presentation %>"
@@ -29,20 +33,43 @@
         </div>
         <% unless hide_summary %>
           <aside class="pos-shell__summary" id="pos-summary" aria-label="Summary">
-            <%= summary %>
+            <div class="pos-shell__summary-scroll">
+              <%= summary %>
+            </div>
+            <% if summary_cta.present? %>
+              <div class="pos-summary-cta">
+                <%= summary_cta %>
+              </div>
+            <% end %>
           </aside>
         <% end %>
       </div>
 
       <% unless hide_commands %>
         <div class="pos-shell__commands" id="pos-commands" role="toolbar" aria-label="POS commands">
-          <%= commands %>
+          <% if primary_commands || overflow_commands %>
+            <div class="pos-commands-primary">
+              <%= primary_commands %>
+            </div>
+            <% if overflow_commands.present? %>
+              <details class="pos-commands-overflow">
+                <summary class="button button-outline button-small">More</summary>
+                <div class="pos-commands-overflow__menu">
+                  <%= overflow_commands %>
+                </div>
+              </details>
+            <% end %>
+          <% else %>
+            <div class="pos-commands-primary">
+              <%= commands %>
+            </div>
+          <% end %>
         </div>
       <% end %>
     </div>
   <% end %>
 
-  <%= turbo_frame_tag "pos_overlay", class: "pos-overlay-frame" do %>
-    <%= yield :pos_overlay if content_for?(:pos_overlay) %>
-  <% end %>
+  <%= turbo_frame_tag "pos_overlay",
+        class: "pos-overlay-frame",
+        data: { action: "turbo:frame-load->pos-overlay#onFrameLoad" } %>
 </div>

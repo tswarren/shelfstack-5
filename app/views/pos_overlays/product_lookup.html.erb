@@ -1,0 +1,45 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Product lookup" } do %>
+    <p class="muted">Search and deliberately Add. Exact matches are never auto-added.</p>
+    <% if @pos_transaction %>
+      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form",
+            data: { turbo_frame: "_top" } do %>
+        <%= hidden_field_tag :intent, @intent %>
+        <%= render "shared/record_picker",
+              name: "product_variant_id",
+              id: "overlay_product_variant_id",
+              record_type: "product_variant",
+              label: "Product variant",
+              required: true,
+              include_blank: false,
+              hint: "Search by name, ISBN, SKU, or identifier." %>
+        <div class="field">
+          <label class="field-label" for="overlay_lookup_quantity">Qty</label>
+          <%= number_field_tag :quantity, 1, id: "overlay_lookup_quantity", min: 1, class: "input input-qty" %>
+        </div>
+        <div class="form-actions">
+          <%= submit_tag "Add from lookup", class: "button button-primary" %>
+        </div>
+      <% end %>
+    <% else %>
+      <%= form_with url: register_scan_to_start_path, method: :post, class: "form",
+            data: { turbo_frame: "_top" } do %>
+        <%= render "shared/record_picker",
+              name: "product_variant_id",
+              id: "ready_product_variant_id",
+              record_type: "product_variant",
+              label: "Product variant",
+              required: true,
+              include_blank: false,
+              hint: "Search by name, ISBN, SKU, or identifier." %>
+        <div class="field">
+          <label class="field-label" for="ready_lookup_quantity">Qty</label>
+          <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>
+        </div>
+        <div class="form-actions">
+          <%= submit_tag "Add from Ready", class: "button button-primary" %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

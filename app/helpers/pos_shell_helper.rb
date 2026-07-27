@@ -17,4 +17,14 @@ module PosShellHelper
   def pos_shell_presentation_label
     @workspace&.label.presence || pos_shell_presentation.to_s.humanize
   end
+
+  # In-shell POS mutations target the workspace frame. Leave-POS links must use `_top`
+  # (the workspace frame default) or an explicit overlay frame.
+  def pos_workspace_turbo
+    { turbo_frame: "pos_workspace", turbo_action: "advance" }
+  end
+
+  def pos_overlay_turbo
+    { turbo_frame: "pos_overlay" }
+  end
 end

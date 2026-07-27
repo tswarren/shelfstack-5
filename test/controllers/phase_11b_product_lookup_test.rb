@@ -56,7 +56,7 @@ class Phase11bProductLookupTest < ActionDispatch::IntegrationTest
 
     get pos_transaction_path(transaction)
     assert_response :success
-    assert_match(/Product lookup/, response.body)
+    assert_match(/Lookup/, response.body)
 
     assert_no_difference "PosTransaction.count" do
       post pos_transaction_pos_line_items_path(transaction), params: {

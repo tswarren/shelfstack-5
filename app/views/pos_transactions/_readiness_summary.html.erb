@@ -1,6 +1,6 @@
 <% if @readiness.present? %>
-  <section class="pos-panel" aria-label="Readiness">
-    <h2>Readiness</h2>
+  <section class="pos-region" aria-label="Readiness">
+    <h3>Readiness</h3>
     <% if @readiness.issues.empty? %>
       <p class="muted" role="status">Ready for tender.</p>
     <% else %>
@@ -15,7 +15,8 @@
                       intent: @entry_intent,
                       selected_line_id: issue.line_id,
                       focus_target: "line_actions"),
-                    class: "button button-small button-ghost" %>
+                    class: "button button-small button-ghost",
+                    data: pos_workspace_turbo %>
             <% end %>
           </li>
         <% end %>
