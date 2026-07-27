@@ -10,7 +10,7 @@
     <% nav_intent = @entry_intent %>
     <% nav_focus = "line_actions" %>
 
-    <% if @section == "price" && line.line_kind == "product" %>
+    <% if @section == "price" %>
       <%= form_with url: override_price_pos_transaction_pos_line_item_path(@pos_transaction, line), method: :patch,
             class: "form", data: { turbo_frame: "_top" } do |form| %>
         <%= hidden_field_tag :intent, nav_intent %>

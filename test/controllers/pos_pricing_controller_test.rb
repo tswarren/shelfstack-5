@@ -110,6 +110,7 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?][data-turbo-frame=pos_overlay]",
       pos_overlay_line_actions_path(pos_transaction_id: @transaction.id, line_id: @line.id, intent: "sale", section: "discount"),
       text: "Discount"
+    assert_select "a[data-turbo-frame=pos_overlay]", text: "Price", count: 0
     assert_match(/Transaction discount/, response.body)
     assert_select "form[action=?]", pos_transaction_pos_discount_path(@transaction, txn_discount)
 
@@ -119,6 +120,12 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match(/Line discount/, response.body)
     assert_select "form[action=?]", pos_transaction_pos_discount_path(@transaction, line_discount)
+
+    get pos_overlay_line_actions_path(
+      pos_transaction_id: @transaction.id, line_id: @line.id, intent: "sale", section: "price"
+    )
+    assert_response :unprocessable_entity
+    assert_match(/not available for this line/i, response.body)
   end
 
 

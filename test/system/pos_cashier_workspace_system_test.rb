@@ -28,14 +28,14 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     )
 
     visit register_path
-    assert_text "Register ready"
+    assert_selector "section[aria-label='Start customer work']"
     assert_button "Scan to start"
 
     before_count = PosTransaction.count
     # Fill inside the ready section, but submit outside `within` — Turbo replaces
     # the section on success and Chrome can raise a detached-node UnknownError
     # while Capybara still holds the within scope.
-    within("section[aria-label='Next action']") do
+    within("section[aria-label='Start customer work']") do
       fill_in "Scan or search", with: @variant.sku
     end
     click_button "Scan to start"
@@ -44,11 +44,11 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     assert_equal before_count + 1, PosTransaction.count
     transaction = PosTransaction.order(:id).last
     assert_current_path pos_transaction_path(transaction)
-    assert_text "State:"
+    assert_selector ".pos-shell[data-pos-presentation='transaction']"
     assert_text "Transaction"
 
     click_link "Tender", href: /\/tender/
-    assert_text "State:"
+    assert_selector ".pos-shell[data-pos-presentation='tender']"
     assert_text "Tender"
 
     net = transaction.reload.pos_line_items.pending.sum { |l|
@@ -64,7 +64,7 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
 
     click_link "Next transaction"
     assert_current_path register_path
-    assert_text "Register ready"
+    assert_selector "section[aria-label='Start customer work']"
     assert_no_text "Resume transaction"
     assert_equal 0, PosTransaction.open_transactions.where(active_pos_session: PosSession.open_sessions.last).count
   end
@@ -85,7 +85,7 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     )
 
     visit register_path
-    within("section[aria-label='Next action']") do
+    within("section[aria-label='Start customer work']") do
       fill_in "Scan or search", with: @variant.sku
     end
     click_button "Scan to start"
@@ -101,7 +101,7 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     assert_text(/Transaction complete|Receipt/i, wait: 5)
 
     visit register_path
-    assert_text "Register ready"
+    assert_selector "section[aria-label='Start customer work']"
     page.go_back
 
     assert_text "Transaction complete", wait: 5

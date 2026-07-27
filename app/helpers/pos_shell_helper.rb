@@ -20,8 +20,9 @@ module PosShellHelper
 
   # In-shell POS mutations target the workspace frame. Leave-POS links must use `_top`
   # (the workspace frame default) or an explicit overlay frame.
+  # Omit turbo_action by default so intermediate mutations do not stack history.
   def pos_workspace_turbo
-    { turbo_frame: "pos_workspace", turbo_action: "advance" }
+    { turbo_frame: "pos_workspace" }
   end
 
   def pos_overlay_turbo

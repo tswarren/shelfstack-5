@@ -1,0 +1,27 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Transaction detail" } do %>
+    <p class="muted">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
+    <section class="pos-region" aria-label="Lines">
+      <table class="pos-line-table">
+        <caption class="sr-only">Transaction lines</caption>
+        <thead>
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col" class="num">Qty</th>
+            <th scope="col" class="num">Price</th>
+            <th scope="col" class="num">Ext</th>
+            <th scope="col" class="num">Disc</th>
+            <th scope="col" class="num">Tax</th>
+            <th scope="col" class="num">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @pos_line_items.each do |line| %>
+            <%= render "pos_transactions/line_item", line: line %>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+    <%= render "pos_transactions/totals" %>
+  <% end %>
+<% end %>

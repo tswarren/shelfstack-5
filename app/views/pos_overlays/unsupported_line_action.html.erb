@@ -1,0 +1,5 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Unavailable" } do %>
+    <p role="alert">That action is not available for this line.</p>
+  <% end %>
+<% end %>

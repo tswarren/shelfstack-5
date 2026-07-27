@@ -25,11 +25,12 @@ class Phase11LineSelectTest < ActionDispatch::IntegrationTest
     @line = @transaction.pos_line_items.pending.last
   end
 
-  test "line rows expose full-page select controls and selection updates command bar" do
+  test "line rows expose workspace select controls and selection updates command bar" do
     get pos_transaction_path(@transaction)
     assert_response :success
-    assert_select "tr[data-controller='pos-line-row'][data-pos-line-row-url-value]"
-    assert_select "a.pos-line-select-link[data-turbo-frame=_top][href=?]",
+    assert_select "tr[data-controller='pos-line-row']"
+    assert_select "tr[role=button]", count: 0
+    assert_select "a.pos-line-select-link[data-turbo-frame=pos_workspace][href=?]",
       pos_transaction_path(@transaction, intent: "sale", selected_line_id: @line.id, focus_target: "line_actions")
 
     get pos_transaction_path(@transaction, intent: "sale", selected_line_id: @line.id, focus_target: "line_actions")
@@ -37,6 +38,7 @@ class Phase11LineSelectTest < ActionDispatch::IntegrationTest
     assert_select "tr.pos-line-selected"
     assert_select ".pos-commands-selected[data-pos-register-target=lineActions]"
     assert_select "a[data-turbo-frame=pos_overlay]", text: "Discount"
+    assert_select "a[data-turbo-frame=pos_overlay]", text: "Price"
   end
 
   private

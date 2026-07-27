@@ -8,6 +8,19 @@ export default class extends Controller {
   connect() {
     this._returnFocusTo = null
     this._openDialog = null
+    this.onClickCapture = this.rememberInvoker.bind(this)
+    this.element.addEventListener("click", this.onClickCapture, true)
+  }
+
+  disconnect() {
+    this.element.removeEventListener("click", this.onClickCapture, true)
+  }
+
+  rememberInvoker(event) {
+    const launcher = event.target.closest('[data-turbo-frame="pos_overlay"]')
+    if (launcher && this.element.contains(launcher)) {
+      this._returnFocusTo = launcher
+    }
   }
 
   onFrameLoad(event) {

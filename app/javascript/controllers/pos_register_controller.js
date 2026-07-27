@@ -117,6 +117,9 @@ export default class extends Controller {
 
   handleKeydown(event) {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      // Do not progress the sale while a modal overlay holds cashier attention.
+      if (document.querySelector("dialog[open]")) return
+      if (!this.element.contains(event.target) && event.target !== document.body) return
       if (this.scanFieldHasUncommittedValue()) return
 
       if (this.hasCompleteButtonTarget && !this.completeButtonTarget.disabled) {

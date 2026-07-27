@@ -31,10 +31,12 @@
               pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "discount"),
               class: "button button-small button-outline",
               data: pos_overlay_turbo %>
-        <%= link_to "Price",
-              pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "price"),
-              class: "button button-small button-outline",
-              data: pos_overlay_turbo %>
+        <% if line.line_kind == "product" %>
+          <%= link_to "Price",
+                pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "price"),
+                class: "button button-small button-outline",
+                data: pos_overlay_turbo %>
+        <% end %>
         <%= link_to "Tax",
               pos_overlay_line_actions_path(pos_transaction_id: @pos_transaction.id, line_id: line.id, intent: @entry_intent, section: "tax"),
               class: "button button-small button-ghost",

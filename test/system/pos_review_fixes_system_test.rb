@@ -30,7 +30,7 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     open_register_with_transaction!
 
     visit pos_transaction_path(@transaction, intent: "open_ring")
-    assert_text "Open-ring line"
+    assert_selector "section[aria-label='Open-ring line']"
     select @department.name, from: "Department"
     fill_in "Price", with: "7.25"
     click_button "Add open-ring line"
@@ -44,11 +44,11 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     open_register_with_transaction!
 
     visit pos_transaction_path(@transaction)
-    assert_text "Scan / search"
+    assert_text "Scan or search"
 
     within("section[aria-label='Scan or search']") do
       fill_in "Scan or search", with: "ZZZNOMATCH999"
-      click_button "Add line"
+      click_button "Add"
     end
     assert_field "Scan or search", with: "ZZZNOMATCH999"
 
@@ -71,12 +71,12 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     open_register_with_transaction!
 
     visit pos_transaction_path(@transaction)
-    assert_text "Scan / search"
+    assert_text "Scan or search"
 
     within("section[aria-label='Scan or search']") do
       fill_in "Scan or search", with: "SHAREDALT01"
       fill_in "Qty", with: "4"
-      click_button "Add line"
+      click_button "Add"
     end
 
     assert_text "Multiple products matched"
@@ -136,7 +136,7 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     assert_current_path register_path
   end
 
-  test "Enter on Transaction detail summary toggles disclosure instead of leaving" do
+  test "View detail opens receipt detail overlay without leaving receipt" do
     open_register_with_transaction!
     Pos::AddOpenRingLine.call(
       pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
@@ -153,10 +153,10 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
 
     visit pos_transaction_path(@transaction)
     assert_text "Transaction complete"
-    details = find("details", text: /Transaction detail/i)
-    summary = details.find("summary")
-    summary.send_keys(:return)
-    assert details[:open].present?
+    find("summary", text: "More").click
+    click_link "View detail"
+    assert_selector "dialog[open]", wait: 5
+    assert_text "Transaction detail"
     assert_current_path pos_transaction_path(@transaction)
   end
 
@@ -164,10 +164,13 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     open_register_with_transaction!
 
     visit pos_transaction_path(@transaction)
-    assert_text "Transaction-wide discount"
-    details = find("details", text: /Transaction-wide discount/)
-    details.find("summary").send_keys(:return)
-    assert details[:open].present?
+    secondary_summary = find("#pos-summary summary", text: "Secondary")
+    secondary_summary.send_keys(:return)
+    assert secondary_summary.find(:xpath, "..")[:open].present?
+
+    discount_summary = find("#pos-summary summary", text: /Transaction-wide discount/)
+    discount_summary.send_keys(:return)
+    assert discount_summary.find(:xpath, "..")[:open].present?
   end
 
   private

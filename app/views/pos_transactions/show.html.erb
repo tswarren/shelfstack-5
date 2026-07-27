@@ -52,11 +52,10 @@
   <% end %>
 
   <% overflow_commands = capture do %>
-    <details>
-      <summary class="button button-ghost button-small">View detail</summary>
-      <%= render "line_items" %>
-      <%= render "totals" %>
-    </details>
+    <%= link_to "View detail",
+          pos_overlay_receipt_detail_path(pos_transaction_id: @pos_transaction.id),
+          class: "button button-ghost button-small",
+          data: pos_overlay_turbo %>
     <% returnable = @pos_transaction.pos_line_items
          .where(status: "completed", direction: "sale")
          .where.not(line_kind: "stored_value")
@@ -85,8 +84,9 @@
   <% content_for :head do %>
     <meta name="turbo-cache-control" content="no-cache">
   <% end %>
-  <% tender_mode = @presentation_state == "tender" || @presentation_state == "recovery" %>
-  <% recovery_mode = @presentation_state == "recovery" || @completion_outcome == "failed" %>
+  <% tender_mode = @presentation_state == "tender" %>
+  <% recovery_mode = @presentation_state == "recovery" %>
+  <% completion_failed = @completion_outcome == "failed" %>
 
   <% primary = capture do %>
     <% if recovery_mode %>
@@ -94,6 +94,26 @@
       <%= render "void_required_tenders" %>
     <% elsif tender_mode %>
       <section class="pos-sale-panel" aria-label="Payment">
+        <% if completion_failed %>
+          <div class="pos-region" role="status" aria-label="Completion failure">
+            <h2>Completion failed</h2>
+            <p>
+              <strong>Code:</strong> <%= @completion_code.presence || "validation_failed" %><br>
+              Transaction not completed. Receipt not assigned. Inventory not posted for this attempt.
+            </p>
+            <% if flash[:alert].present? %>
+              <p><%= flash[:alert] %></p>
+            <% end %>
+            <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
+              <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post,
+                    data: { turbo: false, action: "submit->pos-register#startProcessing" } do |form| %>
+                <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
+                <%= form.submit "Retry completion", class: "button button-primary",
+                      data: { "pos-register-target": "completeButton" } %>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
         <div class="pos-region">
           <h2>Payment</h2>
           <p class="pos-balance">

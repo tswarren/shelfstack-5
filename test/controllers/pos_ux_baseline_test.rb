@@ -430,13 +430,16 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".pos-shell[data-pos-presentation='receipt']"
     assert_select ".pos-completed-summary"
-    # Expanded transaction detail must retain historical discount/tax (not $0.00).
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]",
+      pos_overlay_receipt_detail_path(pos_transaction_id: @transaction.id),
+      text: "View detail"
+
+    get pos_overlay_receipt_detail_path(pos_transaction_id: @transaction.id)
+    assert_response :success
     body = response.body
-    detail_start = body.index("View detail")
-    assert detail_start, "expected transaction detail section"
-    detail = body[detail_start..]
-    assert_includes detail, format("$%.2f", discount_cents / 100.0)
-    assert_includes detail, format("$%.2f", tax_cents / 100.0)
+    assert_includes body, "Transaction detail"
+    assert_includes body, format("$%.2f", discount_cents / 100.0)
+    assert_includes body, format("$%.2f", tax_cents / 100.0)
   end
 
   private

@@ -137,6 +137,7 @@ Rails.application.routes.draw do
     get :product_lookup
     get :customer
     get :receipt_lookup
+    get :receipt_detail
     get :open_ring
     get :stored_value
     get :cash_movement

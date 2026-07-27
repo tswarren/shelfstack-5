@@ -37,6 +37,7 @@ class PosOverlayFrameSystemTest < ApplicationSystemTestCase
       click_button "Close"
     end
     assert_no_selector "dialog[open]", wait: 3
+    assert_equal "Product lookup", page.evaluate_script("document.activeElement?.textContent?.trim()")
 
     within(".pos-register-header") { click_link "Store Operations" }
     assert_current_path root_path

@@ -3,26 +3,53 @@
 module Pos
   # Ready-state first valid work: open (or reuse) a transaction and add a gift-card line.
   # Never leaves an empty open transaction on failure.
+  # When create_account is requested, account creation commits only with a successful line.
   class StartStoredValue < ApplicationService
     Result = Data.define(:success?, :pos_transaction, :pos_line_item, :error)
 
-    def initialize(pos_session:, actor:, account:, operation:, amount_cents:)
+    def initialize(pos_session:, actor:, operation:, amount_cents:, account: nil,
+                   create_account: false, organization: nil, store: nil, alternate_identifier: nil)
       @pos_session = pos_session
       @actor = actor
       @account = account
       @operation = operation
       @amount_cents = amount_cents
+      @create_account = create_account
+      @organization = organization
+      @store = store
+      @alternate_identifier = alternate_identifier
     end
 
     def call
       return failure("POS session is not open.") unless @pos_session.open?
-      return failure("Select or create a gift-card account.") if @account.blank?
+      if !@create_account && @account.blank?
+        return failure("Select or create a gift-card account.")
+      end
+      if @create_account && @organization.blank?
+        return failure("Organization is required to create a gift-card account.")
+      end
 
-      add_error = nil
+      rollback_error = nil
       result = ActiveRecord::Base.transaction(requires_new: true) do
         session = PosSession.lock.find(@pos_session.id)
         unless session.open?
           next failure("POS session is not open.")
+        end
+
+        account = @account
+        if @create_account
+          created = StoredValue::CreateAccount.call(
+            organization: @organization,
+            account_type: "gift_card",
+            actor: @actor,
+            store: @store,
+            alternate_identifier: @alternate_identifier
+          )
+          unless created.success?
+            rollback_error = created.error
+            raise ActiveRecord::Rollback
+          end
+          account = created.account
         end
 
         transaction = PosTransaction.open_transactions.find_by(active_pos_session_id: session.id)
@@ -49,20 +76,20 @@ module Pos
 
         add = AddStoredValueLine.call(
           pos_transaction: transaction,
-          account: @account,
+          account: account,
           operation: @operation,
           amount_cents: @amount_cents,
           actor: @actor
         )
         unless add.success?
-          add_error = add.error
+          rollback_error = add.error
           raise ActiveRecord::Rollback
         end
 
         Result.new(success?: true, pos_transaction: transaction, pos_line_item: add.pos_line_item, error: nil)
       end
 
-      result || failure(add_error.presence || "Unable to start stored-value work.")
+      result || failure(rollback_error.presence || "Unable to start stored-value work.")
     end
 
     private

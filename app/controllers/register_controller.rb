@@ -113,16 +113,27 @@ class RegisterController < ApplicationController
     load_register_context!
     return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
 
-    account = resolve_ready_stored_value_account
-    return if performed?
-    if account.blank?
-      return redirect_to register_path, alert: "Select or create a gift-card account."
+    create_account = params[:create_account].present?
+    if create_account && !Current.user.can?("stored_value.account.create", store: Current.store)
+      return redirect_to register_path, alert: "missing permission stored_value.account.create"
+    end
+
+    account = nil
+    unless create_account
+      account = resolve_ready_stored_value_account
+      if account.blank?
+        return redirect_to register_path, alert: "Select or create a gift-card account."
+      end
     end
 
     result = Pos::StartStoredValue.call(
       pos_session: @open_session,
       actor: Current.user,
       account: account,
+      create_account: create_account,
+      organization: Current.organization,
+      store: Current.store,
+      alternate_identifier: params[:alternate_identifier].presence,
       operation: params[:stored_value_operation].presence || "issue",
       amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount")
     )
@@ -141,26 +152,6 @@ class RegisterController < ApplicationController
   private
 
   def resolve_ready_stored_value_account
-    if params[:create_account].present?
-      unless Current.user.can?("stored_value.account.create", store: Current.store)
-        redirect_to register_path, alert: "missing permission stored_value.account.create"
-        return nil
-      end
-
-      created = StoredValue::CreateAccount.call(
-        organization: Current.organization,
-        account_type: "gift_card",
-        actor: Current.user,
-        store: Current.store,
-        alternate_identifier: params[:alternate_identifier].presence
-      )
-      unless created.success?
-        redirect_to register_path, alert: created.error
-        return nil
-      end
-      return created.account
-    end
-
     identifier = params[:account_number].presence || params[:alternate_identifier].presence
     return nil if identifier.blank?
 
