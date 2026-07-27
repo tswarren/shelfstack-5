@@ -6,7 +6,8 @@
 <% hide_commands = local_assigns.fetch(:hide_commands, false) %>
 <% shell_modifier = hide_summary ? "pos-shell--no-summary" : "pos-shell--with-summary" %>
 
-<div data-controller="pos-overlay">
+<div data-controller="pos-overlay"
+     data-pos-overlay-open-on-connect-value="<%= h(params[:overlay].to_s) %>">
   <%= turbo_frame_tag "pos_workspace", class: "pos-workspace-frame" do %>
     <div class="pos-shell <%= shell_modifier %>"
          data-controller="pos-register"

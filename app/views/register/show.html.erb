@@ -210,10 +210,10 @@
       Cash Movement
     </button>
   <% end %>
-  <% if @open_session.present? && Current.user.can?("pos.cash_movement.create", store: Current.store) %>
+  <% if @open_session.present? && @open_session.cash_enabled? %>
     <button type="button" class="button button-outline button-small"
             data-action="pos-overlay#open"
-            data-pos-overlay-id-param="pos-cash-movement">
+            data-pos-overlay-id-param="pos-no-sale">
       No Sale
     </button>
   <% end %>
@@ -340,6 +340,7 @@
 
   <% if @open_session.present? && Current.user.can?("pos.cash_movement.create", store: Current.store) %>
     <%= render layout: "pos/overlays/frame", locals: { id: "pos-cash-movement", title: "Cash movement" } do %>
+      <p class="muted">Record a paid-in, paid-out, float, or safe drop against this open session.</p>
       <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "form",
             data: { turbo_frame: "_top" } do |form| %>
         <div class="field">
@@ -347,7 +348,8 @@
           <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name, {}, class: "input" %>
         </div>
         <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
-              id: "cash_movement_amount_cents", required: true %>
+              id: "cash_movement_amount_cents", required: true, value_cents: nil, value: "",
+              autofocus: true, hint: "Enter an amount greater than zero." %>
         <div class="field">
           <%= form.label :reason, class: "field-label" %>
           <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
@@ -361,6 +363,18 @@
           <%= form.submit "Record cash movement", class: "button button-primary" %>
         </div>
       <% end %>
+    <% end %>
+  <% end %>
+
+  <% if @open_session.present? && @open_session.cash_enabled? %>
+    <%= render layout: "pos/overlays/frame", locals: { id: "pos-no-sale", title: "No Sale" } do %>
+      <p class="muted">
+        No Sale opens the cash drawer as an audited action without changing expected cash.
+        Drawer kick / No Sale posting is not available in this build yet.
+      </p>
+      <div class="form-actions">
+        <button type="button" class="button button-outline" data-action="pos-overlay#close">Close</button>
+      </div>
     <% end %>
   <% end %>
 

@@ -40,6 +40,10 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
+  # Allow Docker-hosted tooling (Playwright MCP) to reach the app.
+  config.hosts << "host.docker.internal"
+  config.hosts << "host.docker.internal:3000"
+
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
 
