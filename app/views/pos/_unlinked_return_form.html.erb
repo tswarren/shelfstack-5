@@ -6,7 +6,18 @@
    price_field_id = local_assigns.fetch(:price_field_id, "unlinked_return_unit_price_cents")
    tax_field_id = local_assigns.fetch(:tax_field_id, "unlinked_return_explicit_tax_amount_cents")
    confirm_id = local_assigns.fetch(:confirm_id, "unlinked_confirm_cost_basis")
-   turbo_frame = local_assigns.fetch(:turbo_frame, nil) %>
+   turbo_frame = local_assigns.fetch(:turbo_frame, nil)
+   selected_source = params[:return_source].presence
+   selected_reason = params[:return_reason_id].presence
+   selected_disposition = params[:return_disposition].presence
+   selected_variant = params[:product_variant_id].presence
+   selected_department = params[:department_id].presence
+   selected_tax_category = params[:tax_category_id].presence
+   selected_tax_basis = params[:tax_basis].presence
+   selected_quantity = params[:quantity].presence || 1
+   selected_description = params[:description]
+   unit_price_display = params[:unit_price_cents]
+   explicit_tax_display = params[:explicit_tax_amount_cents] %>
 
 <p class="muted">
   Unlinked returns need an explicit refund price, tax basis, and (for inventory-affecting
@@ -31,11 +42,12 @@
             [ "External receipt", "external_receipt" ],
             [ "Gift receipt", "gift_receipt" ],
             [ "No receipt", "no_receipt" ]
-          ], {}, class: "input", data: { unlinked_return_tax_target: "source" } %>
+          ], { selected: selected_source }, class: "input", data: { unlinked_return_tax_target: "source" } %>
     </div>
     <div class="field">
       <%= form.label :return_reason_id, "Reason", class: "field-label" %>
-      <%= form.collection_select :return_reason_id, return_reasons, :id, :name, {}, class: "input" %>
+      <%= form.collection_select :return_reason_id, return_reasons, :id, :name,
+            { selected: selected_reason }, class: "input" %>
     </div>
     <div class="field">
       <%= form.label :return_disposition, "Disposition", class: "field-label" %>
@@ -45,7 +57,7 @@
             [ "Damaged", "damaged" ],
             [ "Return to vendor", "return_to_vendor" ],
             [ "Non-inventory", "non_inventory" ]
-          ], {}, class: "input" %>
+          ], { selected: selected_disposition }, class: "input" %>
     </div>
   </div>
 
@@ -59,7 +71,7 @@
               .order("products.name", :sku)
               .limit(200),
             :id, ->(v) { "#{v.product.name} · #{v.sku}" },
-            { include_blank: "Open-ring return instead" }, class: "input" %>
+            { include_blank: "Open-ring return instead", selected: selected_variant }, class: "input" %>
       <p class="field-hint">Leave blank for an open-ring return. Individually tracked items require a linked return.</p>
     </div>
     <div class="field">
@@ -67,20 +79,21 @@
       <%= form.collection_select :department_id,
             Department.sorted_hierarchically(Current.organization.departments.where(active: true, postable: true)),
             :id, :name,
-            { include_blank: "—" }, class: "input" %>
+            { include_blank: "—", selected: selected_department }, class: "input" %>
     </div>
     <div class="field">
       <%= form.label :description, "Description (open-ring)", class: "field-label" %>
-      <%= form.text_field :description, class: "input", placeholder: "Blank uses department name" %>
+      <%= form.text_field :description, value: selected_description, class: "input",
+            placeholder: "Blank uses department name" %>
     </div>
   </div>
 
   <div class="form-grid">
     <%= render "shared/currency_field", name: "unit_price_cents", label: "Refund unit price",
-          id: price_field_id %>
+          id: price_field_id, value: unit_price_display, value_cents: (unit_price_display.present? ? nil : 0) %>
     <div class="field">
       <%= form.label :quantity, class: "field-label" %>
-      <%= form.number_field :quantity, value: 1, min: 1, class: "input input-qty" %>
+      <%= form.number_field :quantity, value: selected_quantity, min: 1, class: "input input-qty" %>
     </div>
   </div>
 
@@ -88,7 +101,8 @@
     <div class="field">
       <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
       <%= form.collection_select :tax_category_id, tax_categories, :id, :name,
-            { include_blank: "Use classification / department default" }, class: "input" %>
+            { include_blank: "Use classification / department default", selected: selected_tax_category },
+            class: "input" %>
     </div>
     <div class="field">
       <%= form.label :tax_basis, "Tax basis", class: "field-label" %>
@@ -96,12 +110,12 @@
             [ "Current configured rules", "current_configured_rules" ],
             [ "External receipt tax amount", "external_receipt_tax" ],
             [ "No tax refund", "no_tax_refund" ]
-          ], {}, class: "input", data: { unlinked_return_tax_target: "basis" } %>
+          ], { selected: selected_tax_basis }, class: "input", data: { unlinked_return_tax_target: "basis" } %>
     </div>
     <div data-unlinked-return-tax-target="explicitTax">
       <%= render "shared/currency_field", name: "explicit_tax_amount_cents",
             label: "Explicit tax amount (external receipt)",
-            id: tax_field_id, required: false, value_cents: nil,
+            id: tax_field_id, required: false, value: explicit_tax_display, value_cents: nil,
             hint: "Only used when tax basis is External receipt tax amount." %>
     </div>
   </div>

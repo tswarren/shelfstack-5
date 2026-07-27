@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L6 + MVP review remediations (auth/tax F1, cost confirm, inventory unit add, No Sale F2, CI) landed; **core L7 captures present, residual scenarios + Accepted scoring still block merge**; POS-UI decisions remain Proposed until L7 Accepted
+**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L6 + remediations landed; **reduced L7 Accepted** (human 2026-07-27); P1 overlay first-step error visibility fixed; **ready to squash-merge**. Full POS-UI matrix / gate-issue close follows merge.
 
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Layout gates:** [../design/pos/layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)  
@@ -23,7 +23,7 @@
 
 ## Immediate next work
 
-1. Finish [#150](https://github.com/tswarren/shelfstack-5/pull/150) Gate L7 viewport acceptance at 1366×768 and 1024×768 ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md)); **L2 Must criteria block merge** (single line scroller, stable selected-line commands, pinned totals/progression CTA, keyboard line selection, eight-line 1366 composition). Promote POS-UI-020–037 only after Accepted. Financial Gates F1/F2 are review checkpoints on the PR, not substitutes for L7. Gate D §15.1 Must receipt core is implemented; §15.2 Should residuals remain on DWR-017.
+1. Squash-merge [#150](https://github.com/tswarren/shelfstack-5/pull/150). Reduced L7 is **Accepted**; P1 overlay first-step errors stay visible in `pos_overlay`. Residual screenshot matrix stays deferred. Promote POS-UI decisions and close gate issues after merge. Gate D §15.2 Should residuals remain on DWR-017.
 2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
 3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
 4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.

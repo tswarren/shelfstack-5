@@ -101,6 +101,32 @@ class PosUnlinkedReturnTest < ActionDispatch::IntegrationTest
     refute_match(/9999/, response.body)
   end
 
+  test "missing inventory cost basis re-renders overlay with visible error" do
+    post session_path, params: { username: "admin", password: "password123" }
+    neutralize_unlinked_cost_basis!(@variant)
+    txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+
+    assert_no_difference -> { txn.pos_line_items.returns.count } do
+      post pos_transaction_pos_return_lines_path(txn), params: {
+        mode: "unlinked",
+        return_source: "external_receipt",
+        return_reason_id: @reason.id,
+        return_disposition: "return_to_stock",
+        product_variant_id: @variant.id,
+        unit_price_cents: format("%.2f", @variant.regular_price_cents / 100.0),
+        quantity: 1,
+        tax_basis: "current_configured_rules"
+      }
+    end
+    assert_response :unprocessable_entity
+    assert_nil response.headers["Turbo-Frame"]
+    assert_select "turbo-frame#pos_overlay dialog"
+    assert_select "[role=alert]", text: /no inventory cost basis/i
+    assert_select "form#txn_unlinked_return_form"
+    assert_select "select[name=product_variant_id] option[selected][value=?]", @variant.id.to_s
+    assert_select "select[name=return_disposition] option[selected][value=return_to_stock]"
+  end
+
   test "ready unlinked return requires pos.transaction.open when no open transaction exists" do
     post session_path, params: { username: "admin", password: "password123" }
     cashier = create_limited_cashier(%w[pos.access pos.return.create pos.return.no_receipt])
@@ -140,6 +166,19 @@ class PosUnlinkedReturnTest < ActionDispatch::IntegrationTest
   end
 
   private
+
+  def neutralize_unlinked_cost_basis!(variant)
+    balance = StockBalance.find_by(store: @store, product_variant: variant)
+    if balance
+      balance.update!(
+        moving_average_cost_cents: nil,
+        inventory_value_cents: nil,
+        cost_quality: "unknown"
+      )
+    end
+    Department.where(organization_id: @store.organization_id)
+      .update_all(default_cost_estimation_margin_bps: nil)
+  end
 
   def create_limited_cashier(permission_codes)
     username = "cashier_#{SecureRandom.hex(2)}"

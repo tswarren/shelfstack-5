@@ -1,6 +1,9 @@
 <%= turbo_frame_tag "pos_overlay" do %>
   <% title = @pos_transaction.present? ? "Return" : "Start return" %>
   <%= render layout: "pos_overlays/dialog", locals: { title: title } do %>
+    <% if flash[:alert].present? %>
+      <div class="ss-alert ss-alert-danger" role="alert"><p><%= flash[:alert] %></p></div>
+    <% end %>
     <% if @pos_transaction.present? %>
       <section class="pos-region" aria-label="Linked return">
         <h3>Linked receipt</h3>

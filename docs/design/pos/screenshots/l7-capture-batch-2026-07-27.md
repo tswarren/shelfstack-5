@@ -67,7 +67,7 @@ Residual exhaustive matrix (twenty-line, staged customer, all tender/receipt var
 - Tender partial card / split / net refund / forced Tender
 - Additional receipt variants and remaining overlays
 
-**L7 status (reduced MVP):** Critical viewport evidence complete for merge-gate review. Exhaustive matrix remains Needs refinement / deferred.
+**L7 status (reduced MVP):** **Accepted** — human review confirmed 2026-07-27 on [#150](https://github.com/tswarren/shelfstack-5/pull/150). Exhaustive matrix remains deferred.
 
 ## Financial checkpoints (code remediations)
 

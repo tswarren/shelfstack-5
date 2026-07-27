@@ -69,7 +69,7 @@ class PosReturnLinesController < ApplicationController
     if unlinked_cost_review_needed?
       error = prepare_unlinked_cost_review!
       if error
-        return redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: error
+        return render_unlinked_return_overlay_error(alert: error)
       end
 
       @cost_review_form_url = pos_transaction_pos_return_lines_path(@pos_transaction)
@@ -87,11 +87,17 @@ class PosReturnLinesController < ApplicationController
     if result.success?
       redirect_out_of_overlay_to pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan"),
                                 notice: "Unlinked return line added."
+    elsif first_step_unlinked_overlay_request?
+      render_unlinked_return_overlay_error(alert: result.error)
     else
       redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: result.error
     end
   rescue ArgumentError => e
-    redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: e.message
+    if first_step_unlinked_overlay_request?
+      render_unlinked_return_overlay_error(alert: e.message)
+    else
+      redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: e.message
+    end
   end
 
   def set_transaction

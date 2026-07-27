@@ -85,8 +85,25 @@ module UnlinkedReturnRequest
     nil
   end
 
-  # Cost-review and validation responses stay inside turbo-frame#pos_overlay;
-  # success must escape so the POS shell reloads.
+  # First-step posts target turbo-frame#pos_overlay. Turbo keeps loading into that
+  # frame; response Turbo-Frame:_top does not retarget. Re-render the overlay so
+  # the alert stays visible. Confirm-step posts use turbo_frame:_top and may redirect.
+  def first_step_unlinked_overlay_request?
+    !ActiveModel::Type::Boolean.new.cast(params[:confirm_cost_basis])
+  end
+
+  def render_unlinked_return_overlay_error(alert:)
+    flash.now[:alert] = alert
+    load_start_return_overlay_locals!
+    render "pos_overlays/start_return", layout: false, status: :unprocessable_entity
+  end
+
+  def load_start_return_overlay_locals!
+    @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
+    @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
+  end
+
+  # Cost-review success and confirm-step responses escape so the POS shell reloads.
   def redirect_out_of_overlay_to(path, **options)
     response.set_header("Turbo-Frame", "_top")
     redirect_to path, **options
