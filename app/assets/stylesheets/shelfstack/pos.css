@@ -427,12 +427,17 @@
   vertical-align: top;
 }
 
-.pos-line-table tbody tr {
+.pos-line-table tbody tr[data-controller="pos-line-row"] {
   cursor: pointer;
 }
 
-.pos-line-table tbody tr:hover {
+.pos-line-table tbody tr[data-controller="pos-line-row"]:hover {
   background: var(--surface-secondary, rgb(0 0 0 / 0.03));
+}
+
+.pos-line-table tbody tr[data-controller="pos-line-row"]:focus-visible {
+  outline: 2px solid var(--brand-primary, var(--border-strong));
+  outline-offset: -2px;
 }
 
 .pos-line-table .pos-line-meta {

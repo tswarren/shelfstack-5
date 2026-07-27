@@ -7,14 +7,23 @@
     ("pos-line-return" if line.return?),
     ("pos-line-selected" if selected)
   ].compact.join(" ")
+  select_path = pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: line.id, focus_target: "line_actions")
 %>
-<tr class="<%= row_classes %>">
+<tr class="<%= row_classes %>"
+    <% if @pos_transaction.editable? %>
+      data-controller="pos-line-row"
+      data-pos-line-row-url-value="<%= select_path %>"
+      data-action="click->pos-line-row#select keydown->pos-line-row#keySelect"
+      tabindex="0"
+      role="button"
+      aria-pressed="<%= selected %>"
+      aria-label="Select line <%= line.effective_description %>"
+    <% end %>>
   <td>
     <% if @pos_transaction.editable? %>
-      <%= link_to line.effective_description,
-            pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: line.id, focus_target: "line_actions"),
+      <%= link_to line.effective_description, select_path,
             class: "pos-line-select-link",
-            data: pos_workspace_turbo,
+            data: { turbo_frame: "_top" },
             aria: { current: (selected ? "true" : nil) } %>
     <% else %>
       <%= line.effective_description %>

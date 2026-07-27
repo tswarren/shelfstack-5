@@ -54,8 +54,8 @@ class PosOverlaysController < ApplicationController
     @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
     @discount_reasons = Current.organization.discount_reasons.where(active: true).order(:name)
     @line_discounts_by_line_id = @pos_transaction.pos_discounts
-      .where(scope: "line", pos_line_item_id: @line.id)
-      .group_by(&:pos_line_item_id)
+      .where(scope: "line", target_pos_line_item_id: @line.id)
+      .group_by(&:target_pos_line_item_id)
   end
 
   private

@@ -105,11 +105,22 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
 
     get pos_transaction_path(@transaction, selected_line_id: @line.id, focus_target: "line_actions")
     assert_response :success
-    assert_match(/Line discount/, response.body)
+    assert_select ".pos-line-selected"
+    assert_select ".pos-commands-selected"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]",
+      pos_overlay_line_actions_path(pos_transaction_id: @transaction.id, line_id: @line.id, intent: "sale", section: "discount"),
+      text: "Discount"
     assert_match(/Transaction discount/, response.body)
-    assert_select "form[action=?]", pos_transaction_pos_discount_path(@transaction, line_discount)
     assert_select "form[action=?]", pos_transaction_pos_discount_path(@transaction, txn_discount)
+
+    get pos_overlay_line_actions_path(
+      pos_transaction_id: @transaction.id, line_id: @line.id, intent: "sale", section: "discount"
+    )
+    assert_response :success
+    assert_match(/Line discount/, response.body)
+    assert_select "form[action=?]", pos_transaction_pos_discount_path(@transaction, line_discount)
   end
+
 
   test "crafted delete cannot remove a linked-return discount reversal" do
     store = @store
