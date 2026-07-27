@@ -463,10 +463,12 @@ Suggested structure:
 
 ```text
 app/views/pos/recovery/
+  _workspace.html.erb
   _incident_summary.html.erb
   _verification_steps.html.erb
-  _allowed_actions.html.erb
   _void_required.html.erb
+  _allowed_actions.html.erb
+  _affected_activity.html.erb
 ```
 
 Use an explicit component for each supported structured Recovery category. Do not create a broad generic exception form that guesses permitted actions from message text.
@@ -477,13 +479,17 @@ Suggested structure:
 
 ```text
 app/views/pos/receipt/
+  _workspace.html.erb
   _completion.html.erb
   _receipt_identity.html.erb
   _change_due.html.erb
   _final_tenders.html.erb
   _actions.html.erb
-  _transaction_detail.html.erb
+  _commands.html.erb
+  _overflow_commands.html.erb
 ```
+
+Printable customer document remains `pos_transactions/customer_receipt` on `layouts/pos_receipt` (not these interactive partials).
 
 Detailed completed lines may remain subordinate or disclosed. Next Transaction and Print remain visually dominant.
 
@@ -580,7 +586,7 @@ Retain for simple record selection. Supplement it with richer POS-specific looku
 | `_primary_cta` | Retain as summary-rail progression CTA for Transaction/Tender; never duplicate in command bar |
 | `_tenders` | Split collection and row |
 | `_tender_entry` | Split by tender method |
-| `_recovery_panel` | Promote to Recovery primary workspace |
+| `_recovery_panel` / `_void_required_tenders` | Replaced by `pos/recovery/*` (Gate L4) |
 | `_secondary_actions` | Recompose into contextual command bar/menu |
 | `_transaction_actions` | Recompose per presentation command bar |
 | `shared/_record_picker` | Retain for simple selection; supplement for rich Product lookup |

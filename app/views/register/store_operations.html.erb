@@ -1,0 +1,190 @@
+<% content_for :title, "Store Operations" %>
+<%
+  presentation = "ready"
+  presentation_label = "Store Operations"
+  pos_shell_session = @open_session
+%>
+
+<% primary = capture do %>
+  <section class="pos-region" aria-label="Store Operations">
+    <h2>Store Operations</h2>
+    <p class="muted">Session close, business-day close, and X/Z reports. Return to Ready for customer work.</p>
+    <div class="action-group">
+      <%= link_to "Back to register", register_path, class: "button button-outline",
+            data: { turbo_frame: "_top" } %>
+    </div>
+  </section>
+
+  <% if @open_session.present? && Current.user.can?("pos.session.close", store: Current.store) %>
+    <section class="pos-panel" aria-label="Close session">
+      <h2>Close session</h2>
+      <p>
+        Session #<%= @open_session.id %>
+        <% if @open_session.pos_device %>· <%= @open_session.pos_device.name %><% end %>
+        · <%= @open_session.cash_enabled? ? "Cash enabled" : "Cash disabled" %>
+      </p>
+      <div class="action-group">
+        <% if @open_session.cash_enabled? %>
+          <%= link_to "Close Session", close_form_pos_session_path(@open_session),
+                class: "button button-primary button-large", data: { turbo_frame: "_top" } %>
+        <% else %>
+          <%= button_to "Close Session", close_pos_session_path(@open_session), method: :post,
+                class: "button button-primary button-large",
+                form: { data: { turbo_frame: "_top" } } %>
+        <% end %>
+        <% if @can_view_session_x %>
+          <%= link_to "Session X", session_x_report_pos_session_path(@open_session),
+                class: "button button-outline button-large", data: { turbo_frame: "_top" } %>
+        <% end %>
+      </div>
+    </section>
+  <% elsif @open_session.present? && @can_view_session_x %>
+    <section class="pos-panel" aria-label="Current session reports">
+      <h2>Current session</h2>
+      <div class="action-group">
+        <%= link_to "Session X", session_x_report_pos_session_path(@open_session),
+              class: "button button-primary button-large", data: { turbo_frame: "_top" } %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="pos-panel" aria-label="Business day">
+    <h2>Business day</h2>
+    <% if @business_day.blank? %>
+      <p class="muted">No business day is open.</p>
+      <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
+        <div class="action-group">
+          <%= link_to "Open business day", new_business_day_path, class: "button button-primary",
+                data: { turbo_frame: "_top" } %>
+        </div>
+      <% end %>
+    <% else %>
+      <p>
+        Open since <strong><%= formatted_datetime(@business_day.opened_at, format: :short) %></strong>
+        <br><span class="muted">Reporting date <%= @business_day.reporting_date %></span>
+      </p>
+      <p class="muted">Sales, tender, and cash-variance totals live on Day X / Session X — not on Ready.</p>
+      <div class="action-group">
+        <% if @can_view_day_x %>
+          <%= link_to "Day X", business_day_x_report_business_day_path(@business_day),
+                class: "button button-outline", data: { turbo_frame: "_top" } %>
+        <% end %>
+        <% if @can_view_day_z && @business_day.business_day_z_report.present? %>
+          <%= link_to "Day Z ##{@business_day.business_day_z_report.z_number}",
+                business_day_z_report_business_day_path(@business_day),
+                class: "button button-outline", data: { turbo_frame: "_top" } %>
+        <% end %>
+        <% if Current.user.can?("pos.business_day.close", store: Current.store) %>
+          <%= link_to "Close business day", close_form_business_day_path(@business_day),
+                class: "button button-outline", data: { turbo_frame: "_top" } %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <% if @business_day.present? %>
+    <section class="pos-panel" aria-label="POS sessions">
+      <h2>Sessions</h2>
+      <% if @day_sessions.blank? %>
+        <p class="muted">No POS sessions for this day.</p>
+      <% else %>
+        <div class="table-container">
+          <table class="data-table">
+            <caption class="sr-only">POS sessions for the open business day</caption>
+            <thead>
+              <tr>
+                <th scope="col">Session</th>
+                <th scope="col">Cashier</th>
+                <th scope="col">Status</th>
+                <th scope="col"><span class="sr-only">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @day_sessions.each do |session| %>
+                <tr>
+                  <td>
+                    #<%= session.id %>
+                    <br><span class="muted"><%= session.pos_device.name %></span>
+                    <% if session.id == @open_session&.id %>
+                      <br><span class="muted">Your open session</span>
+                    <% end %>
+                  </td>
+                  <td><%= session.cashier_user.username %></td>
+                  <td><%= session.status %></td>
+                  <td>
+                    <div class="action-group">
+                      <% if session.open? && @can_view_session_x %>
+                        <%= link_to "Session X", session_x_report_pos_session_path(session),
+                              class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
+                      <% end %>
+                      <% if session.closed? && @can_view_session_z && session.pos_session_z_report.present? %>
+                        <%= link_to "Session Z ##{session.pos_session_z_report.z_number}",
+                              session_z_report_pos_session_path(session),
+                              class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
+                      <% elsif session.closed? && @can_view_session_x %>
+                        <%= link_to "Session X", session_x_report_pos_session_path(session),
+                              class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
+                      <% end %>
+                      <% if session.id == @open_session&.id && Current.user.can?("pos.session.close", store: Current.store) %>
+                        <% if session.cash_enabled? %>
+                          <%= link_to "Close", close_form_pos_session_path(session),
+                                class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
+                        <% else %>
+                          <%= button_to "Close", close_pos_session_path(session), method: :post,
+                                class: "button button-small button-outline",
+                                form: { data: { turbo_frame: "_top" } } %>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% if @open_session.present? %>
+    <section class="pos-panel" aria-label="Cash movement history">
+      <h2>Cash movements this session</h2>
+      <% movements = @open_session.pos_cash_movements.includes(:cash_movement_type).order(:id) %>
+      <% if movements.any? %>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Type</th>
+                <th scope="col">Direction</th>
+                <th scope="col" class="num">Amount</th>
+                <th scope="col">Reference</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% movements.each do |movement| %>
+                <tr>
+                  <td><%= movement.cash_movement_type.name %></td>
+                  <td><%= movement.cash_movement_type.direction.humanize %></td>
+                  <td class="num"><%= pos_money(movement.amount_cents) %></td>
+                  <td><%= movement.reference.presence || "—" %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="muted">No cash movements recorded in this session.</p>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>
+
+<%= render "pos/shell",
+      presentation: presentation,
+      presentation_label: presentation_label,
+      session: pos_shell_session,
+      primary: primary,
+      summary: "",
+      hide_summary: true,
+      hide_commands: true %>

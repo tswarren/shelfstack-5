@@ -5,28 +5,42 @@
       "<%= @scan_resolution["query"] %>".</strong>
       Choose the exact item to add.
     </p>
-    <ul class="pos-resolution-list">
-      <% qty = @scan_resolution["quantity"].presence || 1 %>
-      <% @scan_resolution["candidates"].each do |candidate| %>
-        <li>
-          <p>
-            <strong><%= candidate["title"] %></strong>
-            <span class="muted">· <%= candidate["identifier"] %></span>
-          </p>
-          <div class="action-group">
-            <% candidate["variants"].each do |variant| %>
-              <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "pos-inline-form" do |form| %>
-                <%= hidden_field_tag :product_variant_id, variant["id"] %>
-                <%= hidden_field_tag :quantity, qty %>
-                <% if @scan_resolution["product_request_id"].present? %>
-                  <%= hidden_field_tag :product_request_id, @scan_resolution["product_request_id"] %>
-                <% end %>
-                <%= form.submit "Add #{variant["label"]}", class: "button button-small button-outline" %>
-              <% end %>
-            <% end %>
-          </div>
-        </li>
-      <% end %>
-    </ul>
+    <% qty = @scan_resolution["quantity"].presence || 1 %>
+    <% groups = @scan_resolution["candidates"].map do |candidate|
+         variants = (candidate["variants"] || []).map do |variant|
+           Pos::ProductLookupResults::VariantRow.new(
+             product_variant_id: variant["id"],
+             variant_label: variant["label"],
+             sku: variant["sku"],
+             tracking_mode: variant["tracking_mode"],
+             price_cents: variant["price_cents"],
+             available_quantity: variant["available_quantity"],
+             addable?: variant.fetch("addable", true),
+             blockers: Array(variant["blockers"]),
+             warnings: Array(variant["warnings"]),
+             inactive?: variant["inactive"],
+             status_note: variant["status_note"],
+             inventory_unit_id: variant["inventory_unit_id"],
+             inventory_unit_identifier: variant["inventory_unit_identifier"]
+           )
+         end
+         Pos::ProductLookupResults::ProductGroup.new(
+           product_id: candidate["product_id"],
+           title: candidate["title"],
+           identifier: candidate["identifier"],
+           variants: variants
+         )
+       end %>
+    <%= render "pos/product_lookup_results",
+          results: Pos::ProductLookupResults::Result.new(
+            query: @scan_resolution["query"],
+            groups: groups,
+            inventory_unit: nil
+          ),
+          view_only: false,
+          pos_transaction: @pos_transaction,
+          intent: @entry_intent || "sale",
+          quantity: qty,
+          product_request_id: @scan_resolution["product_request_id"] %>
   </div>
 <% end %>

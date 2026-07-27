@@ -1,0 +1,54 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Open Ring" } do %>
+    <% if @pos_transaction.present? %>
+      <p class="muted">Add an open-ring line to this transaction.</p>
+      <%= form_with url: pos_transaction_pos_line_items_path(@pos_transaction), method: :post, class: "form",
+            data: { turbo_frame: "_top" } do |form| %>
+        <%= hidden_field_tag :kind, "open_ring" %>
+        <%= hidden_field_tag :intent, "sale" %>
+        <div class="field">
+          <%= form.label :department_id, "Department", class: "field-label" %>
+          <%= form.select :department_id,
+                @departments.map { |d| [ hierarchy_path_label(d), d.id ] },
+                {}, class: "input" %>
+        </div>
+        <%= render "shared/currency_field", name: "unit_price_cents", label: "Price",
+              id: "txn_open_ring_unit_price_cents" %>
+        <div class="field">
+          <label class="field-label" for="txn_open_ring_quantity">Qty</label>
+          <%= number_field_tag :quantity, 1, id: "txn_open_ring_quantity", min: 1, class: "input input-qty" %>
+        </div>
+        <div class="field">
+          <%= form.label :description, "Description (optional)", class: "field-label" %>
+          <%= form.text_field :description, class: "input" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Add open-ring line", class: "button button-primary" %>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="muted">Starts a transaction with the first open-ring line.</p>
+      <%= form_with url: register_start_open_ring_path, method: :post, class: "form",
+            data: { turbo_frame: "_top" } do |form| %>
+        <div class="field">
+          <%= form.label :department_id, "Department", class: "field-label" %>
+          <%= form.select :department_id,
+                @departments.map { |d| [ hierarchy_path_label(d), d.id ] },
+                {}, class: "input" %>
+        </div>
+        <%= render "shared/currency_field", name: "unit_price_cents", label: "Price", id: "ready_open_ring_unit_price_cents" %>
+        <div class="field">
+          <label class="field-label" for="ready_open_ring_quantity">Qty</label>
+          <%= number_field_tag :quantity, 1, id: "ready_open_ring_quantity", min: 1, class: "input input-qty" %>
+        </div>
+        <div class="field">
+          <%= form.label :description, "Description (optional)", class: "field-label" %>
+          <%= form.text_field :description, class: "input" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Start with open ring", class: "button button-primary" %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

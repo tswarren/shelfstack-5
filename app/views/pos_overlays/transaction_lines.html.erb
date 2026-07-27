@@ -1,0 +1,30 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Transaction lines" } do %>
+    <p class="muted">Read-only review of lines on this transaction. Return to Transaction to edit.</p>
+    <% if @pos_line_items.blank? %>
+      <p class="muted">No lines.</p>
+    <% else %>
+      <ul class="pos-resolution-list" role="list">
+        <% @pos_line_items.each do |line| %>
+          <li>
+            <p>
+              <strong><%= line.effective_description %></strong>
+              <span class="muted">
+                · qty <%= line.quantity %>
+                · <%= pos_money(line.extended_price_cents.to_i) %>
+                · <%= line.direction %>
+              </span>
+            </p>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+    <div class="form-actions">
+      <%= link_to "Return to Transaction",
+            pos_transaction_path(@pos_transaction, intent: @entry_intent),
+            class: "button button-outline",
+            data: { turbo_frame: "_top" } %>
+      <button type="button" class="button button-ghost" data-action="pos-overlay#close">Close</button>
+    </div>
+  <% end %>
+<% end %>

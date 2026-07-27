@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "scanInput", "scanForm", "liveRegion", "completeButton", "announce",
-    "backToRegister", "recoveryPanel", "lineActions", "saleIntent"
+    "backToRegister", "recoveryPanel", "lineActions", "saleIntent", "progressCta"
   ]
   static values = {
     scanOutcome: String,
@@ -18,17 +18,14 @@ export default class extends Controller {
     this.onBeforeCache = this.handleBeforeCache.bind(this)
     this.element.addEventListener("turbo:submit-end", this.onSubmitEnd)
     document.addEventListener("turbo:before-cache", this.onBeforeCache)
+    // Document-level: Tender amount fields / body focus are often outside a bubbling
+    // path that reliably reaches the shell for Ctrl+Enter progression.
+    document.addEventListener("keydown", this.onKeydown)
 
     if (window.Turbo?.Cache?.exemptPageFromCache) {
       Turbo.Cache.exemptPageFromCache()
     } else if (window.Turbo?.cache?.exemptPageFromCache) {
       Turbo.cache.exemptPageFromCache()
-    }
-
-    if (this.completedValue) {
-      document.addEventListener("keydown", this.onKeydown)
-    } else {
-      this.element.addEventListener("keydown", this.onKeydown)
     }
 
     this.announceStatus()
@@ -38,7 +35,6 @@ export default class extends Controller {
 
   disconnect() {
     this.element.removeEventListener("turbo:submit-end", this.onSubmitEnd)
-    this.element.removeEventListener("keydown", this.onKeydown)
     document.removeEventListener("keydown", this.onKeydown)
     document.removeEventListener("turbo:before-cache", this.onBeforeCache)
   }
@@ -120,13 +116,27 @@ export default class extends Controller {
   }
 
   handleKeydown(event) {
-    if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && this.hasCompleteButtonTarget) {
-      event.preventDefault()
-      this.completeButtonTarget.click()
-      return
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+      // Do not progress the sale while a modal overlay holds cashier attention.
+      if (document.querySelector("dialog[open]")) return
+      if (!this.element.contains(event.target) && event.target !== document.body) return
+      if (this.scanFieldHasUncommittedValue()) return
+
+      if (this.hasCompleteButtonTarget && !this.completeButtonTarget.disabled) {
+        event.preventDefault()
+        this.activateComplete()
+        return
+      }
+
+      if (this.hasProgressCtaTarget) {
+        event.preventDefault()
+        this.progressCtaTarget.click()
+        return
+      }
     }
 
     if (event.key === "Escape") {
+      if (!this.element.contains(event.target) && event.target !== document.body) return
       event.preventDefault()
       if (this.hasSaleIntentTarget && this.saleIntentTarget.getAttribute("aria-current") !== "true") {
         this.saleIntentTarget.click()
@@ -147,6 +157,21 @@ export default class extends Controller {
       event.preventDefault()
       this.backToRegisterTarget.click()
     }
+  }
+
+  activateComplete() {
+    const button = this.completeButtonTarget
+    const form = button.form || button.closest("form")
+    if (form && typeof form.requestSubmit === "function") {
+      form.requestSubmit(button)
+      return
+    }
+    button.click()
+  }
+
+  scanFieldHasUncommittedValue() {
+    if (!this.hasScanInputTarget) return false
+    return this.scanInputTarget.value.trim().length > 0
   }
 
   focusScanInput() {

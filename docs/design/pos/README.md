@@ -28,6 +28,7 @@ Review them in that order. A technically clean partial hierarchy does not compen
 | [wireframes.md](wireframes.md) | Annotated low-fidelity compositions for the shell, presentations, and primary overlays |
 | [component-map.md](component-map.md) | Partials, forms, Turbo boundaries, Stimulus responsibilities, and current-to-target mapping |
 | [layout-completion-checklist.md](layout-completion-checklist.md) | Gate checklist mapping wireframe regions and current→target work for visual completion |
+| [layout-acceptance-status.md](layout-acceptance-status.md) | Delivery PR index and viewport acceptance / decision-promotion status |
 | [review-scenarios.md](review-scenarios.md) | Scripted cashier walkthroughs and acceptance procedure |
 | [decisions.md](decisions.md) | Accepted, proposed, and open visual decisions |
 | [screenshots/README.md](screenshots/README.md) | Screenshot naming, capture matrix, and review evidence requirements |

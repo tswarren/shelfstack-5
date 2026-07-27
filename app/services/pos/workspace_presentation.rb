@@ -103,7 +103,11 @@ module Pos
       when "receipt" then :next_transaction
       when "recovery" then :resolve_recovery
       when "tender"
-        return :complete if @balance_due_cents.zero? && ready_for_completion?
+        if @balance_due_cents.zero?
+          return :complete if ready_for_completion?
+
+          return :resolve_blockers
+        end
 
         @net_total_cents.negative? || @balance_due_cents.negative? ? :add_refund : :add_payment
       when "transaction"

@@ -1,0 +1,66 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Create customer" } do %>
+    <p class="muted">Creates an active customer and stages them for the next transaction.</p>
+
+    <% if @possible_duplicates.present? %>
+      <section class="banner banner-warning" role="status">
+        <h2 class="form-section-title">Possible duplicate customer</h2>
+        <p>This phone number or email is also associated with:</p>
+        <ul>
+          <% @possible_duplicates.each do |dupe| %>
+            <li>
+              <%= dupe.display_name.presence || "Customer" %>
+              <code><%= dupe.customer_number %></code>
+            </li>
+          <% end %>
+        </ul>
+        <p>Stage an existing customer from lookup, or create a new customer anyway.</p>
+      </section>
+    <% end %>
+
+    <%= form_with model: @customer, url: register_create_customer_path, method: :post, class: "form",
+          data: { turbo_frame: "pos_overlay" } do |form| %>
+      <%= render "shared/form_errors", object: @customer %>
+      <% if @possible_duplicates.present? %>
+        <%= hidden_field_tag :create_anyway, "true" %>
+      <% end %>
+
+      <div class="field">
+        <%= form.label :customer_type, class: "field-label" %>
+        <%= form.select :customer_type, Customer::CUSTOMER_TYPES.map { |t| [ t.humanize, t ] }, {}, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :first_name, class: "field-label" %>
+        <%= form.text_field :first_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :last_name, class: "field-label" %>
+        <%= form.text_field :last_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :organization_name, class: "field-label" %>
+        <%= form.text_field :organization_name, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :preferred_contact_method, class: "field-label" %>
+        <%= form.select :preferred_contact_method,
+              Customer::PREFERRED_CONTACT_METHODS.map { |m| [ m.humanize, m ] },
+              {}, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :primary_phone, class: "field-label" %>
+        <%= form.telephone_field :primary_phone, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :primary_email, class: "field-label" %>
+        <%= form.email_field :primary_email, class: "input" %>
+      </div>
+      <div class="form-actions">
+        <%= form.submit @possible_duplicates.present? ? "Create customer anyway" : "Create and stage",
+              class: "button button-primary" %>
+        <%= link_to "Back to lookup", pos_overlay_customer_path,
+              class: "button button-ghost", data: pos_overlay_turbo %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

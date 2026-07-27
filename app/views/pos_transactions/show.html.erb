@@ -2,147 +2,109 @@
   <% content_for :head do %>
     <meta name="turbo-cache-control" content="no-cache">
   <% end %>
-  <div class="pos-workspace pos-completed-workspace" data-controller="pos-register"
-       data-pos-register-completed-value="true">
-    <span hidden data-pos-register-target="announce">
-      <%= flash[:notice].presence || "Transaction complete. Receipt #{@pos_transaction.receipt_number}." %>
-    </span>
-    <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
+  <% primary = capture do %>
+    <%= render "pos/receipt/workspace" %>
+  <% end %>
 
-    <section class="pos-panel pos-completed-summary" aria-label="Completed transaction">
-      <p class="muted">State: Receipt</p>
-      <h2>Transaction complete</h2>
-      <p class="pos-receipt-number">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
-      <p class="muted">Completed <%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></p>
-      <% if @pos_transaction.customer.present? %>
-        <% if can_lookup_customers? %>
-          <p>Customer: <strong><%= @pos_transaction.customer.display_name %></strong>
-            <code><%= @pos_transaction.customer.customer_number %></code></p>
-        <% else %>
-          <p class="muted">Customer attached.</p>
-        <% end %>
-      <% end %>
+  <% primary_commands = capture do %>
+    <%= render "pos/receipt/commands" %>
+  <% end %>
 
-      <dl class="definition-grid pos-totals">
-        <div class="definition-item"><dt>Final total</dt><dd class="pos-balance"><%= pos_money(@net_total_cents) %></dd></div>
-        <div class="definition-item"><dt>Tendered</dt><dd><%= pos_money(@tendered_total_cents) %></dd></div>
-        <% if @change_due_cents.to_i.positive? %>
-          <div class="definition-item">
-            <dt>Change due</dt>
-            <dd class="pos-balance pos-change"><%= pos_money(@change_due_cents) %></dd>
-          </div>
-        <% end %>
-      </dl>
+  <% overflow_commands = capture do %>
+    <%= render "pos/receipt/overflow_commands" %>
+  <% end %>
 
-      <%= render "void_required_tenders" %>
-
-      <% if @pos_tenders.any? %>
-        <h3>Tenders</h3>
-        <ul class="pos-tender-summary">
-          <% @pos_tenders.each do |tender| %>
-            <li>
-              <%= tender.tender_type.name %> · <%= tender.direction.humanize %> ·
-              <%= pos_money(tender.amount_cents) %>
-              <% if tender.change_due_cents.to_i.positive? %>
-                <span class="muted">(change <%= pos_money(tender.change_due_cents) %>)</span>
-              <% end %>
-            </li>
-          <% end %>
-        </ul>
-      <% end %>
-
-      <div class="form-actions">
-        <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
-              data: { "pos-register-target": "backToRegister" },
-              autofocus: true %>
-        <%= link_to "Print receipt", customer_receipt_pos_transaction_path(@pos_transaction),
-              class: "button button-outline button-large", target: "_blank", rel: "noopener" %>
-        <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
-              class: "button button-ghost button-large", target: "_blank", rel: "noopener" %>
-        <% returnable = @pos_transaction.pos_line_items
-             .where(status: "completed", direction: "sale")
-             .where.not(line_kind: "stored_value")
-             .any? { |line| line.remaining_returnable_quantity.positive? } %>
-        <% if returnable && Current.user.can?("pos.return.create", store: Current.store) %>
-          <%= button_to "Start linked return", start_linked_return_pos_transaction_path(@pos_transaction),
-                method: :post, class: "button button-outline button-large" %>
-        <% end %>
-        <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
-          <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
-                class: "button button-ghost button-large" %>
-        <% end %>
-      </div>
-      <p class="field-hint">Press Enter to start the next transaction from Ready. Print uses the browser print path.</p>
-    </section>
-
-    <details class="pos-panel">
-      <summary>Transaction detail</summary>
-      <%= render "line_items" %>
-      <%= render "totals" %>
-    </details>
-  </div>
+  <%= render "pos/shell",
+        presentation: "receipt",
+        presentation_label: "Receipt",
+        session: pos_shell_session,
+        primary: primary,
+        summary: "".html_safe,
+        primary_commands: primary_commands,
+        overflow_commands: overflow_commands,
+        hide_summary: true %>
 <% else %>
-  <% tender_mode = @presentation_state == "tender" || @presentation_state == "recovery" %>
   <% content_for :head do %>
     <meta name="turbo-cache-control" content="no-cache">
   <% end %>
-  <%= render "session_context" %>
-  <%= render "transaction_status" %>
-  <%= render "recall_summary" %>
+  <% tender_mode = @presentation_state == "tender" %>
+  <% recovery_mode = @presentation_state == "recovery" %>
+  <% completion_failed = @completion_outcome == "failed" %>
+  <% void_required_tenders = (@pos_tenders || []).select(&:void_required?) %>
 
-  <div class="pos-workspace" data-controller="pos-register"
-       data-pos-register-scan-outcome-value="<%= @scan_outcome %>"
-       data-pos-register-focus-target-value="<%= @focus_target %>">
-    <span hidden data-pos-register-target="announce"><%= flash[:notice].presence || flash[:alert] %></span>
-    <div class="pos-live-region" role="status" aria-live="polite" data-pos-register-target="liveRegion"></div>
-
-    <div class="pos-workspace-banner">
-      <p class="muted" role="status">
-        State: <strong><%= @workspace.label %></strong>
-        · Intent: <strong><%= (@entry_intent || "sale").humanize %></strong>
-      </p>
-
-      <% if @presentation_state == "recovery" || @completion_outcome == "failed" %>
-        <%= render "recovery_panel" %>
+  <% primary = capture do %>
+    <% if recovery_mode %>
+      <%= render "pos/recovery/workspace", void_required_tenders: void_required_tenders %>
+    <% elsif tender_mode %>
+      <% if completion_failed %>
+        <div class="pos-region" role="status" aria-label="Completion failure">
+          <h2>Completion failed</h2>
+          <p>
+            <strong>Code:</strong> <%= @completion_code.presence || "validation_failed" %><br>
+            Transaction not completed. Receipt not assigned. Inventory not posted for this attempt.
+          </p>
+          <% if flash[:alert].present? %>
+            <p><%= flash[:alert] %></p>
+          <% end %>
+          <p class="muted">Use Complete in the summary rail to retry.</p>
+        </div>
       <% end %>
-    </div>
+      <%= render "pos/tender/workspace", presentation: @tender_presentation %>
+    <% else %>
+      <section class="pos-sale-panel" aria-label="Transaction">
+        <%= render "entry_intents" %>
+        <%= render "scan_form" %>
+        <%= render "line_items" %>
+      </section>
+    <% end %>
+  <% end %>
 
-    <section class="pos-sale-panel" aria-label="Sale" <% if tender_mode %>hidden<% end %>>
-      <%= render "entry_intents" %>
-      <%= render "scan_form" %>
-      <%= render "line_items" %>
-      <%= render "selected_line_actions" %>
-      <%= render "secondary_actions" %>
-    </section>
-
-    <aside class="pos-payment-panel" aria-label="Payment">
+  <% summary = capture do %>
+    <% if recovery_mode %>
+      <%= render "pos/recovery/affected_activity", void_required_tenders: void_required_tenders %>
+    <% else %>
       <%= render "customer_panel" %>
       <%= render "totals" %>
       <%= render "readiness_summary" %>
-      <%= render "primary_cta" %>
-      <% if tender_mode || !@pos_transaction.editable? || @pos_tenders.any? %>
-        <%= render "tenders" %>
-        <%= render "tender_entry" %>
-      <% else %>
-        <details class="pos-panel">
-          <summary>Tender entry</summary>
-          <%= render "tenders" %>
-          <%= render "tender_entry" %>
+      <% unless tender_mode %>
+        <details class="pos-region">
+          <summary>Secondary</summary>
+          <%= render "secondary_actions" %>
         </details>
       <% end %>
-      <%= render "transaction_actions" %>
-      <% if tender_mode && @pos_transaction.editable? && !@workspace.forced_tender %>
-        <p>
-          <%= link_to "Return to Transaction",
-                pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-                class: "button button-ghost button-small" %>
-        </p>
-        <p class="field-hint">Commercial editing reopens only while settlement state is safe.</p>
-      <% elsif tender_mode && @workspace.forced_tender %>
-        <p class="muted" role="status">Return to Transaction is blocked while tender activity is unresolved.</p>
-      <% end %>
-    </aside>
-  </div>
+    <% end %>
+  <% end %>
 
-  <p><%= link_to "Back to register", register_path, class: "button button-ghost button-small" %></p>
+  <% summary_cta = capture do %>
+    <% unless recovery_mode %>
+      <%= render "primary_cta" %>
+    <% end %>
+  <% end %>
+
+  <% primary_commands = capture do %>
+    <% if recovery_mode %>
+      <span class="muted">Closed-list Recovery actions only — resolve in the primary workspace.</span>
+    <% elsif tender_mode %>
+      <%= render "pos/tender/commands", presentation: @tender_presentation %>
+    <% else %>
+      <%= render "selected_line_actions" %>
+    <% end %>
+  <% end %>
+
+  <% overflow_commands = capture do %>
+    <%= render "transaction_actions" %>
+    <%= link_to "Back to register", register_path, class: "button button-ghost button-small",
+          data: { turbo_frame: "_top" } %>
+  <% end %>
+
+  <%= render "pos/shell",
+        presentation: pos_shell_presentation,
+        presentation_label: pos_shell_presentation_label,
+        session: pos_shell_session,
+        primary: primary,
+        summary: summary,
+        summary_cta: summary_cta,
+        primary_commands: primary_commands,
+        overflow_commands: (recovery_mode ? nil : overflow_commands),
+        hide_commands: recovery_mode %>
 <% end %>

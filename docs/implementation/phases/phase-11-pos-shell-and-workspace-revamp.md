@@ -1,6 +1,6 @@
 # Phase 11 — POS Shell and Workspace Revamp
 
-**Status:** In progress — Gate 11A underway  
+**Status:** In progress — server gates 11A–11E delivered ([#146](https://github.com/tswarren/shelfstack-5/pull/146)); layout Gates L0–L7 on [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`feat/phase-11-layout`); **reduced L7 Accepted** (human 2026-07-27); P1 overlay error path fixed; merge-ready ([layout-acceptance-status.md](../../design/pos/layout-acceptance-status.md))
 
 **Depends on:** Phase 10 fully complete; Phase 6.5 cashier workspace on `main`; Phase 9 Customer v1  
 **Primary register item:** [DWR-067](../deferred-work-register.md)  
@@ -518,6 +518,14 @@ Gate B is accepted when the cashier can perform the supported transaction-entry 
 * Product Request pickup;
 * stored-value issuance and reload.
 
+**Status (implementation):** Entry workflows above are **automated / scaffold-complete** on this branch (including Path A unlinked returns with source-specific tax basis + inventory cost confirmation, Ready pickup overlay → `Pos::StartPickup` with bounded search + `pos.product_request.pickup`, compact customer create → stage, and rich Product lookup / shared scan-resolution presenter). Formal Gate B **Accepted** and issue close for [#132](https://github.com/tswarren/shelfstack-5/issues/132) still require L7 viewport evidence and PR merge review — do not treat automated green as layout Accepted.
+
+**Unlinked returns (Path A Must slice):** `Pos::AddUnlinkedReturnLine` supports `external_receipt` / `gift_receipt` / `no_receipt` for product (quantity/none) and open-ring lines with explicit refund unit price; tax basis is source-specific (`current_configured_rules` / `external_receipt_tax` / `no_tax_refund`) with durable confirmation facts; inventory-affecting quantity-tracked dispositions require confirmed cost (store MAC → department estimate → block; quality `estimated`). `no_receipt` approval commits atomically with the line. Individually tracked unlinked returns remain out of this slice (require linked originals).
+
+**Financial Gate F1 (unlinked return basis):** documented tax/cost policies + migrations; valuation/approval tests in `test/services/pos/add_unlinked_return_line_test.rb` — review checkpoint on [#150](https://github.com/tswarren/shelfstack-5/pull/150).
+
+**In-shell pickup + rich lookup:** Ready `Pickup / Product Request` opens `pos/overlays/pickup` (bounded customer/request search; permission `pos.product_request.pickup` or `requests.product_request.view`) and `Pos::StartPickup` opens/reuses a transaction with a linked request line (does not call `RecordFulfillment` — completion still owns fulfilment). Customer overlay `Create customer` stays in-shell via `pos/overlays/customer_create` → `PosCustomersController#create` → stage. Product lookup uses `Pos::ProductLookupResults` (price, availability, eligibility, unit context); Transaction `_scan_resolution` reuses the same result contract.
+
 ---
 
 # Gate C — Financial completion
@@ -601,6 +609,12 @@ The cashier can settle realistic payment and refund combinations.
 
 Gate C is accepted when realistic cash, standalone-card, stored-value, refund, and split-tender combinations can be completed atomically and idempotently.
 
+**Status (implementation):** Tender matrix + shell checkpoints are **automated** on this branch (`settled?` = zero balance independent of readiness; server Card Type reload; read-only Tender line review overlay; audited `Pos::RecordNoSale`). Formal Gate C **Accepted** still requires PR review + L7 viewport evidence — automated green is not layout Accepted.
+
+**Financial Gate F2 (No Sale):** `pos.no_sale.create`; Session race / duplicate / audit / no Cash Movement coverage in `test/services/pos/record_no_sale_test.rb` — review checkpoint on [#150](https://github.com/tswarren/shelfstack-5/pull/150).
+
+**Acceptance bar (automated):** `test/services/pos/phase_11c_tender_contract_matrix_test.rb` holds one contract each for cash, standalone card, stored-value redemption, cash+card split, and linked-return cash refund, plus forced-tender / void-required / receipt-immutability shell checkpoints. Edge-policy coverage remains in dedicated tender/refund/SV service tests. Formal issue close for [#133](https://github.com/tswarren/shelfstack-5/issues/133) follows PR merge + this matrix green.
+
 ---
 
 # Gate D — Customer-facing completion
@@ -625,6 +639,8 @@ The mandatory receipt core includes:
 * print or display failure does not reverse completion;
 * Receipt Lookup cannot mutate the transaction.
 
+**Status (implementation):** Must core is in place — interactive Receipt via `pos/receipt/*`; printable `customer_receipt` on `layouts/pos_receipt`; line `description_snapshot` / `identifier_snapshot`; store address + configured `receipt_header` / `receipt_footer` rendering; lookup; reprint gated by `pos.receipt.reprint` and marked `REPRINT`; completion isolated from print/display. Manual viewport acceptance for layout Gate L5 remains open.
+
 Gate D may be accepted when this mandatory core is complete.
 
 ## 15.2 Should — first scope cuts
@@ -638,6 +654,19 @@ The following remain planned Phase 11 work but may be deferred without preventin
 * expanded template formatting;
 * begin linked return directly from Receipt Lookup;
 * current receipt header/footer administration beyond existing configuration.
+
+**Status (implementation):**
+
+| Should item | Disposition |
+| --- | --- |
+| Begin linked return from Receipt Lookup | **Delivered** — lookup overlay checkbox → opens return intent |
+| Richer return / mixed / post-void presentation | **Partial** — document banners + original-receipt reference; fuller templates remain residual |
+| Expanded template formatting | **Partial beyond Must** — Must already includes minimal browser-print formatting (`layouts/pos_receipt`, hide toolbar on print, narrow receipt column, item/discount/net rows, totals). Residual is richer template variants / administration, not the absence of printable formatting |
+| Receipt header/footer administration UI | **Deferred** — fields render when set; admin UI remains [DWR-019](../deferred-work-register.md) |
+| Non-itemized gift receipt | **Re-registered** under [DWR-017](../deferred-work-register.md) |
+| Dedicated SV issue/reload slip | **Re-registered** under DWR-017 |
+| Receipt-number barcode | **Re-registered** under DWR-017 |
+| Persisted print-event audit (INV-POS-014) | **Re-registered** under DWR-017 (browser reprint remains functional) |
 
 Any Should item not delivered must be explicitly re-registered under DWR-017 rather than silently dropped.
 
@@ -662,6 +691,8 @@ Gate D is accepted when:
 * reprinting does not recalculate commercial history;
 * presentation or printing failure cannot reverse completion;
 * any undelivered Should scope is explicitly retained in DWR-017.
+
+**Implementation note:** Exit criteria above are met in code on the Phase 11 layout branch; undelivered Should items are listed under §15.2 and DWR-017. Layout Gate L5/L7 manual viewport scoring remains separate from Gate D Must acceptance. Hygiene coverage includes reprint denial without `pos.receipt.reprint` (`phase_11d_customer_receipt_test`). Formal issue close for [#134](https://github.com/tswarren/shelfstack-5/issues/134) follows PR merge.
 
 ---
 

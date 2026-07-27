@@ -18,11 +18,11 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     open_register_with_transaction!
 
     visit pos_transaction_path(@transaction)
-    assert_text "Scan / search"
+    assert_text "Scan or search"
 
     within("section[aria-label='Scan or search']") do
       fill_in "Scan or search", with: @variant.sku
-      click_button "Add line"
+      click_button "Add"
     end
     assert_text(/available quantity is negative|Line added/i, wait: 5)
     assert_equal 1, @transaction.reload.pos_line_items.pending.count
@@ -41,17 +41,16 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     )
 
     visit pos_transaction_path(@transaction)
+    find("summary", text: "More").click
     click_button "Suspend"
     assert_text "Transaction suspended"
     assert_current_path register_path
     assert @transaction.reload.suspended?
 
     visit register_path
-    assert_text "Suspended transactions"
-    within("details", text: /Suspended transactions/) do
-      accept_confirm do
-        click_button "Recall"
-      end
+    assert_selector "section[aria-label='Suspended work']"
+    accept_confirm do
+      click_button "Recall"
     end
     assert_text "Transaction recalled"
     assert @transaction.reload.open?
@@ -91,11 +90,16 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
       amount_tendered_cents: net, actor: @admin
     )
 
-    visit pos_transaction_path(@transaction)
+    visit tender_pos_transaction_path(@transaction)
     assert_button "Complete transaction"
 
+    # Focus body (common tender posture) and dispatch from that element so
+    # event.target matches real keydown targeting — not the document root.
     page.execute_script(<<~JS)
-      document.querySelector(".pos-workspace").dispatchEvent(
+      const body = document.body
+      body.setAttribute("tabindex", "-1")
+      body.focus()
+      body.dispatchEvent(
         new KeyboardEvent("keydown", { key: "Enter", code: "Enter", ctrlKey: true, bubbles: true })
       )
     JS
@@ -103,12 +107,44 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
     assert @transaction.reload.completed?
   end
 
+  test "Ctrl+Enter does not progress while an overlay dialog is open" do
+    open_register_with_transaction!
+    Pos::AddOpenRingLine.call(
+      pos_transaction: @transaction, department: @department, unit_price_cents: 500, actor: @admin
+    )
+    line = @transaction.pos_line_items.pending.last
+
+    visit pos_transaction_path(@transaction, selected_line_id: line.id, focus_target: "line_actions")
+    assert_link "Tender", href: /\/tender/
+    assert_equal "transaction", find(".pos-shell")["data-pos-presentation"]
+
+    click_link "Discount"
+    assert_selector "dialog[open]", wait: 5
+    assert_text "Line discount"
+
+    # Focus a field inside the open dialog, then Ctrl+Enter must not advance Tender.
+    page.execute_script(<<~JS)
+      const field = document.querySelector("dialog[open] input, dialog[open] select, dialog[open] textarea")
+      field?.focus()
+      field?.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", code: "Enter", ctrlKey: true, bubbles: true })
+      )
+    JS
+
+    assert_selector "dialog[open]"
+    assert_equal "transaction", find(".pos-shell")["data-pos-presentation"]
+    assert_current_path pos_transaction_path(@transaction), ignore_query: true
+    refute @transaction.reload.completed?
+  end
+
   private
 
   def enter_tender_and_cash!(net_cents)
     click_link "Tender", href: /\/tender/
+    assert_selector ".pos-tender-workspace"
+    assert_selector "form#active_tender_form", count: 1
     fill_in "Amount tendered", with: format("%.2f", net_cents / 100.0)
-    click_button "Add cash tender"
+    find("button[type=submit][form=active_tender_form]").click
     assert_text "Tender recorded"
   end
 

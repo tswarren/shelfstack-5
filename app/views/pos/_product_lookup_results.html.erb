@@ -1,0 +1,78 @@
+<% results = local_assigns.fetch(:results) %>
+<% view_only = local_assigns.fetch(:view_only, false) %>
+<% pos_transaction = local_assigns[:pos_transaction] %>
+<% intent = local_assigns.fetch(:intent, "sale") %>
+<% quantity = local_assigns.fetch(:quantity, 1) %>
+<% product_request_id = local_assigns[:product_request_id] %>
+
+<% if results.groups.blank? %>
+  <p class="muted" role="status">No matching products for "<%= results.query %>".</p>
+<% else %>
+  <% if results.inventory_unit.present? %>
+    <p class="muted" role="status">
+      Exact inventory unit <code><%= results.inventory_unit.unit_identifier %></code> matched.
+    </p>
+  <% end %>
+  <ul class="pos-resolution-list" aria-label="Product lookup results">
+    <% results.groups.each do |group| %>
+      <li>
+        <p>
+          <strong><%= group.title %></strong>
+          <span class="muted">· <%= group.identifier %></span>
+        </p>
+        <ul class="pos-resolution-list">
+          <% group.variants.each do |row| %>
+            <li>
+              <p>
+                <%= row.variant_label %>
+                <span class="muted">
+                  · <%= row.price_cents.nil? ? "no price" : pos_money(row.price_cents) %>
+                  <% if row.tracking_mode == "quantity" %>
+                    · avail <%= row.available_quantity.nil? ? "—" : row.available_quantity %>
+                  <% else %>
+                    · <%= row.tracking_mode %>
+                  <% end %>
+                  <% if row.status_note.present? %>
+                    · <%= row.status_note %>
+                  <% end %>
+                </span>
+              </p>
+              <% if row.blockers.any? %>
+                <p class="muted">Cannot add: <%= row.blockers.join(", ") %></p>
+              <% end %>
+              <% unless view_only %>
+                <% if row.addable? %>
+                  <% if pos_transaction %>
+                    <%= form_with url: pos_transaction_pos_line_items_path(pos_transaction), method: :post,
+                          class: "pos-inline-form", data: { turbo_frame: "_top" } do |form| %>
+                      <%= hidden_field_tag :product_variant_id, row.product_variant_id %>
+                      <%= hidden_field_tag :quantity, quantity %>
+                      <%= hidden_field_tag :intent, intent %>
+                      <% if row.inventory_unit_id.present? %>
+                        <%= hidden_field_tag :inventory_unit_id, row.inventory_unit_id %>
+                      <% end %>
+                      <% if product_request_id.present? %>
+                        <%= hidden_field_tag :product_request_id, product_request_id %>
+                      <% end %>
+                      <%= form.submit "Add", class: "button button-small button-outline" %>
+                    <% end %>
+                  <% else %>
+                    <%= form_with url: register_scan_to_start_path, method: :post,
+                          class: "pos-inline-form", data: { turbo_frame: "_top" } do |form| %>
+                      <%= hidden_field_tag :product_variant_id, row.product_variant_id %>
+                      <%= hidden_field_tag :quantity, quantity %>
+                      <% if row.inventory_unit_id.present? %>
+                        <%= hidden_field_tag :inventory_unit_id, row.inventory_unit_id %>
+                      <% end %>
+                      <%= form.submit "Add from Ready", class: "button button-small button-outline" %>
+                    <% end %>
+                  <% end %>
+                <% end %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

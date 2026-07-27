@@ -1,0 +1,7 @@
+<%= render "pos/unlinked_return_form",
+      form_url: pos_transaction_pos_return_lines_path(@pos_transaction),
+      form_id: "unlinked_return_form",
+      submit_label: "Add unlinked return",
+      return_reasons: @return_reasons,
+      tax_categories: @tax_categories,
+      hidden_fields: { intent: "sale" } %>

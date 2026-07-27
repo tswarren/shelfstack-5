@@ -226,6 +226,14 @@ admin_pos_cash_movement_create:
   role: administrator
   permission: pos_cash_movement_create
 
+admin_pos_no_sale_create:
+  role: administrator
+  permission: pos_no_sale_create
+
+admin_pos_product_request_pickup:
+  role: administrator
+  permission: pos_product_request_pickup
+
 admin_pos_receipt_reprint:
   role: administrator
   permission: pos_receipt_reprint
@@ -237,6 +245,10 @@ admin_inventory_unit_manage:
 admin_pos_return_create:
   role: administrator
   permission: pos_return_create
+
+admin_pos_return_no_receipt:
+  role: administrator
+  permission: pos_return_no_receipt
 
 clerk_pos_access:
   role: associate
@@ -261,6 +273,14 @@ clerk_pos_price_override:
 clerk_pos_discount_apply:
   role: associate
   permission: pos_discount_apply
+
+clerk_pos_no_sale_create:
+  role: associate
+  permission: pos_no_sale_create
+
+clerk_pos_product_request_pickup:
+  role: associate
+  permission: pos_product_request_pickup
 
 catalog_editor_product_view:
   role: catalog_editor

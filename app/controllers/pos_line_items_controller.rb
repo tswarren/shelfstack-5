@@ -163,7 +163,16 @@ class PosLineItemsController < ApplicationController
       return
     end
 
-    add_line(variant)
+    inventory_unit = nil
+    if params[:inventory_unit_id].present?
+      inventory_unit = InventoryUnit.find_by(id: params[:inventory_unit_id])
+      if inventory_unit.blank?
+        redirect_to txn_redirect_path, alert: "Select a valid inventory unit."
+        return
+      end
+    end
+
+    add_line(variant, inventory_unit: inventory_unit)
   end
 
   def add_line(variant, inventory_unit: nil)
@@ -224,44 +233,57 @@ class PosLineItemsController < ApplicationController
   end
 
   def create_stored_value_line
-    account = if params[:create_account].present?
-      unless Current.user.can?("stored_value.account.create", store: Current.store)
-        redirect_to txn_redirect_path, alert: "missing permission stored_value.account.create"
-        return
-      end
-
-      created = StoredValue::CreateAccount.call(
-        organization: Current.organization,
-        account_type: "gift_card",
-        actor: Current.user,
-        store: Current.store,
-        alternate_identifier: params[:alternate_identifier].presence
-      )
-      unless created.success?
-        redirect_to txn_redirect_path, alert: created.error
-        return
-      end
-      created.account
-    else
-      resolve_stored_value_account_for_line
-    end
-
-    if account.blank?
-      redirect_to txn_redirect_path, alert: "Select or create a gift-card account."
+    create_account = params[:create_account].present?
+    if create_account && !Current.user.can?("stored_value.account.create", store: Current.store)
+      redirect_to txn_redirect_path, alert: "missing permission stored_value.account.create"
       return
     end
 
-    result = Pos::AddStoredValueLine.call(
-      pos_transaction: @pos_transaction,
-      account: account,
-      operation: params[:stored_value_operation].presence || "issue",
-      amount_cents: money_param_to_cents(params[:amount_cents], label: "Amount"),
-      actor: Current.user
-    )
-    if result.success?
+    amount_cents = money_param_to_cents(params[:amount_cents], label: "Amount")
+    operation = params[:stored_value_operation].presence || "issue"
+    error = nil
+
+    result = ActiveRecord::Base.transaction(requires_new: true) do
+      account = if create_account
+        created = StoredValue::CreateAccount.call(
+          organization: Current.organization,
+          account_type: "gift_card",
+          actor: Current.user,
+          store: Current.store,
+          alternate_identifier: params[:alternate_identifier].presence
+        )
+        unless created.success?
+          error = created.error
+          raise ActiveRecord::Rollback
+        end
+        created.account
+      else
+        resolve_stored_value_account_for_line
+      end
+
+      if account.blank?
+        error = "Select or create a gift-card account."
+        raise ActiveRecord::Rollback
+      end
+
+      add = Pos::AddStoredValueLine.call(
+        pos_transaction: @pos_transaction,
+        account: account,
+        operation: operation,
+        amount_cents: amount_cents,
+        actor: Current.user
+      )
+      unless add.success?
+        error = add.error
+        raise ActiveRecord::Rollback
+      end
+      add
+    end
+
+    if result&.success?
       redirect_to sale_after_intent_path, notice: "Stored-value line added."
     else
-      redirect_to txn_redirect_path, alert: result.error
+      redirect_to txn_redirect_path, alert: error.presence || "Unable to add stored-value line."
     end
   rescue ArgumentError => e
     redirect_to txn_redirect_path, alert: e.message

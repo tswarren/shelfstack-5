@@ -1,0 +1,14 @@
+<% if @pos_tenders.any? %>
+  <h3>Tenders</h3>
+  <ul class="pos-tender-summary">
+    <% @pos_tenders.each do |tender| %>
+      <li>
+        <%= tender.tender_type.name %> · <%= tender.direction.humanize %> ·
+        <%= pos_money(tender.amount_cents) %>
+        <% if tender.change_due_cents.to_i.positive? %>
+          <span class="muted">(change <%= pos_money(tender.change_due_cents) %>)</span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

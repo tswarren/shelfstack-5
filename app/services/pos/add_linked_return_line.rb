@@ -64,6 +64,7 @@ module Pos
           department: original.department,
           tax_category: original.tax_category,
           description_snapshot: original.description_snapshot,
+          identifier_snapshot: original.identifier_snapshot,
           quantity: @quantity,
           unit_price_cents: original.unit_price_cents,
           original_pos_line_item: original,

@@ -1,0 +1,45 @@
+<%# locals: presentation:, presentation_label:, session: (optional) %>
+<% session = local_assigns.fetch(:session, nil) %>
+<% device = session&.pos_device %>
+<% drawer = session&.cash_drawer %>
+<% active_txn = (@pos_transaction if @pos_transaction&.open?) || (@open_transaction if @open_transaction&.open?) %>
+<header class="pos-register-header" role="banner">
+  <div class="pos-register-header__brand">
+    <%= link_to register_path, class: "pos-register-header__brand-link",
+          data: { turbo_frame: "_top" } do %>
+      ShelfStack <span class="muted">POS</span>
+    <% end %>
+  </div>
+  <div class="pos-register-header__context" aria-label="Register context">
+    <span class="pos-register-header__item">
+      <strong><%= Current.store.name %></strong>
+    </span>
+    <% if device %>
+      <span class="pos-register-header__item muted"><%= device.name %></span>
+    <% end %>
+    <% if drawer %>
+      <span class="pos-register-header__item muted"><%= drawer.name %></span>
+    <% end %>
+    <span class="pos-register-header__item">
+      <%= Current.user.username %>
+    </span>
+    <% if session %>
+      <span class="pos-register-header__item muted">Session <%= session.id %></span>
+    <% end %>
+    <span class="pos-presentation-status" role="status" data-pos-presentation="<%= presentation %>">
+      <%= status_badge presentation_label,
+            variant: (presentation == "recovery" ? :danger : (active_txn ? :warning : :neutral)) %>
+    </span>
+  </div>
+  <div class="pos-register-header__actions">
+    <%= link_to "Store Operations", register_store_operations_path,
+          class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
+    <% show_switch = effective_memberships_for(Current.user).many? %>
+    <% if show_switch && !active_txn %>
+      <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-ghost",
+            data: { turbo_frame: "_top" } %>
+    <% end %>
+    <%= button_to "Sign out", session_path, method: :delete, class: "button button-small button-ghost",
+          form: { data: { turbo_frame: "_top" } } %>
+  </div>
+</header>

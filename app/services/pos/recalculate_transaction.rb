@@ -5,8 +5,8 @@ require "bigdecimal"
 module Pos
   # Owns provisional recalculation: prices (already on lines) -> discounts (already
   # allocated) -> tax -> totals. Sale lines use Tax::CalculateTransaction. Linked
-  # return lines reverse stored original tax components (ADR-0014) rather than
-  # recalculating current rules.
+  # return lines reverse stored original tax components (ADR-0014). Unlinked return
+  # lines calculate an explicit tax basis with direction "return".
   class RecalculateTransaction < ApplicationService
     Result = Data.define(:success?, :blockers, :warnings, :subtotal_cents, :discount_total_cents,
                           :tax_total_cents, :net_total_cents, :tax_exempt?)
@@ -43,20 +43,42 @@ module Pos
                             tax_exempt?: false)
         end
 
+        linked_returns, unlinked_returns = return_lines.partition { |line| line.original_pos_line_item_id.present? }
+        rule_unlinked, special_unlinked = unlinked_returns.partition { |line|
+          line.tax_basis_snapshot.blank? || line.tax_basis_snapshot == "current_configured_rules"
+        }
+        unlinked_tax_result = calculate_direction_tax(transaction, rule_unlinked, direction: "return", persist: false)
+        special_tax = build_special_unlinked_tax(special_unlinked)
+        if unlinked_tax_result[:blockers].any? || special_tax[:blockers].any?
+          existing_tax = pending_tax_total_cents(transaction)
+          return Result.new(success?: false,
+                            blockers: unlinked_tax_result[:blockers] + special_tax[:blockers],
+                            warnings: unlinked_tax_result[:warnings] + special_tax[:warnings],
+                            subtotal_cents: sale_subtotal - return_subtotal,
+                            discount_total_cents: sale_discounts - return_discounts,
+                            tax_total_cents: existing_tax,
+                            net_total_cents: provisional_net + existing_tax,
+                            tax_exempt?: false)
+        end
+        unlinked_tax_cents = unlinked_tax_result[:tax_cents] + special_tax[:tax_cents]
+        unlinked_line_results = unlinked_tax_result[:line_results] + special_tax[:line_results]
+        unlinked_warnings = (unlinked_tax_result[:warnings] + special_tax[:warnings]).uniq
+
         if transaction.tax_exempt?
           clear_pending_tax_rows!(transaction)
-          return_tax_cents = persist_return_tax!(return_lines)
-          # Whole-transaction exemption suppresses sale tax only. Linked returns
-          # still reverse historically stored components so the customer is refunded.
+          persist_tax_components(unlinked_line_results)
+          return_tax_cents = persist_linked_return_tax!(linked_returns) + unlinked_tax_cents
+          # Whole-transaction exemption suppresses sale tax only. Returns still
+          # refund tax on their explicit or historical basis.
           tax_total = -return_tax_cents
           net = provisional_net - return_tax_cents
-          return Result.new(success?: true, blockers: [], warnings: [],
+          return Result.new(success?: true, blockers: [], warnings: unlinked_warnings,
                             subtotal_cents: sale_subtotal - return_subtotal,
                             discount_total_cents: sale_discounts - return_discounts,
                             tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: true)
         end
 
-        sale_tax_result = calculate_sale_tax(transaction, merchandise_sale_lines, persist: false)
+        sale_tax_result = calculate_direction_tax(transaction, merchandise_sale_lines, direction: "sale", persist: false)
         if sale_tax_result[:blockers].any?
           # Do not wipe previously persisted provisional tax when calculation is blocked.
           existing_tax = pending_tax_total_cents(transaction)
@@ -71,13 +93,15 @@ module Pos
 
         clear_pending_tax_rows!(transaction)
         persist_tax_components(sale_tax_result[:line_results])
-        return_tax_cents = persist_return_tax!(return_lines)
+        persist_tax_components(unlinked_line_results)
+        return_tax_cents = persist_linked_return_tax!(linked_returns) + unlinked_tax_cents
         sale_tax_cents = sale_tax_result[:tax_cents]
         tax_total = sale_tax_cents - return_tax_cents
         net = (sale_subtotal - sale_discounts + sale_tax_cents + stored_value_sale_total) -
               (return_subtotal - return_discounts + return_tax_cents)
 
-        Result.new(success?: true, blockers: [], warnings: sale_tax_result[:warnings],
+        Result.new(success?: true, blockers: [],
+                   warnings: (sale_tax_result[:warnings] + unlinked_warnings).uniq,
                    subtotal_cents: sale_subtotal - return_subtotal,
                    discount_total_cents: sale_discounts - return_discounts,
                    tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: false)
@@ -85,6 +109,64 @@ module Pos
     end
 
     private
+
+    def build_special_unlinked_tax(lines)
+      return { tax_cents: 0, blockers: [], warnings: [], line_results: [] } if lines.empty?
+
+      blockers = []
+      warnings = []
+      line_results = []
+      tax_cents = 0
+
+      lines.each do |line|
+        case line.tax_basis_snapshot
+        when "no_tax_refund"
+          line_results << synthetic_tax_line_result(line, amount_cents: 0, treatment: "exempt",
+                                                         receipt_code: "NO_TAX_REFUND")
+        when "external_receipt_tax"
+          amount = line.explicit_tax_amount_cents
+          if amount.nil?
+            blockers << "Line #{line.id} external_receipt_tax requires explicit_tax_amount_cents"
+            next
+          end
+          tax_cents += amount
+          line_results << synthetic_tax_line_result(line, amount_cents: amount, treatment: "taxable",
+                                                         receipt_code: "EXTERNAL_RECEIPT")
+        else
+          blockers << "Line #{line.id} has unsupported tax basis #{line.tax_basis_snapshot.inspect}"
+        end
+      end
+
+      { tax_cents: tax_cents, blockers: blockers, warnings: warnings, line_results: line_results }
+    end
+
+    def synthetic_tax_line_result(line, amount_cents:, treatment:, receipt_code:)
+      component = Tax::CalculateTransaction::ComponentResult.new(
+        store_tax_rule_id: nil,
+        store_tax_rate_id: nil,
+        tax_category_id: line.tax_category_id,
+        treatment_snapshot: treatment,
+        receipt_code_snapshot: receipt_code,
+        component_code: receipt_code.downcase,
+        calculation_order: 0,
+        compounds_on_prior_tax_snapshot: false,
+        taxable_fraction_snapshot: BigDecimal("1"),
+        rate: nil,
+        position: 0,
+        taxable_amount_cents: line.extended_price_cents,
+        amount_cents: amount_cents
+      )
+      Tax::CalculateTransaction::LineResult.new(
+        line_id: line.id,
+        tax_category_id: line.tax_category_id,
+        direction: "return",
+        position: line.position,
+        taxable_merchandise_amount_cents: line.extended_price_cents,
+        components: [ component ],
+        exempt_components: [],
+        tax_amount_cents: amount_cents
+      )
+    end
 
     def clear_pending_tax_rows!(transaction)
       PosLineItemTax.where(pos_line_item_id: transaction.pos_line_items.where.not(status: "completed").select(:id)).delete_all
@@ -100,10 +182,10 @@ module Pos
       PosDiscountAllocation.joins(:pos_discount).where(pos_line_item_id: lines.map(&:id)).sum(:allocated_amount_cents)
     end
 
-    def calculate_sale_tax(transaction, sale_lines, persist: true)
-      return { tax_cents: 0, blockers: [], warnings: [], line_results: [] } if sale_lines.empty?
+    def calculate_direction_tax(transaction, lines, direction:, persist: true)
+      return { tax_cents: 0, blockers: [], warnings: [], line_results: [] } if lines.empty?
 
-      tax_lines = sale_lines.map { |line| tax_input_line(line) }
+      tax_lines = lines.map { |line| tax_input_line(line, direction: direction) }
       calculation = Tax::CalculateTransaction.call(store: transaction.store, lines: tax_lines)
       if calculation.blockers.any?
         return { tax_cents: 0, blockers: calculation.blockers, warnings: calculation.warnings, line_results: [] }
@@ -111,14 +193,14 @@ module Pos
 
       persist_tax_components(calculation.lines) if persist
       {
-        tax_cents: calculation.total_tax_cents_by_direction.fetch("sale", 0),
+        tax_cents: calculation.total_tax_cents_by_direction.fetch(direction, 0),
         blockers: [],
         warnings: calculation.warnings,
         line_results: calculation.lines
       }
     end
 
-    def persist_return_tax!(return_lines)
+    def persist_linked_return_tax!(return_lines)
       total = 0
       return_lines.each do |line|
         original = line.original_pos_line_item
@@ -193,7 +275,7 @@ module Pos
       ((BigDecimal(total) * return_qty) / original_qty).round(0, BigDecimal::ROUND_HALF_UP).to_i
     end
 
-    def tax_input_line(line)
+    def tax_input_line(line, direction: "sale")
       reducing_discount_cents = PosDiscountAllocation
         .joins(:pos_discount)
         .where(pos_line_item_id: line.id, pos_discounts: { tax_treatment: "reduces_taxable_base" })
@@ -204,7 +286,7 @@ module Pos
       Tax::CalculateTransaction::Line.new(
         id: line.id,
         tax_category_id: line.tax_category_id,
-        direction: "sale",
+        direction: direction,
         taxable_merchandise_amount_cents: taxable_cents,
         position: line.position
       )

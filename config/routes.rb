@@ -126,10 +126,34 @@ Rails.application.routes.draw do
   get "reports/export", to: "reports#export", as: :export_report
 
   get "register", to: "register#show", as: :register
+  get "register/store_operations", to: "register#store_operations", as: :register_store_operations
   post "register/scan_to_start", to: "register#scan_to_start", as: :register_scan_to_start
   post "register/lookup_receipt", to: "register#lookup_receipt", as: :register_lookup_receipt
+  post "register/start_open_ring", to: "register#start_open_ring", as: :register_start_open_ring
+  post "register/start_stored_value", to: "register#start_stored_value", as: :register_start_stored_value
+  post "register/start_pickup", to: "register#start_pickup", as: :register_start_pickup
+  post "register/start_unlinked_return", to: "register#start_unlinked_return", as: :register_start_unlinked_return
   post "register/stage_customer", to: "pos_customers#stage", as: :register_stage_customer
   post "register/clear_staged_customer", to: "pos_customers#clear_stage", as: :register_clear_staged_customer
+  post "register/create_customer", to: "pos_customers#create", as: :register_create_customer
+  post "register/no_sale", to: "pos_no_sales#create", as: :register_no_sale
+
+  scope path: "pos/overlays", as: :pos_overlay, controller: "pos_overlays" do
+    get :product_lookup
+    get :customer
+    get :customer_create
+    get :pickup
+    get :receipt_lookup
+    get :start_return
+    get :receipt_detail
+    get :open_ring
+    get :stored_value
+    get :cash_movement
+    get :no_sale
+    get :suspended
+    get :line_actions
+    get :transaction_lines
+  end
 
   resources :business_days, only: %i[index new create] do
     member do

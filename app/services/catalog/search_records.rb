@@ -138,8 +138,14 @@ module Catalog
     def search_product_variants
       scope = base_variant_scope
       if @query.present?
+        unit_variants = variants_from_unit_identifier
+        return unit_variants if unit_variants.any?
+
         lookup_variants = variants_from_product_lookup
         return lookup_variants if lookup_variants.any?
+
+        creator_variants = variants_from_creator_name
+        return creator_variants if creator_variants.any?
 
         pattern = "%#{sanitize_like(@query)}%"
         scope = scope.where(
@@ -168,6 +174,37 @@ module Catalog
       return [] if lookup.empty?
 
       product_ids = lookup.products.map(&:id)
+      product_ids &= [ @product_id.to_i ] if @product_id.present?
+      return [] if product_ids.empty?
+
+      base_variant_scope.where(product_id: product_ids).limit(LIMIT).to_a
+    end
+
+    # Exact Inventory Unit identifier (namespace 27). Returns the unit's variant so
+    # the shared picker can surface the match; individual-unit add still requires
+    # scan/ResolveScan for the unit itself.
+    def variants_from_unit_identifier
+      unit = InventoryUnit.joins(product_variant: :product)
+        .where(products: { organization_id: @organization.id })
+        .find_by(unit_identifier: @query)
+      return [] if unit.blank?
+      return [] if @product_id.present? && unit.product_variant.product_id != @product_id.to_i
+
+      variant = base_variant_scope.find_by(id: unit.product_variant_id)
+      variant.present? ? [ variant ] : []
+    end
+
+    def variants_from_creator_name
+      pattern = "%#{sanitize_like(@query)}%"
+      product_ids = ProductCreator.joins(:creator)
+        .where(creators: { organization_id: @organization.id })
+        .where(
+          "creators.display_name ILIKE :q OR creators.sort_name ILIKE :q OR creators.normalized_name ILIKE :q",
+          q: pattern
+        )
+        .limit(LIMIT * 4)
+        .pluck(:product_id)
+        .uniq
       product_ids &= [ @product_id.to_i ] if @product_id.present?
       return [] if product_ids.empty?
 

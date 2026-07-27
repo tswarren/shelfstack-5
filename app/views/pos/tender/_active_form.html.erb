@@ -1,0 +1,28 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<% if tp.selected_method.present? && !@pos_transaction.void_required_tenders? %>
+  <div class="pos-region pos-tender-active-form" aria-label="Active tender method">
+    <h3>Active method</h3>
+    <p class="muted"><%= tp.method_labels[tp.selected_method] %></p>
+
+    <% case tp.selected_method %>
+    <% when "cash" %>
+      <% if tp.refund_mode? %>
+        <%= render "pos/forms/cash_refund", presentation: tp %>
+      <% else %>
+        <%= render "pos/forms/cash_tender", presentation: tp %>
+      <% end %>
+    <% when "card" %>
+      <% if tp.refund_mode? %>
+        <%= render "pos/forms/card_refund", presentation: tp %>
+      <% else %>
+        <%= render "pos/forms/card_tender", presentation: tp %>
+      <% end %>
+    <% when "stored_value" %>
+      <% if tp.refund_mode? %>
+        <%= render "pos/forms/stored_value_refund", presentation: tp %>
+      <% else %>
+        <%= render "pos/forms/stored_value_tender", presentation: tp %>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

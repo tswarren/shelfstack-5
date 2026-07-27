@@ -62,12 +62,12 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] `layouts/pos` hosts `pos_workspace` and `pos_overlay`; no presentation business markup in the layout
-- [ ] Interactive POS does not use the normal back-office page header / large page title pattern
-- [ ] Shell CSS implements bounded height (`100dvh` grid: header · workspace · command)
-- [ ] Summary rail and command bar remain visible while primary content scrolls internally
-- [ ] Empty / stub content in regions is acceptable in L0 if geometry matches the wireframe
-- [ ] Screenshots at 1366×768 and 1024×768 attached for Ready stub and Transaction stub
+- [x] `layouts/pos` hosts `pos_workspace` and `pos_overlay`; no presentation business markup in the layout
+- [x] Interactive POS does not use the normal back-office page header / large page title pattern
+- [x] Shell CSS implements bounded height (`100dvh` grid: header · workspace · command)
+- [x] Summary rail and command bar remain visible while primary content scrolls internally
+- [x] Empty / stub content in regions is acceptable in L0 if geometry matches the wireframe
+- [ ] Screenshots at 1366×768 and 1024×768 attached for Ready stub and Transaction stub (manual review)
 
 ### Current → target (L0 focus)
 
@@ -93,19 +93,19 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Matches Ready wireframe regions (not necessarily final typography)
-- [ ] Sale / Return / Stored Value / Open Ring visible without opening disclosures (POS-UI-010)
-- [ ] Product / Receipt / pickup lookups launch overlay or bounded panel (may stub in L1 if L6 not ready)
-- [ ] Detailed business-day and cash-history tables are absent from ordinary Ready
-- [ ] Pre-Ready (no day / no session) reuses shell with one clear prerequisite task
-- [ ] Scenario 1 setup steps from [review-scenarios.md](review-scenarios.md) Accepted at both viewports
+- [x] Matches Ready wireframe regions (not necessarily final typography) — implemented; typography pending review
+- [x] Ready launchers visible without stacked disclosures for primary path (POS-UI-033; not Transaction four-intent bar)
+- [x] Product lookup launches overlay (L6); Receipt lookup bounded on Ready
+- [x] Detailed business-day and cash-history tables are absent from ordinary Ready
+- [x] Pre-Ready (no day / no session) reuses shell with one clear prerequisite task
+- [ ] Scenario 1 setup steps from [review-scenarios.md](review-scenarios.md) Accepted at both viewports (manual)
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
 | Ready card + stacked `<details>` | `presentations/_ready` + `ready/*` start / intents / staged customer |
-| Day and session details `<details>` | Move to Store Operations / secondary surface (POS-UI-037 open) |
+| Day and session details `<details>` | Moved to `register/store_operations` (POS-UI-037) |
 | Suspended list in large panel | Compact summary-rail treatment (POS-UI-034 open) |
 
 ---
@@ -156,20 +156,23 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Tender has intentional primary markup — not Transaction with left column hidden (POS-UI-005)
-- [ ] Amount due / refund due and remaining balance are visually dominant
-- [ ] Split settlement keeps recorded tenders visible
-- [ ] Refund language is explicit (not only negative numbers)
-- [ ] Complete Transaction visible when settled
-- [ ] Tender contract scenarios from presentation matrix Accepted
+- [x] Tender has intentional primary markup — not Transaction with left column hidden (POS-UI-005)
+- [x] Amount due / refund due and remaining balance are visually dominant
+- [x] Split settlement keeps recorded tenders visible
+- [x] Refund language is explicit (not only negative numbers)
+- [x] Complete Transaction visible when settled
+- [ ] Tender contract scenarios from presentation matrix Accepted (manual viewport review)
+- [x] One active tender form; methods are selectors (POS-UI-010 / POS-UI-035)
+- [x] Summary CTA submits the active form via `form=` binding
+- [x] Tender redirects preserve `/tender?tender_method=`
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
-| `_tender_entry` stacked `<details>` | `tender/_method_selector` + per-method forms |
-| `_tenders` | Split collection + row |
-| Tender via collapsed Transaction chrome | Dedicated `presentations/_tender` |
+| `_tender_entry` stacked `<details>` | Replaced by `pos/tender/*` + `pos/forms/*` |
+| `_tenders` | `pos/tender/_recorded_tenders` + selectable rows |
+| Tender via collapsed Transaction chrome | `pos/tender/_workspace` through shell |
 
 ---
 
@@ -180,18 +183,18 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Recovery occupies the primary workspace
-- [ ] Incident + numbered verification steps in operational language
-- [ ] Affected tender/amount visible in summary
-- [ ] Unsafe tender-entry controls absent (not merely muted)
-- [ ] Closed-list permitted actions only; primary resolution focused
-- [ ] `void_required` review scenario Accepted
+- [x] Recovery occupies the primary workspace
+- [x] Incident + numbered verification steps in operational language
+- [x] Affected tender/amount visible in summary
+- [x] Unsafe tender-entry controls absent (not merely muted)
+- [x] Closed-list permitted actions only; primary resolution focused
+- [ ] `void_required` review scenario Accepted at both viewports (manual)
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
-| `_recovery_panel` / `_void_required_tenders` | Promote to `presentations/_recovery` + `recovery/*` |
+| `_recovery_panel` / `_void_required_tenders` | `pos/recovery/*` through shell (affected-activity summary rail) |
 
 ---
 
@@ -202,17 +205,17 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Completion, receipt number, change, Print, Next Transaction dominate
-- [ ] Next Transaction receives focus after completion announcement
-- [ ] Linked return / post-void / detail are secondary
-- [ ] Browser print remains on `layouts/pos_receipt` (separate document)
-- [ ] Receipt scenarios Accepted at both viewports
+- [x] Completion, receipt number, change, Print, Next Transaction dominate
+- [x] Next Transaction receives focus after completion announcement
+- [x] Linked return / post-void / detail are secondary
+- [x] Browser print remains on `layouts/pos_receipt` (separate document)
+- [ ] Receipt scenarios Accepted at both viewports (manual)
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
-| Completed branch of `pos_transactions/show` | `presentations/_receipt` + `receipt/*` |
+| Completed branch of `pos_transactions/show` | `pos/receipt/*` through shell |
 | `customer_receipt` | Retain as print document only |
 
 ---
@@ -224,12 +227,13 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] One overlay host; supporting work does not leave the POS shell for ordinary paths
-- [ ] Focus trap, Escape (when permitted), restore focus to invoker
-- [ ] Successful state-changing action replaces `pos_workspace`, clears overlay
-- [ ] Overlay never creates an empty transaction
-- [ ] Product lookup exposes enough operational context (or accepted record-picker interim with documented residual)
-- [ ] Frequent actions are not primarily behind `<details>` (POS-UI-010)
+- [x] One overlay host; supporting work does not leave the POS shell for ordinary paths
+- [x] Focus trap, Escape (when permitted), restore focus to invoker (`pos-overlay` Stimulus + native `<dialog>`)
+- [x] Successful state-changing action replaces workspace via `_top` navigation (overlay clears on turbo load)
+- [x] Overlay never creates an empty transaction (Add still goes through ScanToStart)
+- [x] Product lookup uses rich POS-specific results (`Pos::ProductLookupResults`; shared with `_scan_resolution`) — not thin picker-only
+- [x] Ready Product lookup is not buried in `<details>` (POS-UI-010)
+- [ ] Screenshots / workflow review at both viewports (manual review)
 
 ### Current → target
 
@@ -247,12 +251,14 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Required presentation-matrix scenarios have Accepted compositions
-- [ ] Visual acceptance checklist passes for Ready, Transaction, Tender, Recovery, Receipt
-- [ ] Screenshots captured at 1366×768 and 1024×768 per screenshot matrix
-- [ ] Component boundaries match [component-map.md](component-map.md) or an explicit recorded replacement in [decisions.md](decisions.md)
-- [ ] Existing domain and server-authority tests still pass
-- [ ] Open visual decisions either Accepted or deferred with register/OD note
+- [ ] Required presentation-matrix scenarios have Accepted compositions (manual)
+- [ ] Visual acceptance checklist passes for Ready, Transaction, Tender, Recovery, Receipt (manual)
+- [ ] Screenshots captured at 1366×768 and 1024×768 per screenshot matrix (manual)
+- [x] Component boundaries match [component-map.md](component-map.md) or an explicit recorded replacement in [decisions.md](decisions.md) (shell + overlay host; see [layout-acceptance-status.md](layout-acceptance-status.md) residuals)
+- [x] Existing domain and server-authority tests still pass (CI on layout PRs)
+- [ ] Proposed POS-UI-020–037 promoted to Accepted after confirmation evidence (no Open visual-direction items remain)
+
+Tracking: [layout-acceptance-status.md](layout-acceptance-status.md).
 
 ---
 
@@ -260,16 +266,20 @@ L7  Viewport + scenario acceptance
 
 Keep PRs short-lived and reviewable as compositions, not as “more POS features.”
 
-| PR | Gate | Scope |
-| --- | --- | --- |
-| Layout 0 | L0 | Shell geometry, register header, `pos_workspace` / `pos_overlay`, stub regions |
-| Layout 1 | L1 | Ready composition through shell |
-| Layout 2 | L2 | Transaction entry + lines + summary + command bar |
-| Layout 3 | L3–L4 | Tender + Recovery dedicated compositions |
-| Layout 4 | L5–L6 | Receipt composition + overlay host workflows |
-| Layout 5 | L7 | Scenario walkthrough evidence + residual decisions |
+**Process (updated):** Layout Gates L0–L7 are consolidated on `feat/phase-11-layout` / [#150](https://github.com/tswarren/shelfstack-5/pull/150) against `main` (same pattern as mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146)). After CI is green, pause for manual viewport review (1366×768 and 1024×768). Score **Accepted** / **Needs refinement** / **Fail** using [review-scenarios.md](review-scenarios.md). Record residuals in [decisions.md](decisions.md) when needed.
 
-Mechanics already on `main` / [#146](https://github.com/tswarren/shelfstack-5/pull/146) should not be re-litigated in these PRs unless a layout change forces a contract tweak.
+| Gate | Scope |
+| --- | --- |
+| L0 | Shell geometry, register header, `pos_workspace` / `pos_overlay`, stub regions |
+| L1 | Ready composition through shell |
+| L2 | Transaction entry + lines + summary + command bar |
+| L3 | Tender dedicated composition |
+| L4 | Recovery dedicated composition |
+| L5 | Receipt completion composition |
+| L6 | Overlay host workflows |
+| L7 | Scenario walkthrough evidence + promote Proposed POS-UI decisions |
+
+Mechanics from [#146](https://github.com/tswarren/shelfstack-5/pull/146) should not be re-litigated unless a layout change forces a contract tweak.
 
 ## Explicit non-goals
 

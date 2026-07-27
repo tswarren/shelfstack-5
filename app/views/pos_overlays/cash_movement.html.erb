@@ -1,0 +1,27 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Cash movement" } do %>
+    <p class="muted">Record a paid-in, paid-out, float, or safe drop against this open session.</p>
+    <%= form_with url: pos_session_pos_cash_movements_path(@open_session), method: :post, class: "form",
+          data: { turbo_frame: "_top" } do |form| %>
+      <div class="field">
+        <%= form.label :cash_movement_type_id, "Type", class: "field-label" %>
+        <%= form.collection_select :cash_movement_type_id, @cash_movement_types, :id, :name, {}, class: "input" %>
+      </div>
+      <%= render "shared/currency_field", name: "amount_cents", label: "Amount",
+            id: "cash_movement_amount_cents", required: true, value_cents: nil, value: "",
+            autofocus: true, hint: "Enter an amount greater than zero." %>
+      <div class="field">
+        <%= form.label :reason, class: "field-label" %>
+        <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :reference, class: "field-label" %>
+        <%= form.text_field :reference, placeholder: "Reference", class: "input" %>
+      </div>
+      <%= render "shared/approval_fields", prefix: "cash_movement" %>
+      <div class="form-actions">
+        <%= form.submit "Record cash movement", class: "button button-primary" %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>

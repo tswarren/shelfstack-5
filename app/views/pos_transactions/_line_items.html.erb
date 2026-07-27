@@ -1,26 +1,25 @@
-<section class="pos-panel" aria-label="Lines">
+<section class="pos-region pos-lines-region" aria-label="Lines">
   <h2>Lines</h2>
-  <% if @pos_line_items.any? %>
-    <div class="table-container">
-      <table class="data-table">
+  <div class="pos-lines">
+    <% if @pos_line_items.any? %>
+      <table class="pos-line-table">
         <thead>
           <tr>
             <th scope="col">Description</th>
             <th scope="col" class="num">Qty</th>
             <th scope="col" class="num">Price</th>
-            <th scope="col" class="num">Extended</th>
-            <th scope="col" class="num">Discount</th>
+            <th scope="col" class="num">Ext</th>
+            <th scope="col" class="num">Disc</th>
             <th scope="col" class="num">Tax</th>
             <th scope="col" class="num">Net</th>
-            <th scope="col"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
           <%= render partial: "line_item", collection: @pos_line_items, as: :line %>
         </tbody>
       </table>
-    </div>
-  <% else %>
-    <p class="muted">No lines yet. Scan or search to add the first item.</p>
-  <% end %>
+    <% else %>
+      <p class="muted">No lines yet. Scan or search to add the first item.</p>
+    <% end %>
+  </div>
 </section>

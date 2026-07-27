@@ -59,7 +59,7 @@ class PosLineItemTest < ActiveSupport::TestCase
     refute line.return?
   end
 
-  test "return direction requires original line, return reason, and disposition" do
+  test "return direction requires return reason, disposition, and linked or unlinked source" do
     line = PosLineItem.new(
       pos_transaction: @transaction, line_kind: "product", status: "pending",
       product_variant: @variant, department: @department, quantity: 1,
@@ -67,9 +67,9 @@ class PosLineItemTest < ActiveSupport::TestCase
     )
 
     refute line.valid?
-    assert_includes line.errors[:original_pos_line_item], "is required for return lines"
     assert_includes line.errors[:return_reason], "is required for return lines"
     assert_includes line.errors[:return_disposition], "is required for return lines"
+    assert_includes line.errors[:return_source], "must be an unlinked source when no original sale line is present"
   end
 
   test "return line rejects an unsupported disposition value" do
@@ -104,6 +104,7 @@ class PosLineItemTest < ActiveSupport::TestCase
       pos_transaction: @transaction, line_kind: "product", status: "pending",
       product_variant: @variant, department: @department, quantity: 2,
       unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      return_source: "linked_sale",
       original_pos_line_item: original, return_reason: return_reasons(:unwanted),
       return_disposition: "return_to_stock"
     )
@@ -114,6 +115,7 @@ class PosLineItemTest < ActiveSupport::TestCase
       pos_transaction: @transaction, line_kind: "product", status: "completed",
       product_variant: @variant, department: @department, quantity: 1,
       unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      return_source: "linked_sale",
       original_pos_line_item: original, return_reason: return_reasons(:defective),
       return_disposition: "inspection_required"
     )
@@ -132,6 +134,7 @@ class PosLineItemTest < ActiveSupport::TestCase
       pos_transaction: return_txn, line_kind: "product", status: "pending",
       product_variant: @variant, department: @department, quantity: 2,
       unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      return_source: "linked_sale",
       original_pos_line_item: original, return_reason: return_reasons(:unwanted),
       return_disposition: "return_to_stock"
     )
@@ -152,6 +155,7 @@ class PosLineItemTest < ActiveSupport::TestCase
       pos_transaction: @transaction, line_kind: "product", status: "pending",
       product_variant: @variant, department: @department, quantity: 1,
       unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      return_source: "linked_sale",
       original_pos_line_item: original, return_reason: return_reasons(:unwanted),
       return_disposition: "return_to_stock"
     )
@@ -182,6 +186,7 @@ class PosLineItemTest < ActiveSupport::TestCase
       pos_transaction: @transaction, line_kind: "product", status: "pending",
       product_variant: request.product_variant, department: @department, quantity: 1,
       unit_price_cents: 100, created_by_user: @admin, direction: "return",
+      return_source: "linked_sale",
       original_pos_line_item: original, return_reason: return_reasons(:unwanted),
       return_disposition: "return_to_stock", product_request: request
     )

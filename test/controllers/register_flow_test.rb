@@ -11,7 +11,7 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     @variant = product_variants(:sample_book_standard)
   end
 
-  test "register day and session details link to X reports with live totals" do
+  test "register Ready omits day session tables and offers Store Operations" do
     post session_path, params: { username: "admin", password: "password123" }
     post business_days_path, params: { business_day: { reporting_date: Date.current } }
     business_day = BusinessDay.order(:id).last
@@ -23,16 +23,23 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
         opening_cash_cents: 0
       }
     }
-    session = PosSession.order(:id).last
 
     get register_path
     assert_response :success
-    assert_select "a[href=?]", business_day_x_report_business_day_path(business_day), text: "Day X"
-    assert_select "a[href=?]", session_x_report_pos_session_path(session), text: "Session X"
-    assert_select "a[href=?]", close_form_business_day_path(business_day), text: "Close business day"
-    assert_match(/Sales, tender, and cash-variance totals live on/, response.body)
+    assert_select ".pos-shell"
+    assert_select "a[href=?]", register_store_operations_path, text: "Store Operations"
+    assert_select "a", text: "Day X", count: 0
+    assert_select "a", text: "Close business day", count: 0
     refute_match(/Net sales/, response.body)
     refute_match(/cash variance/i, response.body)
+
+    get register_store_operations_path
+    assert_response :success
+    assert_select "a[href=?]", close_form_pos_session_path(PosSession.open_sessions.order(:id).last),
+                  text: "Close Session"
+    assert_select "a", text: "Day X"
+    assert_select "a", text: "Close business day"
+    assert_select "a", text: "Session X"
   end
 
   test "admin can open day/session, add lines, suspend, and recall" do
@@ -139,9 +146,10 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_redirected_to register_path
   end
 
-  test "ambiguous ready scan open-to-resolve carries query into transaction candidates" do
+  test "ambiguous ready scan stays on Ready; explicit variant starts atomically" do
     products(:sample_book).update!(alternate_identifier: "SHAREDALT01")
     products(:upc_product).update!(alternate_identifier: "SHAREDALT01")
+    open_inventory(product_variants(:sample_book_standard), quantity: 3, unit_cost_cents: 500)
 
     post session_path, params: { username: "admin", password: "password123" }
     post business_days_path, params: { business_day: { reporting_date: Date.current } }
@@ -162,18 +170,20 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_equal "ambiguous", flash[:scan_outcome]
     assert_equal "SHAREDALT01", flash[:scan_query]
 
-    assert_difference -> { PosTransaction.count }, 1 do
+    assert_no_difference -> { PosTransaction.count } do
       post pos_transactions_path, params: { query: "SHAREDALT01", quantity: 2 }
+    end
+    assert_redirected_to register_path
+
+    variant = product_variants(:sample_book_standard)
+    assert_difference -> { PosTransaction.count }, 1 do
+      post register_scan_to_start_path, params: { product_variant_id: variant.id, quantity: 2 }
     end
     transaction = PosTransaction.order(:id).last
     assert_redirected_to pos_transaction_path(transaction)
-
-    get pos_transaction_path(transaction)
-    assert_response :success
-    assert_select ".pos-scan-resolution"
-    assert_match "The Illustrated Man", response.body
-    assert_match "UPC Sample", response.body
-    assert_select ".pos-scan-resolution input[name=quantity][value='2']"
+    line = transaction.pos_line_items.pending.last
+    assert_equal variant, line.product_variant
+    assert_equal 2, line.quantity
   end
 
   test "receipt lookup finds completed receipt" do
@@ -249,8 +259,8 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
 
     get tender_pos_transaction_path(transaction)
     assert_response :success
-    assert_match(/State:.*Tender/m, response.body)
-    assert_select "aside[aria-label='Payment']"
+    assert_select "[data-pos-presentation='tender']"
+    assert_select "#pos-primary [aria-label='Payment']"
   end
 
   test "completed next transaction link does not create a record" do
@@ -280,7 +290,7 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { PosTransaction.count } do
       get pos_transaction_path(transaction)
       assert_response :success
-      assert_select "a", text: "Next transaction"
+      assert_select "a[href=?][data-turbo-frame=_top]", register_path, text: "Next transaction"
       get register_path
       assert_response :success
       assert_select "input.button-primary[value=?]", "Scan to start"

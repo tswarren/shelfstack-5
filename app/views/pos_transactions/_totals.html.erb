@@ -1,6 +1,6 @@
-<section class="pos-panel" aria-label="Totals">
-  <h2>Totals</h2>
-  <dl class="definition-grid pos-totals">
+<section class="pos-region" aria-label="Totals">
+  <h3>Totals</h3>
+  <dl class="pos-totals">
     <div class="definition-item"><dt>Subtotal</dt><dd><%= pos_money(@subtotal_cents) %></dd></div>
     <div class="definition-item"><dt>Discount</dt><dd><%= pos_money(@discount_total_cents) %></dd></div>
     <div class="definition-item"><dt>Tax</dt><dd><%= pos_money(@tax_total_cents) %></dd></div>
@@ -10,25 +10,25 @@
 
   <% if @pos_transaction.open? %>
     <% if @balance_due_cents.zero? %>
-      <p>
-        <span class="muted">Settled</span><br>
-        <span class="pos-balance"><%= pos_money(0) %></span>
+      <p class="pos-kv">
+        <span class="pos-kv__label">Settled</span>
+        <span class="pos-kv__value pos-balance"><%= pos_money(0) %></span>
       </p>
     <% elsif @balance_due_cents.negative? %>
-      <p>
-        <span class="muted">Refund due</span><br>
-        <span class="pos-balance"><%= pos_money(-@balance_due_cents) %></span>
+      <p class="pos-kv">
+        <span class="pos-kv__label">Refund due</span>
+        <span class="pos-kv__value pos-balance"><%= pos_money(-@balance_due_cents) %></span>
       </p>
     <% else %>
-      <p>
-        <span class="muted">Amount due</span><br>
-        <span class="pos-balance"><%= pos_money(@balance_due_cents) %></span>
+      <p class="pos-kv">
+        <span class="pos-kv__label">Amount due</span>
+        <span class="pos-kv__value pos-balance"><%= pos_money(@balance_due_cents) %></span>
       </p>
     <% end %>
     <% if @change_due_cents.to_i.positive? %>
-      <p>
-        <span class="muted">Change due</span><br>
-        <span class="pos-balance pos-change"><%= pos_money(@change_due_cents) %></span>
+      <p class="pos-kv">
+        <span class="pos-kv__label">Change due</span>
+        <span class="pos-kv__value pos-balance pos-change"><%= pos_money(@change_due_cents) %></span>
       </p>
     <% end %>
   <% end %>

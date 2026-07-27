@@ -172,6 +172,8 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.tender.card_standalone` | Record standalone card tenders | store | 4c | — | no | yes |
 | `pos.tender.card_void` | Confirm external card voids for authorized card tenders and `void_required` recovery tenders | store | 4c/6 | — | no | yes |
 | `pos.cash_movement.create` | Paid-in / paid-out / drops | store | 4c | `maximum_paid_out_cents` | yes | yes |
+| `pos.no_sale.create` | Record an audited No Sale event (no cash movement) | store | 11 | — | no | yes |
+| `pos.product_request.pickup` | Search fulfillable Customer Requests and add pickup quantity on POS | store | 11 | — | no | no |
 | `pos.receipt.reprint` | Reprint receipts | store | 4c | — | no | yes |
 | `pos.post_void.create` | Create post-void corrections | store | 6 | — | yes | yes |
 | `pos.post_void.approve` | Independently approve another user’s post-void | store | 6 | — | — | yes |

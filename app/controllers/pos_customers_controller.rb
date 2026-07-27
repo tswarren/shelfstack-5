@@ -1,11 +1,55 @@
 # frozen_string_literal: true
 
-# POS-native Customer stage / attach / remove (Phase 9).
+# POS-native Customer stage / attach / remove / compact create (Phase 9 / 11B).
 class PosCustomersController < ApplicationController
   layout "pos"
 
   before_action -> { require_permission!("pos.access") }
-  before_action -> { require_any_permission!("customers.customer.view", "customers.customer.lookup") }
+  before_action -> { require_any_permission!("customers.customer.view", "customers.customer.lookup") },
+                except: :create
+  before_action -> { require_permission!("customers.customer.create") }, only: :create
+
+  def create
+    session = current_open_session
+    return redirect_to register_path, alert: "Open a POS session first." unless session
+
+    attributes = customer_create_params.to_h.stringify_keys
+    attributes["country_code"] ||= Current.store&.country_code
+    attributes["region"] ||= Current.store&.region
+
+    result = Customers::Create.call(
+      organization: Current.organization,
+      actor: Current.user,
+      store: Current.store,
+      attributes: attributes,
+      create_anyway: ActiveModel::Type::Boolean.new.cast(params[:create_anyway]),
+      default_phone_country: Current.store&.country_code
+    )
+
+    if result.success?
+      stage = Pos::StageCustomer.call(
+        pos_session: session,
+        customer: result.customer,
+        actor: Current.user
+      )
+      if stage.success?
+        notice = "Customer created and staged for next transaction."
+        notice = "Previous staged customer replaced. #{notice}" if stage.replaced_prior
+        redirect_out_of_overlay_to register_path, notice: notice
+      else
+        redirect_out_of_overlay_to register_path, alert: "Customer created, but staging failed: #{stage.error}"
+      end
+    elsif result.error == "possible_duplicates"
+      @customer = result.customer
+      @possible_duplicates = result.possible_duplicates
+      render "pos_overlays/customer_create", layout: false, status: :unprocessable_entity
+    else
+      @customer = result.customer || Current.organization.customers.new(customer_create_params)
+      @possible_duplicates = []
+      flash.now[:alert] = result.error
+      render "pos_overlays/customer_create", layout: false, status: :unprocessable_entity
+    end
+  end
 
   def stage
     session = current_open_session
@@ -86,5 +130,19 @@ class PosCustomersController < ApplicationController
       return nil
     end
     customer
+  end
+
+  def customer_create_params
+    params.require(:customer).permit(
+      :customer_type, :organization_name, :first_name, :last_name,
+      :primary_phone, :primary_email, :preferred_contact_method
+    )
+  end
+
+  # Validation failures re-render inside turbo-frame#pos_overlay; success must
+  # escape that frame so Ready reloads with the staged customer.
+  def redirect_out_of_overlay_to(path, **options)
+    response.set_header("Turbo-Frame", "_top")
+    redirect_to path, **options
   end
 end

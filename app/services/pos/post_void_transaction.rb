@@ -309,6 +309,7 @@ module Pos
         tax_category_id: original_line.tax_category_id,
         original_tax_category_id: original_line.original_tax_category_id,
         description_snapshot: original_line.description_snapshot,
+        identifier_snapshot: original_line.identifier_snapshot,
         cost_unit_cost_cents: original_line.cost_unit_cost_cents,
         cost_extended_cents: original_line.cost_extended_cents,
         cost_method_snapshot: original_line.cost_method_snapshot,

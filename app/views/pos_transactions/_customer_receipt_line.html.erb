@@ -1,0 +1,40 @@
+<% line = local_assigns.fetch(:line) %>
+<% sign = line.return? ? -1 : 1 %>
+<% extended_cents = line.extended_price_cents.to_i * sign %>
+<% allocations = line.pos_discount_allocations.to_a %>
+<% discount_cents = allocations.sum { |allocation| allocation.allocated_amount_cents.to_i } %>
+<% net_cents = (line.extended_price_cents.to_i - discount_cents) * sign %>
+<% identifier = pos_receipt_line_identifier(line) %>
+
+<article class="pos-receipt-item">
+  <p class="pos-receipt-item__description">
+    <%= line.effective_description.presence || line.description_snapshot.presence || "Line" %>
+    <% if line.return? %>
+      <span class="muted">(return)</span>
+    <% end %>
+  </p>
+
+  <% if identifier.present? %>
+    <p class="pos-receipt-item__meta muted"><%= identifier %></p>
+  <% end %>
+
+  <p class="pos-receipt-item__row">
+    <span><%= line.quantity %> × <%= pos_money(line.unit_price_cents) %></span>
+    <span><%= pos_money(extended_cents) %></span>
+  </p>
+
+  <% allocations.each do |allocation| %>
+    <% next unless allocation.allocated_amount_cents.to_i.positive? %>
+    <p class="pos-receipt-item__row pos-receipt-item__row--adjustment">
+      <span><%= pos_receipt_discount_label(allocation.pos_discount) %></span>
+      <span><%= pos_money(-allocation.allocated_amount_cents.to_i * sign) %></span>
+    </p>
+  <% end %>
+
+  <% if discount_cents.positive? %>
+    <p class="pos-receipt-item__row pos-receipt-item__row--net">
+      <span>Net</span>
+      <span><%= pos_money(net_cents) %></span>
+    </p>
+  <% end %>
+</article>

@@ -1,0 +1,13 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<section class="pos-region" aria-label="Recorded tenders">
+  <h3>Recorded tenders</h3>
+  <% if tp.recorded_tenders.any? %>
+    <ul class="pos-recorded-tenders">
+      <% tp.recorded_tenders.each do |tender| %>
+        <%= render "pos/tender/recorded_tender", presentation: tp, tender: tender %>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No tenders recorded.</p>
+  <% end %>
+</section>

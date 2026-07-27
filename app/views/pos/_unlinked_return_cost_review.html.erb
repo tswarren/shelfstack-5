@@ -1,0 +1,41 @@
+<%# locals: form_url, cost_proposal, submit_label, turbo_frame, form_id, fields, needs_approval %>
+<% form_url = local_assigns.fetch(:form_url)
+   form_id = local_assigns.fetch(:form_id, "unlinked_return_cost_confirm_form")
+   submit_label = local_assigns.fetch(:submit_label, "Confirm and add return")
+   turbo_frame = local_assigns.fetch(:turbo_frame, "_top")
+   proposal = local_assigns.fetch(:cost_proposal)
+   fields = local_assigns.fetch(:fields)
+   needs_approval = local_assigns.fetch(:needs_approval, false) %>
+
+<p class="muted">Review the proposed inventory cost before adding this return.</p>
+
+<div class="pos-region" role="status">
+  <p>
+    <strong>Proposed inventory cost:</strong>
+    <%= pos_money(proposal.unit_cost_cents) %> per unit
+  </p>
+  <p><strong>Basis:</strong> <%= proposal.basis_label %></p>
+  <p><strong>Quality:</strong> Estimated</p>
+</div>
+
+<%= form_with url: form_url, method: :post, class: "form", id: form_id,
+      data: { turbo_frame: turbo_frame } do %>
+  <%= hidden_field_tag :mode, "unlinked" %>
+  <% fields.each do |name, value| %>
+    <%= hidden_field_tag name, value unless value.nil? %>
+  <% end %>
+  <%= hidden_field_tag :reviewed_cost_unit_cents, proposal.unit_cost_cents %>
+  <%= hidden_field_tag :reviewed_cost_source, proposal.source %>
+  <%= hidden_field_tag :confirm_cost_basis, "true" %>
+
+  <% if needs_approval %>
+    <details class="pos-region" open>
+      <summary>Approval (when no-receipt exceeds authority)</summary>
+      <%= render "shared/approval_fields", prefix: "unlinked_return" %>
+    </details>
+  <% end %>
+
+  <div class="form-actions">
+    <%= submit_tag submit_label, class: "button button-primary" %>
+  </div>
+<% end %>

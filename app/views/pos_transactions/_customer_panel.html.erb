@@ -1,5 +1,5 @@
-<section class="pos-panel" aria-label="Customer">
-  <h2>Customer</h2>
+<section class="pos-region" aria-label="Customer">
+  <h3>Customer</h3>
   <% if @pos_transaction.customer.present? %>
     <% if can_lookup_customers? %>
       <p>
@@ -7,14 +7,16 @@
         <code><%= @pos_transaction.customer.customer_number %></code>
       </p>
       <% if @pos_transaction.editable? %>
-        <%= button_to "Remove customer", remove_customer_pos_transaction_path(@pos_transaction),
-              method: :post, class: "button button-outline" %>
+        <%= button_to "Remove", remove_customer_pos_transaction_path(@pos_transaction),
+              method: :post, class: "button button-ghost button-small",
+              form: { data: pos_workspace_turbo } %>
       <% end %>
     <% else %>
       <p class="muted">Customer attached.</p>
     <% end %>
   <% elsif @pos_transaction.editable? && can_lookup_customers? %>
-    <%= form_with url: attach_customer_pos_transaction_path(@pos_transaction), method: :post, class: "form" do %>
+    <%= form_with url: attach_customer_pos_transaction_path(@pos_transaction), method: :post, class: "form",
+          data: pos_workspace_turbo do %>
       <%= render "shared/record_picker",
             name: "customer_id",
             id: "attach_customer_id",
@@ -22,12 +24,13 @@
             label: "Attach customer",
             required: true,
             include_blank: false,
-            hint: "Search by name, phone, email, or customer number." %>
-      <%= submit_tag "Attach", class: "button button-outline" %>
+            hint: "Name, phone, email, or number." %>
+      <%= submit_tag "Attach", class: "button button-outline button-small" %>
     <% end %>
     <% if Current.user.can?("customers.customer.create", store: Current.store) %>
-      <p class="field-hint" style="margin-top: 0.75rem;">
-        <%= link_to "Create customer", new_customer_path, class: "button button-small button-ghost" %>
+      <p class="field-hint">
+        <%= link_to "Create customer", new_customer_path, class: "button button-small button-ghost",
+              data: { turbo_frame: "_top" } %>
       </p>
     <% end %>
   <% else %>

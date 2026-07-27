@@ -1,0 +1,35 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Product lookup" } do %>
+    <p class="muted">
+      Search for POS-specific results. Exact matches are never auto-added —
+      choose Add deliberately.
+      <% if @view_only %>
+        View only in this presentation — Add is unavailable.
+      <% end %>
+    </p>
+
+    <%= form_with url: pos_overlay_product_lookup_path, method: :get, class: "form" do %>
+      <%= hidden_field_tag :intent, @intent %>
+      <%= hidden_field_tag :pos_transaction_id, @pos_transaction&.id if @pos_transaction %>
+      <%= hidden_field_tag :presentation, params[:presentation] if params[:presentation].present? %>
+      <div class="field">
+        <label class="field-label" for="pos_product_lookup_q">Search</label>
+        <%= text_field_tag :q, @query, id: "pos_product_lookup_q", class: "input",
+              autofocus: true, placeholder: "Name, ISBN, SKU, creator, or unit ID",
+              autocomplete: "off" %>
+      </div>
+      <div class="form-actions">
+        <%= submit_tag "Search", class: "button button-primary" %>
+      </div>
+    <% end %>
+
+    <% if @query.present? %>
+      <%= render "pos/product_lookup_results",
+            results: @lookup_results,
+            view_only: @view_only,
+            pos_transaction: @pos_transaction,
+            intent: @intent,
+            quantity: 1 %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -340,6 +340,18 @@ pos_cash_movement_create:
   permission_group: pos
   active: true
 
+pos_no_sale_create:
+  code: pos.no_sale.create
+  name: Record No Sale
+  permission_group: pos
+  active: true
+
+pos_product_request_pickup:
+  code: pos.product_request.pickup
+  name: POS Product Request pickup
+  permission_group: pos
+  active: true
+
 pos_receipt_reprint:
   code: pos.receipt.reprint
   name: Reprint receipts
@@ -355,6 +367,12 @@ inventory_unit_manage:
 pos_return_create:
   code: pos.return.create
   name: Create return lines
+  permission_group: pos
+  active: true
+
+pos_return_no_receipt:
+  code: pos.return.no_receipt
+  name: No-receipt returns
   permission_group: pos
   active: true
 

@@ -1,0 +1,23 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Customer" } do %>
+    <p class="muted">Staging a customer does not create a transaction.</p>
+    <%= form_with url: register_stage_customer_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do %>
+      <%= render "shared/record_picker",
+            name: "customer_id",
+            id: "stage_customer_id",
+            record_type: "customer",
+            label: "Stage customer",
+            required: true,
+            include_blank: false,
+            hint: "Search by name, phone, email, or customer number." %>
+      <%= submit_tag "Use for next transaction", class: "button button-primary" %>
+    <% end %>
+    <% if Current.user.can?("customers.customer.create", store: Current.store) %>
+      <p class="field-hint">
+        <%= link_to "Create customer", pos_overlay_customer_create_path,
+              class: "button button-small button-ghost", data: pos_overlay_turbo %>
+      </p>
+    <% end %>
+  <% end %>
+<% end %>

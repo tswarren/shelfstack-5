@@ -40,6 +40,32 @@ class PosHelperTest < ActionView::TestCase
     Current.store = nil
   end
 
+  test "pos_receipt_discount_label prefers reason then percentage" do
+    reason = DiscountReason.new(name: "Member discount")
+    with_reason = PosDiscount.new(method: "percentage", rate_bps: 1000, discount_reason: reason)
+    assert_equal "Member discount", pos_receipt_discount_label(with_reason)
+
+    percentage = PosDiscount.new(method: "percentage", rate_bps: 1500)
+    assert_equal "Discount 15%", pos_receipt_discount_label(percentage)
+  end
+
+  test "pos_masked_tender_reference masks long auth and terminal tokens" do
+    tender = PosTender.new(
+      authorization_code: "AUTH-123456",
+      terminal_reference: "TERM-9876"
+    )
+
+    masked = pos_masked_tender_reference(tender)
+    assert_match(/Auth .+3456/, masked)
+    assert_match(/Term .+9876/, masked)
+    refute_includes masked, "AUTH-123456"
+  end
+
+  test "pos_masked_tender_reference explains missing references" do
+    assert_equal "No external reference recorded",
+                 pos_masked_tender_reference(PosTender.new)
+  end
+
   test "pos_discount_summary labels fixed-amount method without repeating the amount" do
     discount = PosDiscount.new(
       method: "fixed_amount",

@@ -1,0 +1,27 @@
+<% void_required = local_assigns.fetch(:void_required_tenders) %>
+<section class="pos-region" aria-label="Affected activity">
+  <h3>Affected activity</h3>
+  <p class="muted">Transaction <%= @pos_transaction.public_id %></p>
+
+  <% if void_required.any? %>
+    <ul class="pos-recovery-affected-list">
+      <% void_required.each do |tender| %>
+        <li>
+          <p class="pos-kv">
+            <span class="pos-kv__label">
+              <%= tender.tender_type.name %>
+              <%= tender.direction == "refunded" ? "refund" : "payment" %>
+            </span>
+            <span class="pos-kv__value"><%= pos_money(tender.amount_cents) %></span>
+          </p>
+          <p class="muted"><%= pos_masked_tender_reference(tender) %></p>
+          <p><strong>Status:</strong> void required</p>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="muted">No void-required tenders.</p>
+  <% end %>
+
+  <p class="pos-readiness-warning" role="status">Normal tender entry unavailable</p>
+</section>
