@@ -12,10 +12,8 @@ class PosLineItem < ApplicationRecord
   RETURN_DISPOSITIONS = %w[
     return_to_stock inspection_required damaged return_to_vendor discard non_inventory
   ].freeze
-  # Domain "Customer Returns": linked_sale is the only source implemented in
-  # Phase 4e; external_receipt/gift_receipt/no_receipt remain unlinked-return
-  # scope (pos.return.no_receipt permission is seeded but has no service yet).
   RETURN_SOURCES = %w[linked_sale external_receipt gift_receipt no_receipt].freeze
+  UNLINKED_RETURN_SOURCES = %w[external_receipt gift_receipt no_receipt].freeze
 
   belongs_to :pos_transaction
   belongs_to :product_variant, optional: true
@@ -183,14 +181,23 @@ class PosLineItem < ApplicationRecord
   # Mirrors the `pos_line_items_return_requires_link` DB check constraint
   # (application validation complements, not replaces, database protection).
   # Post-void reversing lines use `reverses_pos_line_item_id` instead of the
-  # customer-return linkage trio.
+  # customer-return linkage trio. Unlinked returns require source + reason +
+  # disposition without an original sale line.
   def return_direction_requires_linkage
     return unless direction == "return"
     return if reverses_pos_line_item_id.present?
 
-    errors.add(:original_pos_line_item, "is required for return lines") if original_pos_line_item_id.blank?
     errors.add(:return_reason, "is required for return lines") if return_reason_id.blank?
     errors.add(:return_disposition, "is required for return lines") if return_disposition.blank?
+
+    if original_pos_line_item_id.present?
+      errors.add(:return_source, "must be linked_sale for linked returns") unless return_source == "linked_sale"
+      return
+    end
+
+    unless UNLINKED_RETURN_SOURCES.include?(return_source)
+      errors.add(:return_source, "must be an unlinked source when no original sale line is present")
+    end
   end
 
   # Mirrors the `pos_line_items_product_request_requires_product_sale` DB

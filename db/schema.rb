@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_27_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_27_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -486,7 +486,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_010000) do
     t.index ["pos_transaction_id"], name: "index_pos_approvals_on_pos_transaction_id"
     t.index ["requested_by_user_id"], name: "index_pos_approvals_on_requested_by_user_id"
     t.index ["store_id"], name: "index_pos_approvals_on_store_id"
-    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying::text, 'discount_apply'::character varying::text, 'tax_exemption'::character varying::text, 'tax_category_override'::character varying::text, 'cash_movement'::character varying::text, 'post_void'::character varying::text, 'stored_value_adjustment'::character varying::text, 'stored_value_refund_exception'::character varying::text, 'card_refund_reconciliation'::character varying::text, 'reconciliation_variance'::character varying::text])", name: "pos_approvals_action_type_check"
+    t.check_constraint "action_type::text = ANY (ARRAY['price_override'::character varying::text, 'discount_apply'::character varying::text, 'tax_exemption'::character varying::text, 'tax_category_override'::character varying::text, 'cash_movement'::character varying::text, 'post_void'::character varying::text, 'stored_value_adjustment'::character varying::text, 'stored_value_refund_exception'::character varying::text, 'card_refund_reconciliation'::character varying::text, 'reconciliation_variance'::character varying::text, 'no_receipt_return'::character varying::text])", name: "pos_approvals_action_type_check"
   end
 
   create_table "pos_cash_movements", force: :cascade do |t|
@@ -679,7 +679,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_010000) do
     t.check_constraint "cost_method_snapshot IS NULL OR (cost_method_snapshot::text = ANY (ARRAY['explicit'::character varying::text, 'configured_estimate'::character varying::text, 'moving_average'::character varying::text, 'last_known'::character varying::text, 'unknown'::character varying::text]))", name: "pos_line_items_cost_method_snapshot_check"
     t.check_constraint "cost_quality_snapshot IS NULL OR (cost_quality_snapshot::text = ANY (ARRAY['actual'::character varying::text, 'estimated'::character varying::text, 'mixed'::character varying::text, 'unknown'::character varying::text]))", name: "pos_line_items_cost_quality_snapshot_check"
     t.check_constraint "cost_unit_cost_cents IS NULL OR cost_unit_cost_cents >= 0", name: "pos_line_items_cost_unit_cost_non_negative"
-    t.check_constraint "direction::text = 'sale'::text OR reverses_pos_line_item_id IS NOT NULL OR original_pos_line_item_id IS NOT NULL AND return_reason_id IS NOT NULL AND return_disposition IS NOT NULL", name: "pos_line_items_return_requires_link"
+    t.check_constraint "direction::text = 'sale'::text OR reverses_pos_line_item_id IS NOT NULL OR return_reason_id IS NOT NULL AND return_disposition IS NOT NULL AND (original_pos_line_item_id IS NOT NULL OR (return_source::text = ANY (ARRAY['external_receipt'::character varying::text, 'gift_receipt'::character varying::text, 'no_receipt'::character varying::text])))", name: "pos_line_items_return_requires_link"
     t.check_constraint "direction::text = ANY (ARRAY['sale'::character varying::text, 'return'::character varying::text])", name: "pos_line_items_direction_check"
     t.check_constraint "inventory_unit_id IS NULL OR line_kind::text = 'product'::text", name: "pos_line_items_unit_matches_kind"
     t.check_constraint "inventory_unit_id IS NULL OR quantity = 1", name: "pos_line_items_unit_quantity_one"

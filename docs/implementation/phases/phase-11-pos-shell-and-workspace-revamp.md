@@ -518,6 +518,8 @@ Gate B is accepted when the cashier can perform the supported transaction-entry 
 * Product Request pickup;
 * stored-value issuance and reload.
 
+**Unlinked returns (Path A Must slice):** `Pos::AddUnlinkedReturnLine` supports `external_receipt` / `gift_receipt` / `no_receipt` for product (quantity/none) and open-ring lines with explicit refund unit price + tax basis; `no_receipt` uses `pos.return.no_receipt` + `maximum_no_receipt_return_cents` via `Pos::AuthorizeAction` (`no_receipt_return`). Individually tracked unlinked returns remain out of this slice (require linked originals). Remaining Gate B shell gaps (in-shell pickup, compact customer create) are tracked separately from this return Must.
+
 ---
 
 # Gate C — Financial completion

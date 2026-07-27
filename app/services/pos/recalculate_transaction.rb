@@ -5,8 +5,8 @@ require "bigdecimal"
 module Pos
   # Owns provisional recalculation: prices (already on lines) -> discounts (already
   # allocated) -> tax -> totals. Sale lines use Tax::CalculateTransaction. Linked
-  # return lines reverse stored original tax components (ADR-0014) rather than
-  # recalculating current rules.
+  # return lines reverse stored original tax components (ADR-0014). Unlinked return
+  # lines calculate an explicit tax basis with direction "return".
   class RecalculateTransaction < ApplicationService
     Result = Data.define(:success?, :blockers, :warnings, :subtotal_cents, :discount_total_cents,
                           :tax_total_cents, :net_total_cents, :tax_exempt?)
@@ -43,20 +43,34 @@ module Pos
                             tax_exempt?: false)
         end
 
+        linked_returns, unlinked_returns = return_lines.partition { |line| line.original_pos_line_item_id.present? }
+        unlinked_tax_result = calculate_direction_tax(transaction, unlinked_returns, direction: "return", persist: false)
+        if unlinked_tax_result[:blockers].any?
+          existing_tax = pending_tax_total_cents(transaction)
+          return Result.new(success?: false, blockers: unlinked_tax_result[:blockers],
+                            warnings: unlinked_tax_result[:warnings],
+                            subtotal_cents: sale_subtotal - return_subtotal,
+                            discount_total_cents: sale_discounts - return_discounts,
+                            tax_total_cents: existing_tax,
+                            net_total_cents: provisional_net + existing_tax,
+                            tax_exempt?: false)
+        end
+
         if transaction.tax_exempt?
           clear_pending_tax_rows!(transaction)
-          return_tax_cents = persist_return_tax!(return_lines)
-          # Whole-transaction exemption suppresses sale tax only. Linked returns
-          # still reverse historically stored components so the customer is refunded.
+          persist_tax_components(unlinked_tax_result[:line_results])
+          return_tax_cents = persist_linked_return_tax!(linked_returns) + unlinked_tax_result[:tax_cents]
+          # Whole-transaction exemption suppresses sale tax only. Returns still
+          # refund tax on their explicit or historical basis.
           tax_total = -return_tax_cents
           net = provisional_net - return_tax_cents
-          return Result.new(success?: true, blockers: [], warnings: [],
+          return Result.new(success?: true, blockers: [], warnings: unlinked_tax_result[:warnings],
                             subtotal_cents: sale_subtotal - return_subtotal,
                             discount_total_cents: sale_discounts - return_discounts,
                             tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: true)
         end
 
-        sale_tax_result = calculate_sale_tax(transaction, merchandise_sale_lines, persist: false)
+        sale_tax_result = calculate_direction_tax(transaction, merchandise_sale_lines, direction: "sale", persist: false)
         if sale_tax_result[:blockers].any?
           # Do not wipe previously persisted provisional tax when calculation is blocked.
           existing_tax = pending_tax_total_cents(transaction)
@@ -71,13 +85,15 @@ module Pos
 
         clear_pending_tax_rows!(transaction)
         persist_tax_components(sale_tax_result[:line_results])
-        return_tax_cents = persist_return_tax!(return_lines)
+        persist_tax_components(unlinked_tax_result[:line_results])
+        return_tax_cents = persist_linked_return_tax!(linked_returns) + unlinked_tax_result[:tax_cents]
         sale_tax_cents = sale_tax_result[:tax_cents]
         tax_total = sale_tax_cents - return_tax_cents
         net = (sale_subtotal - sale_discounts + sale_tax_cents + stored_value_sale_total) -
               (return_subtotal - return_discounts + return_tax_cents)
 
-        Result.new(success?: true, blockers: [], warnings: sale_tax_result[:warnings],
+        Result.new(success?: true, blockers: [],
+                   warnings: (sale_tax_result[:warnings] + unlinked_tax_result[:warnings]).uniq,
                    subtotal_cents: sale_subtotal - return_subtotal,
                    discount_total_cents: sale_discounts - return_discounts,
                    tax_total_cents: tax_total, net_total_cents: net, tax_exempt?: false)
@@ -100,10 +116,10 @@ module Pos
       PosDiscountAllocation.joins(:pos_discount).where(pos_line_item_id: lines.map(&:id)).sum(:allocated_amount_cents)
     end
 
-    def calculate_sale_tax(transaction, sale_lines, persist: true)
-      return { tax_cents: 0, blockers: [], warnings: [], line_results: [] } if sale_lines.empty?
+    def calculate_direction_tax(transaction, lines, direction:, persist: true)
+      return { tax_cents: 0, blockers: [], warnings: [], line_results: [] } if lines.empty?
 
-      tax_lines = sale_lines.map { |line| tax_input_line(line) }
+      tax_lines = lines.map { |line| tax_input_line(line, direction: direction) }
       calculation = Tax::CalculateTransaction.call(store: transaction.store, lines: tax_lines)
       if calculation.blockers.any?
         return { tax_cents: 0, blockers: calculation.blockers, warnings: calculation.warnings, line_results: [] }
@@ -111,14 +127,14 @@ module Pos
 
       persist_tax_components(calculation.lines) if persist
       {
-        tax_cents: calculation.total_tax_cents_by_direction.fetch("sale", 0),
+        tax_cents: calculation.total_tax_cents_by_direction.fetch(direction, 0),
         blockers: [],
         warnings: calculation.warnings,
         line_results: calculation.lines
       }
     end
 
-    def persist_return_tax!(return_lines)
+    def persist_linked_return_tax!(return_lines)
       total = 0
       return_lines.each do |line|
         original = line.original_pos_line_item
@@ -193,7 +209,7 @@ module Pos
       ((BigDecimal(total) * return_qty) / original_qty).round(0, BigDecimal::ROUND_HALF_UP).to_i
     end
 
-    def tax_input_line(line)
+    def tax_input_line(line, direction: "sale")
       reducing_discount_cents = PosDiscountAllocation
         .joins(:pos_discount)
         .where(pos_line_item_id: line.id, pos_discounts: { tax_treatment: "reduces_taxable_base" })
@@ -204,7 +220,7 @@ module Pos
       Tax::CalculateTransaction::Line.new(
         id: line.id,
         tax_category_id: line.tax_category_id,
-        direction: "sale",
+        direction: direction,
         taxable_merchandise_amount_cents: taxable_cents,
         position: line.position
       )
