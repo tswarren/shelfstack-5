@@ -508,17 +508,55 @@
   margin: 0.25rem 0;
 }
 
-.pos-totals {
+/* Summary rail: key/value on one row — never stacked labels above amounts */
+.pos-shell__summary .definition-grid,
+.pos-shell__summary .pos-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
   margin: 0;
   padding: 0;
 }
 
-.pos-totals .definition-item {
+.pos-shell__summary .definition-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 0.75rem;
   padding: 0.1rem 0;
 }
 
-.pos-totals p {
-  margin: 0.15rem 0;
+.pos-shell__summary .definition-item dt {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text-muted, var(--text-secondary, #5c5c5c));
+}
+
+.pos-shell__summary .definition-item dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pos-kv {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 0.75rem;
+  margin: 0.2rem 0 0;
+}
+
+.pos-kv__label {
+  font-size: 0.82rem;
+  color: var(--text-muted, var(--text-secondary, #5c5c5c));
+}
+
+.pos-kv__value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .pos-balance {
