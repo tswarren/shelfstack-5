@@ -279,7 +279,7 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { PosTransaction.count } do
       get pos_transaction_path(transaction)
       assert_response :success
-      assert_select "a", text: "Next transaction"
+      assert_select "a[href=?][data-turbo-frame=_top]", register_path, text: "Next transaction"
       get register_path
       assert_response :success
       assert_select "input.button-primary[value=?]", "Scan to start"

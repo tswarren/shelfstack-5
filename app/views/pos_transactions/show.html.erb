@@ -37,7 +37,7 @@
 
       <div class="form-actions pos-summary-cta">
         <%= link_to "Next transaction", register_path, class: "button button-primary button-large",
-              data: { "pos-register-target": "backToRegister" },
+              data: { turbo_frame: "_top", "pos-register-target": "backToRegister" },
               autofocus: true %>
       </div>
       <p class="field-hint">Press Enter to start the next transaction from Ready.</p>
@@ -60,11 +60,12 @@
          .any? { |line| line.remaining_returnable_quantity.positive? } %>
     <% if returnable && Current.user.can?("pos.return.create", store: Current.store) %>
       <%= button_to "Start linked return", start_linked_return_pos_transaction_path(@pos_transaction),
-            method: :post, class: "button button-outline button-small" %>
+            method: :post, class: "button button-outline button-small",
+            form: { data: { turbo_frame: "_top" } } %>
     <% end %>
     <% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
       <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
-            class: "button button-ghost button-small" %>
+            class: "button button-ghost button-small", data: { turbo_frame: "_top" } %>
     <% end %>
   <% end %>
 
@@ -135,7 +136,7 @@
       <% if @pos_transaction.editable? && !@workspace.forced_tender %>
         <%= link_to "Return to Transaction",
               pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-              class: "button button-outline button-small" %>
+              class: "button button-outline button-small", data: { turbo_frame: "_top" } %>
       <% elsif @workspace.forced_tender %>
         <span class="muted" role="status">Return to Transaction is blocked while tender activity is unresolved.</span>
       <% end %>
@@ -143,7 +144,8 @@
     <% else %>
       <%= render "selected_line_actions" %>
       <%= render "transaction_actions" %>
-      <%= link_to "Back to register", register_path, class: "button button-ghost button-small" %>
+      <%= link_to "Back to register", register_path, class: "button button-ghost button-small",
+            data: { turbo_frame: "_top" } %>
     <% end %>
   <% end %>
 

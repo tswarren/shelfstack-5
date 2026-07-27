@@ -5,7 +5,8 @@
 <% active_txn = (@pos_transaction if @pos_transaction&.open?) || (@open_transaction if @open_transaction&.open?) %>
 <header class="pos-register-header" role="banner">
   <div class="pos-register-header__brand">
-    <%= link_to register_path, class: "pos-register-header__brand-link" do %>
+    <%= link_to register_path, class: "pos-register-header__brand-link",
+          data: { turbo_frame: "_top" } do %>
       ShelfStack <span class="muted">POS</span>
     <% end %>
   </div>

@@ -199,7 +199,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select ".pos-completed-summary"
     assert_match "Change due", response.body
-    assert_select "a", text: "Next transaction"
+    assert_select "a[href=?][data-turbo-frame=_top]", register_path, text: "Next transaction"
     assert_match(/Print/i, response.body)
   end
 
