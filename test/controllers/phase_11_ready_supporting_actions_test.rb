@@ -55,7 +55,7 @@ class Phase11ReadySupportingActionsTest < ActionDispatch::IntegrationTest
       }
     end
     txn = PosTransaction.order(:id).last
-    assert_redirected_to pos_transaction_path(txn, intent: "open_ring")
+    assert_redirected_to pos_transaction_path(txn)
     assert_equal 1, txn.pos_line_items.pending.count
     assert_equal "open_ring", txn.pos_line_items.pending.last.line_kind
   end

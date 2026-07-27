@@ -40,8 +40,8 @@ class Phase11LineSelectTest < ActionDispatch::IntegrationTest
     assert_select "a[data-turbo-frame=pos_overlay]", text: "Discount"
     assert_select "a[data-turbo-frame=pos_overlay]", text: "Price"
     assert_select "a[data-turbo-frame=_top][data-turbo-action=advance]", text: /Tender/
-    assert_select "a[data-turbo-frame=_top][data-turbo-action=replace]", text: "Return"
-    assert_select "a[data-turbo-frame=_top][data-turbo-action=replace]", text: "Open ring"
+    assert_select "a[data-turbo-frame=pos_overlay]", text: "Return"
+    assert_select "a[data-turbo-frame=pos_overlay]", text: "Open ring"
   end
 
   private

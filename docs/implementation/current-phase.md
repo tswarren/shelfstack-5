@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L6 composition + review remediations (empty-txn, unlinked tax/cost F1, No Sale F2, rich lookup, Tender settlement) landed; **L7 viewport acceptance still blocks merge**; POS-UI decisions remain Proposed until L7 Accepted
+**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L6 + MVP review remediations (auth/tax F1, cost confirm, inventory unit add, No Sale F2, CI) landed; **core L7 captures present, residual scenarios + Accepted scoring still block merge**; POS-UI decisions remain Proposed until L7 Accepted
 
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Layout gates:** [../design/pos/layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)  

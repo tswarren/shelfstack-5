@@ -3,15 +3,23 @@
 # Register workspace entry point: surfaces business day / session / transaction
 # context and routes the cashier to the next required step.
 class RegisterController < ApplicationController
+  include UnlinkedReturnRequest
+
   layout "pos"
 
   before_action -> { require_permission!("pos.access") }
   before_action -> { require_permission!("pos.transaction.open") },
                 only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value]
   before_action -> { require_permission!("pos.return.create") }, only: :start_unlinked_return
+  before_action -> { require_permission!("pos.transaction.open") },
+                only: :start_unlinked_return,
+                if: -> { Current.store && current_open_session_without_transaction? }
   before_action -> {
                   require_any_permission!("pos.product_request.pickup", "requests.product_request.view")
                 }, only: :start_pickup
+  before_action -> { require_permission!("pos.transaction.open") },
+                only: :start_pickup,
+                if: -> { Current.store && current_open_session_without_transaction? }
   before_action -> { require_permission!("pos.return.create") },
                 only: :lookup_receipt,
                 if: -> { ActiveModel::Type::Boolean.new.cast(params[:start_linked_return]) }
@@ -54,7 +62,8 @@ class RegisterController < ApplicationController
       actor: Current.user,
       query: params[:query],
       quantity: params[:quantity].presence || 1,
-      product_variant_id: params[:product_variant_id]
+      product_variant_id: params[:product_variant_id],
+      inventory_unit_id: params[:inventory_unit_id]
     )
 
     if result.success?
@@ -113,7 +122,7 @@ class RegisterController < ApplicationController
       description: params[:description]
     )
     if result.success?
-      redirect_to pos_transaction_path(result.pos_transaction, intent: "open_ring"),
+      redirect_to pos_transaction_path(result.pos_transaction),
                   notice: "Open-ring line added."
     elsif result.pos_transaction
       redirect_to pos_transaction_path(result.pos_transaction), alert: result.error
@@ -128,39 +137,24 @@ class RegisterController < ApplicationController
     load_register_context!
     return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
 
-    reason = Current.organization.return_reasons.find(params[:return_reason_id])
-    variant = params[:product_variant_id].presence &&
-      ProductVariant.joins(:product)
-        .where(products: { organization_id: Current.organization.id })
-        .find_by(id: params[:product_variant_id])
-    department = params[:department_id].presence &&
-      Current.organization.departments.find_by(id: params[:department_id])
-    approver = params[:approver_username].presence &&
-      User.find_by(username: params[:approver_username].to_s.strip.downcase)
-    tax_category = params[:tax_category_id].presence &&
-      Current.organization.tax_categories.find_by(id: params[:tax_category_id])
-    explicit_tax = if params[:tax_basis].to_s == "external_receipt_tax"
-      money_param_to_cents(params[:explicit_tax_amount_cents], label: "Explicit tax amount", required: false)
+    parse_unlinked_return_inputs!
+
+    if unlinked_cost_review_needed?
+      error = prepare_unlinked_cost_review!
+      if error
+        return redirect_to register_path, alert: error
+      end
+
+      @cost_review_form_url = register_start_unlinked_return_path
+      @cost_review_form_id = "ready_unlinked_return_cost_confirm_form"
+      @cost_review_submit_label = "Confirm and start return"
+      return render "pos_overlays/unlinked_return_cost_review"
     end
 
     result = Pos::StartUnlinkedReturn.call(
       pos_session: @open_session,
       actor: Current.user,
-      return_source: params[:return_source],
-      return_reason: reason,
-      return_disposition: params[:return_disposition],
-      unit_price_cents: money_param_to_cents(params[:unit_price_cents], label: "Refund unit price"),
-      quantity: params[:quantity].presence || 1,
-      product_variant: variant,
-      department: department,
-      description: params[:description],
-      tax_category: tax_category,
-      tax_basis: params[:tax_basis],
-      explicit_tax_amount_cents: explicit_tax,
-      confirm_cost_basis: params[:confirm_cost_basis],
-      confirmed_unit_cost_cents: nil,
-      approver: approver,
-      approver_pin: params[:approver_pin]
+      **unlinked_return_service_kwargs
     )
     if result.success?
       redirect_to pos_transaction_path(result.pos_transaction),
@@ -281,6 +275,15 @@ class RegisterController < ApplicationController
     nil
   end
 
+  def current_open_session_without_transaction?
+    business_day = Current.store.business_days.find_by(status: "open")
+    return true unless business_day
+
+    open_session = Current.store.pos_sessions.open_sessions.find_by(cashier_user: Current.user)
+    return true unless open_session
+
+    !PosTransaction.open_transactions.exists?(active_pos_session: open_session)
+  end
 
   def load_register_context!
     @business_day = Current.store.business_days.find_by(status: "open")

@@ -97,14 +97,18 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     transaction = PosTransaction.order(:id).last
 
     intent_link = find("section[aria-label='Entry intent'] a", text: /\AOpen ring\z/)
-    assert_includes intent_link[:href], "intent=open_ring"
+    assert_includes intent_link[:href], "pos/overlays/open_ring"
     intent_link.click
-    assert_selector "section[aria-label='Open-ring line']", wait: 5
-    assert_includes page.current_url, "intent=open_ring"
-    page.refresh
-    assert_includes page.current_url, "intent=open_ring"
-    assert_selector "section[aria-label='Open-ring line']"
-    assert_selector "a[aria-current='true']", text: "Open ring"
+    assert_selector "dialog[open]", wait: 5
+    assert_text "Open Ring"
+    assert_text "Add an open-ring line to this transaction."
+    within("dialog[open]") do
+      assert_button "Add open-ring line"
+      click_button "Close"
+    end
+    assert_no_selector "dialog[open]", wait: 3
+    assert_selector "section[aria-label='Scan or search']"
+    assert_selector "a[aria-current='true']", text: "Sale"
   end
 
   test "browser back after complete does not expose editable controls" do

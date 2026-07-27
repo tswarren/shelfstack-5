@@ -27,15 +27,15 @@ module Pos
         raise Error, "missing permission pos.no_sale.create"
       end
 
-      existing = PosNoSaleEvent.find_by(idempotency_key: @idempotency_key)
-      if existing
-        return Result.new(pos_no_sale_event: existing, success?: true, error: nil, replayed: true)
-      end
-
       ActiveRecord::Base.transaction do
         session = PosSession.lock.find(@pos_session.id)
         raise Error, "POS session is not open" unless session.open?
         raise Error, "No Sale requires a cash-enabled session" unless session.cash_enabled?
+
+        existing = PosNoSaleEvent.find_by(pos_session_id: session.id, idempotency_key: @idempotency_key)
+        if existing
+          return replay_or_conflict!(existing)
+        end
 
         event = PosNoSaleEvent.create!(
           organization: store.organization,
@@ -65,7 +65,25 @@ module Pos
     rescue Error, ActiveRecord::RecordInvalid => e
       Result.new(pos_no_sale_event: nil, success?: false, error: e.message, replayed: false)
     rescue ActiveRecord::RecordNotUnique
-      existing = PosNoSaleEvent.find_by!(idempotency_key: @idempotency_key)
+      existing = PosNoSaleEvent.find_by!(pos_session_id: @pos_session.id, idempotency_key: @idempotency_key)
+      begin
+        replay_or_conflict!(existing)
+      rescue Error => e
+        Result.new(pos_no_sale_event: nil, success?: false, error: e.message, replayed: false)
+      end
+    end
+
+    private
+
+    def replay_or_conflict!(existing)
+      same_payload =
+        existing.created_by_user_id == @actor.id &&
+        existing.reason == @reason
+
+      unless same_payload
+        raise Error, "idempotency key conflicts with a different No Sale payload"
+      end
+
       Result.new(pos_no_sale_event: existing, success?: true, error: nil, replayed: true)
     end
   end

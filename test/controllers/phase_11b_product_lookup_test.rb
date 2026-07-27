@@ -66,6 +66,48 @@ class Phase11bProductLookupTest < ActionDispatch::IntegrationTest
     assert_equal 2, transaction.pos_line_items.pending.count
   end
 
+  test "lookup add passes eligible inventory unit through ready and transaction paths" do
+    unit_variant = product_variants(:signed_book_standard)
+    unit = Inventory::CreateInventoryUnit.call(
+      store: @store, product_variant: unit_variant, actor: @admin, acquisition_cost_cents: 900
+    ).inventory_unit
+
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+
+    assert_difference "PosTransaction.count", 1 do
+      post register_scan_to_start_path, params: {
+        product_variant_id: unit_variant.id,
+        inventory_unit_id: unit.id,
+        quantity: 1
+      }
+    end
+    transaction = PosTransaction.order(:id).last
+    assert_redirected_to pos_transaction_path(transaction)
+    line = transaction.pos_line_items.pending.last
+    assert_equal unit.id, line.inventory_unit_id
+
+    unit2 = Inventory::CreateInventoryUnit.call(
+      store: @store, product_variant: unit_variant, actor: @admin, acquisition_cost_cents: 900
+    ).inventory_unit
+    post pos_transaction_pos_line_items_path(transaction), params: {
+      product_variant_id: unit_variant.id,
+      inventory_unit_id: unit2.id,
+      quantity: 1,
+      intent: "sale"
+    }
+    assert_equal unit2.id, transaction.pos_line_items.pending.order(:id).last.inventory_unit_id
+  end
+
   test "cashiers with pos.access can search product variants for lookup" do
     assert Catalog::SearchRecords.authorized?(
       user: @admin, store: @store, record_type: "product_variant"

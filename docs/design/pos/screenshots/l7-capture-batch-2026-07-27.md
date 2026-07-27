@@ -1,26 +1,59 @@
-# L7 capture batch — 2026-07-27 (PR #150 remediations)
+# L7 capture batch — 2026-07-27 (MVP remediations)
 
-**Commit (pre-push):** remediations on `feat/phase-11-layout` (uncommitted at capture time; attach SHA after push)  
+**Branch:** `feat/phase-11-layout`  
 **Browser:** Playwright via MCP Docker (`host.docker.internal:3000`)  
 **OS:** macOS (host) / Docker MCP browser  
 **Zoom:** 100%  
-**Fixture:** demo org bootstrap (`admin` / seeded Ready session open)
+**Fixture:** demo org (`admin` / open Ready session)
 
-## Captured in session
+## Captured this session (both viewports where noted)
 
-| Scenario | Viewport | Status |
-| --- | --- | --- |
-| Ready normal | 1366×768 | Reviewed in agent session (composition matches Ready wireframe regions) |
-| Ready normal | 1024×768 | Captured in browser session |
-| Product lookup overlay | 1366×768 | Captured in browser session |
+| Scenario | 1366×768 | 1024×768 | Notes |
+| --- | --- | --- | --- |
+| Ready normal | Captured | Captured | Scan + supporting actions + session rail |
+| Product lookup overlay | Captured | — | Frame-loaded dialog on Ready |
+| Transaction one-line | Captured | Captured | After Open Ring first-valid-work |
+| Transaction eight-line | Captured | Captured | Open-ring lines; L2 composition check |
+| Tender unpaid | Captured | Captured | Positive balance before tender |
+| Tender settled | Captured | Captured | Cash amount covering net |
+| Receipt cash / change | Captured | Captured | Post-complete receipt surface |
 
-## Still required before L7 Accepted / merge
+In-repo copies (pulled from MCP container `focused_hoover` `/home/node`):
 
-Attach the full [screenshots/README.md](screenshots/README.md) set to [#150](https://github.com/tswarren/shelfstack-5/pull/150), including Transaction 1/8/20-line, Tender unpaid/settled, Recovery, Receipt, and remaining overlays. Score each gate Accepted / Needs refinement / Fail.
+```text
+ready/ready-normal-1366x768-review.png
+ready/ready-normal-1024x768-review.png
+ready/ready-with-open-txn-1366x768-review.png
+overlays/overlays-product-lookup-1366x768-review.png
+transaction/transaction-one-line-1366x768-review.png
+transaction/transaction-one-line-1024x768-review.png
+transaction/transaction-eight-lines-1366x768-review.png
+transaction/transaction-eight-lines-1024x768-review.png
+tender/tender-unpaid-1366x768-review.png
+tender/tender-unpaid-1024x768-review.png
+tender/tender-settled-1366x768-review.png
+tender/tender-settled-1024x768-review.png
+receipt/receipt-cash-change-1366x768-review.png
+receipt/receipt-cash-change-1024x768-review.png
+```
 
-**L2 Must criteria remain merge blockers** even if non-Must polish is deferred.
+Attach these to [#150](https://github.com/tswarren/shelfstack-5/pull/150) from this directory.
 
-## Financial review checkpoints (not L7 substitutes)
+## Still incomplete vs full [screenshots/README.md](README.md) set
 
-- **F1 Unlinked return basis:** tax basis + cost MAC→estimate→block; valuation/approval tests green
-- **F2 No Sale:** `PosNoSaleEvent` log-only; session race / idempotency / no cash movement tests green
+- Ready staged Customer / suspended / ambiguous / no day / no session
+- Transaction twenty-line, selected-line commands, warning/blocker, mixed return, individual unit
+- Tender partial card / split / net refund / forced Tender
+- Recovery `void_required`
+- Additional receipt variants and remaining overlays
+
+**L7 status:** Needs refinement until the residual set is attached and scored. Core Ready / Transaction / Tender / Receipt / Product lookup evidence at both primary viewports is present for review.
+
+## L2 Must criteria (still merge blockers)
+
+Single ordinary line scroller, stable selected-line commands, pinned totals/progression CTA, keyboard line selection, eight-line 1366 composition — score on the eight-line captures above.
+
+## Financial checkpoints (code remediations)
+
+- **F1:** source/tax matrix; merchandise+tax no-receipt authority; two-step cost confirm; unlinked Discard disabled
+- **F2:** session-scoped No Sale idempotency; same payload replay / changed payload conflict; audited-event-only

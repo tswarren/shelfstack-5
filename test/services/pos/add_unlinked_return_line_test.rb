@@ -125,10 +125,7 @@ module Pos
       assert_match(/confirm the proposed inventory cost/i, result.error)
     end
 
-    test "discard restores pre-return on_hand and inventory value" do
-      prior_on_hand = @prior_balance.on_hand
-      prior_value = @prior_balance.inventory_value_cents
-
+    test "rejects unlinked discard disposition for MVP" do
       result = AddUnlinkedReturnLine.call(
         pos_transaction: @txn,
         return_source: "gift_receipt",
@@ -140,19 +137,26 @@ module Pos
         unit_price_cents: @variant.regular_price_cents,
         confirm_cost_basis: true
       )
-      assert result.success?, result.error
+      refute result.success?
+      assert_match(/discard is not available/i, result.error)
+    end
 
-      net = RecalculateTransaction.call(pos_transaction: @txn).net_total_cents
-      refund = pos_add_cash_refund(pos_transaction: @txn, amount_cents: -net, actor: @admin)
-      assert refund.success?, refund.error
-      assert CompleteTransaction.call(
-        pos_transaction: @txn, pos_session: @session, actor: @admin,
-        completion_idempotency_key: "unlinked-discard-1"
-      ).success?
-
-      balance = StockBalance.find_by!(store: @store, product_variant: @variant)
-      assert_equal prior_on_hand, balance.on_hand
-      assert_equal prior_value, balance.inventory_value_cents
+    test "rejects stale reviewed cost proposal" do
+      result = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "gift_receipt",
+        return_reason: @reason,
+        return_disposition: "return_to_stock",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: @variant.regular_price_cents,
+        confirm_cost_basis: true,
+        reviewed_cost_unit_cents: 1,
+        reviewed_cost_source: "store_stock_balance_mac"
+      )
+      refute result.success?
+      assert_match(/cost basis changed/i, result.error)
     end
 
     test "open-ring unlinked return completes without inventory posting" do
@@ -265,6 +269,61 @@ module Pos
       )
       refute result.success?
       assert_match(/linked return/i, result.error)
+    end
+
+    test "rejects external_receipt_tax for no_receipt source" do
+      result = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "no_receipt",
+        return_reason: @reason,
+        return_disposition: "non_inventory",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: 1000,
+        tax_basis: "external_receipt_tax",
+        explicit_tax_amount_cents: 100,
+        confirm_cost_basis: false
+      )
+      refute result.success?
+      assert_match(/not permitted/i, result.error)
+    end
+
+    test "no_receipt authority includes refunded tax" do
+      membership = StoreMembership.find_by!(user: @admin, store: @store)
+      membership.update!(maximum_no_receipt_return_cents: 1000)
+
+      denied = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "no_receipt",
+        return_reason: @reason,
+        return_disposition: "non_inventory",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: 1000,
+        tax_basis: "current_configured_rules",
+        confirm_cost_basis: false
+      )
+      refute denied.success?
+      assert_match(/approval|authority|exceed/i, denied.error)
+
+      membership.update!(maximum_no_receipt_return_cents: 10_000_00)
+      allowed = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "no_receipt",
+        return_reason: @reason,
+        return_disposition: "non_inventory",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: 1000,
+        tax_basis: "current_configured_rules",
+        confirm_cost_basis: false
+      )
+      assert allowed.success?, allowed.error
+      tax = allowed.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
+      assert tax.positive?, "expected configured return tax so authority includes tax"
     end
   end
 end

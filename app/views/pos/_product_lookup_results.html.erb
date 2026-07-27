@@ -13,9 +13,9 @@
       Exact inventory unit <code><%= results.inventory_unit.unit_identifier %></code> matched.
     </p>
   <% end %>
-  <ul class="pos-resolution-list" role="listbox" aria-label="Product lookup results">
+  <ul class="pos-resolution-list" aria-label="Product lookup results">
     <% results.groups.each do |group| %>
-      <li role="option">
+      <li>
         <p>
           <strong><%= group.title %></strong>
           <span class="muted">· <%= group.identifier %></span>

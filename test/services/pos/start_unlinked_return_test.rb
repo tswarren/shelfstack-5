@@ -60,5 +60,54 @@ module Pos
       assert_not result.success?
       assert_equal before, PosTransaction.open_transactions.where(active_pos_session: @session).count
     end
+
+    test "does not open a transaction without pos.transaction.open" do
+      cashier = create_limited_actor(%w[pos.access pos.return.create pos.return.no_receipt])
+      membership = StoreMembership.find_by!(user: cashier, store: @store)
+      membership.update!(maximum_no_receipt_return_cents: 10_000_00)
+
+      assert_no_difference -> { PosTransaction.count } do
+        assert_no_difference -> { PosLineItem.count } do
+          result = StartUnlinkedReturn.call(
+            pos_session: @session,
+            actor: cashier,
+            return_source: "no_receipt",
+            return_reason: @reason,
+            return_disposition: "non_inventory",
+            product_variant: @variant,
+            unit_price_cents: 100,
+            quantity: 1,
+            tax_basis: "current_configured_rules",
+            confirm_cost_basis: false
+          )
+          assert_not result.success?
+          assert_match(/pos\.transaction\.open/i, result.error)
+        end
+      end
+    end
+
+    private
+
+    def create_limited_actor(permission_codes)
+      username = "cashier_#{SecureRandom.hex(2)}"
+      user = User.create!(
+        username: username,
+        user_number: rand(10_000..99_999),
+        first_name: "Cash", last_name: "Ier",
+        password: "password123",
+        active: true, default_store: @store
+      )
+      role = Role.create!(
+        organization: @store.organization,
+        code: "role_#{username}",
+        name: "Role #{username}",
+        active: true
+      )
+      permission_codes.each do |code|
+        RolePermission.create!(role: role, permission: Permission.find_by!(code: code))
+      end
+      StoreMembership.create!(user: user, store: @store, role: role, active: true)
+      user
+    end
   end
 end

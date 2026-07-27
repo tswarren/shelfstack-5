@@ -163,7 +163,16 @@ class PosLineItemsController < ApplicationController
       return
     end
 
-    add_line(variant)
+    inventory_unit = nil
+    if params[:inventory_unit_id].present?
+      inventory_unit = InventoryUnit.find_by(id: params[:inventory_unit_id])
+      if inventory_unit.blank?
+        redirect_to txn_redirect_path, alert: "Select a valid inventory unit."
+        return
+      end
+    end
+
+    add_line(variant, inventory_unit: inventory_unit)
   end
 
   def add_line(variant, inventory_unit: nil)

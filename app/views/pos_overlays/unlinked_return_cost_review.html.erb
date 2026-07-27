@@ -1,0 +1,11 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Confirm inventory cost" } do %>
+    <%= render "pos/unlinked_return_cost_review",
+          form_url: @cost_review_form_url,
+          form_id: @cost_review_form_id,
+          submit_label: @cost_review_submit_label,
+          cost_proposal: @cost_proposal,
+          fields: @cost_review_fields,
+          turbo_frame: "_top" %>
+  <% end %>
+<% end %>

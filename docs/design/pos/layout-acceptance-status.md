@@ -1,9 +1,10 @@
 # POS layout acceptance status
 
-**Status:** Needs refinement — shell kept; compact presentation + Turbo contract in revision on [#150](https://github.com/tswarren/shelfstack-5/pull/150)  
+**Status:** Needs refinement — MVP remediations landed on [#150](https://github.com/tswarren/shelfstack-5/pull/150); core L7 viewport captures present; residual scenario set + Accepted scoring still required before merge  
 **Parent:** [README.md](README.md)  
 **Checklist:** [layout-completion-checklist.md](layout-completion-checklist.md)  
 **Decisions:** [decisions.md](decisions.md)
+**Latest capture note:** [screenshots/l7-capture-batch-2026-07-27.md](screenshots/l7-capture-batch-2026-07-27.md)
 
 ## Delivery PRs
 

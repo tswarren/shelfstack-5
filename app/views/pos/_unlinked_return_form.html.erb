@@ -14,7 +14,11 @@
 </p>
 
 <%= form_with url: form_url, method: :post, class: "form", id: form_id,
-      data: (turbo_frame ? { turbo_frame: turbo_frame } : {}) do |form| %>
+      data: {
+        controller: "unlinked-return-tax",
+        action: "change->unlinked-return-tax#sync",
+        **(turbo_frame ? { turbo_frame: turbo_frame } : {})
+      } do |form| %>
   <%= hidden_field_tag :mode, "unlinked" %>
   <% local_assigns.fetch(:hidden_fields, {}).each do |name, value| %>
     <%= hidden_field_tag name, value %>
@@ -27,7 +31,7 @@
             [ "External receipt", "external_receipt" ],
             [ "Gift receipt", "gift_receipt" ],
             [ "No receipt", "no_receipt" ]
-          ], {}, class: "input" %>
+          ], {}, class: "input", data: { unlinked_return_tax_target: "source" } %>
     </div>
     <div class="field">
       <%= form.label :return_reason_id, "Reason", class: "field-label" %>
@@ -40,7 +44,6 @@
             [ "Inspection required", "inspection_required" ],
             [ "Damaged", "damaged" ],
             [ "Return to vendor", "return_to_vendor" ],
-            [ "Discard", "discard" ],
             [ "Non-inventory", "non_inventory" ]
           ], {}, class: "input" %>
     </div>
@@ -93,19 +96,20 @@
             [ "Current configured rules", "current_configured_rules" ],
             [ "External receipt tax amount", "external_receipt_tax" ],
             [ "No tax refund", "no_tax_refund" ]
-          ], {}, class: "input" %>
+          ], {}, class: "input", data: { unlinked_return_tax_target: "basis" } %>
     </div>
-    <%= render "shared/currency_field", name: "explicit_tax_amount_cents",
-          label: "Explicit tax amount (external receipt)",
-          id: tax_field_id, required: false, value_cents: nil,
-          hint: "Only used when tax basis is External receipt tax amount." %>
+    <div data-unlinked-return-tax-target="explicitTax">
+      <%= render "shared/currency_field", name: "explicit_tax_amount_cents",
+            label: "Explicit tax amount (external receipt)",
+            id: tax_field_id, required: false, value_cents: nil,
+            hint: "Only used when tax basis is External receipt tax amount." %>
+    </div>
   </div>
 
   <div class="checkbox-group">
-    <label>
-      <%= check_box_tag :confirm_cost_basis, "true", false, id: confirm_id %>
-      Confirm proposed inventory cost basis (required for inventory-affecting product returns)
-    </label>
+    <p class="muted">
+      Inventory-affecting product returns show a cost proposal for confirmation on the next step.
+    </p>
   </div>
 
   <% if Current.user.can?("pos.return.no_receipt", store: Current.store) %>

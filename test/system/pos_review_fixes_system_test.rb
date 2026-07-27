@@ -29,11 +29,15 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
   test "currency field submits a typed decimal amount without relying on hidden cents" do
     open_register_with_transaction!
 
-    visit pos_transaction_path(@transaction, intent: "open_ring")
-    assert_selector "section[aria-label='Open-ring line']"
-    select @department.name, from: "Department"
-    fill_in "Price", with: "7.25"
-    click_button "Add open-ring line"
+    visit pos_transaction_path(@transaction)
+    click_link "Open ring"
+    assert_selector "dialog[open]", wait: 5
+    assert_text "Open Ring"
+    within("dialog[open]") do
+      select @department.name, from: "Department"
+      fill_in "Price", with: "7.25"
+      click_button "Add open-ring line"
+    end
 
     assert_text "Open-ring line added"
     line = @transaction.pos_line_items.pending.find_by(line_kind: "open_ring")
@@ -83,7 +87,7 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
     within(".pos-scan-resolution") do
       assert_selector "input[name=quantity][value='4']", visible: :all
       within("li", text: "The Illustrated Man") do
-        click_button "Add Standard"
+        click_button "Add"
       end
     end
 

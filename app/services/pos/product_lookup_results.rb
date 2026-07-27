@@ -98,8 +98,29 @@ module Pos
       available = balance&.available
       inactive = variant.status != "active" || variant.product.status != "active"
       unit = matched_unit if matched_unit&.product_variant_id == variant.id
-      blockers = eligibility.blockers
-      addable = blockers.empty?
+      blockers = eligibility.blockers.dup
+      addable_unit_id = nil
+      addable_unit_identifier = nil
+
+      if variant.inventory_tracking_mode == "individual"
+        if unit.blank?
+          blockers << "exact inventory unit required"
+        elsif unit.store_id != @store.id
+          blockers << "unit belongs to another store"
+        elsif !unit.available?
+          blockers << unit_blocker_for(unit)
+        else
+          addable_unit_id = unit.id
+          addable_unit_identifier = unit.unit_identifier
+        end
+      elsif unit.present?
+        addable_unit_id = unit.id
+        addable_unit_identifier = unit.unit_identifier
+      end
+
+      addable = blockers.empty? && (
+        variant.inventory_tracking_mode != "individual" || addable_unit_id.present?
+      )
 
       VariantRow.new(
         product_variant_id: variant.id,
@@ -113,9 +134,20 @@ module Pos
         warnings: eligibility.warnings,
         inactive?: inactive,
         status_note: status_note_for(variant, inactive, blockers),
-        inventory_unit_id: unit&.id,
-        inventory_unit_identifier: unit&.unit_identifier
+        inventory_unit_id: addable_unit_id,
+        inventory_unit_identifier: addable_unit_identifier || unit&.unit_identifier
       )
+    end
+
+    def unit_blocker_for(unit)
+      case unit.status
+      when "sold" then "unit is sold"
+      when "reserved" then "unit is reserved"
+      when "unavailable", "inspection", "damaged", "discarded", "rtv", "in_transfer"
+        "unit is unavailable"
+      else
+        "unit_not_available"
+      end
     end
 
     def status_note_for(variant, inactive, blockers)

@@ -42,14 +42,22 @@ module Pos
           next failure(resolve_error)
         end
 
-        transaction = PosTransaction.open_transactions.find_by(active_pos_session_id: session.id)
-        unless transaction
-          open = OpenTransaction.call(pos_session: session, actor: @actor)
-          unless open.success?
-            next failure(open.error)
-          end
-          transaction = open.pos_transaction
-        else
+        can_open = Authorization::EvaluatePermission.call(
+          user: @actor, store: session.store, permission_key: "pos.transaction.open"
+        ) == :allow
+        opened = FindOrOpenActiveTransaction.call(
+          pos_session: session,
+          actor: @actor,
+          create_if_missing: can_open
+        )
+        unless opened.success?
+          next failure(
+            can_open ? opened.error : "missing permission pos.transaction.open"
+          )
+        end
+        transaction = opened.pos_transaction
+
+        unless opened.created?
           consume = ConsumeStagedCustomer.call(
             pos_session: session, pos_transaction: transaction, actor: @actor
           )

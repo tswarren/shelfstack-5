@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosReturnLinesController < ApplicationController
+  include UnlinkedReturnRequest
+
   before_action -> { require_permission!("pos.return.create") }
   before_action :set_transaction
 
@@ -62,40 +64,24 @@ class PosReturnLinesController < ApplicationController
   end
 
   def create_unlinked
-    reason = Current.organization.return_reasons.find(params[:return_reason_id])
-    variant = params[:product_variant_id].presence &&
-      ProductVariant.joins(:product)
-        .where(products: { organization_id: Current.organization.id })
-        .find_by(id: params[:product_variant_id])
-    department = params[:department_id].presence &&
-      Current.organization.departments.find_by(id: params[:department_id])
-    approver = params[:approver_username].presence &&
-      User.find_by(username: params[:approver_username].to_s.strip.downcase)
+    parse_unlinked_return_inputs!
 
-    tax_category = params[:tax_category_id].presence &&
-      Current.organization.tax_categories.find_by(id: params[:tax_category_id])
-    explicit_tax = if params[:tax_basis].to_s == "external_receipt_tax"
-      money_param_to_cents(params[:explicit_tax_amount_cents], label: "Explicit tax amount", required: false)
+    if unlinked_cost_review_needed?
+      error = prepare_unlinked_cost_review!
+      if error
+        return redirect_to pos_transaction_path(@pos_transaction), alert: error
+      end
+
+      @cost_review_form_url = pos_transaction_pos_return_lines_path(@pos_transaction)
+      @cost_review_form_id = "txn_unlinked_return_cost_confirm_form"
+      @cost_review_submit_label = "Confirm and add return"
+      return render "pos_overlays/unlinked_return_cost_review", layout: "pos"
     end
 
     result = Pos::AddUnlinkedReturnLine.call(
       pos_transaction: @pos_transaction,
-      return_source: params[:return_source],
-      return_reason: reason,
-      return_disposition: params[:return_disposition],
       actor: Current.user,
-      unit_price_cents: money_param_to_cents(params[:unit_price_cents], label: "Refund unit price"),
-      quantity: params[:quantity].presence || 1,
-      product_variant: variant,
-      department: department,
-      description: params[:description],
-      tax_category: tax_category,
-      tax_basis: params[:tax_basis],
-      explicit_tax_amount_cents: explicit_tax,
-      confirm_cost_basis: params[:confirm_cost_basis],
-      confirmed_unit_cost_cents: nil,
-      approver: approver,
-      approver_pin: params[:approver_pin]
+      **unlinked_return_service_kwargs
     )
 
     if result.success?

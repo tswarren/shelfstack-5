@@ -44,9 +44,94 @@ class PosUnlinkedReturnTest < ActionDispatch::IntegrationTest
         unit_price_cents: format("%.2f", @variant.regular_price_cents / 100.0),
         quantity: 1,
         tax_basis: "current_configured_rules",
-        confirm_cost_basis: "true"
+        confirm_cost_basis: "true",
+        reviewed_cost_unit_cents: StockBalance.find_by!(store: @store, product_variant: @variant).moving_average_cost_cents,
+        reviewed_cost_source: "store_stock_balance_mac"
       }
     end
     assert_redirected_to pos_transaction_path(txn, intent: "sale", focus_target: "scan")
+  end
+
+  test "unlinked inventory return without confirm renders cost review" do
+    post session_path, params: { username: "admin", password: "password123" }
+    txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+
+    assert_no_difference -> { txn.pos_line_items.returns.count } do
+      post pos_transaction_pos_return_lines_path(txn), params: {
+        mode: "unlinked",
+        return_source: "external_receipt",
+        return_reason_id: @reason.id,
+        return_disposition: "return_to_stock",
+        product_variant_id: @variant.id,
+        unit_price_cents: format("%.2f", @variant.regular_price_cents / 100.0),
+        quantity: 1,
+        tax_basis: "current_configured_rules"
+      }
+    end
+    assert_response :success
+    assert_select "form#txn_unlinked_return_cost_confirm_form"
+    assert_match(/Proposed inventory cost/i, response.body)
+  end
+
+  test "ready unlinked return requires pos.transaction.open when no open transaction exists" do
+    post session_path, params: { username: "admin", password: "password123" }
+    cashier = create_limited_cashier(%w[pos.access pos.return.create pos.return.no_receipt])
+    membership = StoreMembership.find_by!(user: cashier, store: @store)
+    membership.update!(maximum_no_receipt_return_cents: 10_000_00)
+
+    device_b = PosDevice.find_or_create_by!(store: @store, code: "REG-UNLINKED") do |device|
+      device.name = "Register Unlinked"
+      device.device_type = "register"
+      device.active = true
+    end
+    day = @session.business_day
+    cashier_session = Pos::OpenSession.call(
+      business_day: day, store: @store, pos_device: device_b,
+      cashier: cashier, actor: @admin
+    )
+    assert cashier_session.success?, cashier_session.error
+
+    delete session_path
+    post session_path, params: { username: cashier.username, password: "password123" }
+
+    assert_no_difference -> { PosTransaction.count } do
+      assert_no_difference -> { PosLineItem.count } do
+        post register_start_unlinked_return_path, params: {
+          return_source: "no_receipt",
+          return_reason_id: @reason.id,
+          return_disposition: "non_inventory",
+          product_variant_id: @variant.id,
+          unit_price_cents: "10.00",
+          quantity: 1,
+          tax_basis: "current_configured_rules"
+        }
+      end
+    end
+    assert_redirected_to root_path
+    assert_match(/not authorized/i, flash[:alert])
+  end
+
+  private
+
+  def create_limited_cashier(permission_codes)
+    username = "cashier_#{SecureRandom.hex(2)}"
+    user = User.create!(
+      username: username,
+      user_number: rand(10_000..99_999),
+      first_name: "Cash", last_name: "Ier",
+      password: "password123",
+      active: true, default_store: @store
+    )
+    role = Role.create!(
+      organization: @store.organization,
+      code: "role_#{username}",
+      name: "Role #{username}",
+      active: true
+    )
+    permission_codes.each do |code|
+      RolePermission.create!(role: role, permission: Permission.find_by!(code: code))
+    end
+    StoreMembership.create!(user: user, store: @store, role: role, active: true)
+    user
   end
 end

@@ -30,7 +30,8 @@ class PosOverlayFrameSystemTest < ApplicationSystemTestCase
     click_link "Product lookup"
     assert_selector "turbo-frame#pos_overlay dialog", wait: 5
     assert_selector "dialog[open]", wait: 5
-    assert_text "Product variant"
+    assert_text "Product lookup"
+    assert_text "Search"
     assert_current_path register_path
 
     within "dialog[open]" do

@@ -10,9 +10,16 @@ module Pos
 
     UNLINKED_SOURCES = PosLineItem::UNLINKED_RETURN_SOURCES
     TAX_BASES = %w[current_configured_rules external_receipt_tax no_tax_refund].freeze
+    TAX_BASES_BY_SOURCE = {
+      "external_receipt" => %w[current_configured_rules external_receipt_tax no_tax_refund].freeze,
+      "gift_receipt" => %w[current_configured_rules no_tax_refund].freeze,
+      "no_receipt" => %w[current_configured_rules no_tax_refund].freeze
+    }.freeze
     INVENTORY_AFFECTING_DISPOSITIONS = %w[
-      return_to_stock inspection_required damaged return_to_vendor discard
+      return_to_stock inspection_required damaged return_to_vendor
     ].freeze
+    # MVP: unlinked Discard is disabled (cost-quality provenance restoration deferred).
+    DISABLED_DISPOSITIONS = %w[discard].freeze
 
     def initialize(
       pos_transaction:,
@@ -29,7 +36,8 @@ module Pos
       tax_basis: nil,
       explicit_tax_amount_cents: nil,
       confirm_cost_basis: false,
-      confirmed_unit_cost_cents: nil,
+      reviewed_cost_unit_cents: nil,
+      reviewed_cost_source: nil,
       approver: nil,
       approver_pin: nil
     )
@@ -47,7 +55,8 @@ module Pos
       @tax_basis = tax_basis.to_s.presence
       @explicit_tax_amount_cents = explicit_tax_amount_cents
       @confirm_cost_basis = ActiveModel::Type::Boolean.new.cast(confirm_cost_basis)
-      @confirmed_unit_cost_cents = confirmed_unit_cost_cents
+      @reviewed_cost_unit_cents = reviewed_cost_unit_cents
+      @reviewed_cost_source = reviewed_cost_source.to_s.presence
       @approver = approver
       @approver_pin = approver_pin
     end
@@ -56,6 +65,9 @@ module Pos
       raise Error, "quantity must be positive" unless @quantity.positive?
       raise Error, "refund unit price must not be negative" if @unit_price_cents.negative?
       raise Error, "return disposition is invalid" unless PosLineItem::RETURN_DISPOSITIONS.include?(@return_disposition)
+      if DISABLED_DISPOSITIONS.include?(@return_disposition)
+        raise Error, "unlinked discard is not available; choose another disposition"
+      end
       raise Error, "return source is invalid" unless UNLINKED_SOURCES.include?(@return_source)
       raise Error, "return reason is required" if @return_reason.blank?
 
@@ -68,14 +80,22 @@ module Pos
       line_shape = resolve_line_shape!
       tax_basis = resolve_tax_basis!
       cost_basis = resolve_cost_basis!(line_shape)
-      refund_extended_cents = @quantity * @unit_price_cents
+      refund = UnlinkedReturnRefundAmount.call(
+        store: @pos_transaction.store,
+        quantity: @quantity,
+        unit_price_cents: @unit_price_cents,
+        tax_basis: tax_basis.fetch(:basis),
+        tax_category: line_shape.fetch(:tax_category),
+        explicit_tax_amount_cents: tax_basis[:explicit_tax_amount_cents]
+      )
+      raise Error, refund.error unless refund.success?
 
       ActiveRecord::Base.transaction do
         transaction = PosTransaction.lock.find(@pos_transaction.id)
         raise Error, "transaction is not open" unless transaction.open?
         raise Error, "commercial fields are locked by unresolved tenders" unless transaction.editable?
 
-        approval = authorize_no_receipt!(refund_extended_cents)
+        approval = authorize_no_receipt!(refund.total_cents)
 
         position = (transaction.pos_line_items.maximum(:position) || -1) + 1
         now = Time.current
@@ -124,11 +144,24 @@ module Pos
       Result.new(pos_line_item: nil, success?: false, error: e.message, warnings: [], pos_approval: nil)
     end
 
+    def self.requires_cost_confirmation?(product_variant:, return_disposition:)
+      return false if product_variant.blank?
+      return false unless INVENTORY_AFFECTING_DISPOSITIONS.include?(return_disposition.to_s)
+      return false if product_variant.inventory_tracking_mode == "none"
+
+      true
+    end
+
     private
 
     def resolve_tax_basis!
       basis = @tax_basis.presence || default_tax_basis_for_source
       raise Error, "tax basis is invalid" unless TAX_BASES.include?(basis)
+
+      permitted = TAX_BASES_BY_SOURCE.fetch(@return_source)
+      unless permitted.include?(basis)
+        raise Error, "tax basis #{basis} is not permitted for return source #{@return_source}"
+      end
 
       explicit = nil
       if basis == "external_receipt_tax"
@@ -148,45 +181,35 @@ module Pos
     end
 
     def resolve_cost_basis!(line_shape)
-      return nil unless line_shape.fetch(:line_kind) == "product"
-      return nil unless INVENTORY_AFFECTING_DISPOSITIONS.include?(@return_disposition)
-
-      variant = line_shape.fetch(:product_variant)
-      return nil if variant.inventory_tracking_mode == "none"
+      return nil unless self.class.requires_cost_confirmation?(
+        product_variant: line_shape[:product_variant],
+        return_disposition: @return_disposition
+      )
 
       raise Error, "confirm the proposed inventory cost basis before adding this return" unless @confirm_cost_basis
 
-      store = @pos_transaction.store
-      balance = StockBalance.find_by(store_id: store.id, product_variant_id: variant.id)
-      mac = balance&.moving_average_cost_cents
-      if mac.present? && balance.cost_quality.to_s != "unknown"
-        proposed = mac
-        basis_type = "moving_average"
-        method = "moving_average"
-        source = "store_stock_balance_mac"
-      else
-        estimate = Inventory::DepartmentEstimate.call(product_variant: variant)
-        unless estimate.available
-          raise Error,
-                "no inventory cost basis available (MAC and department estimate missing); " \
-                "supply an authorized cost basis before inventory-affecting unlinked returns"
-        end
-        proposed = estimate.unit_cost_cents
-        basis_type = "configured_estimate"
-        method = "configured_estimate"
-        source = "department_estimate"
+      proposal = ProposeUnlinkedReturnCost.call(
+        store: @pos_transaction.store,
+        product_variant: line_shape.fetch(:product_variant)
+      )
+      unless proposal.available?
+        raise Error, proposal.error
       end
 
-      confirmed = @confirmed_unit_cost_cents.nil? ? proposed : @confirmed_unit_cost_cents.to_i
-      raise Error, "confirmed unit cost must not be negative" if confirmed.negative?
+      if @reviewed_cost_unit_cents.present? || @reviewed_cost_source.present?
+        reviewed_cents = @reviewed_cost_unit_cents.to_i
+        if reviewed_cents != proposal.unit_cost_cents || @reviewed_cost_source != proposal.source
+          raise Error, "inventory cost basis changed; review and confirm the updated proposal"
+        end
+      end
 
       {
-        proposed_unit_cents: proposed,
-        unit_cost_cents: confirmed,
-        basis_type: basis_type,
-        method: method,
-        quality: "estimated",
-        source: source
+        proposed_unit_cents: proposal.unit_cost_cents,
+        unit_cost_cents: proposal.unit_cost_cents,
+        basis_type: proposal.basis_type,
+        method: proposal.method,
+        quality: proposal.quality,
+        source: proposal.source
       }
     end
 
@@ -238,7 +261,7 @@ module Pos
       end
     end
 
-    def authorize_no_receipt!(refund_extended_cents)
+    def authorize_no_receipt!(authority_cents)
       return nil unless @return_source == "no_receipt"
 
       auth = Pos::AuthorizeAction.call(
@@ -248,7 +271,7 @@ module Pos
         action_type: "no_receipt_return",
         reason: "No-receipt return",
         limit_key: :maximum_no_receipt_return_cents,
-        requested_value: refund_extended_cents,
+        requested_value: authority_cents,
         approver: @approver,
         approver_pin: @approver_pin,
         pos_transaction: @pos_transaction

@@ -36,20 +36,49 @@ module Pos
       end
     end
 
-    test "repeated idempotency key does not create a second event" do
+    test "same payload replays; changed payload conflicts" do
       first = RecordNoSale.call(
         pos_session: @session, actor: @admin, reason: "First", idempotency_key: "dup-key"
       )
       assert first.success?, first.error
 
       assert_no_difference -> { PosNoSaleEvent.count } do
-        second = RecordNoSale.call(
-          pos_session: @session, actor: @admin, reason: "Second", idempotency_key: "dup-key"
+        replay = RecordNoSale.call(
+          pos_session: @session, actor: @admin, reason: "First", idempotency_key: "dup-key"
         )
-        assert second.success?, second.error
-        assert second.replayed
-        assert_equal first.pos_no_sale_event.id, second.pos_no_sale_event.id
+        assert replay.success?, replay.error
+        assert replay.replayed
+        assert_equal first.pos_no_sale_event.id, replay.pos_no_sale_event.id
       end
+
+      conflict = RecordNoSale.call(
+        pos_session: @session, actor: @admin, reason: "Second", idempotency_key: "dup-key"
+      )
+      assert_not conflict.success?
+      assert_match(/conflicts/i, conflict.error)
+    end
+
+    test "idempotency key is scoped to the session" do
+      first = RecordNoSale.call(
+        pos_session: @session, actor: @admin, reason: "Shared key", idempotency_key: "shared-key"
+      )
+      assert first.success?, first.error
+
+      other_device = PosDevice.create!(
+        store: @store, code: "REG-NOSALE-B", name: "No Sale B",
+        device_type: "register", active: true
+      )
+      other_drawer = CashDrawer.create!(store: @store, code: "DRW-NOSALE-B", name: "Drawer B", active: true)
+      other = OpenSession.call(
+        business_day: @day, store: @store, pos_device: other_device, cash_drawer: other_drawer,
+        opening_cash_cents: 0, cashier: @admin, actor: @admin
+      ).pos_session
+
+      second = RecordNoSale.call(
+        pos_session: other, actor: @admin, reason: "Shared key", idempotency_key: "shared-key"
+      )
+      assert second.success?, second.error
+      assert_not_equal first.pos_no_sale_event.id, second.pos_no_sale_event.id
     end
 
     test "rejects blank reason" do

@@ -9,12 +9,13 @@ module Pos
       :success?, :pos_transaction, :pos_line_item, :error, :outcome, :resolution, :warnings
     )
 
-    def initialize(pos_session:, actor:, query: nil, quantity: 1, product_variant_id: nil)
+    def initialize(pos_session:, actor:, query: nil, quantity: 1, product_variant_id: nil, inventory_unit_id: nil)
       @pos_session = pos_session
       @actor = actor
       @query = query.to_s.strip
       @quantity = [ quantity.to_i, 1 ].max
       @product_variant_id = product_variant_id.presence
+      @inventory_unit_id = inventory_unit_id.presence
     end
 
     def call
@@ -88,6 +89,12 @@ module Pos
                               .find_by(id: @product_variant_id)
       return failure("Select a valid product variant.", outcome: "failed") if variant.blank?
 
+      inventory_unit = nil
+      if @inventory_unit_id.present?
+        inventory_unit = InventoryUnit.find_by(id: @inventory_unit_id)
+        return failure("Select a valid inventory unit.", outcome: "failed") if inventory_unit.blank?
+      end
+
       eligibility = Catalog::SaleEligibility.call(variant: variant, store: @pos_session.store)
       if eligibility.blockers.any?
         return Result.new(
@@ -103,7 +110,7 @@ module Pos
 
       add_line(
         variant: variant,
-        inventory_unit: nil,
+        inventory_unit: inventory_unit,
         resolution: nil,
         warnings: Array(eligibility.warnings)
       )

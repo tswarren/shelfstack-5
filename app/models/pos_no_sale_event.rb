@@ -11,7 +11,7 @@ class PosNoSaleEvent < ApplicationRecord
 
   validates :reason, presence: true, length: { maximum: REASON_MAX }
   validates :occurred_at, presence: true
-  validates :idempotency_key, presence: true, uniqueness: true
+  validates :idempotency_key, presence: true, uniqueness: { scope: :pos_session_id }
   validate :session_store_organization_consistency
 
   private
