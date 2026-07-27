@@ -91,17 +91,20 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
       amount_tendered_cents: net, actor: @admin
     )
 
-    visit pos_transaction_path(@transaction)
+    visit tender_pos_transaction_path(@transaction)
     assert_button "Complete transaction"
 
+    # Document-level listener must fire even when focus is not inside .pos-shell.
     page.execute_script(<<~JS)
-      document.querySelector(".pos-workspace").dispatchEvent(
+      document.body.focus()
+      document.dispatchEvent(
         new KeyboardEvent("keydown", { key: "Enter", code: "Enter", ctrlKey: true, bubbles: true })
       )
     JS
     assert_text(/Transaction complete|completed/i, wait: 5)
     assert @transaction.reload.completed?
   end
+
 
   private
 
