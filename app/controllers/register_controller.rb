@@ -139,7 +139,7 @@ class RegisterController < ApplicationController
       User.find_by(username: params[:approver_username].to_s.strip.downcase)
     tax_category = params[:tax_category_id].presence &&
       Current.organization.tax_categories.find_by(id: params[:tax_category_id])
-    explicit_tax = if params[:explicit_tax_amount_cents].present?
+    explicit_tax = if params[:tax_basis].to_s == "external_receipt_tax"
       money_param_to_cents(params[:explicit_tax_amount_cents], label: "Explicit tax amount", required: false)
     end
 
@@ -163,7 +163,7 @@ class RegisterController < ApplicationController
       approver_pin: params[:approver_pin]
     )
     if result.success?
-      redirect_to pos_transaction_path(result.pos_transaction, intent: "return"),
+      redirect_to pos_transaction_path(result.pos_transaction),
                   notice: "Unlinked return started."
     elsif result.pos_transaction
       redirect_to pos_transaction_path(result.pos_transaction, intent: "return"), alert: result.error
@@ -266,7 +266,7 @@ class RegisterController < ApplicationController
       "original_transaction_id" => original.id,
       "receipt_number" => original.receipt_number
     }
-    redirect_to pos_transaction_path(open_txn, intent: "return"),
+    redirect_to pos_transaction_path(open_txn),
                 notice: "Receipt #{original.receipt_number} loaded for return."
   end
 

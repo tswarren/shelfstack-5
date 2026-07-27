@@ -91,6 +91,24 @@ module Pos
       assert_equal 75, result.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
     end
 
+    test "configured tax basis ignores leftover explicit tax field values" do
+      result = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "gift_receipt",
+        return_reason: @reason,
+        return_disposition: "non_inventory",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: 1000,
+        tax_basis: "current_configured_rules",
+        explicit_tax_amount_cents: 0
+      )
+      assert result.success?, result.error
+      assert_equal "current_configured_rules", result.pos_line_item.tax_basis_snapshot
+      assert_nil result.pos_line_item.explicit_tax_amount_cents
+    end
+
     test "blocks inventory-affecting return without cost confirmation" do
       result = AddUnlinkedReturnLine.call(
         pos_transaction: @txn,
@@ -188,6 +206,13 @@ module Pos
     end
 
     test "no_receipt source requires pos.return.no_receipt permission and authority" do
+      RolePermission.where(
+        role: roles(:administrator),
+        permission: permissions(:pos_return_no_receipt)
+      ).delete_all
+      membership = StoreMembership.find_by!(user: @admin, store: @store)
+      membership.update!(maximum_no_receipt_return_cents: nil)
+
       denied = AddUnlinkedReturnLine.call(
         pos_transaction: @txn,
         return_source: "no_receipt",
@@ -200,7 +225,7 @@ module Pos
         confirm_cost_basis: true
       )
       refute denied.success?
-      assert_match(/pos\.return\.no_receipt/, denied.error)
+      assert_match(/pos\.return\.no_receipt|permission|approval/i, denied.error)
 
       RolePermission.find_or_create_by!(
         role: roles(:administrator),

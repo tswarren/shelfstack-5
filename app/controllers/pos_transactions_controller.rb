@@ -177,7 +177,7 @@ class PosTransactionsController < ApplicationController
       "original_transaction_id" => @pos_transaction.id,
       "receipt_number" => @pos_transaction.receipt_number
     }
-    redirect_to pos_transaction_path(open_txn, intent: "return"),
+    redirect_to pos_transaction_path(open_txn),
                 notice: "Receipt #{@pos_transaction.receipt_number} loaded for return."
   end
 

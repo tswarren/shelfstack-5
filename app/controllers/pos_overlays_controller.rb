@@ -6,7 +6,10 @@ class PosOverlaysController < ApplicationController
 
   before_action -> { require_permission!("pos.access") }
   before_action :load_register_session!
-  before_action :load_transaction!, only: %i[product_lookup line_actions receipt_detail transaction_lines]
+  before_action :load_transaction!, only: %i[
+    product_lookup line_actions receipt_detail transaction_lines
+    start_return open_ring stored_value
+  ]
 
   def product_lookup
     @intent = params[:intent].presence || "sale"
@@ -79,6 +82,7 @@ class PosOverlaysController < ApplicationController
 
     @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
     @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
+    load_return_lookup_for_overlay! if @pos_transaction.present?
   end
 
   def receipt_detail
@@ -174,6 +178,25 @@ class PosOverlaysController < ApplicationController
     return if params[:pos_transaction_id].blank?
 
     @pos_transaction = Current.store.pos_transactions.find(params[:pos_transaction_id])
+  end
+
+  def load_return_lookup_for_overlay!
+    stored = session[:pos_return_lookup]
+    return if stored.blank? || stored["for_transaction_id"] != @pos_transaction.id
+
+    original_txn = Current.store.pos_transactions.completed.find_by(id: stored["original_transaction_id"])
+    if original_txn.blank?
+      session.delete(:pos_return_lookup)
+      return
+    end
+
+    @return_lookup_transaction = original_txn
+    @return_lookup_lines = original_txn.pos_line_items
+      .where(status: "completed", direction: "sale")
+      .where.not(line_kind: "stored_value")
+      .includes(:inventory_unit, product_variant: :product)
+      .order(:position)
+      .select { |line| line.remaining_returnable_quantity.positive? }
   end
 
   def can_view_customers?

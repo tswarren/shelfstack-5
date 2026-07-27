@@ -97,7 +97,8 @@
     </div>
     <%= render "shared/currency_field", name: "explicit_tax_amount_cents",
           label: "Explicit tax amount (external receipt)",
-          id: tax_field_id, required: false %>
+          id: tax_field_id, required: false, value_cents: nil,
+          hint: "Only used when tax basis is External receipt tax amount." %>
   </div>
 
   <div class="checkbox-group">

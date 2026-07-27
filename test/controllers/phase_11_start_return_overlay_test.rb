@@ -56,7 +56,7 @@ class Phase11StartReturnOverlayTest < ActionDispatch::IntegrationTest
       }
     end
     txn = PosTransaction.order(:id).last
-    assert_redirected_to pos_transaction_path(txn, intent: "return")
+    assert_redirected_to pos_transaction_path(txn)
     assert_equal 1, txn.pos_line_items.returns.count
     assert_equal "no_receipt", txn.pos_line_items.returns.last.return_source
   end

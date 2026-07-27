@@ -1,6 +1,7 @@
 <p class="muted">Look up a completed receipt, then choose a returnable line.</p>
 
-<%= form_with url: lookup_pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
+<%= form_with url: lookup_pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form",
+      data: { turbo_frame: "_top" } do |form| %>
   <div class="field">
     <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
     <%= form.text_field :receipt_number, class: "input",
@@ -38,7 +39,8 @@
               · <%= pos_money(line.unit_price_cents) %> each
             </span>
           </p>
-          <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form" do |form| %>
+          <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form",
+                data: { turbo_frame: "_top" } do |form| %>
             <%= hidden_field_tag :original_pos_line_item_id, line.id %>
             <%= hidden_field_tag :intent, "sale" %>
             <div class="form-grid">

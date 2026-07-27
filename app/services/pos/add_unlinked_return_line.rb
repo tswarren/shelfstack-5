@@ -137,9 +137,8 @@ module Pos
         raise Error, "explicit tax amount must not be negative" if explicit.to_i.negative?
 
         explicit = explicit.to_i
-      elsif @explicit_tax_amount_cents.present?
-        raise Error, "explicit tax amount is only allowed for external_receipt_tax basis"
       end
+      # Ignore leftover currency-field values (often 0.00) unless external_receipt_tax.
 
       { basis: basis, explicit_tax_amount_cents: explicit }
     end

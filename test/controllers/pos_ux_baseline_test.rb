@@ -147,14 +147,14 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
   end
 
   test "open-ring fields appear in department price quantity description order" do
-    get pos_transaction_path(@transaction, intent: "open_ring")
+    get pos_overlay_open_ring_path(pos_transaction_id: @transaction.id)
     assert_response :success
 
-    start = response.body.index("Open-ring line")
-    assert start, "expected open-ring panel"
+    start = response.body.index("Open Ring")
+    assert start, "expected open-ring overlay"
     segment = response.body[start..]
     dept_at = segment.index("Department")
-    price_at = segment.index("open_ring_unit_price_cents")
+    price_at = segment.index("txn_open_ring_unit_price_cents")
     qty_at = segment.index('name="quantity"')
     desc_at = segment.index("Description (optional)")
 
@@ -165,10 +165,10 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
   end
 
   test "open-ring department options keep hierarchy order after filtering postable" do
-    get pos_transaction_path(@transaction, intent: "open_ring")
+    get pos_overlay_open_ring_path(pos_transaction_id: @transaction.id)
     assert_response :success
 
-    start = response.body.index("Open-ring line")
+    start = response.body.index("Open Ring")
     segment = response.body[start..]
     books_new = departments(:books_new)
     unconfigured = departments(:unconfigured_tax_department)
@@ -219,11 +219,15 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     return_txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     post lookup_pos_transaction_pos_return_lines_path(return_txn), params: { receipt_number: receipt }
-    assert_redirected_to pos_transaction_path(return_txn, intent: "return")
+    assert_redirected_to pos_transaction_path(return_txn)
 
-    get pos_transaction_path(return_txn, intent: "return")
+    get pos_transaction_path(return_txn)
     assert_response :success
     assert_match(/Receipt #{Regexp.escape(receipt)}/, response.body)
+    assert_select "a[href=?]", pos_overlay_start_return_path(pos_transaction_id: return_txn.id), text: "Continue return"
+
+    get pos_overlay_start_return_path(pos_transaction_id: return_txn.id)
+    assert_response :success
     assert_select "input[name=original_pos_line_item_id]", count: 1
     assert_no_match(/Original line ID/i, response.body)
   end
@@ -324,6 +328,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select "[aria-label='Entry intent'] a", text: "Return", count: 0
     assert_select "[aria-label='Entry intent'] a", text: "Stored value", count: 0
     assert_select "[aria-label='Entry intent'] a[aria-current=true]", text: "Sale"
+    assert_select "section[aria-label='Scan or search']"
     assert_select "section[aria-label='Linked return']", count: 0
   end
 
@@ -351,11 +356,15 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
       post start_linked_return_pos_transaction_path(@transaction)
     end
     open_txn = PosTransaction.open_transactions.order(:id).last
-    assert_redirected_to pos_transaction_path(open_txn, intent: "return")
+    assert_redirected_to pos_transaction_path(open_txn)
 
-    get pos_transaction_path(open_txn, intent: "return")
+    get pos_transaction_path(open_txn)
     assert_response :success
     assert_match(/Receipt #{Regexp.escape(@transaction.receipt_number)}/, response.body)
+    assert_select "a[href=?]", pos_overlay_start_return_path(pos_transaction_id: open_txn.id), text: "Continue return"
+
+    get pos_overlay_start_return_path(pos_transaction_id: open_txn.id)
+    assert_response :success
     assert_select "input[name=original_pos_line_item_id]", count: 1
   end
 

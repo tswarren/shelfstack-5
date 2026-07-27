@@ -7,14 +7,14 @@ class PosReturnLinesController < ApplicationController
   def lookup
     receipt = params[:receipt_number].to_s.strip
     if receipt.blank?
-      redirect_to pos_transaction_path(@pos_transaction, intent: "return"), alert: "Enter a receipt number."
+      redirect_to pos_transaction_path(@pos_transaction), alert: "Enter a receipt number."
       return
     end
 
     original = Current.store.pos_transactions.completed.find_by(receipt_number: receipt)
     if original.blank?
       session.delete(:pos_return_lookup)
-      redirect_to pos_transaction_path(@pos_transaction, intent: "return"),
+      redirect_to pos_transaction_path(@pos_transaction),
                   alert: "No completed transaction found for that receipt."
       return
     end
@@ -24,7 +24,7 @@ class PosReturnLinesController < ApplicationController
       "original_transaction_id" => original.id,
       "receipt_number" => original.receipt_number
     }
-    redirect_to pos_transaction_path(@pos_transaction, intent: "return"),
+    redirect_to pos_transaction_path(@pos_transaction),
                 notice: "Receipt #{original.receipt_number} loaded for return."
   end
 
@@ -57,7 +57,7 @@ class PosReturnLinesController < ApplicationController
       redirect_to pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan"),
                   notice: "Return line added."
     else
-      redirect_to pos_transaction_path(@pos_transaction, intent: "return"), alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
   end
 
@@ -74,7 +74,7 @@ class PosReturnLinesController < ApplicationController
 
     tax_category = params[:tax_category_id].presence &&
       Current.organization.tax_categories.find_by(id: params[:tax_category_id])
-    explicit_tax = if params[:explicit_tax_amount_cents].present?
+    explicit_tax = if params[:tax_basis].to_s == "external_receipt_tax"
       money_param_to_cents(params[:explicit_tax_amount_cents], label: "Explicit tax amount", required: false)
     end
 
@@ -102,10 +102,10 @@ class PosReturnLinesController < ApplicationController
       redirect_to pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan"),
                   notice: "Unlinked return line added."
     else
-      redirect_to pos_transaction_path(@pos_transaction, intent: "return"), alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction, intent: "return"), alert: e.message
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def set_transaction
