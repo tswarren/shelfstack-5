@@ -105,7 +105,7 @@ L7  Viewport + scenario acceptance
 | Current | Treatment |
 | --- | --- |
 | Ready card + stacked `<details>` | `presentations/_ready` + `ready/*` start / intents / staged customer |
-| Day and session details `<details>` | Move to Store Operations / secondary surface (POS-UI-037 open) |
+| Day and session details `<details>` | Moved to `register/store_operations` (POS-UI-037) |
 | Suspended list in large panel | Compact summary-rail treatment (POS-UI-034 open) |
 
 ---

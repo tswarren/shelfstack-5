@@ -40,6 +40,8 @@ class PosOverlayFrameSystemTest < ApplicationSystemTestCase
     assert_equal "Product lookup", page.evaluate_script("document.activeElement?.textContent?.trim()")
 
     within(".pos-register-header") { click_link "Store Operations" }
-    assert_current_path root_path
+    assert_current_path register_store_operations_path
+    assert_text "Close Session"
+    assert_text "Close business day"
   end
 end

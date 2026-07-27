@@ -126,6 +126,7 @@ Rails.application.routes.draw do
   get "reports/export", to: "reports#export", as: :export_report
 
   get "register", to: "register#show", as: :register
+  get "register/store_operations", to: "register#store_operations", as: :register_store_operations
   post "register/scan_to_start", to: "register#scan_to_start", as: :register_scan_to_start
   post "register/lookup_receipt", to: "register#lookup_receipt", as: :register_lookup_receipt
   post "register/start_open_ring", to: "register#start_open_ring", as: :register_start_open_ring

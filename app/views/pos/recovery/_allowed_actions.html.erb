@@ -21,7 +21,7 @@
             data: {
               turbo_confirm: "Confirm the card was voided on the external terminal before continuing."
             } %>
-      <%= link_to "Void failed / escalate", root_path,
+      <%= link_to "Void failed / escalate", register_store_operations_path,
             class: "button button-outline button-large",
             data: { turbo_frame: "_top" },
             title: "Leave POS for Store Operations help. The transaction remains blocked in Recovery." %>

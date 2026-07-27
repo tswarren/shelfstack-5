@@ -27,11 +27,19 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     get register_path
     assert_response :success
     assert_select ".pos-shell"
-    assert_select "a[href=?]", root_path, text: "Store Operations"
+    assert_select "a[href=?]", register_store_operations_path, text: "Store Operations"
     assert_select "a", text: "Day X", count: 0
     assert_select "a", text: "Close business day", count: 0
     refute_match(/Net sales/, response.body)
     refute_match(/cash variance/i, response.body)
+
+    get register_store_operations_path
+    assert_response :success
+    assert_select "a[href=?]", close_form_pos_session_path(PosSession.open_sessions.order(:id).last),
+                  text: "Close Session"
+    assert_select "a", text: "Day X"
+    assert_select "a", text: "Close business day"
+    assert_select "a", text: "Session X"
   end
 
   test "admin can open day/session, add lines, suspend, and recall" do

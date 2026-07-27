@@ -186,8 +186,8 @@
 <% end %>
 
 <% overflow_commands = capture do %>
-  <%= link_to "Store Operations", root_path, class: "button button-outline button-small",
-        data: { turbo_frame: "_top" } %>
+  <%= link_to "Store Operations", register_store_operations_path,
+        class: "button button-outline button-small", data: { turbo_frame: "_top" } %>
 <% end %>
 
 <%= render "pos/shell",

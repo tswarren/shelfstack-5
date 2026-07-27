@@ -32,8 +32,8 @@
     </span>
   </div>
   <div class="pos-register-header__actions">
-    <%= link_to "Store Operations", root_path, class: "button button-small button-outline",
-          data: { turbo_frame: "_top" } %>
+    <%= link_to "Store Operations", register_store_operations_path,
+          class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
     <% show_switch = effective_memberships_for(Current.user).many? %>
     <% if show_switch && !active_txn %>
       <%= link_to "Switch store", new_store_selection_path, class: "button button-small button-ghost",

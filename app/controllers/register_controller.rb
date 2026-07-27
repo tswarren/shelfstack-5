@@ -29,6 +29,17 @@ class RegisterController < ApplicationController
     end
   end
 
+  # POS-UI-037: session/day close and X/Z reports live here, not on Ready.
+  def store_operations
+    load_register_context!
+    load_register_reporting!
+    @workspace = Pos::WorkspacePresentation.for(
+      pos_transaction: nil,
+      open_session: @open_session
+    )
+    @presentation_state = "ready"
+  end
+
   def scan_to_start
     load_register_context!
     session = @open_session
