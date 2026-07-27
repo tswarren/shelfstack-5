@@ -19,7 +19,7 @@
               tax_field_id: "txn_unlinked_return_explicit_tax_amount_cents",
               confirm_id: "txn_unlinked_confirm_cost_basis",
               hidden_fields: { intent: "sale" },
-              turbo_frame: "_top" %>
+              turbo_frame: "pos_overlay" %>
       </section>
     <% else %>
       <section class="pos-region" aria-label="Linked return">
@@ -50,7 +50,7 @@
                 price_field_id: "ready_unlinked_return_unit_price_cents",
                 tax_field_id: "ready_unlinked_return_explicit_tax_amount_cents",
                 confirm_id: "ready_unlinked_confirm_cost_basis",
-                turbo_frame: "_top" %>
+                turbo_frame: "pos_overlay" %>
         </section>
       <% end %>
     <% end %>

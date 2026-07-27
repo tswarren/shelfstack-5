@@ -148,7 +148,9 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
       check "External void confirmed on the terminal"
       accept_confirm { click_button "Void confirmed" }
     end
-    assert_text(/voided/i, wait: 5)
+    # Avoid matching Recovery instructional copy that already contains "voided".
+    assert_text("Unattachable card authorization recorded as voided.", wait: 10)
+    assert_no_selector "section[aria-label='Recovery'], .pos-recovery-workspace"
     voided = txn.pos_tenders.where(status: "voided").find_by(authorization_code: "AUTH-MISMATCH")
     assert voided.present?, "expected voided tender after Recovery confirmation"
     refute txn.reload.void_required_tenders?

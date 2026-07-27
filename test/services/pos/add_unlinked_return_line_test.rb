@@ -40,7 +40,7 @@ module Pos
         quantity: 1,
         unit_price_cents: @variant.regular_price_cents,
         tax_basis: "current_configured_rules",
-        confirm_cost_basis: true
+        **reviewed_mac_cost
       )
       assert result.success?, result.error
       line = result.pos_line_item
@@ -141,6 +141,22 @@ module Pos
       assert_match(/discard is not available/i, result.error)
     end
 
+    test "rejects confirm_cost_basis without reviewed proposal facts" do
+      result = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "gift_receipt",
+        return_reason: @reason,
+        return_disposition: "return_to_stock",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: @variant.regular_price_cents,
+        confirm_cost_basis: true
+      )
+      refute result.success?
+      assert_match(/reviewed inventory cost/i, result.error)
+    end
+
     test "rejects stale reviewed cost proposal" do
       result = AddUnlinkedReturnLine.call(
         pos_transaction: @txn,
@@ -226,7 +242,7 @@ module Pos
         product_variant: @variant,
         quantity: 1,
         unit_price_cents: 100,
-        confirm_cost_basis: true
+        **reviewed_mac_cost
       )
       refute denied.success?
       assert_match(/pos\.return\.no_receipt|permission|approval/i, denied.error)
@@ -247,10 +263,44 @@ module Pos
         product_variant: @variant,
         quantity: 1,
         unit_price_cents: 100,
-        confirm_cost_basis: true
+        **reviewed_mac_cost
       )
       assert allowed.success?, allowed.error
       assert_equal "no_receipt", allowed.pos_line_item.return_source
+    end
+
+    test "no_receipt authority accumulates pending lines in the transaction" do
+      membership = StoreMembership.find_by!(user: @admin, store: @store)
+      membership.update!(maximum_no_receipt_return_cents: 1500)
+
+      first = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "no_receipt",
+        return_reason: @reason,
+        return_disposition: "non_inventory",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: 1000,
+        tax_basis: "no_tax_refund",
+        confirm_cost_basis: false
+      )
+      assert first.success?, first.error
+
+      second = AddUnlinkedReturnLine.call(
+        pos_transaction: @txn,
+        return_source: "no_receipt",
+        return_reason: @reason,
+        return_disposition: "non_inventory",
+        actor: @admin,
+        product_variant: @variant,
+        quantity: 1,
+        unit_price_cents: 1000,
+        tax_basis: "no_tax_refund",
+        confirm_cost_basis: false
+      )
+      refute second.success?
+      assert_match(/approval|authority|exceed/i, second.error)
     end
 
     test "rejects individually tracked variants without a linked original" do
@@ -265,7 +315,7 @@ module Pos
         product_variant: unit_variant,
         quantity: 1,
         unit_price_cents: 1000,
-        confirm_cost_basis: true
+        **reviewed_mac_cost
       )
       refute result.success?
       assert_match(/linked return/i, result.error)
@@ -324,6 +374,18 @@ module Pos
       assert allowed.success?, allowed.error
       tax = allowed.pos_line_item.pos_line_item_taxes.sum(:amount_cents)
       assert tax.positive?, "expected configured return tax so authority includes tax"
+    end
+
+    private
+
+    def reviewed_mac_cost
+      proposal = ProposeUnlinkedReturnCost.call(store: @store, product_variant: @variant)
+      assert proposal.available?, proposal.error
+      {
+        confirm_cost_basis: true,
+        reviewed_cost_unit_cents: proposal.unit_cost_cents,
+        reviewed_cost_source: proposal.source
+      }
     end
   end
 end

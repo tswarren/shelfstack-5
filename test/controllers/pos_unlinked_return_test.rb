@@ -69,8 +69,36 @@ class PosUnlinkedReturnTest < ActionDispatch::IntegrationTest
       }
     end
     assert_response :success
+    assert_select "turbo-frame#pos_overlay dialog"
     assert_select "form#txn_unlinked_return_cost_confirm_form"
+    assert_select "input[name=approver_pin]", count: 0
+    assert_select "input[name=reviewed_cost_unit_cents]", count: 1
     assert_match(/Proposed inventory cost/i, response.body)
+  end
+
+  test "cost review does not reflect approver pin and collects it on confirm for no_receipt" do
+    post session_path, params: { username: "admin", password: "password123" }
+    membership = StoreMembership.find_by!(user: @admin, store: @store)
+    membership.update!(maximum_no_receipt_return_cents: 10_000_00)
+    txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+
+    post pos_transaction_pos_return_lines_path(txn), params: {
+      mode: "unlinked",
+      return_source: "no_receipt",
+      return_reason_id: @reason.id,
+      return_disposition: "return_to_stock",
+      product_variant_id: @variant.id,
+      unit_price_cents: format("%.2f", @variant.regular_price_cents / 100.0),
+      quantity: 1,
+      tax_basis: "current_configured_rules",
+      approver_username: "admin",
+      approver_pin: "9999"
+    }
+    assert_response :success
+    assert_select "turbo-frame#pos_overlay dialog"
+    assert_select "input[name=approver_pin][type=password]", count: 1
+    assert_select "input[type=hidden][name=approver_pin]", count: 0
+    refute_match(/9999/, response.body)
   end
 
   test "ready unlinked return requires pos.transaction.open when no open transaction exists" do

@@ -95,7 +95,8 @@ module Pos
         raise Error, "transaction is not open" unless transaction.open?
         raise Error, "commercial fields are locked by unresolved tenders" unless transaction.editable?
 
-        approval = authorize_no_receipt!(refund.total_cents)
+        authority_cents = pending_no_receipt_refund_cents(transaction) + refund.total_cents
+        approval = authorize_no_receipt!(authority_cents)
 
         position = (transaction.pos_line_items.maximum(:position) || -1) + 1
         now = Time.current
@@ -187,6 +188,9 @@ module Pos
       )
 
       raise Error, "confirm the proposed inventory cost basis before adding this return" unless @confirm_cost_basis
+      if @reviewed_cost_unit_cents.blank? || @reviewed_cost_source.blank?
+        raise Error, "reviewed inventory cost proposal is required"
+      end
 
       proposal = ProposeUnlinkedReturnCost.call(
         store: @pos_transaction.store,
@@ -196,11 +200,9 @@ module Pos
         raise Error, proposal.error
       end
 
-      if @reviewed_cost_unit_cents.present? || @reviewed_cost_source.present?
-        reviewed_cents = @reviewed_cost_unit_cents.to_i
-        if reviewed_cents != proposal.unit_cost_cents || @reviewed_cost_source != proposal.source
-          raise Error, "inventory cost basis changed; review and confirm the updated proposal"
-        end
+      reviewed_cents = @reviewed_cost_unit_cents.to_i
+      if reviewed_cents != proposal.unit_cost_cents || @reviewed_cost_source != proposal.source
+        raise Error, "inventory cost basis changed; review and confirm the updated proposal"
       end
 
       {
@@ -279,6 +281,12 @@ module Pos
       return auth.pos_approval if auth.allowed?
 
       raise Error, auth.error.presence || "no-receipt return requires approval"
+    end
+
+    def pending_no_receipt_refund_cents(transaction)
+      transaction.pos_line_items.pending
+        .where(direction: "return", return_source: "no_receipt")
+        .sum { |line| line.extended_price_cents + line.tax_amount_cents }
     end
   end
 end

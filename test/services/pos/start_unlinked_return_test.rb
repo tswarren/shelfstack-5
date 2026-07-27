@@ -34,7 +34,9 @@ module Pos
             unit_price_cents: @variant.regular_price_cents,
             quantity: 1,
             tax_basis: "current_configured_rules",
-            confirm_cost_basis: true
+            confirm_cost_basis: true,
+            reviewed_cost_unit_cents: StockBalance.find_by!(store: @store, product_variant: @variant).moving_average_cost_cents,
+            reviewed_cost_source: "store_stock_balance_mac"
           )
           assert result.success?, result.error
           assert result.pos_transaction.open?

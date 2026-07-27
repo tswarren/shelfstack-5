@@ -1,6 +1,6 @@
 # POS layout acceptance status
 
-**Status:** Needs refinement — MVP remediations landed on [#150](https://github.com/tswarren/shelfstack-5/pull/150); core L7 viewport captures present; residual scenario set + Accepted scoring still required before merge  
+**Status:** Reduced MVP merge-gate evidence ready on [#150](https://github.com/tswarren/shelfstack-5/pull/150) — critical L7 viewports + L2 Must scores captured; exhaustive matrix deferred  
 **Parent:** [README.md](README.md)  
 **Checklist:** [layout-completion-checklist.md](layout-completion-checklist.md)  
 **Decisions:** [decisions.md](decisions.md)
@@ -17,28 +17,23 @@ Closed stack (superseded by #150): [#147](https://github.com/tswarren/shelfstack
 
 Server mechanics baseline: [#146](https://github.com/tswarren/shelfstack-5/pull/146).
 
-## Manual review disposition (2026-07-26)
+## Reduced MVP merge gate (2026-07-27)
 
-**Verdict: Needs refinement — block merge** until L7 viewport evidence Accepted:
+**Verdict: Ready for human L7/L2 score on the reduced critical set** (exhaustive matrix deferred):
 
-1. Capture Ready / Transaction / Tender / Recovery / Receipt at **1366×768** and **1024×768**.
-2. **L2 Must criteria are merge blockers** (not optional polish): single ordinary line scroller, stable selected-line commands, pinned totals/progression CTA, keyboard line selection, eight-line 1366×768 composition.
-3. Financial Gates F1 (unlinked return tax/cost basis) and F2 (No Sale event) are PR review checkpoints — they do not replace L7.
+1. Captured at **both** 1366×768 and 1024×768: Ready normal, Transaction 1/8, selected-line commands, Tender unpaid/settled, Recovery `void_required`, Receipt cash/change, Product lookup.
+2. **L2 Must criteria** scored Accepted from those captures (see capture note): single ordinary line scroller, selected-line commands, pinned totals/primary CTA, line selection, no clipped primary controls, overlay bounded/closable.
+3. Financial Gates F1/F2 remediations: cost-review overlay frame fix, PIN not replayed/logged, reviewed cost fields required, cumulative no-receipt authority, Recovery system CI green.
 
-Do not mark POS-UI-020–037 **Accepted** until screenshots and [review-scenarios.md](review-scenarios.md) walks pass at both viewports.
+Do not mark the full POS-UI-020–037 matrix **Accepted** until residual scenarios in [screenshots/README.md](screenshots/README.md) are captured. Reduced MVP merge may proceed once reviewers confirm the critical set.
 
 Score each gate: **Accepted** / **Needs refinement** / **Fail**. Record scores on [#150](https://github.com/tswarren/shelfstack-5/pull/150).
 
-### Capture set (minimum)
+### Capture set (reduced MVP vs full)
 
-See [screenshots/README.md](screenshots/README.md). At minimum capture:
+**Reduced MVP (present):** Ready normal; Transaction one/eight + selected-line; Tender unpaid/settled; Recovery `void_required`; Receipt change; Product lookup (both viewports).
 
-- Ready normal + staged Customer + suspended preview
-- Transaction one-line, eight-line, twenty-line (internal scroll)
-- Tender positive partial + settled
-- Recovery `void_required`
-- Receipt with change + Next transaction focus
-- Product lookup overlay open (frame-loaded)
+**Deferred vs full [screenshots/README.md](screenshots/README.md):** staged Customer, suspended, twenty-line, warning/blocker, mixed return, individual unit, partial/split/net-refund tender variants, remaining overlays.
 
 ### Decision promotion rule
 

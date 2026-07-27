@@ -65,6 +65,7 @@ module UnlinkedReturnRequest
     end
 
     @cost_proposal = proposal
+    # Never replay approver_pin into HTML. Collect PIN only on the confirm form.
     @cost_review_fields = {
       return_source: params[:return_source],
       return_reason_id: @unlinked_reason.id,
@@ -77,10 +78,17 @@ module UnlinkedReturnRequest
       unit_price_cents: params[:unit_price_cents],
       quantity: @unlinked_quantity,
       explicit_tax_amount_cents: params[:explicit_tax_amount_cents],
-      approver_username: params[:approver_username],
-      approver_pin: params[:approver_pin],
       intent: params[:intent]
     }
+    @cost_review_needs_approval = params[:return_source].to_s == "no_receipt" &&
+      Current.user.can?("pos.return.no_receipt", store: Current.store)
     nil
+  end
+
+  # Cost-review and validation responses stay inside turbo-frame#pos_overlay;
+  # success must escape so the POS shell reloads.
+  def redirect_out_of_overlay_to(path, **options)
+    response.set_header("Turbo-Frame", "_top")
+    redirect_to path, **options
   end
 end

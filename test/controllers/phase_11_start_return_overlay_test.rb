@@ -43,6 +43,7 @@ class Phase11StartReturnOverlayTest < ActionDispatch::IntegrationTest
   end
 
   test "start unlinked return from ready creates first-valid-work transaction" do
+    mac = StockBalance.find_by!(store: @store, product_variant: @variant).moving_average_cost_cents
     assert_difference -> { PosTransaction.count }, 1 do
       post register_start_unlinked_return_path, params: {
         return_source: "no_receipt",
@@ -52,7 +53,9 @@ class Phase11StartReturnOverlayTest < ActionDispatch::IntegrationTest
         unit_price_cents: format("%.2f", @variant.regular_price_cents / 100.0),
         quantity: 1,
         tax_basis: "current_configured_rules",
-        confirm_cost_basis: "true"
+        confirm_cost_basis: "true",
+        reviewed_cost_unit_cents: mac,
+        reviewed_cost_source: "store_stock_balance_mac"
       }
     end
     txn = PosTransaction.order(:id).last

@@ -69,13 +69,13 @@ class PosReturnLinesController < ApplicationController
     if unlinked_cost_review_needed?
       error = prepare_unlinked_cost_review!
       if error
-        return redirect_to pos_transaction_path(@pos_transaction), alert: error
+        return redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: error
       end
 
       @cost_review_form_url = pos_transaction_pos_return_lines_path(@pos_transaction)
       @cost_review_form_id = "txn_unlinked_return_cost_confirm_form"
       @cost_review_submit_label = "Confirm and add return"
-      return render "pos_overlays/unlinked_return_cost_review", layout: "pos"
+      return render "pos_overlays/unlinked_return_cost_review", layout: false
     end
 
     result = Pos::AddUnlinkedReturnLine.call(
@@ -85,13 +85,13 @@ class PosReturnLinesController < ApplicationController
     )
 
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan"),
-                  notice: "Unlinked return line added."
+      redirect_out_of_overlay_to pos_transaction_path(@pos_transaction, intent: "sale", focus_target: "scan"),
+                                notice: "Unlinked return line added."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: result.error
     end
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_out_of_overlay_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def set_transaction

@@ -142,13 +142,13 @@ class RegisterController < ApplicationController
     if unlinked_cost_review_needed?
       error = prepare_unlinked_cost_review!
       if error
-        return redirect_to register_path, alert: error
+        return redirect_out_of_overlay_to register_path, alert: error
       end
 
       @cost_review_form_url = register_start_unlinked_return_path
       @cost_review_form_id = "ready_unlinked_return_cost_confirm_form"
       @cost_review_submit_label = "Confirm and start return"
-      return render "pos_overlays/unlinked_return_cost_review"
+      return render "pos_overlays/unlinked_return_cost_review", layout: false
     end
 
     result = Pos::StartUnlinkedReturn.call(
@@ -157,15 +157,16 @@ class RegisterController < ApplicationController
       **unlinked_return_service_kwargs
     )
     if result.success?
-      redirect_to pos_transaction_path(result.pos_transaction),
-                  notice: "Unlinked return started."
+      redirect_out_of_overlay_to pos_transaction_path(result.pos_transaction),
+                                notice: "Unlinked return started."
     elsif result.pos_transaction
-      redirect_to pos_transaction_path(result.pos_transaction, intent: "return"), alert: result.error
+      redirect_out_of_overlay_to pos_transaction_path(result.pos_transaction, intent: "return"),
+                                alert: result.error
     else
-      redirect_to register_path, alert: result.error
+      redirect_out_of_overlay_to register_path, alert: result.error
     end
   rescue ArgumentError, ActiveRecord::RecordNotFound => e
-    redirect_to register_path, alert: e.message
+    redirect_out_of_overlay_to register_path, alert: e.message
   end
 
   def start_stored_value
