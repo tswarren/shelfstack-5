@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout implementation [#147](https://github.com/tswarren/shelfstack-5/pull/147)–[#148](https://github.com/tswarren/shelfstack-5/pull/148); awaiting manual viewport acceptance ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md))  
+**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout implementation [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`feat/phase-11-layout`); awaiting manual viewport acceptance ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md))  
 
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Layout gates:** [../design/pos/layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)  
@@ -23,7 +23,7 @@
 
 ## Immediate next work
 
-1. Manual viewport acceptance for layout Gates L0–L6 ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md)); promote POS-UI-020–037 to Accepted when confirmed; merge [#147](https://github.com/tswarren/shelfstack-5/pull/147)/[#148](https://github.com/tswarren/shelfstack-5/pull/148) after Accepted.
+1. Manual viewport acceptance for layout Gates L0–L6 ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md)); promote POS-UI-020–037 to Accepted when confirmed; merge [#150](https://github.com/tswarren/shelfstack-5/pull/150) after Accepted.
 2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
 3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
 4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.

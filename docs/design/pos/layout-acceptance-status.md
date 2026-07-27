@@ -9,9 +9,10 @@
 
 | Gate | PR | Implementation |
 | --- | --- | --- |
-| Process docs + L0–L5 shell compositions | [#147](https://github.com/tswarren/shelfstack-5/pull/147) | Dedicated shell, Ready tiers, Transaction/Tender/Recovery/Receipt regions |
-| L6 overlays | [#148](https://github.com/tswarren/shelfstack-5/pull/148) | `pos-overlay` + Product lookup dialog |
+| L0–L7 layout + Ready action fixes | [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`feat/phase-11-layout`) | Dedicated shell, presentation regions, overlay host, supporting actions, Next-transaction breakout |
 | L7 acceptance tracking | this document | Review evidence checklist; Proposed → Accepted promotion rules |
+
+Closed stack (superseded by #150): [#147](https://github.com/tswarren/shelfstack-5/pull/147), [#148](https://github.com/tswarren/shelfstack-5/pull/148), [#149](https://github.com/tswarren/shelfstack-5/pull/149).
 
 Server mechanics baseline: [#146](https://github.com/tswarren/shelfstack-5/pull/146).
 
@@ -19,7 +20,7 @@ Server mechanics baseline: [#146](https://github.com/tswarren/shelfstack-5/pull/
 
 Do not mark POS-UI-020–037 **Accepted** until screenshots and [review-scenarios.md](review-scenarios.md) walks pass at **1366×768** and **1024×768**.
 
-Score each gate: **Accepted** / **Needs refinement** / **Fail**. Record scores on the gate PR.
+Score each gate: **Accepted** / **Needs refinement** / **Fail**. Record scores on [#150](https://github.com/tswarren/shelfstack-5/pull/150).
 
 ### Capture set (minimum)
 

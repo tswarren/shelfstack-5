@@ -263,20 +263,20 @@ Tracking: [layout-acceptance-status.md](layout-acceptance-status.md).
 
 Keep PRs short-lived and reviewable as compositions, not as “more POS features.”
 
-**Process:** one PR per gate against `main` (`feat/phase-11-layout-l0` … `feat/phase-11-layout-l7`). After CI is green, pause for manual viewport review (1366×768 and 1024×768). Score **Accepted** / **Needs refinement** / **Fail** using [review-scenarios.md](review-scenarios.md). Do not open the next gate until the prior gate is Accepted (or Accepted with an explicit residual in [decisions.md](decisions.md)).
+**Process (updated):** Layout Gates L0–L7 are consolidated on `feat/phase-11-layout` / [#150](https://github.com/tswarren/shelfstack-5/pull/150) against `main` (same pattern as mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146)). After CI is green, pause for manual viewport review (1366×768 and 1024×768). Score **Accepted** / **Needs refinement** / **Fail** using [review-scenarios.md](review-scenarios.md). Record residuals in [decisions.md](decisions.md) when needed.
 
-| PR | Gate | Scope |
-| --- | --- | --- |
-| Layout 0 | L0 | Shell geometry, register header, `pos_workspace` / `pos_overlay`, stub regions |
-| Layout 1 | L1 | Ready composition through shell |
-| Layout 2 | L2 | Transaction entry + lines + summary + command bar |
-| Layout 3 | L3 | Tender dedicated composition |
-| Layout 4 | L4 | Recovery dedicated composition |
-| Layout 5 | L5 | Receipt completion composition |
-| Layout 6 | L6 | Overlay host workflows |
-| Layout 7 | L7 | Scenario walkthrough evidence + promote Proposed POS-UI decisions |
+| Gate | Scope |
+| --- | --- |
+| L0 | Shell geometry, register header, `pos_workspace` / `pos_overlay`, stub regions |
+| L1 | Ready composition through shell |
+| L2 | Transaction entry + lines + summary + command bar |
+| L3 | Tender dedicated composition |
+| L4 | Recovery dedicated composition |
+| L5 | Receipt completion composition |
+| L6 | Overlay host workflows |
+| L7 | Scenario walkthrough evidence + promote Proposed POS-UI decisions |
 
-Mechanics from [#146](https://github.com/tswarren/shelfstack-5/pull/146) should not be re-litigated in these PRs unless a layout change forces a contract tweak.
+Mechanics from [#146](https://github.com/tswarren/shelfstack-5/pull/146) should not be re-litigated unless a layout change forces a contract tweak.
 
 ## Explicit non-goals
 
