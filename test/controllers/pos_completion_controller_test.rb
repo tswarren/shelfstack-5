@@ -34,8 +34,8 @@ class PosCompletionControllerTest < ActionDispatch::IntegrationTest
     post session_path, params: { username: "admin", password: "password123" }
 
     post pos_transaction_pos_tenders_path(@transaction),
-         params: { tender_type_id: @cash.id, amount_tendered_cents: @net_total }
-    assert_redirected_to pos_transaction_path(@transaction)
+         params: { tender_type_id: @cash.id, amount_tendered_cents: @net_total, tender_method: "cash" }
+    assert_redirected_to tender_pos_transaction_path(@transaction, tender_method: "cash")
     assert_equal 1, @transaction.pos_tenders.unresolved.count
 
     post complete_pos_transaction_path(@transaction), params: { completion_idempotency_key: "ctrl-key-1" }

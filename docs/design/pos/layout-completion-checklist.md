@@ -156,20 +156,23 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Tender has intentional primary markup — not Transaction with left column hidden (POS-UI-005)
-- [ ] Amount due / refund due and remaining balance are visually dominant
-- [ ] Split settlement keeps recorded tenders visible
-- [ ] Refund language is explicit (not only negative numbers)
-- [ ] Complete Transaction visible when settled
-- [ ] Tender contract scenarios from presentation matrix Accepted
+- [x] Tender has intentional primary markup — not Transaction with left column hidden (POS-UI-005)
+- [x] Amount due / refund due and remaining balance are visually dominant
+- [x] Split settlement keeps recorded tenders visible
+- [x] Refund language is explicit (not only negative numbers)
+- [x] Complete Transaction visible when settled
+- [ ] Tender contract scenarios from presentation matrix Accepted (manual viewport review)
+- [x] One active tender form; methods are selectors (POS-UI-010 / POS-UI-035)
+- [x] Summary CTA submits the active form via `form=` binding
+- [x] Tender redirects preserve `/tender?tender_method=`
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
-| `_tender_entry` stacked `<details>` | `tender/_method_selector` + per-method forms |
-| `_tenders` | Split collection + row |
-| Tender via collapsed Transaction chrome | Dedicated `presentations/_tender` |
+| `_tender_entry` stacked `<details>` | Replaced by `pos/tender/*` + `pos/forms/*` |
+| `_tenders` | `pos/tender/_recorded_tenders` + selectable rows |
+| Tender via collapsed Transaction chrome | `pos/tender/_workspace` through shell |
 
 ---
 

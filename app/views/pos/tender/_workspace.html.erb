@@ -1,0 +1,25 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<section class="pos-sale-panel pos-tender-workspace" aria-label="Payment">
+  <%= render "pos/tender/direction_status", presentation: tp %>
+
+  <% unless tp.settled? %>
+    <%= render "pos/tender/method_selector", presentation: tp %>
+    <%= render "pos/tender/active_form", presentation: tp %>
+  <% else %>
+    <div class="pos-region" role="status">
+      <p class="pos-balance">Settled</p>
+      <p class="muted">Recorded tenders are final for this settlement. Complete the transaction from the summary rail.</p>
+    </div>
+  <% end %>
+
+  <%= render "pos/tender/recorded_tenders", presentation: tp %>
+
+  <% unless tp.settled? %>
+    <p class="pos-region">
+      <%= link_to "View transaction lines",
+            pos_transaction_path(@pos_transaction, intent: @entry_intent),
+            class: "button button-ghost button-small",
+            data: { turbo_frame: "_top", turbo_action: "replace" } %>
+    </p>
+  <% end %>
+</section>

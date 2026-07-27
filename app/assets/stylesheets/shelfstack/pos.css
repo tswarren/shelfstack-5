@@ -613,6 +613,33 @@
   padding-left: 1rem;
 }
 
+.pos-recorded-tenders {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pos-recorded-tender {
+  margin: 0.35rem 0;
+}
+
+.pos-recorded-tender__select,
+.pos-recorded-tender__static {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  text-decoration: none;
+  color: inherit;
+}
+
+.pos-recorded-tender--selected {
+  font-weight: 650;
+}
+
+.pos-tender-active-form .form-actions {
+  display: none;
+}
+
 .pos-live-region {
   position: absolute;
   width: 1px;

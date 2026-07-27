@@ -41,22 +41,23 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     cash_amount = due - sv_amount
     assert cash_amount.positive?
 
-    visit tender_pos_transaction_path(ret)
-    within_panel("Stored-value refund") do
+    visit tender_pos_transaction_path(ret, tender_method: "stored_value")
+    within(".pos-tender-active-form") do
+      assert_selector "select[name='original_pos_tender_id']"
       select_option_value("original_pos_tender_id", sv_tender.id)
       find("#sv_refund_amount_cents").set(format("%.2f", sv_amount / 100.0))
-      uncheck "create_store_credit" if page.has_field?("create_store_credit", wait: 1)
-      click_button "Record stored-value refund"
+      uncheck "create_store_credit" if page.has_checked_field?("create_store_credit", wait: 1)
     end
+    submit_active_tender!
     assert_selector ".flash, [role='status'], .notice", text: /Tender recorded/i
     assert_equal 1, ret.reload.pos_tenders.where(direction: "refunded").count
 
-    visit pos_transaction_path(ret)
-    within_panel("Cash refund") do
+    visit tender_pos_transaction_path(ret, tender_method: "cash")
+    within(".pos-tender-active-form") do
       select_option_value("original_pos_tender_id", cash_tender.id)
       find("#refund_amount_cents").set(format("%.2f", cash_amount / 100.0))
-      click_button "Add cash refund"
     end
+    submit_active_tender!
     assert_selector ".flash, [role='status'], .notice", text: /Tender recorded/i
     assert_equal 2, ret.reload.pos_tenders.where(direction: "refunded").count
 
@@ -78,11 +79,11 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     visit tender_pos_transaction_path(ret)
     due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
 
-    within_panel("Cash refund") do
+    within_tender_method("Cash refund") do
       select "Select original… (or exception below)", from: "Original cash tender"
       fill_in "refund_amount_cents", with: format("%.2f", due / 100.0)
-      click_button "Add cash refund"
     end
+    submit_active_tender!
     assert_text(/restore remaining original|exception approval/i)
     assert_equal 0, ret.pos_tenders.where(direction: "refunded").count
   end
@@ -112,12 +113,12 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     visit tender_pos_transaction_path(ret)
     due = -Pos::RecalculateTransaction.call(pos_transaction: ret).net_total_cents
 
-    within_panel("Card (standalone) refund") do
+    within_tender_method("Card refund") do
       select_option_value("original_pos_tender_id", card_tender.id)
-      fill_in "card_refund_amount_cents_#{@card.id}", with: format("%.2f", due / 100.0)
+      fill_in "card_refund_amount_cents", with: format("%.2f", due / 100.0)
       fill_in "Auth code", with: "RFND-UI-1"
-      click_button "Record card refund"
     end
+    submit_active_tender!
     assert_selector ".flash, [role='status'], .notice", text: /Tender recorded/i
     refund = ret.pos_tenders.where(direction: "refunded").last
     assert_equal card_tender.id, refund.original_pos_tender_id
@@ -131,15 +132,15 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
     net = Pos::RecalculateTransaction.call(pos_transaction: txn).net_total_cents
 
-    visit tender_pos_transaction_path(txn)
-    within_panel("Card (standalone)") do
-      fill_in "card_amount_cents_#{@card.id}", with: format("%.2f", (net + 500) / 100.0)
+    visit tender_pos_transaction_path(txn, tender_method: "card")
+    within(".pos-tender-active-form") do
+      fill_in "card_amount_cents", with: format("%.2f", (net + 500) / 100.0)
       fill_in "Auth code", with: "AUTH-MISMATCH"
-      click_button "Add card tender"
     end
+    submit_active_tender!
     assert_text(/Confirm external void|not attachable|exceeds remaining/i)
 
-    within_panel("Confirm external void") do
+    within("section[aria-label='Recovery'], .pos-recovery-panel") do
       check "External void confirmed"
       accept_confirm { click_button "Record voided card tender" }
     end
@@ -153,56 +154,51 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
 
-    visit tender_pos_transaction_path(txn)
-    within_panel("Stored-value tender") do
+    visit tender_pos_transaction_path(txn, tender_method: "stored_value")
+    within(".pos-tender-active-form") do
       fill_in "Account number", with: "0000000000000"
       fill_in "sv_tender_amount_cents", with: "1.00"
-      click_button "Redeem stored value"
     end
+    submit_active_tender!
     assert_text(/required|not found|account/i)
+    assert_current_path tender_pos_transaction_path(txn), ignore_query: true
+    assert_includes page.current_url, "tender_method=stored_value"
   end
 
   test "stored value redeem resolves canonical and alternate identifiers" do
     sign_in_and_open_session!
     txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     Pos::AddLine.call(pos_transaction: txn, product_variant: @variant, quantity: 1, actor: @admin)
-    visit tender_pos_transaction_path(txn)
+    visit tender_pos_transaction_path(txn, tender_method: "stored_value")
 
-    within_panel("Stored-value tender") do
+    within(".pos-tender-active-form") do
       fill_in "Account number", with: @account.account_number
       fill_in "sv_tender_amount_cents", with: "1.00"
-      click_button "Redeem stored value"
     end
+    submit_active_tender!
     assert_selector ".flash, [role='status'], .notice", text: /Tender recorded|recorded/i
 
     txn2 = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
     Pos::AddLine.call(pos_transaction: txn2, product_variant: @variant, quantity: 1, actor: @admin)
-    visit tender_pos_transaction_path(txn2)
-    within_panel("Stored-value tender") do
+    visit tender_pos_transaction_path(txn2, tender_method: "stored_value")
+    within(".pos-tender-active-form") do
       fill_in "Account number", with: @account.alternate_identifier
       fill_in "sv_tender_amount_cents", with: "1.00"
-      click_button "Redeem stored value"
     end
+    submit_active_tender!
     assert_selector ".flash, [role='status'], .notice", text: /Tender recorded|recorded/i
   end
 
   private
 
-  def within_panel(summary_text, &block)
-    # Prefer the innermost details whose summary matches — an outer "Tender entry"
-    # wrapper also contains nested panel text and must not win the match.
-    attempts = 0
-    begin
-      attempts += 1
-      summary = find("details > summary", text: /#{Regexp.escape(summary_text)}/i, match: :first)
-      details = summary.find(:xpath, "..")
-      page.execute_script("arguments[0].open = true", details.native)
-      within(details, &block)
-    rescue Selenium::WebDriver::Error::StaleElementReferenceError
-      raise if attempts >= 3
+  def within_tender_method(method_label, &block)
+    within("div[aria-label='Select tender method']") { click_link method_label }
+    assert_selector ".pos-tender-active-form", wait: 5
+    within(".pos-tender-active-form", &block)
+  end
 
-      retry
-    end
+  def submit_active_tender!
+    find("button[type=submit][form=active_tender_form]").click
   end
 
   def select_option_value(name, value)

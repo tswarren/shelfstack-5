@@ -141,8 +141,10 @@ class PosCriticalWorkflowsSystemTest < ApplicationSystemTestCase
 
   def enter_tender_and_cash!(net_cents)
     click_link "Tender", href: /\/tender/
+    assert_selector ".pos-tender-workspace"
+    assert_selector "form#active_tender_form", count: 1
     fill_in "Amount tendered", with: format("%.2f", net_cents / 100.0)
-    click_button "Add cash tender"
+    find("button[type=submit][form=active_tender_form]").click
     assert_text "Tender recorded"
   end
 

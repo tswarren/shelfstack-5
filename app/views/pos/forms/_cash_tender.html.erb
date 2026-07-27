@@ -1,0 +1,11 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post,
+      class: "form", id: tp.active_form_id do |form| %>
+  <%= hidden_field_tag :tender_method, "cash" %>
+  <div class="field">
+    <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+    <%= form.collection_select :tender_type_id, tp.cash_types, :id, :name, {}, class: "input" %>
+  </div>
+  <%= render "shared/currency_field", name: "amount_tendered_cents", label: "Amount tendered",
+        id: "cash_amount_tendered_cents", value_cents: [ @balance_due_cents, 0 ].max %>
+<% end %>

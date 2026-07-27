@@ -86,7 +86,7 @@ class PosTendersController < ApplicationController
 
     redirect_after_tender_result(result)
   rescue ArgumentError => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_to tender_return_path, alert: e.message
   end
 
   def confirm_void
@@ -101,10 +101,10 @@ class PosTendersController < ApplicationController
       redirect_to pos_transaction_path(@pos_transaction),
                   notice: "Unattachable card authorization recorded as voided."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to tender_return_path, alert: result.error
     end
   rescue ArgumentError, ActiveRecord::RecordNotFound => e
-    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
+    redirect_to tender_return_path, alert: e.message
   end
 
   def destroy
@@ -116,9 +116,15 @@ class PosTendersController < ApplicationController
       external_void_reference: params[:external_void_reference]
     )
     if result.success?
-      redirect_to pos_transaction_path(@pos_transaction), notice: "Tender removed."
+      @pos_transaction.reload
+      if @pos_transaction.unresolved_tenders? || @pos_transaction.void_required_tenders?
+        redirect_to tender_return_path, notice: "Tender removed."
+      else
+        redirect_to pos_transaction_path(@pos_transaction, intent: params[:intent]),
+                    notice: "Tender removed."
+      end
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to tender_return_path, alert: result.error
     end
   end
 
@@ -127,13 +133,21 @@ class PosTendersController < ApplicationController
   def redirect_after_tender_result(result)
     if result.success?
       notice = result.respond_to?(:warnings) && result.warnings.present? ? result.warnings.join("; ") : "Tender recorded."
-      redirect_to pos_transaction_path(@pos_transaction), notice: notice
+      redirect_to tender_return_path, notice: notice
     elsif result.respond_to?(:requires_void_confirmation?) && result.requires_void_confirmation?
       redirect_to pos_transaction_path(@pos_transaction),
                   alert: "#{result.error} Confirm the external void to clear the void-required tender."
     else
-      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
+      redirect_to tender_return_path, alert: result.error
     end
+  end
+
+  def tender_return_path
+    tender_pos_transaction_path(
+      @pos_transaction,
+      tender_method: params[:tender_method].presence,
+      intent: params[:intent].presence
+    )
   end
 
   def set_transaction

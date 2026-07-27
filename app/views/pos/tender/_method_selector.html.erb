@@ -1,0 +1,21 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<% if tp.available_methods.any? %>
+  <div class="pos-region" aria-label="Tender method">
+    <h3 class="sr-only">Tender method</h3>
+    <div class="action-group" role="group" aria-label="Select tender method">
+      <% tp.available_methods.each do |method| %>
+        <% active = tp.selected_method == method %>
+        <%= link_to tp.method_labels.fetch(method),
+              tender_pos_transaction_path(
+                @pos_transaction,
+                tender_method: method,
+                selected_tender_id: tp.selected_tender&.id,
+                intent: @entry_intent
+              ),
+              class: "button button-small #{active ? 'button-primary' : 'button-outline'}",
+              aria: { current: (active ? "true" : nil) },
+              data: { turbo_frame: "_top", turbo_action: "replace" } %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

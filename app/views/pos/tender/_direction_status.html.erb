@@ -1,0 +1,13 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<div class="pos-region" aria-label="Settlement direction">
+  <h2>Payment</h2>
+  <p class="pos-balance">
+    <% if tp.settled? %>
+      Settled
+    <% elsif tp.refund_mode? %>
+      Refund due <%= pos_money(tp.remaining_cents) %>
+    <% else %>
+      Amount due <%= pos_money(tp.remaining_cents) %>
+    <% end %>
+  </p>
+</div>

@@ -101,9 +101,11 @@ class PosReviewFixesSystemTest < ApplicationSystemTestCase
 
     visit tender_pos_transaction_path(@transaction)
     assert_text "Amount tendered"
+    assert_selector "form#active_tender_form", count: 1
+    assert_no_selector "details > summary", text: /Cash tender/i
     # Cover tax so tenders settle the net total.
     fill_in "Amount tendered", with: "5.65"
-    click_button "Add cash tender"
+    find("button[type=submit][form=active_tender_form]").click
 
     assert_text "Tender recorded"
     click_button "Complete transaction"

@@ -1,0 +1,43 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<% if tp.return_safe? %>
+  <%= link_to "Return to Transaction",
+        pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
+        class: "button button-outline button-small",
+        data: { turbo_frame: "_top", turbo_action: "replace" } %>
+<% elsif tp.forced_tender? %>
+  <% selected = tp.selected_tender %>
+  <% if selected&.unresolved? %>
+    <span class="pos-commands-selected__label">
+      Selected: <%= selected.tender_type.name %> <%= pos_money(selected.amount_cents) %>
+    </span>
+    <% if selected.authorized? && selected.tender_type.tender_category == "card" %>
+      <%= form_with url: pos_transaction_pos_tender_path(@pos_transaction, selected), method: :delete,
+            class: "pos-inline-form", id: "void_selected_tender_form" do |form| %>
+        <%= hidden_field_tag :tender_method, tp.selected_method %>
+        <div class="field">
+          <%= form.text_field :external_void_reference, class: "input",
+                placeholder: "External void ref", aria: { label: "External void reference" } %>
+        </div>
+        <label class="checkbox-inline">
+          <%= form.check_box :external_void_confirmed, {}, "true", "false" %>
+          External void confirmed
+        </label>
+        <%= form.submit "Void card", class: "button button-small button-danger",
+              data: { turbo_confirm: "Confirm the card was voided on the external terminal before continuing." } %>
+      <% end %>
+    <% else %>
+      <%= button_to "Remove tender", pos_transaction_pos_tender_path(@pos_transaction, selected),
+            method: :delete,
+            class: "button button-small button-danger",
+            params: { tender_method: tp.selected_method },
+            form: { data: {
+              turbo_confirm: "Remove this tender?",
+              turbo_frame: "_top"
+            } } %>
+    <% end %>
+  <% else %>
+    <span class="muted" role="status">
+      Remove or void recorded tenders before returning to Transaction.
+    </span>
+  <% end %>
+<% end %>

@@ -361,6 +361,21 @@ class PosTransactionsController < ApplicationController
     )
     @presentation_state = @workspace.state
 
+    if @presentation_state == "tender"
+      @tender_presentation = Pos::TenderPresentation.for(
+        pos_transaction: @pos_transaction,
+        balance_due_cents: @balance_due_cents,
+        tender_types: @tender_types.to_a,
+        pos_tenders: @pos_tenders.to_a,
+        refundable_original_tenders: @refundable_original_tenders,
+        tender_method_param: params[:tender_method],
+        selected_tender_id: params[:selected_tender_id],
+        actor: Current.user,
+        store: Current.store,
+        ready_for_completion: @workspace.ready_for_completion
+      )
+    end
+
     load_return_lookup!
   end
 

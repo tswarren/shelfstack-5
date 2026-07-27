@@ -40,9 +40,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     # Integer cents still accepted (tests / non-UI clients).
     post pos_transaction_pos_tenders_path(@transaction),
-         params: { tender_type_id: @cash.id, amount_tendered_cents: 1250 }
+         params: { tender_type_id: @cash.id, amount_tendered_cents: 1250, tender_method: "cash" }
 
-    assert_redirected_to pos_transaction_path(@transaction)
+    assert_redirected_to tender_pos_transaction_path(@transaction, tender_method: "cash")
     tender = @transaction.pos_tenders.order(:created_at).last
     assert_equal 1250, tender.amount_cents
   end
@@ -53,9 +53,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     )
 
     post pos_transaction_pos_tenders_path(@transaction),
-         params: { tender_type_id: @cash.id, amount_tendered_cents: "12.50" }
+         params: { tender_type_id: @cash.id, amount_tendered_cents: "12.50", tender_method: "cash" }
 
-    assert_redirected_to pos_transaction_path(@transaction)
+    assert_redirected_to tender_pos_transaction_path(@transaction, tender_method: "cash")
     tender = @transaction.pos_tenders.order(:created_at).last
     assert_equal 1250, tender.amount_cents
   end
@@ -67,9 +67,9 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     assert_no_difference -> { @transaction.pos_tenders.count } do
       post pos_transaction_pos_tenders_path(@transaction),
-           params: { tender_type_id: @cash.id, amount_tendered_cents: "abc" }
+           params: { tender_type_id: @cash.id, amount_tendered_cents: "abc", tender_method: "cash" }
     end
-    assert_redirected_to pos_transaction_path(@transaction)
+    assert_redirected_to tender_pos_transaction_path(@transaction, tender_method: "cash")
     assert_match(/amount/i, flash[:alert])
   end
 

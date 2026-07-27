@@ -1,0 +1,39 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<% refundable_sv = tp.refundable_original_tenders.select { |t| t.tender_type.tender_category == "stored_value" } %>
+<%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post,
+      class: "form", id: tp.active_form_id do |form| %>
+  <%= hidden_field_tag :tender_method, "stored_value" %>
+  <%= hidden_field_tag :refund, "1" %>
+  <p class="muted">
+    Restore an original stored-value tender when one remains, or issue new store credit.
+    Exception approval is required to skip a remaining original tender.
+  </p>
+  <div class="field">
+    <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+    <%= form.collection_select :tender_type_id, tp.stored_value_types, :id, :name, {}, class: "input" %>
+  </div>
+  <% if refundable_sv.any? %>
+    <div class="field">
+      <%= form.label :original_pos_tender_id, "Original stored-value tender", class: "field-label" %>
+      <%= form.select :original_pos_tender_id,
+            refundable_sv.map { |t|
+              label = "#{t.stored_value_account&.account_number || t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining"
+              [ label, t.id ]
+            },
+            { include_blank: "Issue new store credit instead…" },
+            class: "input" %>
+    </div>
+  <% end %>
+  <div class="field">
+    <%= check_box_tag :create_store_credit, "1", refundable_sv.empty?, id: "create_store_credit" %>
+    <%= label_tag :create_store_credit, "Create new store-credit account (when not restoring an original)" %>
+  </div>
+  <div class="field">
+    <%= form.label :account_number, "Existing store-credit account (optional)", class: "field-label" %>
+    <%= form.text_field :account_number, class: "input", autocomplete: "off",
+          placeholder: "Leave blank to create new store credit", value: params[:account_number] %>
+  </div>
+  <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+        id: "sv_refund_amount_cents", value_cents: -@balance_due_cents %>
+  <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "sv" %>
+<% end %>

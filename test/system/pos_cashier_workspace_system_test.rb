@@ -59,7 +59,7 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
       l.extended_price_cents.to_i - l.discount_amount_cents.to_i + l.tax_amount_cents.to_i
     }
     fill_in "Amount tendered", with: format("%.2f", net / 100.0)
-    click_button "Add cash tender"
+    find("button[type=submit][form=active_tender_form]").click
     assert_text "Tender recorded"
 
     click_button "Complete transaction"
@@ -133,7 +133,7 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     click_link "Tender", href: /\/tender/
     net = Pos::RecalculateTransaction.call(pos_transaction: transaction).net_total_cents
     fill_in "Amount tendered", with: format("%.2f", net / 100.0)
-    click_button "Add cash tender"
+    find("button[type=submit][form=active_tender_form]").click
     assert_text "Tender recorded"
     click_button "Complete transaction"
     assert_text(/Transaction complete|Receipt/i, wait: 5)

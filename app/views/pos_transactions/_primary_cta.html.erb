@@ -24,8 +24,18 @@
       <p class="field-hint">Tip: Ctrl+Enter (⌘+Enter) to complete.</p>
     <% end %>
   <% when :add_payment, :add_refund %>
-    <p class="pos-balance" role="status"><%= ws.primary_label %></p>
-    <p class="field-hint">Use tender entry below.</p>
+    <% tp = @tender_presentation %>
+    <% if tp&.cta_submits_form? %>
+      <button type="submit"
+              form="<%= tp.active_form_id %>"
+              class="button button-primary button-large"
+              data-pos-register-target="progressCta">
+        <%= tp.cta_label %>
+      </button>
+      <p class="field-hint">Tip: Ctrl+Enter (⌘+Enter) submits the active tender form.</p>
+    <% else %>
+      <p class="pos-balance" role="status"><%= ws.primary_label %></p>
+    <% end %>
   <% when :resolve_blockers %>
     <p class="muted" role="status"><%= ws.primary_label %></p>
   <% when :resolve_recovery %>

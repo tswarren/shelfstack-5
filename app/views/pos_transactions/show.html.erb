@@ -92,37 +92,20 @@
     <% if recovery_mode %>
       <%= render "recovery_panel" %>
     <% elsif tender_mode %>
-      <section class="pos-sale-panel" aria-label="Payment">
-        <% if completion_failed %>
-          <div class="pos-region" role="status" aria-label="Completion failure">
-            <h2>Completion failed</h2>
-            <p>
-              <strong>Code:</strong> <%= @completion_code.presence || "validation_failed" %><br>
-              Transaction not completed. Receipt not assigned. Inventory not posted for this attempt.
-            </p>
-            <% if flash[:alert].present? %>
-              <p><%= flash[:alert] %></p>
-            <% end %>
-            <p class="muted">Use Complete in the summary rail to retry.</p>
-          </div>
-        <% end %>
-        <div class="pos-region">
-          <h2>Payment</h2>
-          <p class="pos-balance">
-            <% if @balance_due_cents.to_i.positive? %>
-              Amount due <%= pos_money(@balance_due_cents) %>
-            <% elsif @balance_due_cents.to_i.negative? %>
-              Refund due <%= pos_money(-@balance_due_cents) %>
-            <% else %>
-              Settled
-            <% end %>
+      <% if completion_failed %>
+        <div class="pos-region" role="status" aria-label="Completion failure">
+          <h2>Completion failed</h2>
+          <p>
+            <strong>Code:</strong> <%= @completion_code.presence || "validation_failed" %><br>
+            Transaction not completed. Receipt not assigned. Inventory not posted for this attempt.
           </p>
+          <% if flash[:alert].present? %>
+            <p><%= flash[:alert] %></p>
+          <% end %>
+          <p class="muted">Use Complete in the summary rail to retry.</p>
         </div>
-        <div class="pos-lines">
-          <%= render "tenders" %>
-          <%= render "tender_entry" %>
-        </div>
-      </section>
+      <% end %>
+      <%= render "pos/tender/workspace", presentation: @tender_presentation %>
     <% else %>
       <section class="pos-sale-panel" aria-label="Transaction">
         <%= render "entry_intents" %>
@@ -152,14 +135,7 @@
     <% if recovery_mode %>
       <span class="muted">Resolve Recovery in the primary workspace.</span>
     <% elsif tender_mode %>
-      <% if @pos_transaction.editable? && !@workspace.forced_tender %>
-        <%= link_to "Return to Transaction",
-              pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-              class: "button button-outline button-small",
-              data: { turbo_frame: "_top", turbo_action: "replace" } %>
-      <% elsif @workspace.forced_tender %>
-        <span class="muted" role="status">Return blocked while tender is unresolved.</span>
-      <% end %>
+      <%= render "pos/tender/commands", presentation: @tender_presentation %>
     <% else %>
       <%= render "selected_line_actions" %>
     <% end %>

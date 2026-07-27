@@ -1,0 +1,26 @@
+<% tp = local_assigns.fetch(:presentation) %>
+<% refundable_cash = tp.refundable_original_tenders.select { |t| t.tender_type.tender_category == "cash" } %>
+<%= form_with url: pos_transaction_pos_tenders_path(@pos_transaction), method: :post,
+      class: "form", id: tp.active_form_id do |form| %>
+  <%= hidden_field_tag :tender_method, "cash" %>
+  <%= hidden_field_tag :refund, "1" %>
+  <p class="muted">Link the original cash tender when restoring it. Exception approval is required for a non-original destination.</p>
+  <div class="field">
+    <%= form.label :tender_type_id, "Tender type", class: "field-label" %>
+    <%= form.collection_select :tender_type_id, tp.cash_types, :id, :name, {}, class: "input" %>
+  </div>
+  <% if refundable_cash.any? %>
+    <div class="field">
+      <%= form.label :original_pos_tender_id, "Original cash tender", class: "field-label" %>
+      <%= form.select :original_pos_tender_id,
+            refundable_cash.map { |t|
+              [ "Tender ##{t.id} — #{number_to_currency(t.remaining_refundable_cents / 100.0)} remaining", t.id ]
+            },
+            { include_blank: "Select original… (or exception below)" },
+            class: "input" %>
+    </div>
+  <% end %>
+  <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
+        id: "refund_amount_cents", value_cents: -@balance_due_cents %>
+  <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "cash" %>
+<% end %>
