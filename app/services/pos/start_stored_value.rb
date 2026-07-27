@@ -3,7 +3,8 @@
 module Pos
   # Ready-state first valid work: open (or reuse) a transaction and add a gift-card line.
   # Never leaves an empty open transaction on failure.
-  # When create_account is requested, account creation commits only with a successful line.
+  # When create_account is requested, account creation runs only after transaction
+  # context is established and immediately before AddStoredValueLine.
   class StartStoredValue < ApplicationService
     Result = Data.define(:success?, :pos_transaction, :pos_line_item, :error)
 
@@ -36,22 +37,6 @@ module Pos
           next failure("POS session is not open.")
         end
 
-        account = @account
-        if @create_account
-          created = StoredValue::CreateAccount.call(
-            organization: @organization,
-            account_type: "gift_card",
-            actor: @actor,
-            store: @store,
-            alternate_identifier: @alternate_identifier
-          )
-          unless created.success?
-            rollback_error = created.error
-            raise ActiveRecord::Rollback
-          end
-          account = created.account
-        end
-
         transaction = PosTransaction.open_transactions.find_by(active_pos_session_id: session.id)
         unless transaction
           open = OpenTransaction.call(pos_session: session, actor: @actor)
@@ -72,6 +57,22 @@ module Pos
             )
           end
           transaction.reload
+        end
+
+        account = @account
+        if @create_account
+          created = StoredValue::CreateAccount.call(
+            organization: @organization,
+            account_type: "gift_card",
+            actor: @actor,
+            store: @store,
+            alternate_identifier: @alternate_identifier
+          )
+          unless created.success?
+            rollback_error = created.error
+            raise ActiveRecord::Rollback
+          end
+          account = created.account
         end
 
         add = AddStoredValueLine.call(

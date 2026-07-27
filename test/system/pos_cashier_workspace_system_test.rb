@@ -48,8 +48,12 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     assert_text "Transaction"
 
     click_link "Tender", href: /\/tender/
+    assert_current_path tender_pos_transaction_path(transaction), ignore_query: true
     assert_selector ".pos-shell[data-pos-presentation='tender']"
     assert_text "Tender"
+    page.refresh
+    assert_selector ".pos-shell[data-pos-presentation='tender']"
+    assert_current_path tender_pos_transaction_path(transaction), ignore_query: true
 
     net = transaction.reload.pos_line_items.pending.sum { |l|
       l.extended_price_cents.to_i - l.discount_amount_cents.to_i + l.tax_amount_cents.to_i
@@ -67,6 +71,40 @@ class PosCashierWorkspaceSystemTest < ApplicationSystemTestCase
     assert_selector "section[aria-label='Start customer work']"
     assert_no_text "Resume transaction"
     assert_equal 0, PosTransaction.open_transactions.where(active_pos_session: PosSession.open_sessions.last).count
+  end
+
+  test "entry intent selection updates the URL and survives refresh" do
+    open_inventory(@variant, quantity: 2, unit_cost_cents: 500)
+
+    visit new_session_path
+    fill_in "Username", with: "admin"
+    fill_in "Password", with: "password123"
+    click_button "Sign in"
+    assert_text "Home"
+
+    day = Pos::OpenBusinessDay.call(store: @store, actor: @admin).business_day
+    Pos::OpenSession.call(
+      business_day: day, store: @store, pos_device: @device, cash_drawer: @drawer,
+      opening_cash_cents: 0, cashier: @admin, actor: @admin
+    )
+
+    visit register_path
+    within("section[aria-label='Start customer work']") do
+      fill_in "Scan or search", with: @variant.sku
+    end
+    click_button "Scan to start"
+    assert_text(/Line added|available quantity/i, wait: 5)
+    transaction = PosTransaction.order(:id).last
+
+    intent_link = find("section[aria-label='Entry intent'] a", text: /\AOpen ring\z/)
+    assert_includes intent_link[:href], "intent=open_ring"
+    intent_link.click
+    assert_selector "section[aria-label='Open-ring line']", wait: 5
+    assert_includes page.current_url, "intent=open_ring"
+    page.refresh
+    assert_includes page.current_url, "intent=open_ring"
+    assert_selector "section[aria-label='Open-ring line']"
+    assert_selector "a[aria-current='true']", text: "Open ring"
   end
 
   test "browser back after complete does not expose editable controls" do

@@ -33,15 +33,22 @@ class Phase11eRecoveryReleaseTest < ActionDispatch::IntegrationTest
 
     get pos_transaction_path(txn)
     assert_response :success
-    assert_select "body[data-pos-presentation=recovery]"
+    assert_select ".pos-shell[data-pos-presentation=recovery]"
     assert_select ".pos-recovery-panel", text: /void_required/
     assert_select ".pos-presentation-status", text: /Recovery/
     assert_select "section[aria-label='Scan or search']", count: 0
+    void_tender = txn.pos_tenders.void_required.first
+    assert_select "form[action=?]",
+      confirm_void_pos_transaction_pos_tender_path(txn, void_tender),
+      count: 1
 
     before = txn.reload.attributes.slice("status", "updated_at")
     get tender_pos_transaction_path(txn)
     assert_response :success
-    assert_select "body[data-pos-presentation=recovery]"
+    assert_select ".pos-shell[data-pos-presentation=recovery]"
+    assert_select "form[action=?]",
+      confirm_void_pos_transaction_pos_tender_path(txn, void_tender),
+      count: 1
     assert_equal before, txn.reload.attributes.slice("status", "updated_at")
   end
 

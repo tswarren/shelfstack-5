@@ -5,7 +5,11 @@
     <% if ws.ready_for_tender %>
       <%= link_to ws.primary_label, tender_pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
             class: "button button-primary button-large",
-            data: pos_workspace_turbo.merge("pos-register-target": "progressCta") %>
+            data: {
+              turbo_frame: "_top",
+              turbo_action: "advance",
+              "pos-register-target": "progressCta"
+            } %>
     <% else %>
       <p class="muted"><%= ws.primary_label %> unavailable until blockers are resolved.</p>
     <% end %>

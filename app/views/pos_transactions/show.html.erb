@@ -91,7 +91,6 @@
   <% primary = capture do %>
     <% if recovery_mode %>
       <%= render "recovery_panel" %>
-      <%= render "void_required_tenders" %>
     <% elsif tender_mode %>
       <section class="pos-sale-panel" aria-label="Payment">
         <% if completion_failed %>
@@ -104,14 +103,7 @@
             <% if flash[:alert].present? %>
               <p><%= flash[:alert] %></p>
             <% end %>
-            <% if Current.user.can?("pos.transaction.complete", store: Current.store) %>
-              <%= form_with url: complete_pos_transaction_path(@pos_transaction), method: :post,
-                    data: { turbo: false, action: "submit->pos-register#startProcessing" } do |form| %>
-                <%= hidden_field_tag :completion_idempotency_key, @completion_idempotency_key %>
-                <%= form.submit "Retry completion", class: "button button-primary",
-                      data: { "pos-register-target": "completeButton" } %>
-              <% end %>
-            <% end %>
+            <p class="muted">Use Complete in the summary rail to retry.</p>
           </div>
         <% end %>
         <div class="pos-region">
@@ -163,7 +155,8 @@
       <% if @pos_transaction.editable? && !@workspace.forced_tender %>
         <%= link_to "Return to Transaction",
               pos_transaction_path(@pos_transaction, intent: @entry_intent, selected_line_id: @selected_line_id),
-              class: "button button-outline button-small", data: pos_workspace_turbo %>
+              class: "button button-outline button-small",
+              data: { turbo_frame: "_top", turbo_action: "replace" } %>
       <% elsif @workspace.forced_tender %>
         <span class="muted" role="status">Return blocked while tender is unresolved.</span>
       <% end %>

@@ -23,8 +23,9 @@ class PosOverlaysController < ApplicationController
     return head :forbidden unless @pos_transaction.completed?
 
     @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position, :id)
-    @line_discount_cents_by_id = @pos_line_items.to_h { |line| [ line.id, line.discount_amount_cents.to_i ] }
-    @line_tax_cents_by_id = @pos_line_items.to_h { |line| [ line.id, line.tax_amount_cents.to_i ] }
+    snapshots = Pos::LineFinancialSnapshots.call(pos_line_item_ids: @pos_line_items.map(&:id))
+    @line_discount_cents_by_id = snapshots.discount_cents_by_id
+    @line_tax_cents_by_id = snapshots.tax_cents_by_id
     @subtotal_cents = @pos_transaction.subtotal_cents || 0
     @discount_total_cents = @pos_transaction.discount_total_cents || 0
     @tax_total_cents = @pos_transaction.tax_total_cents || 0

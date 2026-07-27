@@ -15,7 +15,10 @@
               pos_transaction_path(@pos_transaction, intent: intent, selected_line_id: @selected_line_id),
               class: "button button-small #{active ? 'button-primary' : 'button-outline'}",
               aria: { current: (active ? "true" : nil) },
-              data: pos_workspace_turbo.merge(intent == "sale" ? { "pos-register-target": "saleIntent" } : {}) %>
+              data: {
+                turbo_frame: "_top",
+                turbo_action: "replace"
+              }.merge(intent == "sale" ? { "pos-register-target": "saleIntent" } : {}) %>
       <% end %>
     </div>
   </section>
