@@ -1,23 +1,51 @@
 /* POS workspace — compact presentation (docs/design/pos/visual-contract.md) */
 
-.layout-pos,
-.layout-pos .pos-main,
-.pos-workspace-frame,
-.pos-shell {
+/* One viewport-tall flex column so flash/header never push the shell off-screen. */
+.layout-pos {
   height: 100dvh;
   max-height: 100dvh;
-  overflow: hidden;
-}
-
-.layout-pos {
   margin: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: var(--surface-secondary, #f6f5f2);
 }
 
 .layout-pos .pos-main {
+  flex: 1 1 auto;
+  min-height: 0;
   max-width: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.layout-pos .pos-main > .ss-alert {
+  flex: 0 0 auto;
+}
+
+.layout-pos .pos-main > [data-controller="pos-overlay"] {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pos-workspace-frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.pos-shell {
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .layout-pos .pos-presentation-status {
@@ -89,10 +117,6 @@
 }
 
 /* --- Shell geometry --- */
-
-.pos-workspace-frame {
-  display: block;
-}
 
 .pos-shell {
   display: grid;
@@ -170,6 +194,7 @@
 
 .pos-shell__summary {
   min-height: 0;
+  height: 100%;
   overflow: hidden;
   padding: var(--pos-pad-y) 0.7rem;
   border-left: 1px solid var(--border-default);
@@ -179,13 +204,17 @@
   gap: var(--pos-gap);
 }
 
+/* flex-basis 0 so this region shrinks and scrolls instead of pushing the CTA off-screen */
 .pos-shell__summary-scroll {
+  flex: 1 1 0;
   min-height: 0;
-  flex: 1 1 auto;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: var(--pos-gap);
+  padding-bottom: 0.15rem;
 }
 
 .pos-shell__commands {
@@ -655,10 +684,14 @@
 
 .pos-summary-cta {
   flex: 0 0 auto;
+  flex-shrink: 0;
   margin-top: 0;
   padding-top: 0.4rem;
   border-top: 1px solid var(--border-default);
   background: var(--surface-primary);
+  /* Keep progression action fully visible above the command bar */
+  position: relative;
+  z-index: 2;
 }
 
 .sr-only {
