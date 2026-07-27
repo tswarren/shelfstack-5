@@ -28,7 +28,7 @@ class Phase11ReadySupportingActionsTest < ActionDispatch::IntegrationTest
     assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_open_ring_path, text: "Open Ring"
     assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_cash_movement_path, text: "Cash Movement"
     assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_no_sale_path, text: "No Sale"
-    assert_select "a[href=?][data-turbo-frame=_top]", product_requests_path, text: "Pickup / Product Request"
+    assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_pickup_path, text: "Pickup / Product Request"
   end
 
   test "overlay endpoints render dialog fragments" do

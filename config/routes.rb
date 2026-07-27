@@ -130,12 +130,16 @@ Rails.application.routes.draw do
   post "register/lookup_receipt", to: "register#lookup_receipt", as: :register_lookup_receipt
   post "register/start_open_ring", to: "register#start_open_ring", as: :register_start_open_ring
   post "register/start_stored_value", to: "register#start_stored_value", as: :register_start_stored_value
+  post "register/start_pickup", to: "register#start_pickup", as: :register_start_pickup
   post "register/stage_customer", to: "pos_customers#stage", as: :register_stage_customer
   post "register/clear_staged_customer", to: "pos_customers#clear_stage", as: :register_clear_staged_customer
+  post "register/create_customer", to: "pos_customers#create", as: :register_create_customer
 
   scope path: "pos/overlays", as: :pos_overlay, controller: "pos_overlays" do
     get :product_lookup
     get :customer
+    get :customer_create
+    get :pickup
     get :receipt_lookup
     get :receipt_detail
     get :open_ring

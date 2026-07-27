@@ -15,8 +15,8 @@
     <% end %>
     <% if Current.user.can?("customers.customer.create", store: Current.store) %>
       <p class="field-hint">
-        <%= link_to "Create customer", new_customer_path, class: "button button-small button-ghost",
-              data: { turbo_frame: "_top" } %>
+        <%= link_to "Create customer", pos_overlay_customer_create_path,
+              class: "button button-small button-ghost", data: pos_overlay_turbo %>
       </p>
     <% end %>
   <% end %>

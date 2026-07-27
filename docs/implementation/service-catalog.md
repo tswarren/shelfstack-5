@@ -372,6 +372,7 @@ read already-posted facts (AGENTS.md §4, "Reporting consumes posted source reco
 | `Pos::WorkspacePresentation` | Point of Sale | 6.5 | No | Yes | None | Open/completed txn + optional presentation param + readiness + totals | Derived cashier presentation state (`ready` / `transaction` / `tender` / `receipt` / `recovery`) and primary CTA labels — not a persisted status |
 | `Pos::ProjectCompletionReadiness` | Point of Sale | 6.5 | No | Yes | None | Open txn | Side-effect-free issues (blocker/warning/approval/info) + tender/completion readiness; shares nonmutating checks with completion; **never** called as a substitute for `ValidateCompletionReadiness` under locks |
 | `Pos::ScanToStart` | Point of Sale | 6.5 | Yes | No | Via `OpenTransaction` / `AddLine` | Open session, actor, query, quantity | Resolve-first Ready scan: opens + adds only when resolved; rolls back empty txn on failure; reuses existing open txn for the session |
+| `Pos::StartPickup` | Point of Sale | 11B | Yes | No | Via `OpenTransaction` / `AddLine` | Open session, actor, open customer `ProductRequest`, quantity | Ready/in-shell pickup: opens + adds a linked sale line only when the request is eligible; rolls back empty txn on failure; fulfilment remains `CompleteTransaction` → `RecordFulfillment` |
 
 ### Phase 6.5 notes
 

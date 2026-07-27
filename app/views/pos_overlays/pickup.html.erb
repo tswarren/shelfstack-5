@@ -1,0 +1,43 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Pickup / Product Request" } do %>
+    <p class="muted">Select an open customer request to start a transaction with the pickup line.</p>
+    <% if @fulfillable_customer_requests.blank? %>
+      <p class="muted">No open customer requests with outstanding quantity at this store.</p>
+      <p class="field-hint">
+        <%= link_to "Browse all product requests", product_requests_path,
+              class: "button button-small button-ghost", data: { turbo_frame: "_top" } %>
+      </p>
+    <% else %>
+      <%= form_with url: register_start_pickup_path, method: :post, class: "form",
+            data: { turbo_frame: "_top" } do |form| %>
+        <div class="field">
+          <%= form.label :product_request_id, "Customer request", class: "field-label" %>
+          <%= form.select :product_request_id,
+                @fulfillable_customer_requests.map { |request|
+                  label = [
+                    "##{request.id}",
+                    request.customer&.display_name.presence,
+                    request.product_variant&.name.presence || request.product&.name,
+                    "qty #{request.outstanding_quantity}"
+                  ].compact.join(" · ")
+                  [ label, request.id ]
+                },
+                { include_blank: "Select a request…" },
+                class: "input",
+                required: true %>
+        </div>
+        <div class="field">
+          <label class="field-label" for="ready_pickup_quantity">Qty</label>
+          <%= number_field_tag :quantity, 1, id: "ready_pickup_quantity", min: 1, class: "input input-qty" %>
+        </div>
+        <div class="form-actions">
+          <%= form.submit "Start with pickup", class: "button button-primary" %>
+        </div>
+      <% end %>
+      <p class="field-hint">
+        <%= link_to "Browse all product requests", product_requests_path,
+              class: "button button-small button-ghost", data: { turbo_frame: "_top" } %>
+      </p>
+    <% end %>
+  <% end %>
+<% end %>

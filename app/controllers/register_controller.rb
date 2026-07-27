@@ -7,7 +7,7 @@ class RegisterController < ApplicationController
 
   before_action -> { require_permission!("pos.access") }
   before_action -> { require_permission!("pos.transaction.open") },
-                only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value]
+                only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value start_pickup]
   before_action -> { require_permission!("pos.return.create") },
                 only: :lookup_receipt,
                 if: -> { ActiveModel::Type::Boolean.new.cast(params[:start_linked_return]) }
@@ -154,6 +154,27 @@ class RegisterController < ApplicationController
     end
   rescue ArgumentError => e
     redirect_to register_path, alert: e.message
+  end
+
+  def start_pickup
+    load_register_context!
+    return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
+
+    product_request = Current.store.product_requests.find_by(id: params[:product_request_id])
+    result = Pos::StartPickup.call(
+      pos_session: @open_session,
+      actor: Current.user,
+      product_request: product_request,
+      quantity: params[:quantity].presence || 1
+    )
+    if result.success?
+      redirect_to pos_transaction_path(result.pos_transaction, intent: "sale"),
+                  notice: "Pickup line added."
+    elsif result.pos_transaction
+      redirect_to pos_transaction_path(result.pos_transaction), alert: result.error
+    else
+      redirect_to register_path, alert: result.error
+    end
   end
 
   private

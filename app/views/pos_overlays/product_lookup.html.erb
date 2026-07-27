@@ -12,7 +12,7 @@
               label: "Product variant",
               required: true,
               include_blank: false,
-              hint: "Search by name, ISBN, SKU, or identifier." %>
+              hint: "Search by name, ISBN, SKU, creator, or identifier. Exact inventory-unit IDs appear here; scan to add a specific unit." %>
         <div class="field">
           <label class="field-label" for="overlay_lookup_quantity">Qty</label>
           <%= number_field_tag :quantity, 1, id: "overlay_lookup_quantity", min: 1, class: "input input-qty" %>
@@ -31,7 +31,7 @@
               label: "Product variant",
               required: true,
               include_blank: false,
-              hint: "Search by name, ISBN, SKU, or identifier." %>
+              hint: "Search by name, ISBN, SKU, creator, or identifier. Exact inventory-unit IDs appear here; scan to add a specific unit." %>
         <div class="field">
           <label class="field-label" for="ready_lookup_quantity">Qty</label>
           <%= number_field_tag :quantity, 1, id: "ready_lookup_quantity", min: 1, class: "input input-qty" %>

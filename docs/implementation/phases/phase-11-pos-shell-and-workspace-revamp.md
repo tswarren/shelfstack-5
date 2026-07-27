@@ -518,7 +518,11 @@ Gate B is accepted when the cashier can perform the supported transaction-entry 
 * Product Request pickup;
 * stored-value issuance and reload.
 
-**Unlinked returns (Path A Must slice):** `Pos::AddUnlinkedReturnLine` supports `external_receipt` / `gift_receipt` / `no_receipt` for product (quantity/none) and open-ring lines with explicit refund unit price + tax basis; `no_receipt` uses `pos.return.no_receipt` + `maximum_no_receipt_return_cents` via `Pos::AuthorizeAction` (`no_receipt_return`). Individually tracked unlinked returns remain out of this slice (require linked originals). Remaining Gate B shell gaps (in-shell pickup, compact customer create) are tracked separately from this return Must.
+**Status (implementation):** Entry workflows above are in-shell on this branch (including Path A unlinked returns, Ready pickup overlay → `Pos::StartPickup`, compact customer create → stage, and lookup Creator/unit-id search). Formal issue close for [#132](https://github.com/tswarren/shelfstack-5/issues/132) follows PR merge.
+
+**Unlinked returns (Path A Must slice):** `Pos::AddUnlinkedReturnLine` supports `external_receipt` / `gift_receipt` / `no_receipt` for product (quantity/none) and open-ring lines with explicit refund unit price + tax basis; `no_receipt` uses `pos.return.no_receipt` + `maximum_no_receipt_return_cents` via `Pos::AuthorizeAction` (`no_receipt_return`). Individually tracked unlinked returns remain out of this slice (require linked originals).
+
+**In-shell pickup + compact customer create:** Ready `Pickup / Product Request` opens `pos/overlays/pickup` and `Pos::StartPickup` opens/reuses a transaction with a linked request line (does not call `RecordFulfillment` — completion still owns fulfilment). Customer overlay `Create customer` stays in-shell via `pos/overlays/customer_create` → `PosCustomersController#create` → stage. Product lookup picker search includes Creator name and exact Inventory Unit identifier (unit add for individual-tracked copies remains scan/`ResolveScan`).
 
 ---
 
@@ -603,6 +607,8 @@ The cashier can settle realistic payment and refund combinations.
 
 Gate C is accepted when realistic cash, standalone-card, stored-value, refund, and split-tender combinations can be completed atomically and idempotently.
 
+**Acceptance bar (automated):** `test/services/pos/phase_11c_tender_contract_matrix_test.rb` holds one contract each for cash, standalone card, stored-value redemption, cash+card split, and linked-return cash refund, plus forced-tender / void-required / receipt-immutability shell checkpoints. Edge-policy coverage remains in dedicated tender/refund/SV service tests. Formal issue close for [#133](https://github.com/tswarren/shelfstack-5/issues/133) follows PR merge + this matrix green.
+
 ---
 
 # Gate D — Customer-facing completion
@@ -680,7 +686,7 @@ Gate D is accepted when:
 * presentation or printing failure cannot reverse completion;
 * any undelivered Should scope is explicitly retained in DWR-017.
 
-**Implementation note:** Exit criteria above are met in code on the Phase 11 layout branch; undelivered Should items are listed under §15.2 and DWR-017. Layout Gate L5/L7 manual viewport scoring remains separate from Gate D Must acceptance.
+**Implementation note:** Exit criteria above are met in code on the Phase 11 layout branch; undelivered Should items are listed under §15.2 and DWR-017. Layout Gate L5/L7 manual viewport scoring remains separate from Gate D Must acceptance. Hygiene coverage includes reprint denial without `pos.receipt.reprint` (`phase_11d_customer_receipt_test`). Formal issue close for [#134](https://github.com/tswarren/shelfstack-5/issues/134) follows PR merge.
 
 ---
 

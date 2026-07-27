@@ -16,6 +16,31 @@ class PosOverlaysController < ApplicationController
     head :forbidden unless can_view_customers?
   end
 
+  def customer_create
+    return head :forbidden unless Current.user.can?("customers.customer.create", store: Current.store)
+
+    @customer = Current.organization.customers.new(
+      customer_type: "individual",
+      preferred_contact_method: "none",
+      country_code: Current.store&.country_code,
+      region: Current.store&.region,
+      active: true
+    )
+    @possible_duplicates = []
+  end
+
+  def pickup
+    return head :forbidden unless @open_session
+    return head :forbidden unless Current.user.can?("requests.product_request.view", store: Current.store) ||
+      Current.user.can?("pos.transaction.open", store: Current.store)
+
+    @fulfillable_customer_requests = Current.store.product_requests.open_requests
+      .where(request_type: "customer_request")
+      .includes(:product, :product_variant, :customer)
+      .order(:created_at)
+      .select { |request| request.outstanding_quantity.positive? }
+  end
+
   def receipt_lookup; end
 
   def receipt_detail

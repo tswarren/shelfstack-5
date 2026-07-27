@@ -94,9 +94,8 @@
           <%= link_to "Stored Value", pos_overlay_stored_value_path,
                 class: "button button-ghost button-small", data: pos_overlay_turbo %>
         <% end %>
-        <%= link_to "Pickup / Product Request", product_requests_path,
-              class: "button button-ghost button-small",
-              data: { turbo_frame: "_top" } %>
+        <%= link_to "Pickup / Product Request", pos_overlay_pickup_path,
+              class: "button button-ghost button-small", data: pos_overlay_turbo %>
       </div>
     </section>
   <% else %>

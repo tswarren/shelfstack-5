@@ -148,4 +148,25 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
     assert_select "a", text: "Next transaction"
     assert_select "a", text: "Print"
   end
+
+  test "reprint without pos.receipt.reprint is denied and does not mutate completion" do
+    post session_path, params: { username: "admin", password: "password123" }
+    txn, = pos_complete_cash_sale(
+      session: @session, variant: @variant, quantity: 1, actor: @admin,
+      cash: @cash, key: "11d-reprint-denied"
+    )
+    before = txn.reload.attributes.slice("status", "receipt_number", "net_total_cents")
+
+    delete session_path
+    post session_path, params: { username: "clerk", password: "password123" }
+
+    get customer_receipt_pos_transaction_path(txn, reprint: true)
+    assert_redirected_to root_path
+    assert_match(/not authorized/i, flash[:alert].to_s)
+    assert_equal before, txn.reload.attributes.slice("status", "receipt_number", "net_total_cents")
+
+    get customer_receipt_pos_transaction_path(txn)
+    assert_response :success
+    refute_match(/REPRINT/, response.body)
+  end
 end

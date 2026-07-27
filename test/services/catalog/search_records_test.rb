@@ -142,6 +142,21 @@ class CatalogSearchRecordsTest < ActiveSupport::TestCase
     assert_includes results.map(&:id), variant.id
   end
 
+  test "finds variants by creator name" do
+    product = products(:sample_book)
+    variant = product_variants(:sample_book_standard)
+    creator = creators(:ursula_le_guin)
+    ProductCreator.create!(product: product, creator: creator, role: "author", position: 0)
+
+    results = Catalog::SearchRecords.call(
+      organization: @organization,
+      record_type: "product_variant",
+      query: "le guin"
+    )
+
+    assert_includes results.map(&:id), variant.id
+  end
+
   test "inactive vendor results include inactive flag when requested" do
     results = Catalog::SearchRecords.call(
       organization: @organization,
