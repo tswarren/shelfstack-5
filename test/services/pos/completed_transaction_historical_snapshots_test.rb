@@ -25,8 +25,10 @@ module Pos
         session: @session, variant: @variant, quantity: 1, actor: @admin,
         cash: @cash, key: "hist-sale"
       )
+      @original_product_name = @product.name
       @line_snapshot = {
         description_snapshot: @line.description_snapshot,
+        identifier_snapshot: @line.identifier_snapshot,
         department_id: @line.department_id,
         tax_category_id: @line.tax_category_id,
         unit_price_cents: @line.unit_price_cents,
@@ -55,7 +57,9 @@ module Pos
 
       @line.reload
       @tender.reload
-      assert_nil @line.description_snapshot
+      assert_equal @original_product_name, @line.description_snapshot
+      assert_equal @line_snapshot[:description_snapshot], @line.description_snapshot
+      assert_equal @line_snapshot[:identifier_snapshot], @line.identifier_snapshot
       assert_equal @line_snapshot[:department_id], @line.department_id
       assert_equal @line_snapshot[:tax_category_id], @line.tax_category_id
       assert_equal @line_snapshot[:unit_price_cents], @line.unit_price_cents

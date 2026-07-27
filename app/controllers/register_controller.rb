@@ -8,6 +8,9 @@ class RegisterController < ApplicationController
   before_action -> { require_permission!("pos.access") }
   before_action -> { require_permission!("pos.transaction.open") },
                 only: %i[scan_to_start lookup_receipt start_open_ring start_stored_value]
+  before_action -> { require_permission!("pos.return.create") },
+                only: :lookup_receipt,
+                if: -> { ActiveModel::Type::Boolean.new.cast(params[:start_linked_return]) }
 
   def show
     load_register_context!
@@ -81,6 +84,10 @@ class RegisterController < ApplicationController
       return redirect_to register_path, alert: "No completed receipt found for that number."
     end
 
+    if ActiveModel::Type::Boolean.new.cast(params[:start_linked_return])
+      return start_linked_return_from_lookup!(txn)
+    end
+
     redirect_to pos_transaction_path(txn)
   end
 
@@ -150,6 +157,39 @@ class RegisterController < ApplicationController
   end
 
   private
+
+  def start_linked_return_from_lookup!(original)
+    returnable = original.pos_line_items
+      .where(status: "completed", direction: "sale")
+      .where.not(line_kind: "stored_value")
+      .any? { |line| line.remaining_returnable_quantity.positive? }
+    unless returnable
+      return redirect_to pos_transaction_path(original), alert: "No returnable lines remain on this receipt."
+    end
+
+    if @open_session.blank?
+      return redirect_to register_path, alert: "Open a POS session first."
+    end
+
+    can_open = Current.user.can?("pos.transaction.open", store: Current.store)
+    opened = Pos::FindOrOpenActiveTransaction.call(
+      pos_session: @open_session,
+      actor: Current.user,
+      create_if_missing: can_open
+    )
+    unless opened.success?
+      return redirect_to pos_transaction_path(original), alert: opened.error
+    end
+
+    open_txn = opened.pos_transaction
+    session[:pos_return_lookup] = {
+      "for_transaction_id" => open_txn.id,
+      "original_transaction_id" => original.id,
+      "receipt_number" => original.receipt_number
+    }
+    redirect_to pos_transaction_path(open_txn, intent: "return"),
+                notice: "Receipt #{original.receipt_number} loaded for return."
+  end
 
   def resolve_ready_stored_value_account
     identifier = params[:account_number].presence || params[:alternate_identifier].presence

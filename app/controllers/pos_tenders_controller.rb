@@ -101,10 +101,10 @@ class PosTendersController < ApplicationController
       redirect_to pos_transaction_path(@pos_transaction),
                   notice: "Unattachable card authorization recorded as voided."
     else
-      redirect_to tender_return_path, alert: result.error
+      redirect_to pos_transaction_path(@pos_transaction), alert: result.error
     end
   rescue ArgumentError, ActiveRecord::RecordNotFound => e
-    redirect_to tender_return_path, alert: e.message
+    redirect_to pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def destroy

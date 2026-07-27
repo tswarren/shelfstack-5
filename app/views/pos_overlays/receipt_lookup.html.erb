@@ -7,6 +7,14 @@
         <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
         <%= text_field_tag :receipt_number, nil, class: "input", autocomplete: "off", autofocus: true %>
       </div>
+      <% if Current.user.can?("pos.return.create", store: Current.store) %>
+        <div class="checkbox-group">
+          <label>
+            <%= check_box_tag :start_linked_return, "true", false %>
+            Start linked return after lookup
+          </label>
+        </div>
+      <% end %>
       <div class="form-actions">
         <%= form.submit "Look up receipt", class: "button button-primary" %>
       </div>

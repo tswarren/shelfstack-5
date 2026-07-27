@@ -1,7 +1,7 @@
 # Current Phase
 
 **Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L3 composition landed; L7 viewport acceptance still open
+**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L5 composition landed; Gate D §15.1 Must receipt core in place; L7 viewport acceptance still open
 
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
 **Layout gates:** [../design/pos/layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)  
@@ -23,7 +23,7 @@
 
 ## Immediate next work
 
-1. Finish [#150](https://github.com/tswarren/shelfstack-5/pull/150) Gate L7 viewport acceptance ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md)); promote POS-UI-020–037 only after Accepted. Tender composition (Gate L3) is implemented via `Pos::TenderPresentation` + `pos/tender/*`.
+1. Finish [#150](https://github.com/tswarren/shelfstack-5/pull/150) Gate L7 viewport acceptance ([layout-acceptance-status.md](../design/pos/layout-acceptance-status.md)); promote POS-UI-020–037 only after Accepted. Gate D §15.1 Must receipt core is implemented (`pos/receipt/*` + printable `customer_receipt`); §15.2 Should residuals remain on DWR-017. Next layout gates: L6 overlay polish → L7 acceptance.
 2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
 3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
 4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.

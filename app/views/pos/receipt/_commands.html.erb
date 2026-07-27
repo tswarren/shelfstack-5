@@ -1,0 +1,6 @@
+<%= link_to "Print", customer_receipt_pos_transaction_path(@pos_transaction),
+      class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+<% if Current.user.can?("pos.receipt.reprint", store: Current.store) %>
+  <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
+        class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+<% end %>

@@ -41,6 +41,7 @@ module Pos
 
         product_request = lock_and_validate_product_request!(transaction)
 
+        product = @product_variant.product
         line = PosLineItem.create!(
           pos_transaction: transaction,
           line_kind: "product",
@@ -49,6 +50,8 @@ module Pos
           inventory_unit: individual ? @inventory_unit : nil,
           department: department,
           tax_category: classification.tax_category,
+          description_snapshot: product.name,
+          identifier_snapshot: product.identifier.presence || @product_variant.sku,
           quantity: @quantity,
           unit_price_cents: resolved_unit_price_cents(individual),
           position: next_position,

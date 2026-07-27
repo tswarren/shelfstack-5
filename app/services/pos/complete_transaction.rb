@@ -109,7 +109,16 @@ module Pos
 
         tenders.each { |tender| post_stored_value_tender!(tender, transaction, locked_sv_accounts) }
 
-        lines.each { |line| line.update!(status: "completed", completed_at: now) }
+        lines.each do |line|
+          attrs = { status: "completed", completed_at: now }
+          # Freeze catalog presentation facts if an older path left them blank.
+          if line.description_snapshot.blank? && line.product_variant&.product.present?
+            product = line.product_variant.product
+            attrs[:description_snapshot] = product.name
+            attrs[:identifier_snapshot] = product.identifier.presence || line.product_variant.sku if line.identifier_snapshot.blank?
+          end
+          line.update!(attrs)
+        end
         tenders.each { |tender| tender.update!(status: "completed", completed_at: now) }
 
         store = Store.lock.find(transaction.store_id)

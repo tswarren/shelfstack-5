@@ -1,0 +1,30 @@
+<% tender = local_assigns.fetch(:tender) %>
+<% autofocus = local_assigns.fetch(:autofocus, false) %>
+<div class="pos-recovery-actions" aria-label="Permitted recovery actions">
+  <%= form_with url: confirm_void_pos_transaction_pos_tender_path(@pos_transaction, tender),
+        method: :post, class: "form pos-recovery-confirm-form" do |form| %>
+    <div class="field">
+      <%= form.label :external_void_reference, "External void reference (optional)", class: "field-label" %>
+      <%= form.text_field :external_void_reference, class: "input",
+            autofocus: autofocus %>
+    </div>
+    <div class="checkbox-group">
+      <label>
+        <%= check_box_tag :external_void_confirmed, "true", false,
+              id: "external_void_confirmed_#{tender.id}" %>
+        External void confirmed on the terminal
+      </label>
+    </div>
+    <div class="form-actions pos-recovery-action-group">
+      <%= form.submit "Void confirmed",
+            class: "button button-primary button-large",
+            data: {
+              turbo_confirm: "Confirm the card was voided on the external terminal before continuing."
+            } %>
+      <%= link_to "Void failed / escalate", root_path,
+            class: "button button-outline button-large",
+            data: { turbo_frame: "_top" },
+            title: "Leave POS for Store Operations help. The transaction remains blocked in Recovery." %>
+    </div>
+  <% end %>
+</div>

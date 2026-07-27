@@ -140,9 +140,9 @@ class PosRefundUiSystemTest < ApplicationSystemTestCase
     submit_active_tender!
     assert_text(/Confirm external void|not attachable|exceeds remaining/i)
 
-    within("section[aria-label='Recovery'], .pos-recovery-panel") do
-      check "External void confirmed"
-      accept_confirm { click_button "Record voided card tender" }
+    within("section[aria-label='Recovery'], .pos-recovery-workspace") do
+      check "External void confirmed on the terminal"
+      accept_confirm { click_button "Void confirmed" }
     end
     assert_text(/voided/i)
     voided = txn.pos_tenders.where(status: "voided").last

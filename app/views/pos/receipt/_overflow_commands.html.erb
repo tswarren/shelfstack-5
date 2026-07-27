@@ -1,0 +1,17 @@
+<%= link_to "View detail",
+      pos_overlay_receipt_detail_path(pos_transaction_id: @pos_transaction.id),
+      class: "button button-ghost button-small",
+      data: pos_overlay_turbo %>
+<% returnable = @pos_transaction.pos_line_items
+     .where(status: "completed", direction: "sale")
+     .where.not(line_kind: "stored_value")
+     .any? { |line| line.remaining_returnable_quantity.positive? } %>
+<% if returnable && Current.user.can?("pos.return.create", store: Current.store) %>
+  <%= button_to "Start linked return", start_linked_return_pos_transaction_path(@pos_transaction),
+        method: :post, class: "button button-outline button-small",
+        form: { data: { turbo_frame: "_top" } } %>
+<% end %>
+<% if @pos_transaction.reverses_pos_transaction_id.blank? && !@pos_transaction.post_void_transaction && !@pos_transaction.void_required_tenders? %>
+  <%= link_to "Post-void", post_void_form_pos_transaction_path(@pos_transaction),
+        class: "button button-ghost button-small", data: { turbo_frame: "_top" } %>
+<% end %>

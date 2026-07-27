@@ -1,0 +1,28 @@
+<% void_required = local_assigns.fetch(:void_required_tenders) %>
+<div class="pos-region pos-recovery-void-required" aria-label="Void-required tenders">
+  <% if void_required.empty? %>
+    <p class="muted">No void-required tenders remain. Refresh if Recovery persists.</p>
+  <% elsif Current.user.can?("pos.tender.card_void", store: Current.store) %>
+    <% void_required.each_with_index do |tender, index| %>
+      <article class="pos-recovery-item" aria-label="Void-required tender <%= index + 1 %>">
+        <h3>
+          <%= tender.tender_type.name %>
+          · <%= tender.direction == "refunded" ? "refund" : "payment" %>
+          · <%= pos_money(tender.amount_cents) %>
+        </h3>
+        <p class="muted">
+          <%= pos_masked_tender_reference(tender) %>
+          <% if tender.void_reason.present? %>
+            · <%= tender.void_reason %>
+          <% end %>
+        </p>
+        <%= render "pos/recovery/allowed_actions", tender: tender, autofocus: index.zero? %>
+      </article>
+    <% end %>
+  <% else %>
+    <p role="alert">
+      This transaction has void-required card activity that must be confirmed by a user with
+      card-void permission before complete, suspend, or cancel can proceed.
+    </p>
+  <% end %>
+</div>

@@ -1,0 +1,11 @@
+<p class="pos-receipt-number">Receipt <strong><%= @pos_transaction.receipt_number %></strong></p>
+<p class="muted">Completed <%= formatted_datetime(@pos_transaction.completed_at, format: :receipt) %></p>
+<% if @pos_transaction.customer.present? %>
+  <% if can_lookup_customers? %>
+    <p>Customer: <strong><%= @pos_transaction.customer.display_name %></strong>
+      <code><%= @pos_transaction.customer.customer_number %></code></p>
+  <% else %>
+    <p class="muted">Customer attached.</p>
+  <% end %>
+<% end %>
+<p class="pos-balance">Final total <%= pos_money(@pos_transaction.net_total_cents) %></p>

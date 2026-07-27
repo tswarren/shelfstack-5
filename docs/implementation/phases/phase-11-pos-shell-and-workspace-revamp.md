@@ -625,6 +625,8 @@ The mandatory receipt core includes:
 * print or display failure does not reverse completion;
 * Receipt Lookup cannot mutate the transaction.
 
+**Status (implementation):** Must core is in place — interactive Receipt via `pos/receipt/*`; printable `customer_receipt` on `layouts/pos_receipt`; line `description_snapshot` / `identifier_snapshot`; store address + configured `receipt_header` / `receipt_footer` rendering; lookup; reprint gated by `pos.receipt.reprint` and marked `REPRINT`; completion isolated from print/display. Manual viewport acceptance for layout Gate L5 remains open.
+
 Gate D may be accepted when this mandatory core is complete.
 
 ## 15.2 Should — first scope cuts
@@ -638,6 +640,19 @@ The following remain planned Phase 11 work but may be deferred without preventin
 * expanded template formatting;
 * begin linked return directly from Receipt Lookup;
 * current receipt header/footer administration beyond existing configuration.
+
+**Status (implementation):**
+
+| Should item | Disposition |
+| --- | --- |
+| Begin linked return from Receipt Lookup | **Delivered** — lookup overlay checkbox → opens return intent |
+| Richer return / mixed / post-void presentation | **Partial** — document banners + original-receipt reference; fuller templates remain residual |
+| Expanded template formatting | **Partial beyond Must** — Must already includes minimal browser-print formatting (`layouts/pos_receipt`, hide toolbar on print, narrow receipt column, item/discount/net rows, totals). Residual is richer template variants / administration, not the absence of printable formatting |
+| Receipt header/footer administration UI | **Deferred** — fields render when set; admin UI remains [DWR-019](../deferred-work-register.md) |
+| Non-itemized gift receipt | **Re-registered** under [DWR-017](../deferred-work-register.md) |
+| Dedicated SV issue/reload slip | **Re-registered** under DWR-017 |
+| Receipt-number barcode | **Re-registered** under DWR-017 |
+| Persisted print-event audit (INV-POS-014) | **Re-registered** under DWR-017 (browser reprint remains functional) |
 
 Any Should item not delivered must be explicitly re-registered under DWR-017 rather than silently dropped.
 
@@ -662,6 +677,8 @@ Gate D is accepted when:
 * reprinting does not recalculate commercial history;
 * presentation or printing failure cannot reverse completion;
 * any undelivered Should scope is explicitly retained in DWR-017.
+
+**Implementation note:** Exit criteria above are met in code on the Phase 11 layout branch; undelivered Should items are listed under §15.2 and DWR-017. Layout Gate L5/L7 manual viewport scoring remains separate from Gate D Must acceptance.
 
 ---
 

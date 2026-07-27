@@ -1,0 +1,3 @@
+<% if @change_due_cents.to_i.positive? %>
+  <p class="pos-balance pos-change">Change due <%= pos_money(@change_due_cents) %></p>
+<% end %>

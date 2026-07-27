@@ -1,0 +1,7 @@
+<% void_required = local_assigns.fetch(:void_required_tenders) %>
+<section class="pos-sale-panel pos-recovery-workspace" aria-label="Recovery"
+         data-pos-register-target="recoveryPanel">
+  <%= render "pos/recovery/incident_summary" %>
+  <%= render "pos/recovery/verification_steps" %>
+  <%= render "pos/recovery/void_required", void_required_tenders: void_required %>
+</section>

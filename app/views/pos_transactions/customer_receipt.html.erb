@@ -1,4 +1,6 @@
 <% content_for :title, "Receipt #{@pos_transaction.receipt_number}" %>
+<% net_merchandise_cents = @pos_transaction.subtotal_cents.to_i - @pos_transaction.discount_total_cents.to_i %>
+<% document_banner = pos_receipt_document_banner(@pos_transaction) %>
 
 <div class="pos-receipt-toolbar no-print">
   <p class="muted">Browser print path only — no managed printer queue.</p>
@@ -14,18 +16,37 @@
     <p class="pos-receipt-reprint" role="status"><strong>REPRINT</strong></p>
   <% end %>
 
+  <% if document_banner.present? && document_banner != "RECEIPT" %>
+    <p class="pos-receipt-banner" role="status"><strong><%= document_banner %></strong></p>
+  <% end %>
+
   <header class="pos-receipt-header">
     <h1><%= Current.store.name %></h1>
     <p class="muted"><%= Current.organization.name %></p>
-    <% if Current.store.respond_to?(:address_line1) && Current.store.try(:address_line1).present? %>
-      <p class="muted"><%= Current.store.address_line1 %></p>
+    <% pos_store_address_lines.each do |line| %>
+      <p class="muted"><%= line %></p>
+    <% end %>
+    <% if Current.store.receipt_header.present? %>
+      <p class="pos-receipt-store-text"><%= simple_format(Current.store.receipt_header) %></p>
     <% end %>
   </header>
 
   <p>
     Receipt <strong><%= @pos_transaction.receipt_number %></strong><br>
-    <span class="muted"><%= formatted_datetime(@pos_transaction.completed_at, format: :short) %></span>
+    <span class="muted"><%= formatted_datetime(@pos_transaction.completed_at, format: :receipt) %></span>
   </p>
+
+  <% if @receipt_register_label.present? || @receipt_cashier_label.present? %>
+    <p class="muted">
+      <% if @receipt_register_label.present? %>Register <%= @receipt_register_label %><% end %>
+      <% if @receipt_register_label.present? && @receipt_cashier_label.present? %> · <% end %>
+      <% if @receipt_cashier_label.present? %>Cashier: <%= @receipt_cashier_label %><% end %>
+    </p>
+  <% end %>
+
+  <% if @pos_transaction.reverses_pos_transaction.present? %>
+    <p class="muted">Original receipt <%= @pos_transaction.reverses_pos_transaction.receipt_number %></p>
+  <% end %>
 
   <% if @pos_transaction.customer.present? && can_lookup_customers? %>
     <p>
@@ -34,34 +55,28 @@
     </p>
   <% end %>
 
-  <table class="data-table pos-receipt-lines">
-    <thead>
-      <tr>
-        <th scope="col">Item</th>
-        <th scope="col" class="num">Qty</th>
-        <th scope="col" class="num">Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @receipt_lines.each do |line| %>
-        <tr>
-          <td>
-            <%= line.effective_description.presence || line.description_snapshot.presence || "Line" %>
-            <% if line.direction == "return" %>
-              <span class="muted">(return)</span>
-            <% end %>
-          </td>
-          <td class="num"><%= line.quantity %></td>
-          <td class="num"><%= pos_money(line.extended_price_cents.to_i * (line.direction == "return" ? -1 : 1)) %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <section class="pos-receipt-lines" aria-label="Merchandise">
+    <% @receipt_lines.each do |line| %>
+      <%= render "customer_receipt_line", line: line %>
+    <% end %>
+  </section>
 
   <dl class="definition-grid pos-totals">
-    <div class="definition-item"><dt>Subtotal</dt><dd><%= pos_money(@pos_transaction.subtotal_cents) %></dd></div>
-    <div class="definition-item"><dt>Discount</dt><dd><%= pos_money(@pos_transaction.discount_total_cents) %></dd></div>
-    <div class="definition-item"><dt>Tax</dt><dd><%= pos_money(@pos_transaction.tax_total_cents) %></dd></div>
+    <div class="definition-item"><dt>Merchandise</dt><dd><%= pos_money(@pos_transaction.subtotal_cents) %></dd></div>
+    <% if @pos_transaction.discount_total_cents.to_i.positive? %>
+      <div class="definition-item"><dt>Discounts</dt><dd><%= pos_money(-@pos_transaction.discount_total_cents) %></dd></div>
+      <div class="definition-item"><dt>Net merchandise</dt><dd><%= pos_money(net_merchandise_cents) %></dd></div>
+    <% end %>
+    <% if @receipt_tax_components.present? %>
+      <% @receipt_tax_components.each do |component| %>
+        <div class="definition-item">
+          <dt><%= component[:label] %></dt>
+          <dd><%= pos_money(component[:amount_cents]) %></dd>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="definition-item"><dt>Tax</dt><dd><%= pos_money(@pos_transaction.tax_total_cents) %></dd></div>
+    <% end %>
     <div class="definition-item"><dt>Total</dt><dd class="pos-balance"><%= pos_money(@pos_transaction.net_total_cents) %></dd></div>
   </dl>
 
@@ -80,5 +95,9 @@
     </ul>
   <% end %>
 
-  <p class="muted pos-receipt-footer">Thank you.</p>
+  <% if Current.store.receipt_footer.present? %>
+    <div class="pos-receipt-store-text muted"><%= simple_format(Current.store.receipt_footer) %></div>
+  <% else %>
+    <p class="muted pos-receipt-footer">Thank you.</p>
+  <% end %>
 </article>

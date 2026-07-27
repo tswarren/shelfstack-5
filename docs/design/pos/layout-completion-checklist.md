@@ -183,18 +183,18 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Recovery occupies the primary workspace
-- [ ] Incident + numbered verification steps in operational language
-- [ ] Affected tender/amount visible in summary
-- [ ] Unsafe tender-entry controls absent (not merely muted)
-- [ ] Closed-list permitted actions only; primary resolution focused
-- [ ] `void_required` review scenario Accepted
+- [x] Recovery occupies the primary workspace
+- [x] Incident + numbered verification steps in operational language
+- [x] Affected tender/amount visible in summary
+- [x] Unsafe tender-entry controls absent (not merely muted)
+- [x] Closed-list permitted actions only; primary resolution focused
+- [ ] `void_required` review scenario Accepted at both viewports (manual)
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
-| `_recovery_panel` / `_void_required_tenders` | Promote to `presentations/_recovery` + `recovery/*` |
+| `_recovery_panel` / `_void_required_tenders` | `pos/recovery/*` through shell (affected-activity summary rail) |
 
 ---
 
@@ -205,17 +205,17 @@ L7  Viewport + scenario acceptance
 
 ### Exit criteria
 
-- [ ] Completion, receipt number, change, Print, Next Transaction dominate
-- [ ] Next Transaction receives focus after completion announcement
-- [ ] Linked return / post-void / detail are secondary
-- [ ] Browser print remains on `layouts/pos_receipt` (separate document)
-- [ ] Receipt scenarios Accepted at both viewports
+- [x] Completion, receipt number, change, Print, Next Transaction dominate
+- [x] Next Transaction receives focus after completion announcement
+- [x] Linked return / post-void / detail are secondary
+- [x] Browser print remains on `layouts/pos_receipt` (separate document)
+- [ ] Receipt scenarios Accepted at both viewports (manual)
 
 ### Current → target
 
 | Current | Treatment |
 | --- | --- |
-| Completed branch of `pos_transactions/show` | `presentations/_receipt` + `receipt/*` |
+| Completed branch of `pos_transactions/show` | `pos/receipt/*` through shell |
 | `customer_receipt` | Retain as print document only |
 
 ---

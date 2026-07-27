@@ -6,6 +6,7 @@ class PosTransactionsController < ApplicationController
   SnapshotTotals = Data.define(:subtotal_cents, :discount_total_cents, :tax_total_cents, :net_total_cents)
 
   before_action -> { require_permission!("pos.access") }, only: %i[index show tender customer_receipt]
+  before_action :require_receipt_reprint_permission!, only: :customer_receipt
   before_action -> { require_permission!("pos.transaction.open") }, only: %i[create]
   before_action -> { require_permission!("pos.transaction.suspend") }, only: %i[suspend]
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
@@ -49,8 +50,22 @@ class PosTransactionsController < ApplicationController
     end
 
     @reprint = ActiveModel::Type::Boolean.new.cast(params[:reprint])
-    @receipt_lines = @pos_transaction.pos_line_items.where(status: "completed").order(:position, :id)
-    @receipt_tenders = @pos_transaction.pos_tenders.where(status: "completed").order(:created_at, :id)
+    @receipt_lines = @pos_transaction.pos_line_items
+      .where(status: "completed")
+      .includes(
+        { product_variant: :product },
+        { pos_discount_allocations: { pos_discount: :discount_reason } },
+        :pos_line_item_taxes
+      )
+      .order(:position, :id)
+    @receipt_tenders = @pos_transaction.pos_tenders
+      .where(status: "completed")
+      .includes(:tender_type)
+      .order(:created_at, :id)
+    @receipt_tax_components = receipt_tax_components_for(@receipt_lines)
+    session_record = @pos_transaction.completed_pos_session || @pos_transaction.origin_pos_session
+    @receipt_register_label = session_record&.pos_device&.name
+    @receipt_cashier_label = @pos_transaction.cashier_user&.username
     render layout: "pos_receipt"
   end
 
@@ -404,6 +419,30 @@ class PosTransactionsController < ApplicationController
       presentation: params[:presentation].presence,
       focus_target: params[:focus_target].presence
     }.compact
+  end
+
+  def require_receipt_reprint_permission!
+    return unless ActiveModel::Type::Boolean.new.cast(params[:reprint])
+
+    require_permission!("pos.receipt.reprint")
+  end
+
+  def receipt_tax_components_for(lines)
+    taxes = lines.flat_map(&:pos_line_item_taxes)
+    return [] if taxes.empty?
+
+    taxes
+      .group_by { |tax| tax.receipt_code_snapshot.presence || "Tax" }
+      .map do |code, group|
+        rate = group.map(&:rate).compact.first
+        label = if rate.present?
+          "#{code} #{format("%g", rate.to_f * 100)}%"
+        else
+          code
+        end
+        { label: label, amount_cents: group.sum { |tax| tax.amount_cents.to_i } }
+      end
+      .reject { |component| component[:amount_cents].zero? && component[:label] == "Tax" }
   end
 
   def completion_failure_code(message)
