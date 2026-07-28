@@ -22,7 +22,6 @@
           <%= form.label :reason, class: "field-label" %>
           <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
         </div>
-        <%= render "shared/approval_fields", prefix: "override_price_#{line.id}" %>
         <div class="form-actions">
           <%= form.submit "Override price", class: "button button-primary" %>
         </div>
@@ -41,7 +40,6 @@
           <%= form.label :reason, "Reason (required)", class: "field-label" %>
           <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
         </div>
-        <%= render "shared/approval_fields", prefix: "override_tax_#{line.id}" %>
         <div class="form-actions">
           <%= form.submit "Override tax category", class: "button button-primary" %>
         </div>
@@ -92,7 +90,6 @@
           <%= form.label :reason, "Reason note", class: "field-label" %>
           <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
         </div>
-        <%= render "shared/approval_fields", prefix: "line_discount_#{line.id}" %>
         <div class="form-actions">
           <%= form.submit "Apply line discount", class: "button button-primary" %>
         </div>

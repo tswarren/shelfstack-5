@@ -2,12 +2,14 @@
 
 class PosTransactionsController < ApplicationController
   include PosImmediatePrintContext
+  include PosPendingApprovalLoading
+  include PosPendingApprovalStaging
 
   layout "pos"
 
   SnapshotTotals = Data.define(:subtotal_cents, :discount_total_cents, :tax_total_cents, :net_total_cents)
 
-  before_action -> { require_permission!("pos.access") }, only: %i[index show tender]
+  before_action -> { require_permission!("pos.access") }, only: %i[index show tender accept_refund_plan]
   before_action -> { require_permission!("pos.transaction.open") }, only: %i[create]
   before_action -> { require_permission!("pos.transaction.suspend") }, only: %i[suspend]
   before_action -> { require_permission!("pos.transaction.recall") }, only: %i[recall]
@@ -17,7 +19,7 @@ class PosTransactionsController < ApplicationController
   before_action -> { require_permission!("pos.post_void.create") },
                 only: %i[post_void_form approve_post_void clear_post_void_approval post_void]
   before_action :set_transaction,
-                only: %i[show tender suspend recall cancel complete start_linked_return post_void_form
+                only: %i[show tender accept_refund_plan suspend recall cancel complete start_linked_return post_void_form
                          approve_post_void clear_post_void_approval post_void]
   before_action :disable_turbo_and_browser_cache, only: %i[show tender]
 
@@ -40,6 +42,46 @@ class PosTransactionsController < ApplicationController
 
     assign_workspace_context!(presentation_param: "tender")
     render :show
+  end
+
+  def accept_refund_plan
+    rows = refund_plan_rows_from_params
+    if rows.nil?
+      plan = Pos::ProposeRefundPlan.call(pos_transaction: @pos_transaction)
+      if plan.refund_due_cents <= 0 || plan.rows.empty?
+        return redirect_to tender_pos_transaction_path(@pos_transaction),
+                           alert: "No refund plan to accept."
+      end
+      rows = plan.rows.map { |row|
+        {
+          destination: row.destination,
+          amount_cents: row.amount_cents,
+          original_pos_tender: row.original_pos_tender
+        }
+      }
+    elsif rows.empty?
+      return redirect_to tender_pos_transaction_path(@pos_transaction),
+                         alert: "Select at least one refund destination with an amount."
+    end
+
+    cash_type = Current.organization.tender_types.find_by(tender_category: "cash", active: true)
+    sv_type = Current.organization.tender_types.find_by(tender_category: "stored_value", active: true)
+
+    result = Pos::AcceptRefundPlan.call(
+      pos_transaction: @pos_transaction,
+      actor: Current.user,
+      rows: rows,
+      cash_tender_type: cash_type,
+      stored_value_tender_type: sv_type
+    )
+
+    if result.success?
+      redirect_to tender_pos_transaction_path(@pos_transaction), notice: "Refund plan recorded."
+    else
+      redirect_to tender_pos_transaction_path(@pos_transaction), alert: result.error
+    end
+  rescue ArgumentError => e
+    redirect_to tender_pos_transaction_path(@pos_transaction), alert: e.message
   end
 
   def create
@@ -249,6 +291,35 @@ class PosTransactionsController < ApplicationController
   end
 
   private
+
+  def load_pending_approval_action?
+    true
+  end
+
+  # nil = use server-proposed plan; [] = submitted empty selection; otherwise edited rows.
+  def refund_plan_rows_from_params
+    return nil unless params[:plan_rows].present?
+
+    entries = params[:plan_rows].to_unsafe_h
+    entries.filter_map do |_index, attrs|
+      attrs = attrs.to_h
+      next unless ActiveModel::Type::Boolean.new.cast(attrs["included"])
+
+      amount = money_param_to_cents(attrs["amount_cents"], label: "Refund amount", required: false)
+      next if amount.to_i <= 0
+
+      original_id = attrs["original_pos_tender_id"].presence
+      original = if original_id
+        Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction).find { |t| t.id == original_id.to_i }
+      end
+
+      {
+        destination: attrs["destination"].to_sym,
+        amount_cents: amount,
+        original_pos_tender: original
+      }
+    end
+  end
 
   def assign_workspace_context!(presentation_param:)
     @pos_line_items = @pos_transaction.pos_line_items.where.not(status: "removed").order(:position)

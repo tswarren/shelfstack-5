@@ -11,7 +11,9 @@ class PosApproval < ApplicationRecord
     reconciliation_variance no_receipt_return
   ].freeze
   # card_refund_reconciliation retained for schema check compatibility; unused after Phase 6 simplification.
-  SELF_APPROVAL_ACTION_TYPES = %w[post_void stored_value_adjustment reconciliation_variance].freeze
+  SELF_APPROVAL_ACTION_TYPES = %w[
+    post_void stored_value_adjustment reconciliation_variance stored_value_refund_exception
+  ].freeze
 
   belongs_to :store
   belongs_to :pos_session, optional: true

@@ -103,7 +103,6 @@
         </div>
         <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
               id: "sv_refund_amount_cents", value_cents: -@balance_due_cents %>
-        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "sv" %>
         <div class="form-actions">
           <%= form.submit "Record stored-value refund", class: "button button-outline" %>
         </div>
@@ -134,7 +133,6 @@
         <% end %>
         <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
               id: "refund_amount_cents", value_cents: -@balance_due_cents %>
-        <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "cash" %>
         <div class="form-actions">
           <%= form.submit "Add cash refund", class: "button button-outline" %>
         </div>
@@ -184,7 +182,6 @@
             <%= form.text_field :terminal_reference, class: "input",
                   required: card_type.reference_2_requirement == "required" %>
           </div>
-          <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "card_refund_#{card_type.id}" %>
           <div class="form-actions">
             <%= form.submit "Record card refund", class: "button button-outline" %>
           </div>

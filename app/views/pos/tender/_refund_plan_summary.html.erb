@@ -1,0 +1,39 @@
+<% plan = local_assigns.fetch(:plan) %>
+<% tp = local_assigns.fetch(:presentation) %>
+<div class="pos-region pos-refund-plan-summary" aria-label="Proposed refund plan">
+  <h3>Proposed refund plan</h3>
+  <p class="muted">Policy: restore original stored value before cash / card / new credit.</p>
+  <% if plan.rows.empty? %>
+    <p class="muted">No recommended destinations for the remaining refund.</p>
+  <% else %>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Destination</th>
+          <th scope="col">Amount</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% plan.rows.each do |row| %>
+          <tr>
+            <td><%= row.label %></td>
+            <td><%= pos_money(row.amount_cents) %></td>
+            <td class="muted"><%= row.recommended? ? "Recommended" : "Available" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p class="form-actions">
+      <%= link_to "Review / edit plan",
+            pos_overlay_refund_plan_path(pos_transaction_id: @pos_transaction.id),
+            class: "button button-outline button-small",
+            data: pos_overlay_turbo %>
+      <%= button_to "Accept plan and record",
+            accept_refund_plan_pos_transaction_path(@pos_transaction),
+            method: :post,
+            class: "button button-primary button-small",
+            form: { data: { turbo_frame: "_top" } } %>
+    </p>
+  <% end %>
+</div>

@@ -16,6 +16,7 @@ module Pos
 
     DESTINATIONS = %i[original_stored_value cash card new_stored_value].freeze
     EXCEPTION_APPROVER_PERMISSION = "pos.return.refund_exception.approve"
+    EXCEPTION_SELF_APPROVER_PERMISSION = "pos.return.refund_exception.approve_self"
 
     PlanItem = Data.define(
       :destination,
@@ -246,6 +247,7 @@ module Pos
         approver: @exception_approver,
         approver_pin: @exception_approver_pin,
         approver_permission_key: EXCEPTION_APPROVER_PERMISSION,
+        self_approver_permission_key: EXCEPTION_SELF_APPROVER_PERMISSION,
         pos_transaction: @pos_transaction,
         requested_value: item.amount_cents
       )

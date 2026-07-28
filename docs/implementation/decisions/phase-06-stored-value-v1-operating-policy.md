@@ -126,6 +126,7 @@ Normalize to `<domain>.<resource>.<action>` and seed in Phase 6:
 | `stored_value.tender.redeem` | Redeem stored value as tender | store | no | yes |
 | `stored_value.tender.refund` | Refund to stored value | store | no | yes |
 | `pos.return.refund_exception.approve` | Approve refund destination exceptions (bypass remaining original tender restoration) | store | — | yes |
+| `pos.return.refund_exception.approve_self` | Self-approve refund destination exceptions (PIN re-auth + recorded approval) | store | — | yes |
 | `stored_value.adjustment.create` | Create manual adjustments | store | yes | yes |
 | `stored_value.adjustment.approve` | Approve another user’s manual adjustments | store | — | yes |
 | `stored_value.adjustment.approve_self` | Self-approve own manual adjustments (PIN + recorded approval) | store | — | yes |

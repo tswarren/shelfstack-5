@@ -26,18 +26,44 @@ class PosUnlinkedReturnOverlaySystemTest < ApplicationSystemTestCase
     assert_text "Start return"
 
     within("dialog[open]") do
+      assert_text "How is this return starting?"
+      click_link "Begin unlinked return"
+    end
+
+    assert_selector "dialog[open]", wait: 5
+    within("dialog[open]") do
+      select "#{@variant.product.name} · #{@variant.sku}", from: "Product variant"
       select "External receipt", from: "Return source"
+      click_button "Continue with product"
+    end
+
+    assert_selector "dialog[open]", wait: 5
+    within("dialog[open]") do
+      assert_text "Confirm item"
+      click_button "Use this item"
+    end
+
+    within("dialog[open]") do
+      assert_text "Quantity & price"
+      fill_in "Refund unit price", with: format("%.2f", @variant.regular_price_cents / 100.0)
+      click_button "Continue"
+    end
+
+    within("dialog[open]") do
+      assert_text "Reason & disposition"
       select @reason.name, from: "Reason"
       select "Return to stock", from: "Disposition"
-      select "#{@variant.product.name} · #{@variant.sku}", from: "Product variant (optional)"
-      fill_in "Refund unit price", with: format("%.2f", @variant.regular_price_cents / 100.0)
+      click_button "Continue"
+    end
+
+    within("dialog[open]") do
+      assert_text "Review"
       click_button "Start with unlinked return"
     end
 
     assert_selector "dialog[open]", wait: 5
     within("dialog[open]") do
       assert_selector "[role=alert]", text: /no inventory cost basis/i
-      assert_text "Unlinked return"
       assert_button "Start with unlinked return"
       click_button "Close"
     end

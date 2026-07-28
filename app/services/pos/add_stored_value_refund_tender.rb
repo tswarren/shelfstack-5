@@ -4,7 +4,11 @@ module Pos
   # Refund to stored value: restore an original SV tender, or issue store credit.
   class AddStoredValueRefundTender < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_tender, :account, :success?, :error, :warnings)
+    Result = Data.define(:pos_tender, :account, :success?, :error, :warnings) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval|exception approval/i)
+      end
+    end
 
     def initialize(
       pos_transaction:,

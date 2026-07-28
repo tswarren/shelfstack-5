@@ -5,65 +5,93 @@
    tax_categories = local_assigns.fetch(:tax_categories)
    price_field_id = local_assigns.fetch(:price_field_id, "unlinked_return_unit_price_cents")
    tax_field_id = local_assigns.fetch(:tax_field_id, "unlinked_return_explicit_tax_amount_cents")
-   confirm_id = local_assigns.fetch(:confirm_id, "unlinked_confirm_cost_basis")
    turbo_frame = local_assigns.fetch(:turbo_frame, nil)
+   departments = local_assigns.fetch(:departments) {
+     Department.sorted_hierarchically(Current.organization.departments.where(active: true, postable: true))
+   }
+
+   # Prefer controller-advanced step over the posted hidden field (stale after wizard continue).
+   step = (local_assigns[:unlinked_step].presence || params[:unlinked_step].presence || "identify").to_s
+   open_ring = if !local_assigns[:open_ring].nil?
+     ActiveModel::Type::Boolean.new.cast(local_assigns[:open_ring])
+   else
+     ActiveModel::Type::Boolean.new.cast(params[:open_ring]) ||
+       params[:wizard_open_ring].present? ||
+       (params[:department_id].present? && params[:product_variant_id].blank? &&
+         %w[department quantity reason review].include?(step))
+   end
+
    selected_source = params[:return_source].presence
    selected_reason = params[:return_reason_id].presence
    selected_disposition = params[:return_disposition].presence
    selected_variant = params[:product_variant_id].presence
    selected_department = params[:department_id].presence
    selected_tax_category = params[:tax_category_id].presence
-   selected_tax_basis = params[:tax_basis].presence
+   selected_tax_basis = params[:tax_basis].presence || "current_configured_rules"
    selected_quantity = params[:quantity].presence || 1
    selected_description = params[:description]
    unit_price_display = params[:unit_price_cents]
-   explicit_tax_display = params[:explicit_tax_amount_cents] %>
+   explicit_tax_display = params[:explicit_tax_amount_cents]
+   selected_variant_record = if selected_variant.present?
+     ProductVariant.joins(:product).where(products: { organization_id: Current.organization.id }).find_by(id: selected_variant)
+   end
 
-<p class="muted">
-  Unlinked returns need an explicit refund price, tax basis, and (for inventory-affecting
-  product returns) a confirmed cost basis.
+   steps = if open_ring
+     %w[identify department quantity reason review]
+   else
+     %w[identify confirm quantity reason review]
+   end
+   step = "identify" unless steps.include?(step)
+   step_index = steps.index(step) + 1
+   step_titles = {
+     "identify" => "Identify",
+     "confirm" => "Confirm item",
+     "department" => "Department",
+     "quantity" => "Quantity & price",
+     "reason" => "Reason & disposition",
+     "review" => "Review"
+   } %>
+
+<p class="pos-wizard-progress muted">
+  Unlinked return · Step <%= step_index %> of <%= steps.size %> — <%= step_titles.fetch(step) %>
 </p>
 
 <%= form_with url: form_url, method: :post, class: "form", id: form_id,
       data: {
-        controller: "unlinked-return-tax",
-        action: "change->unlinked-return-tax#sync",
+        controller: (step == "review" ? "unlinked-return-tax" : nil),
+        action: (step == "review" ? "change->unlinked-return-tax#sync" : nil),
         **(turbo_frame ? { turbo_frame: turbo_frame } : {})
       } do |form| %>
   <%= hidden_field_tag :mode, "unlinked" %>
+  <%= hidden_field_tag :unlinked_step, step %>
+  <% if open_ring || step == "department" %>
+    <%= hidden_field_tag :open_ring, "1" %>
+  <% end %>
   <% local_assigns.fetch(:hidden_fields, {}).each do |name, value| %>
     <%= hidden_field_tag name, value %>
   <% end %>
 
-  <div class="form-grid">
-    <div class="field">
-      <%= form.label :return_source, "Return source", class: "field-label" %>
-      <%= form.select :return_source, [
-            [ "External receipt", "external_receipt" ],
-            [ "Gift receipt", "gift_receipt" ],
-            [ "No receipt", "no_receipt" ]
-          ], { selected: selected_source }, class: "input", data: { unlinked_return_tax_target: "source" } %>
-    </div>
-    <div class="field">
-      <%= form.label :return_reason_id, "Reason", class: "field-label" %>
-      <%= form.collection_select :return_reason_id, return_reasons, :id, :name,
-            { selected: selected_reason }, class: "input" %>
-    </div>
-    <div class="field">
-      <%= form.label :return_disposition, "Disposition", class: "field-label" %>
-      <%= form.select :return_disposition, [
-            [ "Return to stock", "return_to_stock" ],
-            [ "Inspection required", "inspection_required" ],
-            [ "Damaged", "damaged" ],
-            [ "Return to vendor", "return_to_vendor" ],
-            [ "Non-inventory", "non_inventory" ]
-          ], { selected: selected_disposition }, class: "input" %>
-    </div>
-  </div>
+  <%# Carry prior answers as hidden fields when advancing past them. %>
+  <% unless step == "identify" %>
+    <%= hidden_field_tag :return_source, selected_source if selected_source.present? %>
+    <%= hidden_field_tag :product_variant_id, selected_variant if selected_variant.present? %>
+    <%= hidden_field_tag :department_id, selected_department if selected_department.present? && step != "department" %>
+    <%= hidden_field_tag :description, selected_description if selected_description.present? && step != "department" %>
+  <% end %>
+  <% if %w[reason review].include?(step) %>
+    <%= hidden_field_tag :quantity, selected_quantity %>
+    <%= hidden_field_tag :unit_price_cents, unit_price_display %>
+  <% end %>
+  <% if step == "review" %>
+    <%= hidden_field_tag :return_reason_id, selected_reason %>
+    <%= hidden_field_tag :return_disposition, selected_disposition %>
+  <% end %>
 
-  <div class="form-grid">
+  <% case step %>
+  <% when "identify" %>
+    <p class="muted">Scan or choose a product, or start an open-ring return.</p>
     <div class="field">
-      <%= form.label :product_variant_id, "Product variant (optional)", class: "field-label" %>
+      <%= form.label :product_variant_id, "Product variant", class: "field-label" %>
       <%= form.collection_select :product_variant_id,
             ProductVariant.joins(:product)
               .where(products: { organization_id: Current.organization.id })
@@ -71,69 +99,172 @@
               .order("products.name", :sku)
               .limit(200),
             :id, ->(v) { "#{v.product.name} · #{v.sku}" },
-            { include_blank: "Open-ring return instead", selected: selected_variant }, class: "input" %>
-      <p class="field-hint">Leave blank for an open-ring return. Individually tracked items require a linked return.</p>
+            { include_blank: "Select a product…", selected: selected_variant }, class: "input" %>
     </div>
     <div class="field">
-      <%= form.label :department_id, "Department (open-ring)", class: "field-label" %>
-      <%= form.collection_select :department_id,
-            Department.sorted_hierarchically(Current.organization.departments.where(active: true, postable: true)),
-            :id, :name,
-            { include_blank: "—", selected: selected_department }, class: "input" %>
+      <%= form.label :return_source, "Return source", class: "field-label" %>
+      <%= form.select :return_source, [
+            [ "External receipt", "external_receipt" ],
+            [ "Gift receipt", "gift_receipt" ],
+            [ "No receipt", "no_receipt" ]
+          ], { selected: selected_source }, class: "input" %>
+    </div>
+    <div class="form-actions">
+      <%= button_tag "Continue with product", type: "submit", name: "wizard_continue", value: "1",
+            class: "button button-primary" %>
+      <%= button_tag "Open-ring return instead", type: "submit", name: "wizard_open_ring", value: "1",
+            class: "button button-outline" %>
+    </div>
+
+  <% when "confirm" %>
+    <% if selected_variant_record %>
+      <p>
+        <strong><%= selected_variant_record.product.name %></strong><br>
+        <span class="muted"><%= variant_option_label(selected_variant_record) %></span>
+      </p>
+      <p class="muted">Current selling price <%= pos_money(selected_variant_record.regular_price_cents) %></p>
+      <%= hidden_field_tag :product_variant_id, selected_variant_record.id %>
+      <%= hidden_field_tag :return_source, selected_source %>
+      <div class="form-actions">
+        <%= button_tag "Use this item", type: "submit", name: "wizard_continue", value: "1",
+              class: "button button-primary" %>
+        <%= button_tag "Back", type: "submit", name: "wizard_back", value: "1",
+              class: "button button-ghost" %>
+      </div>
+    <% else %>
+      <p class="muted">Select a product on the identify step.</p>
+      <%= button_tag "Back", type: "submit", name: "wizard_back", value: "1",
+            class: "button button-outline" %>
+    <% end %>
+
+  <% when "department" %>
+    <div data-controller="department-filter">
+      <div class="field">
+        <label class="field-label" for="<%= form_id %>_department_query">Search department</label>
+        <input type="search" id="<%= form_id %>_department_query" class="input"
+               placeholder="Filter by name or number"
+               data-department-filter-target="query"
+               data-action="input->department-filter#filter"
+               autocomplete="off">
+      </div>
+      <ul class="pos-department-filter-list" role="listbox" aria-label="Departments">
+        <% departments.each do |dept| %>
+          <% label = [ dept.department_number, dept.name ].compact.join(" · ") %>
+          <li data-department-filter-target="item" data-search-text="<%= label %>">
+            <label>
+              <%= radio_button_tag :department_id, dept.id, selected_department.to_s == dept.id.to_s %>
+              <span><%= label %></span>
+            </label>
+          </li>
+        <% end %>
+      </ul>
     </div>
     <div class="field">
-      <%= form.label :description, "Description (open-ring)", class: "field-label" %>
+      <%= form.label :description, "Description", class: "field-label" %>
       <%= form.text_field :description, value: selected_description, class: "input",
             placeholder: "Blank uses department name" %>
     </div>
-  </div>
+    <%= hidden_field_tag :return_source, selected_source.presence || "no_receipt" %>
+    <div class="form-actions">
+      <%= button_tag "Continue", type: "submit", name: "wizard_continue", value: "1",
+            class: "button button-primary" %>
+      <%= button_tag "Back", type: "submit", name: "wizard_back", value: "1",
+            class: "button button-ghost" %>
+    </div>
 
-  <div class="form-grid">
-    <%= render "shared/currency_field", name: "unit_price_cents", label: "Refund unit price",
-          id: price_field_id, value: unit_price_display, value_cents: (unit_price_display.present? ? nil : 0) %>
-    <div class="field">
-      <%= form.label :quantity, class: "field-label" %>
-      <%= form.number_field :quantity, value: selected_quantity, min: 1, class: "input input-qty" %>
+  <% when "quantity" %>
+    <% if selected_variant_record %>
+      <p class="muted"><%= selected_variant_record.product.name %> · <%= variant_option_label(selected_variant_record) %></p>
+    <% elsif selected_department.present? %>
+      <p class="muted">Open-ring · department #<%= selected_department %></p>
+    <% end %>
+    <div class="form-grid">
+      <%= render "shared/currency_field", name: "unit_price_cents", label: "Refund unit price",
+            id: price_field_id, value: unit_price_display,
+            value_cents: (unit_price_display.present? ? nil : (selected_variant_record&.regular_price_cents || 0)) %>
+      <div class="field">
+        <%= form.label :quantity, class: "field-label" %>
+        <%= form.number_field :quantity, value: selected_quantity, min: 1, class: "input input-qty" %>
+      </div>
     </div>
-  </div>
+    <div class="form-actions">
+      <%= button_tag "Continue", type: "submit", name: "wizard_continue", value: "1",
+            class: "button button-primary" %>
+      <%= button_tag "Back", type: "submit", name: "wizard_back", value: "1",
+            class: "button button-ghost" %>
+    </div>
 
-  <div class="form-grid">
-    <div class="field">
-      <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
-      <%= form.collection_select :tax_category_id, tax_categories, :id, :name,
-            { include_blank: "Use classification / department default", selected: selected_tax_category },
-            class: "input" %>
+  <% when "reason" %>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :return_reason_id, "Reason", class: "field-label" %>
+        <%= form.collection_select :return_reason_id, return_reasons, :id, :name,
+              { selected: selected_reason }, class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :return_disposition, "Disposition", class: "field-label" %>
+        <%= form.select :return_disposition, [
+              [ "Return to stock", "return_to_stock" ],
+              [ "Inspection required", "inspection_required" ],
+              [ "Damaged", "damaged" ],
+              [ "Return to vendor", "return_to_vendor" ],
+              [ "Non-inventory", "non_inventory" ]
+            ], { selected: selected_disposition }, class: "input" %>
+      </div>
     </div>
-    <div class="field">
-      <%= form.label :tax_basis, "Tax basis", class: "field-label" %>
-      <%= form.select :tax_basis, [
-            [ "Current configured rules", "current_configured_rules" ],
-            [ "External receipt tax amount", "external_receipt_tax" ],
-            [ "No tax refund", "no_tax_refund" ]
-          ], { selected: selected_tax_basis }, class: "input", data: { unlinked_return_tax_target: "basis" } %>
+    <div class="form-actions">
+      <%= button_tag "Continue", type: "submit", name: "wizard_continue", value: "1",
+            class: "button button-primary" %>
+      <%= button_tag "Back", type: "submit", name: "wizard_back", value: "1",
+            class: "button button-ghost" %>
     </div>
-    <div data-unlinked-return-tax-target="explicitTax">
-      <%= render "shared/currency_field", name: "explicit_tax_amount_cents",
-            label: "Explicit tax amount (external receipt)",
-            id: tax_field_id, required: false, value: explicit_tax_display, value_cents: nil,
-            hint: "Only used when tax basis is External receipt tax amount." %>
-    </div>
-  </div>
 
-  <div class="checkbox-group">
+  <% when "review" %>
+    <p>
+      <% if selected_variant_record %>
+        <strong><%= selected_variant_record.product.name %></strong>
+        · Qty <%= selected_quantity %>
+        · Refund <%= pos_param_money(unit_price_display) %> each
+      <% else %>
+        <strong><%= selected_description.presence || "Open-ring return" %></strong>
+        · Qty <%= selected_quantity %>
+        · Refund <%= pos_param_money(unit_price_display) %> each
+      <% end %>
+    </p>
+    <p class="muted">
+      Reason #<%= selected_reason %> · Disposition <%= selected_disposition.to_s.humanize %>
+      · Source <%= selected_source.to_s.humanize %>
+    </p>
+    <div class="form-grid">
+      <div class="field">
+        <%= form.label :tax_category_id, "Tax category", class: "field-label" %>
+        <%= form.collection_select :tax_category_id, tax_categories, :id, :name,
+              { include_blank: "Use classification / department default", selected: selected_tax_category },
+              class: "input" %>
+      </div>
+      <div class="field">
+        <%= form.label :tax_basis, "Tax basis", class: "field-label" %>
+        <%= form.select :tax_basis, [
+              [ "Current configured rules", "current_configured_rules" ],
+              [ "External receipt tax amount", "external_receipt_tax" ],
+              [ "No tax refund", "no_tax_refund" ]
+            ], { selected: selected_tax_basis }, class: "input", data: { unlinked_return_tax_target: "basis" } %>
+      </div>
+      <div data-unlinked-return-tax-target="explicitTax">
+        <%= render "shared/currency_field", name: "explicit_tax_amount_cents",
+              label: "Explicit tax amount (external receipt)",
+              id: tax_field_id, required: false, value: explicit_tax_display, value_cents: nil,
+              hint: "Only used when tax basis is External receipt tax amount." %>
+      </div>
+    </div>
     <p class="muted">
       Inventory-affecting product returns show a cost proposal for confirmation on the next step.
+      Approval appears only if authority is exceeded.
     </p>
-  </div>
-
-  <% if Current.user.can?("pos.return.no_receipt", store: Current.store) %>
-    <details class="pos-region">
-      <summary>Approval (when no-receipt exceeds authority)</summary>
-      <%= render "shared/approval_fields", prefix: "unlinked_return" %>
-    </details>
+    <div class="form-actions">
+      <%= form.submit submit_label, class: "button button-primary" %>
+      <%= button_tag "Back", type: "submit", name: "wizard_back", value: "1",
+            class: "button button-ghost" %>
+    </div>
   <% end %>
-
-  <div class="form-actions">
-    <%= form.submit submit_label, class: "button button-primary" %>
-  </div>
 <% end %>

@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class PosTendersController < ApplicationController
+  include PosPendingApprovalStaging
+  include PosPendingApprovalLoading
+
   before_action :set_transaction
   before_action :set_tender, only: %i[destroy confirm_void]
   before_action -> { require_permission!(create_permission) }, only: %i[create]
@@ -137,9 +140,57 @@ class PosTendersController < ApplicationController
     elsif result.respond_to?(:requires_void_confirmation?) && result.requires_void_confirmation?
       redirect_to pos_transaction_path(@pos_transaction),
                   alert: "#{result.error} Confirm the external void to clear the void-required tender."
+    elsif result.respond_to?(:requires_approval?) && result.requires_approval?
+      stage_refund_exception_approval!
+      redirect_to tender_return_path
     else
       redirect_to tender_return_path, alert: result.error
     end
+  end
+
+  def load_pending_approval_action?
+    false
+  end
+
+  def stage_refund_exception_approval!
+    tender_type = Current.organization.tender_types.find(params[:tender_type_id])
+    amount = money_param_to_cents(params[:amount_cents], label: "Refund amount")
+    destination = case tender_type.tender_category
+    when "cash" then "cash"
+    when "card" then "card"
+    when "stored_value"
+      params[:original_pos_tender_id].present? ? "original_stored_value" : "new_stored_value"
+    else
+      tender_type.tender_category
+    end
+    account = if tender_type.tender_category == "stored_value"
+      resolve_stored_value_account rescue nil
+    end
+    stage_pending_approval!(
+      action: "refund_exception",
+      fingerprint: Pos::ApprovalInterrupt.refund_exception_fingerprint(
+        pos_transaction: @pos_transaction,
+        destination: destination,
+        amount_cents: amount,
+        original_tender_id: params[:original_pos_tender_id]
+      ),
+      payload: {
+        pos_transaction_id: @pos_transaction.id,
+        tender_type_id: tender_type.id,
+        destination: destination,
+        amount_cents: amount,
+        original_pos_tender_id: params[:original_pos_tender_id],
+        authorization_code: params[:authorization_code],
+        terminal_reference: params[:terminal_reference],
+        recording_idempotency_key: params[:recording_idempotency_key],
+        stored_value_account_id: account&.id,
+        create_store_credit: params[:create_store_credit]
+      },
+      presentation: Pos::ApprovalInterrupt.refund_exception_presentation(
+        destination: destination,
+        amount_cents: amount
+      )
+    )
   end
 
   def tender_return_path

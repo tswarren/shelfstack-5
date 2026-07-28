@@ -43,11 +43,11 @@ Preserve accepted financial and posting rules while replacing form-driven except
 
 | Area | Today |
 | --- | --- |
-| Approvals | `Pos::AuthorizeAction` / `PosApproval` mature; UI still shows preemptive `_approval_fields` |
-| Tender | Phase 11 L3 method selector + active form already shipped under `app/views/pos/tender/` |
-| Linked returns | One line per submit via `Pos::AddLinkedReturnLine` — no multi-select |
-| Unlinked returns | One large form; cost-review is already a second step |
-| Refund policy | `Pos::RefundAllocationPolicy` enforces SV-first; UI does not present a proposed plan |
+| Approvals | Contextual interrupt via `Pos::PendingApprovalAction` + `#pos_overlay`; ordinary forms no longer show preemptive `_approval_fields` |
+| Tender | L3 method selector with settlement hierarchy + Remove/Void labels; refund plan summary when net refund due |
+| Linked returns | Multi-select batch via `Pos::AddLinkedReturnLines` |
+| Unlinked returns | Guided wizard steps + searchable department list; cost-review retained |
+| Refund policy | `Pos::RefundAllocationPolicy` SV-first; `Pos::ProposeRefundPlan` / Accept plan UX |
 
 ---
 

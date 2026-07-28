@@ -2,6 +2,14 @@
 <section class="pos-sale-panel pos-tender-workspace" aria-label="Payment">
   <%= render "pos/tender/direction_status", presentation: tp %>
 
+  <% if tp.refund_mode? && !tp.settled? %>
+    <% plan = Pos::ProposeRefundPlan.call(
+         pos_transaction: @pos_transaction,
+         refund_due_cents: tp.remaining_cents
+       ) %>
+    <%= render "pos/tender/refund_plan_summary", plan: plan, presentation: tp %>
+  <% end %>
+
   <% unless tp.settled? %>
     <%= render "pos/tender/method_selector", presentation: tp %>
     <%= render "pos/tender/active_form", presentation: tp %>

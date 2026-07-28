@@ -6,7 +6,11 @@ module Pos
   # Individually tracked variants remain unsupported without a linked original.
   class AddUnlinkedReturnLine < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_line_item, :success?, :error, :warnings, :pos_approval)
+    Result = Data.define(:pos_line_item, :success?, :error, :warnings, :pos_approval) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval/i)
+      end
+    end
 
     UNLINKED_SOURCES = PosLineItem::UNLINKED_RETURN_SOURCES
     TAX_BASES = %w[current_configured_rules external_receipt_tax no_tax_refund].freeze

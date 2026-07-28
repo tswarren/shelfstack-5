@@ -9,7 +9,11 @@ module Pos
   # allocations"). Ordinary discounts default to `tax_treatment: reduces_taxable_base`.
   class ApplyDiscount < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_discount, :success?, :error, :warnings, :pos_approval)
+    Result = Data.define(:pos_discount, :success?, :error, :warnings, :pos_approval) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval/i)
+      end
+    end
 
     def initialize(pos_transaction:, scope:, method:, actor:, pos_line_item: nil, rate_bps: nil, amount_cents: nil,
                     tax_treatment: "reduces_taxable_base", discount_reason: nil, reason: nil,

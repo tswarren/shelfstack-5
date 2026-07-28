@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosLineItemsController < ApplicationController
+  include PosPendingApprovalStaging
+
   before_action -> { require_permission!("pos.access") }, only: %i[create update override_price override_tax_category]
   before_action -> { require_permission!("pos.line.remove") }, only: %i[destroy]
   before_action :set_transaction
@@ -37,15 +39,36 @@ class PosLineItemsController < ApplicationController
   end
 
   def override_price
+    requested = money_param_to_cents(params[:requested_unit_price_cents], label: "New unit price")
     result = Pos::OverridePrice.call(
       pos_line_item: @line_item,
-      requested_unit_price_cents: money_param_to_cents(params[:requested_unit_price_cents], label: "New unit price"),
+      requested_unit_price_cents: requested,
       actor: Current.user,
       reason: params[:reason],
       **approver_params
     )
     if result.success?
       redirect_to txn_redirect_path, notice: "Price overridden."
+    elsif result.requires_approval?
+      stage_pending_approval!(
+        action: "price_override",
+        fingerprint: Pos::ApprovalInterrupt.price_override_fingerprint(
+          pos_line_item: @line_item, requested_unit_price_cents: requested, reason: params[:reason]
+        ),
+        payload: {
+          pos_transaction_id: @pos_transaction.id,
+          pos_line_item_id: @line_item.id,
+          requested_unit_price_cents: requested,
+          reason: params[:reason],
+          intent: params[:intent],
+          selected_line_id: params[:selected_line_id],
+          focus_target: params[:focus_target]
+        },
+        presentation: Pos::ApprovalInterrupt.price_override_presentation(
+          pos_line_item: @line_item, requested_unit_price_cents: requested
+        )
+      )
+      redirect_to txn_redirect_path
     else
       redirect_to txn_redirect_path, alert: result.error
     end
@@ -69,6 +92,26 @@ class PosLineItemsController < ApplicationController
     )
     if result.success?
       redirect_to txn_redirect_path, notice: "Tax category overridden."
+    elsif result.requires_approval?
+      stage_pending_approval!(
+        action: "tax_override",
+        fingerprint: Pos::ApprovalInterrupt.tax_override_fingerprint(
+          pos_line_item: @line_item, tax_category_id: tax_category.id, reason: params[:reason]
+        ),
+        payload: {
+          pos_transaction_id: @pos_transaction.id,
+          pos_line_item_id: @line_item.id,
+          tax_category_id: tax_category.id,
+          reason: params[:reason],
+          intent: params[:intent],
+          selected_line_id: params[:selected_line_id],
+          focus_target: params[:focus_target]
+        },
+        presentation: Pos::ApprovalInterrupt.tax_override_presentation(
+          pos_line_item: @line_item, tax_category_name: tax_category.name
+        )
+      )
+      redirect_to txn_redirect_path
     else
       redirect_to txn_redirect_path, alert: result.error
     end

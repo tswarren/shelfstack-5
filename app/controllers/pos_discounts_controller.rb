@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosDiscountsController < ApplicationController
+  include PosPendingApprovalStaging
+
   before_action -> { require_permission!("pos.access") }
   before_action -> { require_permission!("pos.discount.apply") }, only: %i[destroy]
   before_action :set_transaction
@@ -29,6 +31,40 @@ class PosDiscountsController < ApplicationController
     if result.success?
       notice = result.warnings.present? ? result.warnings.join("; ") : "Discount applied."
       redirect_to txn_redirect_path, notice: notice
+    elsif result.requires_approval?
+      stage_pending_approval!(
+        action: "discount",
+        fingerprint: Pos::ApprovalInterrupt.discount_fingerprint(
+          pos_transaction: @pos_transaction,
+          scope: params[:scope],
+          pos_line_item_id: line_item&.id,
+          method: params[:method],
+          rate_bps: rate_bps,
+          amount_cents: amount_cents,
+          reason: params[:reason]
+        ),
+        payload: {
+          pos_transaction_id: @pos_transaction.id,
+          scope: params[:scope],
+          pos_line_item_id: line_item&.id,
+          method: params[:method],
+          rate_bps: rate_bps,
+          amount_cents: amount_cents,
+          discount_reason_id: discount_reason&.id,
+          reason: params[:reason],
+          intent: params[:intent],
+          selected_line_id: params[:selected_line_id],
+          focus_target: params[:focus_target]
+        },
+        presentation: Pos::ApprovalInterrupt.discount_presentation(
+          scope: params[:scope],
+          description: line_item&.effective_description,
+          method: params[:method],
+          rate_bps: rate_bps,
+          amount_cents: amount_cents
+        )
+      )
+      redirect_to txn_redirect_path
     else
       redirect_to txn_redirect_path, alert: result.error
     end

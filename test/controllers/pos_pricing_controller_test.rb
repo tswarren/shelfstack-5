@@ -32,15 +32,17 @@ class PosPricingControllerTest < ActionDispatch::IntegrationTest
     assert_equal tax_categories(:stationery), @line.reload.tax_category
   end
 
-  test "applying a transaction discount surfaces the deny path when the requester lacks authority" do
+  test "applying a transaction discount stages approval interrupt when the requester lacks authority" do
     post session_path, params: { username: "clerk", password: "password123" }
 
     post pos_transaction_pos_discounts_path(@transaction),
          params: { scope: "transaction", method: "percentage", rate_bps: 500 }
 
     assert_redirected_to pos_transaction_path(@transaction)
-    assert_match(/authority/, flash[:alert])
+    assert_nil flash[:alert]
     assert_equal 0, @transaction.pos_discounts.count
+    follow_redirect!
+    assert_match(/Approval required|Approve and continue/i, response.body)
   end
 
   test "applying a transaction discount with an approver succeeds" do

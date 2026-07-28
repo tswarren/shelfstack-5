@@ -2,9 +2,15 @@
 
 module Pos
   # Ready-state first valid work: open (or reuse) a transaction and add an
-  # unlinked return line. Never leaves an empty open transaction on failure.
+  # unlinked return line. Never leaves an empty open transaction on failure,
+  # except when authority requires approval — then the open transaction is kept
+  # so the approval interrupt can resume against it (Phase 11.2A/E).
   class StartUnlinkedReturn < ApplicationService
-    Result = Data.define(:success?, :pos_transaction, :pos_line_item, :error, :pos_approval)
+    Result = Data.define(:success?, :pos_transaction, :pos_line_item, :error, :pos_approval) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval|exception approval/i)
+      end
+    end
 
     def initialize(pos_session:, actor:, **add_kwargs)
       @pos_session = pos_session
@@ -16,6 +22,7 @@ module Pos
       return failure("POS session is not open.") unless @pos_session.open?
 
       add_error = nil
+      approval_held = nil
       result = ActiveRecord::Base.transaction(requires_new: true) do
         session = PosSession.lock.find(@pos_session.id)
         unless session.open?
@@ -59,6 +66,17 @@ module Pos
           **@add_kwargs
         )
         unless add.success?
+          if add.requires_approval?
+            approval_held = Result.new(
+              success?: false,
+              pos_transaction: transaction,
+              pos_line_item: nil,
+              error: add.error,
+              pos_approval: nil
+            )
+            next approval_held
+          end
+
           add_error = add.error
           raise ActiveRecord::Rollback
         end

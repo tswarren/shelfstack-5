@@ -35,5 +35,4 @@
     <%= form.text_field :terminal_reference, class: "input",
           required: card_type&.reference_2_requirement == "required" %>
   </div>
-  <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "card_refund" %>
 <% end %>

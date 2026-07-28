@@ -10,6 +10,11 @@ export default class extends Controller {
     this._openDialog = null
     this.onClickCapture = this.rememberInvoker.bind(this)
     this.element.addEventListener("click", this.onClickCapture, true)
+    queueMicrotask(() => {
+      const frame = this.element.querySelector("turbo-frame#pos_overlay")
+      const dialog = frame?.querySelector("dialog")
+      if (dialog && !dialog.open) this.openDialog(dialog)
+    })
   }
 
   disconnect() {

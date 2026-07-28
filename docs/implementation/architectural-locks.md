@@ -174,7 +174,7 @@ Accepted delivery choices for Phase 6 (detail in decision notes):
 **Lock for v1 / Phase 11.2:** restore remaining **original stored-value** refund capacity before cash, card, or new store credit.
 
 - Implemented by `Pos::RefundAllocationPolicy`.
-- Deviations require `pos.return.refund_exception.approve`.
+- Deviations require `pos.return.refund_exception.approve` (or `pos.return.refund_exception.approve_self` for recorded self-approval with PIN re-auth).
 - Decision note: [phase-11.2-refund-allocation-sv-first.md](decisions/phase-11.2-refund-allocation-sv-first.md).
 - Draft cash-first ordering in the Phase 11.2–11.4 scope draft is **superseded**.
 

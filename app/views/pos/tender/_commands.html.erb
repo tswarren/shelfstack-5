@@ -26,7 +26,7 @@
               data: { turbo_confirm: "Confirm the card was voided on the external terminal before continuing." } %>
       <% end %>
     <% else %>
-      <%= button_to "Remove tender", pos_transaction_pos_tender_path(@pos_transaction, selected),
+      <%= button_to "Remove", pos_transaction_pos_tender_path(@pos_transaction, selected),
             method: :delete,
             class: "button button-small button-danger",
             params: { tender_method: tp.selected_method },

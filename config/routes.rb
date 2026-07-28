@@ -161,7 +161,10 @@ Rails.application.routes.draw do
     get :suspended
     get :line_actions
     get :transaction_lines
+    get :refund_plan
   end
+
+  resource :pos_pending_approval, only: %i[create destroy], controller: "pos_pending_approvals"
 
   resources :business_days, only: %i[index new create] do
     member do
@@ -188,6 +191,7 @@ Rails.application.routes.draw do
       post :complete
       post :start_linked_return
       get :tender
+      post :accept_refund_plan
       get :customer_receipt, to: "pos_receipt_documents#customer_receipt"
       get "customer_receipt/reprint", to: "pos_receipt_documents#customer_receipt_reprint", as: :customer_receipt_reprint
       get :gift_receipt, to: "pos_receipt_documents#gift_receipt"

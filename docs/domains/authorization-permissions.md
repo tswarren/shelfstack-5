@@ -168,6 +168,7 @@ Deferred keys (do not seed until designed): `inventory.transfer.*`, RTV document
 | `pos.return.create` | Create return lines | store | 4e | — | no | yes |
 | `pos.return.no_receipt` | No-receipt returns | store | 4e | `maximum_no_receipt_return_cents` | yes | yes |
 | `pos.return.refund_exception.approve` | Approve refund destination exceptions (bypass remaining original tender restoration) | store | 6 | — | — | yes |
+| `pos.return.refund_exception.approve_self` | Authorize one’s own refund destination exception (still requires PIN re-auth and a recorded approval) | store | 6 | — | — | yes |
 | `pos.tender.cash` | Accept cash tenders | store | 4c | — | no | no |
 | `pos.tender.card_standalone` | Record standalone card tenders | store | 4c | — | no | yes |
 | `pos.tender.card_void` | Confirm external card voids for authorized card tenders and `void_required` recovery tenders | store | 4c/6 | — | no | yes |
@@ -272,6 +273,7 @@ Canonical keys for Stored Value. Domain lists must match this catalog. Policy: [
 - Replacement and transfer keys remain deferred.
 - Every manual adjustment requires `stored_value.adjustment.create` plus a recorded approval: another user with `stored_value.adjustment.approve`, or the same user with `stored_value.adjustment.approve_self` (PIN re-auth still required). Holding only `stored_value.adjustment.approve` does not imply self-approval.
 - Post-void always requires `pos.post_void.create` plus a recorded approval: another user with `pos.post_void.approve`, or the same user with `pos.post_void.approve_self` (PIN re-auth still required). Holding only `pos.post_void.approve` does not imply self-approval.
+- Refund destination exceptions require a recorded approval: another user with `pos.return.refund_exception.approve`, or the same user with `pos.return.refund_exception.approve_self` (PIN re-auth still required). Holding only `pos.return.refund_exception.approve` does not imply self-approval.
 
 ## Reporting (Phase 7)
 

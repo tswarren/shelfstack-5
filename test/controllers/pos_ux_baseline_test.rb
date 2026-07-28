@@ -228,7 +228,8 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     get pos_overlay_start_return_path(pos_transaction_id: return_txn.id)
     assert_response :success
-    assert_select "input[name=original_pos_line_item_id]", count: 1
+    assert_select "input[type=checkbox][name^=lines]", count: 1
+    assert_select "input[name=batch][value='1']", count: 1
     assert_no_match(/Original line ID/i, response.body)
   end
 
@@ -365,7 +366,8 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
 
     get pos_overlay_start_return_path(pos_transaction_id: open_txn.id)
     assert_response :success
-    assert_select "input[name=original_pos_line_item_id]", count: 1
+    assert_select "input[type=checkbox][name^=lines]", count: 1
+    assert_select "input[name=batch][value='1']", count: 1
   end
 
   test "start linked return requires pos.transaction.open when no open transaction exists" do

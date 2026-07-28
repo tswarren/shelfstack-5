@@ -4,7 +4,11 @@ module Pos
   # Cash refund tender for transactions whose net total is negative (linked returns).
   class AddCashRefundTender < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_tender, :success?, :error, :warnings)
+    Result = Data.define(:pos_tender, :success?, :error, :warnings) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval|exception approval/i)
+      end
+    end
 
     def initialize(
       pos_transaction:,

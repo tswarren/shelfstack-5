@@ -5,6 +5,22 @@ module PosHelper
     format_money(cents)
   end
 
+  # Display a money param that may be integer cents or a currency-field dollar string.
+  def pos_param_money(value)
+    return pos_money(0) if value.blank?
+
+    str = value.to_s.strip
+    return pos_money(str.to_i) if str.match?(/\A-?\d+\z/)
+
+    str.start_with?("$") ? str : "$#{str}"
+  end
+
+  def recorded_settlement_cents(tender_presentation)
+    tenders = Array(tender_presentation.recorded_tenders)
+    direction = tender_presentation.refund_mode? ? "refunded" : "received"
+    tenders.select { |t| t.direction == direction && t.unresolved? }.sum(&:amount_cents)
+  end
+
   # Barby SVG is generated from ShelfStack identifiers (Code 128 / EAN-13), not free-form HTML.
   # Sanitize so the markup is safe for browsers and so Brakeman does not treat it as XSS.
   def pos_barcode_svg(svg)
