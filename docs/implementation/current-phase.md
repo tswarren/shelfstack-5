@@ -1,15 +1,15 @@
 # Current Phase
 
-**Active delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
-**Status:** In progress — server mechanics [#146](https://github.com/tswarren/shelfstack-5/pull/146); layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) — Gates L0–L6 + remediations landed; **reduced L7 Accepted** (human 2026-07-27); P1 overlay first-step error visibility fixed; **ready to squash-merge**. Full POS-UI matrix / gate-issue close follows merge.
+**Active delivery phase:** Between phases — Phase 11 closed; Phase 11.1 receipt-printing v1 in draft  
+**Status:** Phase 11 **Fully complete** — server [#146](https://github.com/tswarren/shelfstack-5/pull/146) + layout [#150](https://github.com/tswarren/shelfstack-5/pull/150) on `main` (`ddb85cb`); Gates 11A–11E accepted; reduced L7 Accepted; epic [#130](https://github.com/tswarren/shelfstack-5/issues/130) closed. Next delivery candidate: POS printed documents v1 (Customer / Gift / Post-Void) under [../temp_draft/phase-11.1/00_pos_printing-simplified.md](../temp_draft/phase-11.1/00_pos_printing-simplified.md) — not yet a scheduled phase plan.
 
+**Last completed delivery phase:** Phase 11 — POS Shell and Workspace Revamp  
 **Phase document:** [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)  
-**Layout gates:** [../design/pos/layout-completion-checklist.md](../design/pos/layout-completion-checklist.md)  
-**Visual decisions:** [../design/pos/decisions.md](../design/pos/decisions.md)  
-**Epic:** [#130](https://github.com/tswarren/shelfstack-5/issues/130)  
-**Server gates:** [#131](https://github.com/tswarren/shelfstack-5/issues/131) (11A) · [#132](https://github.com/tswarren/shelfstack-5/issues/132) (11B) · [#133](https://github.com/tswarren/shelfstack-5/issues/133) (11C) · [#134](https://github.com/tswarren/shelfstack-5/issues/134) (11D) · [#135](https://github.com/tswarren/shelfstack-5/issues/135) (11E)
+**Layout acceptance:** [../design/pos/layout-acceptance-status.md](../design/pos/layout-acceptance-status.md)  
+**Epic (closed):** [#130](https://github.com/tswarren/shelfstack-5/issues/130)  
+**Server gates (closed):** [#131](https://github.com/tswarren/shelfstack-5/issues/131)–[#135](https://github.com/tswarren/shelfstack-5/issues/135)
 
-**Last completed delivery phase:** Phase 10 — Product record and form workflow refinement (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128))
+**Phase 11 closed:** Gates 11A–11E + layout L0–L7 (reduced MVP) delivered in [#146](https://github.com/tswarren/shelfstack-5/pull/146) and [#150](https://github.com/tswarren/shelfstack-5/pull/150). Residuals: DWR-017 Should receipt/print items (Phase 11.1 draft); DWR-020 purchasing/receiving picker adoption; exhaustive L7 screenshot matrix deferred.
 
 **Phase 10 closed:** Gates 10a–10e delivered in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Follow-on: DWR-066 (triggered invariant — revisit before roles grant receipt / purchasing / cost visibility independently of `stock_view`).
 
@@ -23,8 +23,8 @@
 
 ## Immediate next work
 
-1. Squash-merge [#150](https://github.com/tswarren/shelfstack-5/pull/150). Reduced L7 is **Accepted**; P1 overlay first-step errors stay visible in `pos_overlay`. Residual screenshot matrix stays deferred. Promote POS-UI decisions and close gate issues after merge. Gate D §15.2 Should residuals remain on DWR-017.
-2. Parallel design (not Phase 11 implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
+1. Schedule Phase 11.1 (or equivalent) from [POS printing v1 build contract](../temp_draft/phase-11.1/00_pos_printing-simplified.md) — gift receipt, barcode, server-owned reprint routes, Post-Void print polish; residual DWR-017 Should items.
+2. Parallel design (not implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
 3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
 4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.
 5. Keep posted-receipt correction (`inventory.receipt.correct`) unseeded until a correction workflow is accepted.
@@ -36,7 +36,8 @@
 ## Program spine (preference)
 
 ```text
-Phase 11 (active)
+Phase 11 (closed)
+  → Phase 11.1 POS printed documents v1 (draft → schedule)
   → Correction workflows (after DWR-004–006 design packet accepted)
   → Reporting / reconciliation hardening (DWR-015/016 may proceed earlier if design stalls)
 ```
@@ -53,10 +54,11 @@ Archived prioritization matrix: [../archive/phase-11-drafts-2026-07-26/00-pre-ph
 
 ## Pointers
 
-- Phase 11 plan: [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)
+- Phase 11 plan (closed): [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)
+- Phase 11.1 printing draft: [../temp_draft/phase-11.1/00_pos_printing-simplified.md](../temp_draft/phase-11.1/00_pos_printing-simplified.md)
 - Carry-forward backlog: [deferred-work-register.md](deferred-work-register.md)
 - Master sequence: [roadmap.md](roadmap.md)
 - Design: [../design/README.md](../design/README.md)
 - Git workflow: [git-workflow.md](git-workflow.md)
-- Active scratch: [../temp_draft/phase-11/](../temp_draft/phase-11/README.md)
+- Active scratch: [../temp_draft/phase-11/](../temp_draft/phase-11/README.md) (correction packet); [../temp_draft/phase-11.1/](../temp_draft/phase-11.1/) (printing)
 - Phase 10 plan: [phases/phase-10-product-record-and-form-refinement.md](phases/phase-10-product-record-and-form-refinement.md)

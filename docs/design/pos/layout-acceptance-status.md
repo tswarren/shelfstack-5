@@ -1,6 +1,6 @@
 # POS layout acceptance status
 
-**Status:** Reduced MVP L7 **Accepted** (human confirmed 2026-07-27) on [#150](https://github.com/tswarren/shelfstack-5/pull/150); P1 overlay error-path fixed; merge-ready; exhaustive matrix deferred  
+**Status:** Reduced MVP L7 **Accepted** (human confirmed 2026-07-27); [#150](https://github.com/tswarren/shelfstack-5/pull/150) merged to `main` (`ddb85cb`); exhaustive matrix deferred  
 **Parent:** [README.md](README.md)  
 **Checklist:** [layout-completion-checklist.md](layout-completion-checklist.md)  
 **Decisions:** [decisions.md](decisions.md)
@@ -10,7 +10,7 @@
 
 | Gate | PR | Implementation |
 | --- | --- | --- |
-| L0–L7 layout revision | [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`feat/phase-11-layout`) | Shell + density/Turbo; reduced L7 Accepted; P1 overlay error visibility fixed; merge-ready |
+| L0–L7 layout revision | [#150](https://github.com/tswarren/shelfstack-5/pull/150) (merged) | Shell + density/Turbo; reduced L7 Accepted; P1 overlay error visibility fixed |
 | L7 acceptance tracking | this document | Reduced critical set Accepted; residual scenarios deferred |
 
 Closed stack (superseded by #150): [#147](https://github.com/tswarren/shelfstack-5/pull/147), [#148](https://github.com/tswarren/shelfstack-5/pull/148), [#149](https://github.com/tswarren/shelfstack-5/pull/149).
@@ -19,7 +19,7 @@ Server mechanics baseline: [#146](https://github.com/tswarren/shelfstack-5/pull/
 
 ## Reduced MVP merge gate (2026-07-27)
 
-**Verdict: Reduced critical L7 Accepted** (human review). Code remediations satisfy the reduced MVP gate once the P1 overlay first-step error path is merged:
+**Verdict: Reduced critical L7 Accepted** (human review). Code remediations and P1 overlay first-step error path shipped on `main` via [#150](https://github.com/tswarren/shelfstack-5/pull/150):
 
 1. Captured at **both** 1366×768 and 1024×768: Ready normal, Transaction 1/8, selected-line commands, Tender unpaid/settled, Recovery `void_required`, Receipt cash/change, Product lookup.
 2. **L2 Must criteria** Accepted from those captures (see capture note).

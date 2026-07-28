@@ -1,6 +1,6 @@
 # Phase 11 — POS Shell and Workspace Revamp
 
-**Status:** In progress — server gates 11A–11E delivered ([#146](https://github.com/tswarren/shelfstack-5/pull/146)); layout Gates L0–L7 on [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`feat/phase-11-layout`); **reduced L7 Accepted** (human 2026-07-27); P1 overlay error path fixed; merge-ready ([layout-acceptance-status.md](../../design/pos/layout-acceptance-status.md))
+**Status:** Fully complete — Gates 11A–11E accepted; layout L0–L7 reduced MVP Accepted; merged to `main` via [#146](https://github.com/tswarren/shelfstack-5/pull/146) and [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`ddb85cb`); epic [#130](https://github.com/tswarren/shelfstack-5/issues/130) closed ([layout-acceptance-status.md](../../design/pos/layout-acceptance-status.md))
 
 **Depends on:** Phase 10 fully complete; Phase 6.5 cashier workspace on `main`; Phase 9 Customer v1  
 **Primary register item:** [DWR-067](../deferred-work-register.md)  
@@ -692,7 +692,7 @@ Gate D is accepted when:
 * presentation or printing failure cannot reverse completion;
 * any undelivered Should scope is explicitly retained in DWR-017.
 
-**Implementation note:** Exit criteria above are met in code on the Phase 11 layout branch; undelivered Should items are listed under §15.2 and DWR-017. Layout Gate L5/L7 manual viewport scoring remains separate from Gate D Must acceptance. Hygiene coverage includes reprint denial without `pos.receipt.reprint` (`phase_11d_customer_receipt_test`). Formal issue close for [#134](https://github.com/tswarren/shelfstack-5/issues/134) follows PR merge.
+**Implementation note:** Exit criteria met on `main` via [#146](https://github.com/tswarren/shelfstack-5/pull/146) / [#150](https://github.com/tswarren/shelfstack-5/pull/150). Undelivered Should items remain under §15.2 and DWR-017 (Phase 11.1 draft). Layout Gate L5/L7 reduced MVP Accepted separately from Gate D Must. Hygiene coverage includes reprint denial without `pos.receipt.reprint` (`phase_11d_customer_receipt_test`).
 
 ---
 
@@ -841,10 +841,10 @@ Every gate must preserve the following.
 
 | DWR         | Phase 11 disposition                                                                                                   |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **DWR-067** | Phase 11 epic; resolved when Gates A–E are accepted or residual work is explicitly re-registered                       |
-| **DWR-010** | Absorbed into Gate E                                                                                                   |
-| **DWR-017** | Mandatory receipt core in Gate D; richer receipt documents may remain deferred; printer fleets remain later extensions |
-| **DWR-020** | POS-native lookup may reuse the shared pattern; purchasing/receiving adoption remains separate                         |
+| **DWR-067** | Resolved — Gates A–E + reduced L7 Accepted; [#146](https://github.com/tswarren/shelfstack-5/pull/146) / [#150](https://github.com/tswarren/shelfstack-5/pull/150) |
+| **DWR-010** | Resolved via Gate E ([#51](https://github.com/tswarren/shelfstack-5/issues/51) / [#135](https://github.com/tswarren/shelfstack-5/issues/135)) |
+| **DWR-017** | Gate D Must delivered; Should residual → Phase 11.1 draft; printer fleets remain later extensions |
+| **DWR-020** | POS-native lookup delivered; purchasing/receiving nested-line adoption remains residual |
 | **DWR-066** | Not Phase 11 scope; mandatory before receipt/PO/cost permissions are granted independently of `stock_view`             |
 
 ---
