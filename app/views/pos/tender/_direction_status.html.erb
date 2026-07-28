@@ -1,13 +1,35 @@
 <% tp = local_assigns.fetch(:presentation) %>
+<% transaction_total = local_assigns.fetch(:net_total_cents, @net_total_cents) %>
+<% change_due = local_assigns.fetch(:change_due_cents, @change_due_cents.to_i) %>
 <div class="pos-region" aria-label="Settlement direction">
-  <h2>Payment</h2>
-  <p class="pos-balance">
-    <% if tp.settled? %>
-      Settled
-    <% elsif tp.refund_mode? %>
-      Refund due <%= pos_money(tp.remaining_cents) %>
-    <% else %>
-      Amount due <%= pos_money(tp.remaining_cents) %>
+  <h2><%= tp.refund_mode? ? "Refund settlement" : "Payment settlement" %></h2>
+  <dl class="pos-settlement-facts">
+    <div>
+      <dt class="muted">Transaction total</dt>
+      <dd><%= pos_money(transaction_total) %></dd>
+    </div>
+    <div>
+      <dt class="muted"><%= tp.refund_mode? ? "Refunded" : "Tendered" %></dt>
+      <dd><%= pos_money(recorded_settlement_cents(tp)) %></dd>
+    </div>
+    <div>
+      <dt class="muted"><%= tp.refund_mode? ? "Remaining refund" : "Remaining" %></dt>
+      <dd class="pos-balance"><%= pos_money(tp.remaining_cents) %></dd>
+    </div>
+    <% if change_due.positive? %>
+      <div>
+        <dt class="muted">Change due</dt>
+        <dd><%= pos_money(change_due) %></dd>
+      </div>
     <% end %>
-  </p>
+  </dl>
+  <% if tp.completable? %>
+    <p class="muted" role="status">Ready to complete</p>
+  <% elsif tp.settled? %>
+    <p class="muted" role="status">Balance settled — resolve blockers before completing</p>
+  <% elsif tp.refund_mode? %>
+    <p class="muted" role="status">Refund still required</p>
+  <% else %>
+    <p class="muted" role="status">Payment still required</p>
+  <% end %>
 </div>

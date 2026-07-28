@@ -1,0 +1,69 @@
+<%= turbo_frame_tag "pos_overlay" do %>
+  <%= render layout: "pos_overlays/dialog", locals: { title: "Proposed refund plan" } do %>
+    <% if flash[:alert].present? %>
+      <div class="ss-alert ss-alert-danger" role="alert"><p><%= flash[:alert] %></p></div>
+    <% end %>
+
+    <p class="muted">
+      Refund due <%= pos_money(@refund_plan.refund_due_cents) %>.
+      Policy: restore original stored value before cash / card / new credit.
+      Adjust amounts below, then accept to record tenders.
+    </p>
+
+    <% if @refund_plan.rows.empty? && @available_plan_rows.blank? %>
+      <p class="muted">No recommended destinations.</p>
+    <% else %>
+      <%= form_with url: accept_refund_plan_pos_transaction_path(@pos_transaction), method: :post,
+            class: "form", data: { turbo_frame: "_top" } do %>
+        <table class="pos-return-selector">
+          <thead>
+            <tr>
+              <th scope="col">Include</th>
+              <th scope="col">Destination</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% (@refund_plan.rows + Array(@available_plan_rows)).each_with_index do |row, index| %>
+              <% included = row.amount_cents.positive? %>
+              <tr>
+                <td>
+                  <%# Hidden 0 so unchecked rows submit included=0 (checkbox alone omits the key). %>
+                  <%= hidden_field_tag "plan_rows[#{index}][included]", "0", id: "plan_row_#{index}_included_default" %>
+                  <label class="checkbox-inline" for="<%= "plan_row_#{index}_included" %>">
+                    <%= check_box_tag "plan_rows[#{index}][included]", "1", included,
+                          id: "plan_row_#{index}_included" %>
+                    <span class="visually-hidden">Include <%= row.label %></span>
+                  </label>
+                </td>
+                <td>
+                  <%= row.label %>
+                  <%= hidden_field_tag "plan_rows[#{index}][destination]", row.destination %>
+                  <%= hidden_field_tag "plan_rows[#{index}][original_pos_tender_id]", row.original_pos_tender&.id %>
+                  <%= hidden_field_tag "plan_rows[#{index}][label]", row.label %>
+                </td>
+                <td>
+                  <%= render "shared/currency_field",
+                        name: "plan_rows[#{index}][amount_cents]",
+                        label: "Amount",
+                        id: "plan_row_#{index}_amount",
+                        value_cents: row.amount_cents,
+                        required: false %>
+                </td>
+                <td class="muted"><%= row.recommended? ? "Recommended" : "Available" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <p class="muted">
+          Deviation from recommendation may require Approval interrupt when recording tenders.
+          Uncheck a row or set amount to $0.00 to omit it.
+        </p>
+        <div class="form-actions">
+          <%= submit_tag "Accept plan and record", class: "button button-primary" %>
+        </div>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -1,4 +1,4 @@
-<p class="muted">Look up a completed receipt, then choose a returnable line.</p>
+<p class="muted">Look up a completed receipt, then select one or more returnable lines.</p>
 
 <%= form_with url: lookup_pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form",
       data: { turbo_frame: "_top" } do |form| %>
@@ -14,62 +14,127 @@
 <% end %>
 
 <% if @return_lookup_transaction.present? %>
-  <h3>Receipt <%= @return_lookup_transaction.receipt_number %></h3>
+  <h3>Return from receipt <%= @return_lookup_transaction.receipt_number %></h3>
+  <p class="muted">
+    <%= @return_lookup_transaction.store.name %>
+    · completed <%= formatted_datetime(@return_lookup_transaction.completed_at, format: :receipt) %>
+  </p>
   <% if @return_lookup_lines.blank? %>
     <p class="muted">No returnable lines remain on this receipt.</p>
   <% else %>
-    <ul class="pos-resolution-list">
-      <% @return_lookup_lines.each do |line| %>
-        <% remaining = line.remaining_returnable_quantity %>
-        <% returned = line.quantity - remaining %>
-        <li>
-          <p>
-            <% if line.product_variant.present? %>
-              <strong><%= variant_option_label(line.product_variant) %></strong>
-              <% if line.inventory_unit.present? %>
-                <span class="muted">· Unit <%= line.inventory_unit.unit_identifier %></span>
-              <% end %>
-            <% else %>
-              <strong><%= line.effective_description %></strong>
-            <% end %>
-            <span class="muted">
-              · sold <%= line.quantity %>
-              · returned <%= returned %>
-              · remaining <%= remaining %>
-              · <%= pos_money(line.unit_price_cents) %> each
-            </span>
-          </p>
-          <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form",
-                data: { turbo_frame: "_top" } do |form| %>
-            <%= hidden_field_tag :original_pos_line_item_id, line.id %>
-            <%= hidden_field_tag :intent, "sale" %>
-            <div class="form-grid">
-              <div class="field">
-                <%= form.label :quantity, class: "field-label" %>
-                <%= form.number_field :quantity, value: 1, min: 1, max: remaining, class: "input input-qty" %>
-              </div>
-              <div class="field">
-                <%= form.label :return_reason_id, "Reason", class: "field-label" %>
-                <%= form.collection_select :return_reason_id, @return_reasons, :id, :name, {}, class: "input" %>
-              </div>
-              <div class="field">
-                <%= form.label :return_disposition, "Disposition", class: "field-label" %>
-                <%= form.select :return_disposition, [
-                      [ "Return to stock", "return_to_stock" ],
-                      [ "Inspection required", "inspection_required" ],
-                      [ "Damaged", "damaged" ],
-                      [ "Return to vendor", "return_to_vendor" ],
-                      [ "Discard", "discard" ],
-                      [ "Non-inventory", "non_inventory" ]
-                    ], {}, class: "input" %>
-              </div>
-            </div>
-            <div class="form-actions">
-              <%= form.submit "Add return line", class: "button button-small button-outline" %>
-            </div>
+    <%= form_with url: pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form",
+          data: { turbo_frame: "_top", controller: "linked-return-selector" } do %>
+      <%= hidden_field_tag :intent, "sale" %>
+      <%= hidden_field_tag :batch, "1" %>
+
+      <div class="form-grid">
+        <div class="field">
+          <label class="field-label" for="default_return_reason_id">Default reason</label>
+          <%= select_tag :default_return_reason_id,
+                options_from_collection_for_select(@return_reasons, :id, :name, params[:default_return_reason_id]),
+                class: "input", id: "default_return_reason_id",
+                data: { linked_return_selector_target: "defaultReason" } %>
+        </div>
+        <div class="field">
+          <label class="field-label" for="default_return_disposition">Default disposition</label>
+          <%= select_tag :default_return_disposition,
+                options_for_select([
+                  [ "Return to stock", "return_to_stock" ],
+                  [ "Inspection required", "inspection_required" ],
+                  [ "Damaged", "damaged" ],
+                  [ "Return to vendor", "return_to_vendor" ],
+                  [ "Discard", "discard" ],
+                  [ "Non-inventory", "non_inventory" ]
+                ], params[:default_return_disposition] || "return_to_stock"),
+                class: "input", id: "default_return_disposition",
+                data: { linked_return_selector_target: "defaultDisposition" } %>
+        </div>
+      </div>
+
+      <table class="pos-return-selector">
+        <thead>
+          <tr>
+            <th scope="col">Select</th>
+            <th scope="col">Description</th>
+            <th scope="col">Sold</th>
+            <th scope="col">Prev</th>
+            <th scope="col">Left</th>
+            <th scope="col">Return</th>
+            <th scope="col">Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @return_lookup_lines.each do |line| %>
+            <% remaining = line.remaining_returnable_quantity %>
+            <% returned = line.quantity - remaining %>
+            <tr data-linked-return-selector-target="row">
+              <td>
+                <%= check_box_tag "lines[#{line.id}][selected]", "1", false,
+                      id: "line_#{line.id}_selected",
+                      data: {
+                        linked_return_selector_target: "checkbox",
+                        action: "change->linked-return-selector#syncSummary"
+                      } %>
+              </td>
+              <td>
+                <% if line.product_variant.present? %>
+                  <strong><%= variant_option_label(line.product_variant) %></strong>
+                  <% if line.inventory_unit.present? %>
+                    <span class="muted">· Unit <%= line.inventory_unit.unit_identifier %></span>
+                  <% end %>
+                <% else %>
+                  <strong><%= line.effective_description %></strong>
+                <% end %>
+                <details class="pos-region">
+                  <summary class="muted">Override reason / disposition</summary>
+                  <div class="form-grid">
+                    <div class="field">
+                      <label class="field-label" for="line_<%= line.id %>_reason">Reason</label>
+                      <%= select_tag "lines[#{line.id}][return_reason_id]",
+                            options_from_collection_for_select(@return_reasons, :id, :name),
+                            include_blank: "Use default",
+                            class: "input", id: "line_#{line.id}_reason" %>
+                    </div>
+                    <div class="field">
+                      <label class="field-label" for="line_<%= line.id %>_disposition">Disposition</label>
+                      <%= select_tag "lines[#{line.id}][return_disposition]",
+                            options_for_select([
+                              [ "Use default", "" ],
+                              [ "Return to stock", "return_to_stock" ],
+                              [ "Inspection required", "inspection_required" ],
+                              [ "Damaged", "damaged" ],
+                              [ "Return to vendor", "return_to_vendor" ],
+                              [ "Discard", "discard" ],
+                              [ "Non-inventory", "non_inventory" ]
+                            ]),
+                            class: "input", id: "line_#{line.id}_disposition" %>
+                    </div>
+                  </div>
+                </details>
+              </td>
+              <td><%= line.quantity %></td>
+              <td><%= returned %></td>
+              <td><%= remaining %></td>
+              <td>
+                <%= number_field_tag "lines[#{line.id}][quantity]", 1,
+                      min: 1, max: remaining, class: "input input-qty",
+                      id: "line_#{line.id}_quantity",
+                      data: {
+                        linked_return_selector_target: "quantity",
+                        unit_price_cents: line.unit_price_cents,
+                        action: "input->linked-return-selector#syncSummary"
+                      } %>
+              </td>
+              <td><%= pos_money(line.unit_price_cents) %></td>
+            </tr>
           <% end %>
-        </li>
-      <% end %>
-    </ul>
+        </tbody>
+      </table>
+
+      <p class="muted" data-linked-return-selector-target="summary" role="status">Selected 0 lines</p>
+      <div class="form-actions">
+        <%= submit_tag "Add to transaction", class: "button button-primary" %>
+      </div>
+    <% end %>
   <% end %>
 <% end %>

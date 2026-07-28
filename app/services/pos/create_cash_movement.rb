@@ -8,7 +8,11 @@ module Pos
   # numeric authority key for this permission per the permission catalog).
   class CreateCashMovement < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_cash_movement, :success?, :error, :pos_approval)
+    Result = Data.define(:pos_cash_movement, :success?, :error, :pos_approval) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval/i)
+      end
+    end
 
     def initialize(pos_session:, cash_movement_type:, amount_cents:, actor:, reason: nil, reference: nil,
                     approver: nil, approver_pin: nil)

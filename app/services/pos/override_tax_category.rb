@@ -7,7 +7,11 @@ module Pos
   # reason, actor, and timestamp.
   class OverrideTaxCategory < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_line_item, :success?, :error, :warnings, :pos_approval)
+    Result = Data.define(:pos_line_item, :success?, :error, :warnings, :pos_approval) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval/i)
+      end
+    end
 
     def initialize(pos_line_item:, tax_category:, reason:, actor:, approver: nil, approver_pin: nil)
       @pos_line_item = pos_line_item

@@ -71,5 +71,9 @@
 
   <%= turbo_frame_tag "pos_overlay",
         class: "pos-overlay-frame",
-        data: { action: "turbo:frame-load->pos-overlay#onFrameLoad" } %>
+        data: { action: "turbo:frame-load->pos-overlay#onFrameLoad" } do %>
+    <% if @pending_approval_action.present? %>
+      <%= render "pos_overlays/approval_interrupt", pending: @pending_approval_action %>
+    <% end %>
+  <% end %>
 </div>

@@ -1,0 +1,35 @@
+<%# locals: pending: Pos::PendingApprovalAction %>
+<% pending = local_assigns.fetch(:pending) %>
+<%= render layout: "pos_overlays/dialog", locals: { title: pending.presentation.title } do %>
+  <div class="pos-approval-interrupt">
+    <dl class="pos-approval-interrupt__facts">
+      <div>
+        <dt class="muted">Action</dt>
+        <dd><%= pending.presentation.action_summary %></dd>
+      </div>
+      <div>
+        <dt class="muted">Boundary</dt>
+        <dd><%= pending.presentation.boundary %></dd>
+      </div>
+      <div>
+        <dt class="muted">Material values</dt>
+        <dd><%= pending.presentation.material_values %></dd>
+      </div>
+      <div>
+        <dt class="muted">Effect if approved</dt>
+        <dd><%= pending.presentation.effect %></dd>
+      </div>
+    </dl>
+
+    <%= form_with url: pos_pending_approval_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do |form| %>
+      <%= render "shared/approval_fields", prefix: "pending_approval" %>
+      <p class="muted hint">Leave username blank to self-approve when your role permits it.</p>
+      <div class="form-actions">
+        <%= form.submit "Approve and continue", class: "button button-primary" %>
+        <%= link_to "Cancel", pos_pending_approval_path, data: { turbo_method: :delete, turbo_frame: "_top" },
+              class: "button button-outline" %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

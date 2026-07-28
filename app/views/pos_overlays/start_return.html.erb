@@ -1,32 +1,70 @@
 <%= turbo_frame_tag "pos_overlay" do %>
-  <% title = @pos_transaction.present? ? "Return" : "Start return" %>
+  <% return_mode = @return_mode.presence ||
+       (@return_lookup_transaction.present? ? "linked" : "chooser")
+     title = case return_mode
+             when "unlinked" then (@pos_transaction.present? ? "Unlinked return" : "Start unlinked return")
+             when "linked" then "Return from receipt"
+             else (@pos_transaction.present? ? "Return" : "Start return")
+             end
+     chooser_path = if @pos_transaction.present?
+       pos_overlay_start_return_path(pos_transaction_id: @pos_transaction.id)
+     else
+       pos_overlay_start_return_path
+     end
+     unlinked_path = if @pos_transaction.present?
+       pos_overlay_start_return_path(pos_transaction_id: @pos_transaction.id, return_mode: "unlinked")
+     else
+       pos_overlay_start_return_path(return_mode: "unlinked")
+     end %>
   <%= render layout: "pos_overlays/dialog", locals: { title: title } do %>
     <% if flash[:alert].present? %>
       <div class="ss-alert ss-alert-danger" role="alert"><p><%= flash[:alert] %></p></div>
     <% end %>
-    <% if @pos_transaction.present? %>
-      <section class="pos-region" aria-label="Linked return">
-        <h3>Linked receipt</h3>
-        <%= render "pos_transactions/return_lookup_body" %>
-      </section>
 
-      <section class="pos-region" aria-label="Unlinked return">
-        <h3>Unlinked return</h3>
+    <% case return_mode %>
+    <% when "unlinked" %>
+      <p class="muted">
+        <%= link_to "← Back to return options", chooser_path, data: pos_overlay_turbo %>
+      </p>
+      <% if @pos_transaction.present? %>
         <%= render "pos/unlinked_return_form",
               form_url: pos_transaction_pos_return_lines_path(@pos_transaction),
               form_id: "txn_unlinked_return_form",
               submit_label: "Add unlinked return",
               return_reasons: @return_reasons,
               tax_categories: @tax_categories,
+              departments: @departments,
+              unlinked_step: @unlinked_step,
+              open_ring: @unlinked_open_ring,
               price_field_id: "txn_unlinked_return_unit_price_cents",
               tax_field_id: "txn_unlinked_return_explicit_tax_amount_cents",
               confirm_id: "txn_unlinked_confirm_cost_basis",
-              hidden_fields: { intent: "sale" },
+              hidden_fields: { intent: "sale", return_mode: "unlinked" },
               turbo_frame: "pos_overlay" %>
-      </section>
-    <% else %>
-      <section class="pos-region" aria-label="Linked return">
-        <h3>Linked receipt</h3>
+      <% else %>
+        <%= render "pos/unlinked_return_form",
+              form_url: register_start_unlinked_return_path,
+              form_id: "ready_unlinked_return_form",
+              submit_label: "Start with unlinked return",
+              return_reasons: @return_reasons,
+              tax_categories: @tax_categories,
+              departments: @departments,
+              unlinked_step: @unlinked_step,
+              open_ring: @unlinked_open_ring,
+              price_field_id: "ready_unlinked_return_unit_price_cents",
+              tax_field_id: "ready_unlinked_return_explicit_tax_amount_cents",
+              confirm_id: "ready_unlinked_confirm_cost_basis",
+              hidden_fields: { return_mode: "unlinked" },
+              turbo_frame: "pos_overlay" %>
+      <% end %>
+
+    <% when "linked" %>
+      <p class="muted">
+        <%= link_to "← Back to return options", chooser_path, data: pos_overlay_turbo %>
+      </p>
+      <% if @pos_transaction.present? %>
+        <%= render "pos_transactions/return_lookup_body" %>
+      <% else %>
         <p class="muted">Look up a completed receipt to start a linked return.</p>
         <%= form_with url: register_lookup_receipt_path, method: :post, class: "form",
               data: { turbo_frame: "_top" } do |form| %>
@@ -39,21 +77,55 @@
             <%= form.submit "Look up and start linked return", class: "button button-outline" %>
           </div>
         <% end %>
+      <% end %>
+
+    <% else %>
+      <p>How is this return starting?</p>
+
+      <section class="pos-region" aria-label="Linked return">
+        <h3>Receipt lookup</h3>
+        <p class="muted">Return against a completed receipt on this store.</p>
+        <% if @pos_transaction.present? %>
+          <%= form_with url: lookup_pos_transaction_pos_return_lines_path(@pos_transaction), method: :post, class: "form",
+                data: { turbo_frame: "_top" } do |form| %>
+            <div class="field">
+              <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
+              <%= form.text_field :receipt_number, class: "input", required: true,
+                    autocomplete: "off", placeholder: "e.g. 001-000001", autofocus: true %>
+            </div>
+            <div class="form-actions">
+              <%= form.submit "Look up", class: "button button-outline" %>
+            </div>
+          <% end %>
+        <% else %>
+          <%= form_with url: register_lookup_receipt_path, method: :post, class: "form",
+                data: { turbo_frame: "_top" } do |form| %>
+            <div class="field">
+              <%= form.label :receipt_number, "Receipt number", class: "field-label" %>
+              <%= text_field_tag :receipt_number, nil, class: "input", autocomplete: "off", autofocus: true %>
+            </div>
+            <%= hidden_field_tag :start_linked_return, "true" %>
+            <div class="form-actions">
+              <%= form.submit "Look up", class: "button button-outline" %>
+            </div>
+          <% end %>
+        <% end %>
       </section>
+
+      <p class="muted" style="text-align: center; margin: 0.75rem 0;">— or —</p>
 
       <% if Current.user.can?("pos.return.create", store: Current.store) %>
         <section class="pos-region" aria-label="Unlinked return">
-          <h3>Unlinked return</h3>
-          <%= render "pos/unlinked_return_form",
-                form_url: register_start_unlinked_return_path,
-                form_id: "ready_unlinked_return_form",
-                submit_label: "Start with unlinked return",
-                return_reasons: @return_reasons,
-                tax_categories: @tax_categories,
-                price_field_id: "ready_unlinked_return_unit_price_cents",
-                tax_field_id: "ready_unlinked_return_explicit_tax_amount_cents",
-                confirm_id: "ready_unlinked_confirm_cost_basis",
-                turbo_frame: "pos_overlay" %>
+          <h3>No receipt / unlinked</h3>
+          <p class="muted">
+            External receipt, gift receipt, or no receipt. Requires reason and disposition;
+            may require approval.
+          </p>
+          <div class="form-actions">
+            <%= link_to "Begin unlinked return", unlinked_path,
+                  class: "button button-primary",
+                  data: pos_overlay_turbo %>
+          </div>
         </section>
       <% end %>
     <% end %>

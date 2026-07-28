@@ -10,7 +10,11 @@ module Pos
   # authorized or void_required outcome (ADR-0016 request idempotency).
   class AddCardRefundTender < ApplicationService
     Error = Class.new(StandardError)
-    Result = Data.define(:pos_tender, :success?, :error, :warnings, :requires_void_confirmation?)
+    Result = Data.define(:pos_tender, :success?, :error, :warnings, :requires_void_confirmation?) do
+      def requires_approval?
+        !success? && error.to_s.match?(/requires approval|exception approval/i)
+      end
+    end
 
     def initialize(
       pos_transaction:,

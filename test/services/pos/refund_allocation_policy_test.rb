@@ -57,6 +57,39 @@ module Pos
       assert allowed.pos_tender.pos_approval_id.present?
     end
 
+    test "cash refund allowed with self-approval when actor holds approve_self" do
+      sale_line, = complete_sv_sale
+      ret = open_return(sale_line)
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+
+      allowed = AddCashRefundTender.call(
+        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin,
+        exception_approver: @admin, exception_approver_pin: "1234"
+      )
+      assert allowed.success?, allowed.error
+      approval = allowed.pos_tender.pos_approval
+      assert_equal @admin.id, approval.requested_by_user_id
+      assert_equal @admin.id, approval.approved_by_user_id
+      assert_equal "stored_value_refund_exception", approval.action_type
+    end
+
+    test "cash refund self-approval without approve_self is denied" do
+      sale_line, = complete_sv_sale
+      ret = open_return(sale_line)
+      refund_due = -RecalculateTransaction.call(pos_transaction: ret).net_total_cents
+      RolePermission.where(
+        role: roles(:administrator),
+        permission: permissions(:pos_return_refund_exception_approve_self)
+      ).delete_all
+
+      denied = AddCashRefundTender.call(
+        pos_transaction: ret, tender_type: @cash, amount_cents: refund_due, actor: @admin,
+        exception_approver: @admin, exception_approver_pin: "1234"
+      )
+      refute denied.success?
+      assert_match(/approve_self|self-approval/, denied.error)
+    end
+
     test "cash refund links original cash tender and reduces remaining refundable" do
       sale_line, sale_tender = complete_cash_sale
       ret = open_return(sale_line)

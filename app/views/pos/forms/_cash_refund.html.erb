@@ -22,5 +22,4 @@
   <% end %>
   <%= render "shared/currency_field", name: "amount_cents", label: "Refund amount",
         id: "refund_amount_cents", value_cents: -@balance_due_cents %>
-  <%= render "pos_transactions/refund_exception_fields", form: form, prefix: "cash" %>
 <% end %>

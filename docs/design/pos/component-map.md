@@ -64,10 +64,13 @@ Used for:
 - Product lookup;
 - Customer lookup and compact creation;
 - Receipt lookup;
-- linked-return selection;
+- linked-return multi-line selection;
+- guided unlinked / open-ring return steps;
 - Stored Value lookup;
 - Open Ring entry;
-- discount, price, tax, and approval forms;
+- discount, price, tax forms;
+- contextual approval interrupt (after authority exception);
+- proposed refund plan review;
 - Cash Movement.
 
 The overlay may update independently until an action changes authoritative POS state. A successful state-changing action replaces `pos_workspace`, clears `pos_overlay`, closes the dialog, and restores focus.
@@ -595,6 +598,14 @@ It does not decide tender validity or sufficiency.
 ### `record-picker`
 
 Retain for simple record selection. Supplement it with richer POS-specific lookup where operational comparison is required.
+
+### `linked-return-selector`
+
+Summarizes selected receipt lines and merchandise totals for the multi-line linked return form (Phase 11.2D).
+
+### `department-filter`
+
+Client-side filter for the open-ring department list (Phase 11.2E).
 
 ## Current-to-target mapping
 

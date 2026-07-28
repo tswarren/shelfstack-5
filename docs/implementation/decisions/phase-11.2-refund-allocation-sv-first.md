@@ -10,7 +10,7 @@
 
 Default refund allocation for receipt-linked (and mixed) return transactions restores **remaining original stored-value tenders before** cash, card, or new store-credit destinations.
 
-Deviations from that plan require the existing exception approval path (`pos.return.refund_exception.approve`), recorded against the bypassing tender.
+Deviations from that plan require the existing exception approval path (`pos.return.refund_exception.approve`), recorded against the bypassing tender. Self-approval is permitted only with `pos.return.refund_exception.approve_self` (PIN re-auth still required; `approve` alone does not imply self-approval).
 
 ## Rationale
 

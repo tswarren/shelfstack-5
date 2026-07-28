@@ -29,7 +29,7 @@ class Phase11StartReturnOverlayTest < ActionDispatch::IntegrationTest
     }
   end
 
-  test "ready start return opens start_return overlay with linked and unlinked paths" do
+  test "ready start return opens chooser with linked lookup and unlinked entry" do
     get register_path
     assert_response :success
     assert_select "a[href=?][data-turbo-frame=pos_overlay]", pos_overlay_start_return_path, text: "Start return"
@@ -38,8 +38,14 @@ class Phase11StartReturnOverlayTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_select "turbo-frame#pos_overlay dialog"
     assert_select "form[action=?]", register_lookup_receipt_path
+    assert_select "form#ready_unlinked_return_form", count: 0
+    assert_select "a[href=?]", pos_overlay_start_return_path(return_mode: "unlinked"), text: "Begin unlinked return"
+
+    get pos_overlay_start_return_path(return_mode: "unlinked")
+    assert_response :success
     assert_select "form#ready_unlinked_return_form[action=?]", register_start_unlinked_return_path
     assert_select "select[name=return_source] option[value=no_receipt]"
+    assert_select "form[action=?]", register_lookup_receipt_path, count: 0
   end
 
   test "start unlinked return from ready creates first-valid-work transaction" do

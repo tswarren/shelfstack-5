@@ -182,16 +182,7 @@ module Pos
       return nil unless cta_submits_form?
 
       money = format("$%.2f", remaining_cents / 100.0)
-      case selected_method
-      when "cash"
-        refund_mode? ? "Add cash refund #{money}" : "Add cash payment #{money}"
-      when "card"
-        refund_mode? ? "Add card refund #{money}" : "Add card payment #{money}"
-      when "stored_value"
-        refund_mode? ? "Record Stored Value refund #{money}" : "Redeem Stored Value #{money}"
-      else
-        refund_mode? ? "Add refund #{money}" : "Add payment #{money}"
-      end
+      refund_mode? ? "Add refund #{money}" : "Add tender #{money}"
     end
 
     def types_for(category)

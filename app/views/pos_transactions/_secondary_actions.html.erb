@@ -41,7 +41,6 @@
         <%= form.label :reason, "Reason note", class: "field-label" %>
         <%= form.text_field :reason, placeholder: "Reason", class: "input" %>
       </div>
-      <%= render "shared/approval_fields", prefix: "txn_discount" %>
       <div class="form-actions">
         <%= form.submit "Apply discount", class: "button button-outline" %>
       </div>
@@ -60,7 +59,6 @@
           <%= form.label :notes, "Notes", class: "field-label" %>
           <%= form.text_field :notes, class: "input" %>
         </div>
-        <%= render "shared/approval_fields", prefix: "tax_exemption" %>
         <div class="form-actions">
           <%= form.submit "Apply whole-transaction exemption", class: "button button-outline" %>
         </div>

@@ -5,6 +5,8 @@
 class RegisterController < ApplicationController
   include UnlinkedReturnRequest
   include PosImmediatePrintContext
+  include PosPendingApprovalLoading
+  include PosPendingApprovalStaging
 
   layout "pos"
 
@@ -139,6 +141,8 @@ class RegisterController < ApplicationController
     load_register_context!
     return redirect_to register_path, alert: "Open a POS session first." if @open_session.blank?
 
+    return if handle_unlinked_wizard!
+
     parse_unlinked_return_inputs!
 
     if unlinked_cost_review_needed?
@@ -161,6 +165,9 @@ class RegisterController < ApplicationController
     if result.success?
       redirect_out_of_overlay_to pos_transaction_path(result.pos_transaction),
                                 notice: "Unlinked return started."
+    elsif result.requires_approval?
+      stage_ready_unlinked_return_approval!(result)
+      redirect_out_of_overlay_to pos_transaction_path(result.pos_transaction, intent: "return")
     elsif first_step_unlinked_overlay_request?
       render_unlinked_return_overlay_error(alert: result.error)
     elsif result.pos_transaction
@@ -239,6 +246,44 @@ class RegisterController < ApplicationController
   end
 
   private
+
+  def stage_ready_unlinked_return_approval!(_result)
+    txn = Current.store.pos_transactions.open.order(:id).last
+    return unless txn
+
+    payload = {
+      "pos_transaction_id" => txn.id,
+      "product_variant_id" => @unlinked_variant&.id,
+      "department_id" => @unlinked_department&.id,
+      "description" => params[:description],
+      "quantity" => @unlinked_quantity,
+      "unit_price_cents" => @unlinked_unit_price_cents,
+      "return_reason_id" => @unlinked_reason&.id,
+      "return_disposition" => params[:return_disposition],
+      "return_source" => params[:return_source],
+      "tax_category_id" => @unlinked_tax_category&.id,
+      "tax_basis" => params[:tax_basis],
+      "explicit_tax_amount_cents" => @unlinked_explicit_tax,
+      "cost_method" => params[:reviewed_cost_source],
+      "unit_cost_cents" => params[:reviewed_cost_unit_cents],
+      "cost_quality" => nil
+    }
+    description = @unlinked_variant&.product&.name || params[:description].presence || "Open ring"
+    stage_pending_approval!(
+      action: "unlinked_return",
+      fingerprint: Pos::ApprovalInterrupt.unlinked_return_fingerprint(payload),
+      payload: payload,
+      presentation: Pos::ApprovalInterrupt.unlinked_return_presentation(
+        description: description,
+        quantity: @unlinked_quantity,
+        unit_price_cents: @unlinked_unit_price_cents
+      )
+    )
+  end
+
+  def load_pending_approval_action?
+    action_name == "show"
+  end
 
   def start_linked_return_from_lookup!(original)
     returnable = original.pos_line_items

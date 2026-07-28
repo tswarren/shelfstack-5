@@ -8,7 +8,7 @@ class PosOverlaysController < ApplicationController
   before_action :load_register_session!
   before_action :load_transaction!, only: %i[
     product_lookup line_actions receipt_detail transaction_lines
-    start_return open_ring stored_value
+    start_return open_ring stored_value refund_plan
   ]
 
   def product_lookup
@@ -82,7 +82,23 @@ class PosOverlaysController < ApplicationController
 
     @return_reasons = Current.organization.return_reasons.where(active: true).order(:name)
     @tax_categories = Current.organization.tax_categories.where(active: true).order(:name)
+    @departments = Department.sorted_hierarchically(
+      Current.organization.departments.where(active: true, postable: true)
+    )
     load_return_lookup_for_overlay! if @pos_transaction.present?
+    @return_mode = resolve_start_return_mode
+    @unlinked_step = params[:unlinked_step].presence || "identify" if @return_mode == "unlinked"
+  end
+
+  def refund_plan
+    return head :not_found if @pos_transaction.blank?
+    return head :forbidden unless @pos_transaction.open?
+
+    @refund_plan = Pos::ProposeRefundPlan.call(
+      pos_transaction: @pos_transaction,
+      refund_due_cents: refund_due_cents_for(@pos_transaction)
+    )
+    @available_plan_rows = available_refund_plan_rows(@refund_plan)
   end
 
   def receipt_detail
@@ -199,8 +215,66 @@ class PosOverlaysController < ApplicationController
       .select { |line| line.remaining_returnable_quantity.positive? }
   end
 
+  def resolve_start_return_mode
+    mode = params[:return_mode].presence || @return_mode.presence
+    return mode if %w[chooser linked unlinked].include?(mode)
+    return "linked" if @return_lookup_transaction.present?
+
+    "chooser"
+  end
+
   def can_view_customers?
     Current.user.can?("customers.customer.view", store: Current.store) ||
       Current.user.can?("customers.customer.lookup", store: Current.store)
+  end
+
+  def refund_due_cents_for(transaction)
+    net = if transaction.open?
+      Pos::RecalculateTransaction.call(pos_transaction: transaction).net_total_cents
+    else
+      transaction.net_total_cents.to_i
+    end
+    received = transaction.pos_tenders.unresolved.where(direction: "received").sum(:amount_cents) +
+      transaction.pos_tenders.where(status: "completed", direction: "received").sum(:amount_cents)
+    refunded = transaction.pos_tenders.unresolved.where(direction: "refunded").sum(:amount_cents) +
+      transaction.pos_tenders.where(status: "completed", direction: "refunded").sum(:amount_cents)
+    balance = net - (received - refunded)
+    [ -balance, 0 ].max
+  end
+
+  # Extra zero-amount destinations cashiers may enable when editing the plan.
+  # Card refunds stay on the tender form (external auth refs required).
+  def available_refund_plan_rows(plan)
+    used_ids = plan.rows.filter_map { |row| row.original_pos_tender&.id }.to_set
+    used_destinations = plan.rows.map(&:destination).to_set
+    rows = []
+
+    Pos::RefundAllocationPolicy.remaining_original_tenders(@pos_transaction).each do |tender|
+      next if used_ids.include?(tender.id)
+
+      category = tender.tender_type.tender_category
+      next unless %w[stored_value cash].include?(category)
+
+      destination = category == "stored_value" ? :original_stored_value : :cash
+      rows << Pos::ProposeRefundPlan::PlanRow.new(
+        destination: destination,
+        label: "#{category.humanize} (original)",
+        amount_cents: 0,
+        original_pos_tender: tender,
+        recommended?: false
+      )
+    end
+
+    unless used_destinations.include?(:cash) || rows.any? { |r| r.destination == :cash }
+      rows << Pos::ProposeRefundPlan::PlanRow.new(
+        destination: :cash,
+        label: "Cash",
+        amount_cents: 0,
+        original_pos_tender: nil,
+        recommended?: false
+      )
+    end
+
+    rows
   end
 end

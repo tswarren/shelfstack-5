@@ -33,7 +33,7 @@ module Pos
       assert_equal "cash", result.selected_method
       assert_equal "Cash payment", result.method_labels["cash"]
       assert result.cta_submits_form?
-      assert_match(/Add cash payment/, result.cta_label)
+      assert_match(/Add tender/, result.cta_label)
       assert result.return_safe?
     end
 
