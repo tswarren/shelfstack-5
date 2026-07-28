@@ -184,6 +184,9 @@ class Phase111ReceiptDocumentsTest < ActionDispatch::IntegrationTest
     assert_select ".pos-receipt-barcode-text", text: reversing.receipt_number
     assert_match(/Original receipt/, response.body)
     assert_match(/#{Regexp.escape(original.receipt_number)}/, response.body)
+    # Line-level tax rows store magnitudes; receipt display must sign returns negative.
+    assert_operator reversing.tax_total_cents, :<, 0
+    assert_select ".pos-totals .amount", text: /-\$#{Regexp.escape(format("%.2f", reversing.tax_total_cents.abs / 100.0))}/
 
     get gift_receipt_reprint_pos_transaction_path(reversing)
     assert_redirected_to pos_transaction_path(reversing)

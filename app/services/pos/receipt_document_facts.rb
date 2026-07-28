@@ -100,19 +100,23 @@ module Pos
     end
 
     def tax_components_for(lines)
-      taxes = lines.flat_map(&:pos_line_item_taxes)
-      return [] if taxes.empty?
+      entries = lines.flat_map do |line|
+        sign = line.return? ? -1 : 1
+        line.pos_line_item_taxes.map { |tax| [ tax, sign ] }
+      end
+      return [] if entries.empty?
 
-      taxes
-        .group_by { |tax| tax.receipt_code_snapshot.presence || "Tax" }
+      entries
+        .group_by { |tax, _sign| tax.receipt_code_snapshot.presence || "Tax" }
         .map do |code, group|
-          rate = group.map(&:rate).compact.first
+          rate = group.map { |tax, _sign| tax.rate }.compact.first
           label = if rate.present?
             "#{code} #{format("%g", rate.to_f * 100)}%"
           else
             code
           end
-          { label: label, amount_cents: group.sum { |tax| tax.amount_cents.to_i } }
+          amount_cents = group.sum { |tax, sign| tax.amount_cents.to_i * sign }
+          { label: label, amount_cents: amount_cents }
         end
         .reject { |component| component[:amount_cents].zero? && component[:label] == "Tax" }
     end
