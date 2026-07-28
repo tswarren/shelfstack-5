@@ -36,21 +36,22 @@ Today Store Operations sits next to Register in the focused POS shell, but one p
 * Register Operations: session open/close, drawer, cash movements / no-sale with clear quick-action vs history boundary, Session X/Z  
 * Store Operations: business-day open/close, all store sessions, Day X/Z, surface reconciliation status/links without duplicating full ShelfStack reconciliation  
 * Shared operating context (store, business day, session, device, drawer, user, open-transaction status)  
-* Explicit open-transaction navigation rules (OD-P11-03)  
+* Explicit open-transaction navigation rules ([OD-P11-03](../decisions/phase-11.3-operations-workspace-boundaries.md))  
 * Permissions gate which scopes and actions a user may access  
 
 Detail and acceptance criteria: draft §11.3; promote into gate issues at activation.
 
 ---
 
-## 4. Open decisions needed by this phase
+## 4. Accepted decisions governing this phase
 
-| ID | Topic | Doc |
+| ID | Topic | Resolution |
 | --- | --- | --- |
-| OD-P11-01 | Check refund → cash default vs store config | [open-decisions.md](../open-decisions.md) |
-| OD-P11-02 | Register quick actions vs Operations history | [open-decisions.md](../open-decisions.md) |
-| OD-P11-03 | Open-transaction workspace navigation | [open-decisions.md](../open-decisions.md) |
-| OD-P11-04 | Reconciliation placement in Operations | [open-decisions.md](../open-decisions.md) |
+| OD-P11-02 | Register quick actions vs Operations history | [phase-11.3-operations-workspace-boundaries.md](../decisions/phase-11.3-operations-workspace-boundaries.md) |
+| OD-P11-03 | Open-transaction workspace navigation | same decision note |
+| OD-P11-04 | Reconciliation placement in Operations | same decision note |
+
+Check refund treatment (OD-P11-01) is accepted for Phase **11.4** — [phase-11.4-check-refund-treatment.md](../decisions/phase-11.4-check-refund-treatment.md).
 
 ---
 

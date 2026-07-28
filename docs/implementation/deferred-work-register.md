@@ -158,6 +158,7 @@ Use a delivery phase number, `unscheduled`, or `later_extensions` (formerly the 
 | DWR-065 | Vendor-source linking workflow (Gate 8e) | 8 | delivery_debt | Phase 8 Must gates closed; Should gate deferred — [phase-08…](phases/phase-08-catalog-refinement-and-enrichment.md) §8e | Product/variant → vendor search → create/update source (code, cost, pack); keep Purchasing ownership | unscheduled | [#99](https://github.com/tswarren/shelfstack-5/issues/99) |
 | DWR-066 | Product show rail: build stock summary when any of stock/receipt/PO/cost caps is present | 10 | delivery_debt | Phase 10 MVP review — **triggered invariant:** must revisit before any role grants receipt / purchasing / cost visibility without `stock_view`. Not Phase 11 scope. | Return a stock summary object when any relevant capability exists; nil unauthorized fields; rail gates each row | unscheduled | — |
 | DWR-067 | POS shell and workspace revamp (Phase 11) | 11 | delivery_debt | Resolved 2026-07-27 — Gates 11A–11E + layout L0–L7 reduced MVP on `main` via [#146](https://github.com/tswarren/shelfstack-5/pull/146) + [#150](https://github.com/tswarren/shelfstack-5/pull/150) (`ddb85cb`). [phase-11…](phases/phase-11-pos-shell-and-workspace-revamp.md); archived drafts under [phase-11-drafts-2026-07-26](../archive/phase-11-drafts-2026-07-26/README.md). Residuals: DWR-017 print residuals; DWR-020 purchasing/receiving picker; Phase 11.2+ workflow refinement | — | — | [#130](https://github.com/tswarren/shelfstack-5/issues/130) |
+| DWR-068 | Store-configurable check-refund policy (holding period / alternate defaults) | 11.4 | deferred_capability | OD-P11-01 accepted MVP: check remainder → new store credit; cash needs exception — [phase-11.4-check-refund-treatment.md](decisions/phase-11.4-check-refund-treatment.md). No clearance inference in Phase 11 | Check enabled as ordinary tender + concrete operating requirements | later_extensions | — |
 
 ---
 
@@ -172,9 +173,9 @@ Phase 10 follow-on:            DWR-066 (triggered invariant — before independe
 Phase 11 (closed):             DWR-067 resolved
 Phase 11.1 (closed):           DWR-017 print MVP + SV slips/vouchers delivered; residual cash-movement/audit/ESC/POS remain
 Phase 11.2 (active):           Contextual approvals, tender polish, guided returns, refund UX — epic [#158](https://github.com/tswarren/shelfstack-5/issues/158)
-Phase 11.3 / 11.4 (scheduled): [#165](https://github.com/tswarren/shelfstack-5/issues/165) / [#166](https://github.com/tswarren/shelfstack-5/issues/166)
+Phase 11.3 / 11.4 (scheduled): [#165](https://github.com/tswarren/shelfstack-5/issues/165) / [#166](https://github.com/tswarren/shelfstack-5/issues/166); OD-P11-01–04 accepted
 Parallel design:               DWR-004 … DWR-006 (Correction Integrity Design Packet)
-Later extensions:              DWR-030 … DWR-052  (= deferred-capabilities.md)
+Later extensions:              DWR-030 … DWR-052, DWR-068  (= deferred-capabilities.md)
 Doc hygiene:                   DWR-060 … DWR-063
 ```
 

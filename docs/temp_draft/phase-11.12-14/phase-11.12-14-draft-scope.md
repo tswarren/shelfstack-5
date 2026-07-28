@@ -645,7 +645,7 @@ A proposed refund line is not a completed refund tender until the cashier confir
 3. ~~Stored value;~~  
 4. ~~Other.~~
 
-For refund-default purposes, an original check payment is proposed to be treated as cash (**OD-P11-01** — still open; does not reopen SV-first ordering).
+For refund-default purposes, an original check payment does **not** default to cash (**OD-P11-01** accepted — remainder → new store credit after original-tender / SV allocations; [phase-11.4-check-refund-treatment.md](../../implementation/decisions/phase-11.4-check-refund-treatment.md)). Does not reopen SV-first ordering.
 
 ~~This ordering must be reconciled with the earlier ShelfStack policy that restored stored value before refunding external payment methods. Phase 11.2 must make an explicit policy decision rather than leaving both rules active.~~ **Resolved:** SV-first supersedes the cash-first proposal.
 
@@ -1354,28 +1354,19 @@ This order allows 11.3 to reuse the approval and interaction mechanisms introduc
 
 ## Check refund treatment
 
-Confirm whether check payments always default to cash refunds for MVP or whether store configuration may impose another method or holding rule. Tracked as **OD-P11-01**.
+**Accepted (OD-P11-01):** [phase-11.4-check-refund-treatment.md](../../implementation/decisions/phase-11.4-check-refund-treatment.md) — check-funded remainder defaults to new store credit; cash requires refund-exception approval; store-configurable policy deferred (DWR-068).
 
 ## Register quick actions versus Operations history
 
-Confirm which actions remain immediately accessible from Register while their authoritative history is managed in Register Operations.
-
-This particularly affects:
-
-* cash movements;  
-* no-sale activity;  
-* session opening;  
-* session closing.
-
-Tracked as **OD-P11-02**.
+**Accepted (OD-P11-02):** [phase-11.3-operations-workspace-boundaries.md](../../implementation/decisions/phase-11.3-operations-workspace-boundaries.md).
 
 ## Open-transaction navigation
 
-Define which workspace transitions are permitted while a transaction is open and which require completion, suspension, or cancellation. Tracked as **OD-P11-03**.
+**Accepted (OD-P11-03):** same decision note.
 
 ## Reconciliation placement
 
-Confirm that Operations surfaces current reconciliation status and links while the full reconciliation workflow remains in normal ShelfStack. Tracked as **OD-P11-04**.
+**Accepted (OD-P11-04):** same decision note — Operations status/links only; full workflow remains ShelfStack Reporting and Reconciliation.
 
 ---
 
@@ -1413,4 +1404,4 @@ At exit:
 * permissions, corrections, tenders, reports, and reconciliation remain financially and historically sound;  
 * all known Phase 11 gaps are either resolved or explicitly deferred.
 
-The most consequential formerly unresolved item was the **refund-allocation priority**. That is now **accepted as stored-value first** ([phase-11.2-refund-allocation-sv-first.md](../../implementation/decisions/phase-11.2-refund-allocation-sv-first.md)). Remaining open items for 11.3/11.4 are OD-P11-01–04.  
+Formerly unresolved Phase 11 planning items are now accepted: **refund-allocation priority** (SV-first, OD-P11-R1), **check refund treatment** (OD-P11-01), and **Operations workspace boundaries** (OD-P11-02–04). See the decision notes under `docs/implementation/decisions/`.  

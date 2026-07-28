@@ -33,7 +33,7 @@
 7. Do not open Phase 8.5 / multi-variant (DWR-021) until explicitly scheduled.
 8. Full CRM beyond flat Customer v1 remains deferred (DWR-036).
 9. Phase 7 follow-ups (#89–#94) and catalog Should/Nice remain register-tracked until pulled.
-10. Resolve OD-P11-01–04 before or during Phase 11.3 activation; do not block 11.2A–E on them.
+10. OD-P11-01–04 accepted ([check refund](decisions/phase-11.4-check-refund-treatment.md); [Operations boundaries](decisions/phase-11.3-operations-workspace-boundaries.md)) — apply in Phase 11.3 / 11.4 delivery; do not reopen without a superseding decision.
 11. DWR-017 residuals (cash-movement slips, internal Post-Void copy, INV-POS-014, ESC/POS) remain unscheduled.
 
 ## Program spine (preference)

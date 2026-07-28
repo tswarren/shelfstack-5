@@ -547,7 +547,7 @@ Shown when entering Tender with a net refund, or via **Review / edit plan**. Pro
 
 1. Accept records tenders through existing services under `RefundAllocationPolicy`.
 2. Cash-first draft ordering is not shown; SV-first is locked.
-3. Check→cash default remains OD-P11-01 (annotation only until decided).
+3. Check-funded remainder defaults to new store credit after original-tender / SV allocations (OD-P11-01 accepted); cash needs refund-exception approval — [phase-11.4-check-refund-treatment.md](../../implementation/decisions/phase-11.4-check-refund-treatment.md).
 
 ## Recorded-tender detail overlay
 
@@ -603,7 +603,7 @@ Header gains explicit workspace switches. Shared operating context stays visible
 
 1. Moving Register ↔ Operations preserves store, day, session, device, drawer, user.
 2. **Store Workspace** exits the focused POS shell to normal ShelfStack with store context.
-3. Open-transaction rules (OD-P11-03): some switches allowed with txn preserved; others require suspend/complete/cancel — show disabled reason, do not silently drop the txn.
+3. Open-transaction rules (OD-P11-03 accepted): active txn stays in Register; leave only after complete / explicit suspend / explicit cancel — interruption offers Suspend, Cancel, or Return; never silent abandon — [phase-11.3-operations-workspace-boundaries.md](../../implementation/decisions/phase-11.3-operations-workspace-boundaries.md).
 
 ## Register Operations
 
@@ -636,7 +636,7 @@ Current session, device, and drawer only — not all-store tables.
 
 ### Register Operations annotations
 
-1. Quick actions vs history: OD-P11-02 — Cash Movement / No Sale may also remain on Register Ready; authoritative history lives here.
+1. Quick actions vs history (OD-P11-02 accepted): Cash Movement / No Sale remain on Register Ready; authoritative current-session history lives here.
 2. Close Session is first-level (POS-UI-037), not buried under reports.
 3. Session X/Z appear only in this scope.
 
@@ -670,7 +670,7 @@ Business day and all store sessions — not the current drawer’s private quick
 ### Store Operations annotations
 
 1. Current-session and store-wide controls are not mixed without hierarchy (scope tabs or clear sections).
-2. Reconciliation: status + link only (OD-P11-04); full workflow remains normal ShelfStack.
+2. Reconciliation (OD-P11-04 accepted): status, blockers, and permission-gated links only; full workflow remains normal ShelfStack Reporting and Reconciliation.
 3. Day close blockers are visible and actionable.
 
 ## Open-transaction navigation (blocked example)
@@ -681,11 +681,11 @@ Business day and all store sessions — not the current drawer’s private quick
 │                                                                              │
 │ Transaction has 3 lines · tender not started                                 │
 │                                                                              │
-│ [Suspend and leave] [Return to Register] [Cancel]                            │
+│ [Suspend and continue] [Cancel and continue] [Return to Register]            │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Exact allow/deny matrix is OD-P11-03; this frame establishes the interruption pattern.
+Allow/deny follows OD-P11-03 ([decision note](../../implementation/decisions/phase-11.3-operations-workspace-boundaries.md)); this frame establishes the interruption pattern. Labels: Suspend and continue / Cancel and continue / Return to Register.
 
 ---
 
