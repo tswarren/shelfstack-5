@@ -1,8 +1,6 @@
 <% content_for :title, "Credit Voucher #{@facts.account_number}" %>
 
-<%= render "toolbar",
-      back_path: stored_value_account_path(@facts.account),
-      barcode_error: @facts.barcode.error %>
+<%= render "toolbar", barcode_error: @facts.barcode.error %>
 
 <article class="pos-sv-credit-voucher pos-receipt-document" aria-label="Credit voucher">
   <% if @facts.reprint %>

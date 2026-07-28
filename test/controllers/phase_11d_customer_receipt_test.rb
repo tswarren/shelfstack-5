@@ -32,7 +32,7 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
     assert_select ".pos-receipt-meta", text: /Receipt/
     assert_match(/\b#{txn.completed_at.year}\b/, response.body)
     assert_match(/Browser print path only/, response.body)
-    assert_select "button", text: "Print"
+    assert_select "button", text: "Print again"
     assert_match(/REPRINT/, response.body)
 
     status_before = txn.reload.status

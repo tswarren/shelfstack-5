@@ -5,40 +5,34 @@
 <% can_voucher = Current.user.can?("stored_value.voucher.print", store: Current.store) %>
 <% sv_entries = @pos_transaction.stored_value_entries.select { |e| PosImmediatePrintContext::SLIP_ENTRY_TYPES.include?(e.entry_type) } %>
 <% sv_accounts = sv_entries.map(&:stored_value_account).uniq %>
+<% print_link = { class: "button button-outline button-small", target: "shelfstack_print", data: { turbo: false } } %>
+<% reprint_link = { class: "button button-ghost button-small", target: "shelfstack_print", data: { turbo: false } } %>
 
 <% if immediate %>
-  <%= link_to "Print Receipt", customer_receipt_pos_transaction_path(@pos_transaction),
-        class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+  <%= link_to "Print Receipt", customer_receipt_pos_transaction_path(@pos_transaction), **print_link %>
   <% if reversing %>
-    <%= link_to "Print Post-Void Receipt", post_void_receipt_pos_transaction_path(@pos_transaction),
-          class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+    <%= link_to "Print Post-Void Receipt", post_void_receipt_pos_transaction_path(@pos_transaction), **print_link %>
   <% else %>
-    <%= link_to "Print Gift Receipt", gift_receipt_pos_transaction_path(@pos_transaction),
-          class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+    <%= link_to "Print Gift Receipt", gift_receipt_pos_transaction_path(@pos_transaction), **print_link %>
   <% end %>
   <% if can_slip %>
     <% sv_entries.each do |entry| %>
       <% next unless immediate_sv_entry_print_available?(entry) %>
-      <%= link_to "Print Activity Slip", activity_slip_stored_value_entry_path(entry),
-            class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+      <%= link_to "Print Activity Slip", activity_slip_stored_value_entry_path(entry), **print_link %>
     <% end %>
   <% end %>
   <% if can_voucher %>
     <% sv_accounts.each do |account| %>
       <% next unless immediate_sv_account_print_available?(account) %>
       <% next if account.suspended? %>
-      <%= link_to "Print Credit Voucher", credit_voucher_stored_value_account_path(account),
-            class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+      <%= link_to "Print Credit Voucher", credit_voucher_stored_value_account_path(account), **print_link %>
     <% end %>
   <% end %>
 <% elsif can_reprint %>
-  <%= link_to "Reprint Receipt", customer_receipt_reprint_pos_transaction_path(@pos_transaction),
-        class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+  <%= link_to "Reprint Receipt", customer_receipt_reprint_pos_transaction_path(@pos_transaction), **reprint_link %>
   <% if reversing %>
-    <%= link_to "Reprint Post-Void Receipt", post_void_receipt_reprint_pos_transaction_path(@pos_transaction),
-          class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+    <%= link_to "Reprint Post-Void Receipt", post_void_receipt_reprint_pos_transaction_path(@pos_transaction), **reprint_link %>
   <% else %>
-    <%= link_to "Reprint Gift Receipt", gift_receipt_reprint_pos_transaction_path(@pos_transaction),
-          class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+    <%= link_to "Reprint Gift Receipt", gift_receipt_reprint_pos_transaction_path(@pos_transaction), **reprint_link %>
   <% end %>
 <% end %>

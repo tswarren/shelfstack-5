@@ -1,13 +1,11 @@
-<% back_path = local_assigns.fetch(:back_path) %>
 <% barcode_error = local_assigns[:barcode_error] %>
 <div class="pos-receipt-toolbar no-print">
-  <p class="muted">Browser print path only — no managed printer queue.</p>
+  <p class="muted">Browser print path only — this window is reused for later print documents.</p>
   <% if barcode_error.present? %>
     <p class="alert alert-warning no-print" role="status">Barcode could not be rendered. Account number is still printable below.</p>
   <% end %>
   <div class="action-group">
-    <button type="button" class="button button-primary" onclick="window.print()">Print</button>
-    <%= link_to "Back", back_path, class: "button button-outline" %>
-    <%= link_to "Register", register_path, class: "button button-ghost" %>
+    <button type="button" class="button button-primary" onclick="window.print()">Print again</button>
+    <button type="button" class="button button-outline" onclick="window.close()">Close</button>
   </div>
 </div>

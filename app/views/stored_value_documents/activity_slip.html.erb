@@ -1,7 +1,6 @@
 <% content_for :title, @facts.title %>
 
-<%= render "toolbar",
-      back_path: stored_value_account_path(@facts.account) %>
+<%= render "toolbar" %>
 
 <article class="pos-sv-activity-slip pos-receipt-document" aria-label="Stored-value activity slip">
   <% if @facts.reprint %>

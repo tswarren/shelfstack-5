@@ -6,7 +6,7 @@
     <% if Current.user.can?("stored_value.voucher.print", store: Current.store) %>
       <% if @account.active? %>
         <%= link_to "Reprint Credit Voucher", credit_voucher_reprint_stored_value_account_path(@account),
-              class: "button button-outline", target: "_blank", rel: "noopener" %>
+              class: "button button-outline", target: "shelfstack_print", data: { turbo: false } %>
       <% else %>
         <p class="muted">Credit Voucher printing is unavailable while this account is suspended.</p>
       <% end %>
@@ -68,7 +68,7 @@
               <% if Current.user.can?("stored_value.activity.print", store: Current.store) &&
                     StoredValue::ActivitySlipFacts::IN_SCOPE_ENTRY_TYPES.include?(entry.entry_type) %>
                 <%= link_to "Reprint Activity Slip", activity_slip_reprint_stored_value_entry_path(entry),
-                      class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+                      class: "button button-ghost button-small", target: "shelfstack_print", data: { turbo: false } %>
               <% end %>
             </td>
           </tr>

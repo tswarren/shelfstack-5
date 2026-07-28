@@ -520,7 +520,7 @@ app/services/stored_value/account_barcode.rb
 app/controllers/concerns/pos_immediate_print_context.rb
 ```
 
-Routes (member of `pos_transactions`): immediate `customer_receipt` / `gift_receipt` / `post_void_receipt` vs historical `*/reprint`. SV routes on `stored_value_entries` / `stored_value_accounts` for Activity Slip and Credit Voucher. `_commands.html.erb` chooses immediate vs reprint actions from server-owned session context (including SV entry/account ids when present).
+Routes (member of `pos_transactions`): immediate `customer_receipt` / `gift_receipt` / `post_void_receipt` vs historical `*/reprint`. SV routes on `stored_value_entries` / `stored_value_accounts` for Activity Slip and Credit Voucher. `_commands.html.erb` chooses immediate vs reprint actions from server-owned session context (including SV entry/account ids when present). Print entry links open/reuse a single named browser window (`shelfstack_print`) and the print layout auto-invokes the system print dialog.
 
 Detailed completed lines may remain subordinate or disclosed. Next Transaction and Print remain visually dominant.
 
