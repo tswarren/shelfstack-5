@@ -118,9 +118,9 @@ GEM
       tzinfo
     ffi (1.17.4)
     ffi (1.17.4-aarch64-linux-gnu)
-    ffi (1.17.4-arm-linux)
+    ffi (1.17.4-arm-linux-gnu)
     ffi (1.17.4-arm64-darwin)
-    ffi (1.17.4-x86_64-linux)
+    ffi (1.17.4-x86_64-linux-gnu)
     fugit (1.13.0)
       et-orbi (~> 1.4)
       raabro (~> 1.4)
@@ -194,11 +194,11 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.4-arm-linux)
+    nokogiri (1.19.4-arm-linux-gnu)
       racc (~> 1.4)
     nokogiri (1.19.4-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.19.4-x86_64-linux)
+    nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
     ostruct (0.6.3)
     pagy (43.6.1)
@@ -378,10 +378,10 @@ GEM
 
 PLATFORMS
   aarch64-linux-gnu
-  arm-linux
+  arm-linux-gnu
   arm64-darwin-25
   ruby
-  x86_64-linux
+  x86_64-linux-gnu
 
 DEPENDENCIES
   barby
