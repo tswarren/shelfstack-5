@@ -489,7 +489,38 @@ app/views/pos/receipt/
   _overflow_commands.html.erb
 ```
 
-Printable customer document remains `pos_transactions/customer_receipt` on `layouts/pos_receipt` (not these interactive partials).
+Printable documents (Phase 11.1) live under `pos_receipt_documents` and `stored_value_documents` on `layouts/pos_receipt` — not the interactive Receipt partials:
+
+```text
+app/views/pos_receipt_documents/
+  customer_receipt.html.erb
+  gift_receipt.html.erb
+  post_void_receipt.html.erb
+  _toolbar.html.erb
+  _store_header.html.erb
+  _store_footer.html.erb
+  _status_notices.html.erb
+  _receipt_number_barcode.html.erb
+  _meta.html.erb
+  _line.html.erb
+
+app/views/stored_value_documents/
+  activity_slip.html.erb
+  credit_voucher.html.erb
+  _toolbar.html.erb
+
+app/controllers/pos_receipt_documents_controller.rb
+app/controllers/stored_value_documents_controller.rb
+app/services/pos/receipt_document_facts.rb
+app/services/pos/receipt_barcode.rb
+app/services/stored_value/balance_after_entry.rb
+app/services/stored_value/activity_slip_facts.rb
+app/services/stored_value/credit_voucher_facts.rb
+app/services/stored_value/account_barcode.rb
+app/controllers/concerns/pos_immediate_print_context.rb
+```
+
+Routes (member of `pos_transactions`): immediate `customer_receipt` / `gift_receipt` / `post_void_receipt` vs historical `*/reprint`. SV routes on `stored_value_entries` / `stored_value_accounts` for Activity Slip and Credit Voucher. `_commands.html.erb` chooses immediate vs reprint actions from server-owned session context (including SV entry/account ids when present). Print entry links open/reuse a single named browser window (`shelfstack_print`) and the print layout auto-invokes the system print dialog.
 
 Detailed completed lines may remain subordinate or disclosed. Next Transaction and Print remain visually dominant.
 

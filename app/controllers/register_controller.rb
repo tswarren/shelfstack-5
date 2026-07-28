@@ -4,6 +4,7 @@
 # context and routes the cashier to the next required step.
 class RegisterController < ApplicationController
   include UnlinkedReturnRequest
+  include PosImmediatePrintContext
 
   layout "pos"
 
@@ -25,6 +26,7 @@ class RegisterController < ApplicationController
                 if: -> { ActiveModel::Type::Boolean.new.cast(params[:start_linked_return]) }
 
   def show
+    clear_immediate_print_context!
     load_register_context!
     @scan_query = flash[:scan_query]
     @scan_quantity = flash[:scan_quantity].presence || 1

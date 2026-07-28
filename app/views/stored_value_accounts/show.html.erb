@@ -2,6 +2,16 @@
 <section class="page-header">
   <h1><%= @account.account_number %></h1>
   <p class="muted"><%= @account.account_type %> · <%= @account.status %> · <%= number_to_currency(@account.current_balance_cents / 100.0) %></p>
+  <div class="action-group">
+    <% if Current.user.can?("stored_value.voucher.print", store: Current.store) %>
+      <% if @account.active? %>
+        <%= link_to "Reprint Credit Voucher", credit_voucher_reprint_stored_value_account_path(@account),
+              class: "button button-outline", target: "shelfstack_print", data: { turbo: false } %>
+      <% else %>
+        <p class="muted">Credit Voucher printing is unavailable while this account is suspended.</p>
+      <% end %>
+    <% end %>
+  </div>
 </section>
 
 <% if Current.user.can?("stored_value.adjustment.create", store: Current.store) %>
@@ -44,6 +54,7 @@
           <th>Type</th>
           <th>Amount</th>
           <th>Key</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -53,6 +64,13 @@
             <td><%= entry.entry_type %></td>
             <td><%= number_to_currency(entry.amount_cents / 100.0) %></td>
             <td class="muted"><%= entry.posting_key %></td>
+            <td>
+              <% if Current.user.can?("stored_value.activity.print", store: Current.store) &&
+                    StoredValue::ActivitySlipFacts::IN_SCOPE_ENTRY_TYPES.include?(entry.entry_type) %>
+                <%= link_to "Reprint Activity Slip", activity_slip_reprint_stored_value_entry_path(entry),
+                      class: "button button-ghost button-small", target: "shelfstack_print", data: { turbo: false } %>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>

@@ -71,6 +71,14 @@ Rails.application.routes.draw do
   resources :stored_value_accounts, only: %i[index show new create] do
     member do
       post :adjust
+      get :credit_voucher, to: "stored_value_documents#credit_voucher"
+      get "credit_voucher/reprint", to: "stored_value_documents#credit_voucher_reprint", as: :credit_voucher_reprint
+    end
+  end
+  resources :stored_value_entries, only: [] do
+    member do
+      get :activity_slip, to: "stored_value_documents#activity_slip"
+      get "activity_slip/reprint", to: "stored_value_documents#activity_slip_reprint", as: :activity_slip_reprint
     end
   end
   resources :stock_balances, only: %i[index show]
@@ -180,7 +188,12 @@ Rails.application.routes.draw do
       post :complete
       post :start_linked_return
       get :tender
-      get :customer_receipt
+      get :customer_receipt, to: "pos_receipt_documents#customer_receipt"
+      get "customer_receipt/reprint", to: "pos_receipt_documents#customer_receipt_reprint", as: :customer_receipt_reprint
+      get :gift_receipt, to: "pos_receipt_documents#gift_receipt"
+      get "gift_receipt/reprint", to: "pos_receipt_documents#gift_receipt_reprint", as: :gift_receipt_reprint
+      get :post_void_receipt, to: "pos_receipt_documents#post_void_receipt"
+      get "post_void_receipt/reprint", to: "pos_receipt_documents#post_void_receipt_reprint", as: :post_void_receipt_reprint
       get :post_void_form
       post :approve_post_void
       post :clear_post_void_approval

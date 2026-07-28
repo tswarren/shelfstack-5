@@ -1,0 +1,45 @@
+<% content_for :title, @facts.title %>
+
+<%= render "toolbar" %>
+
+<article class="pos-sv-activity-slip pos-receipt-document" aria-label="Stored-value activity slip">
+  <% if @facts.reprint %>
+    <p class="pos-receipt-reprint" role="status"><strong>REPRINT</strong></p>
+  <% end %>
+
+  <%= render "pos_receipt_documents/store_header" %>
+
+  <p class="pos-receipt-banner" role="status"><strong><%= @facts.title %></strong></p>
+
+  <% if @facts.receipt_number.present? %>
+    <p>Receipt <%= @facts.receipt_number %></p>
+  <% end %>
+  <p class="muted"><%= formatted_datetime(@facts.entry_at, format: :receipt) %></p>
+  <% if @facts.reprint && @facts.reprint_at.present? %>
+    <p class="muted">Reprint <%= formatted_datetime(@facts.reprint_at, format: :receipt) %></p>
+  <% end %>
+
+  <dl class="pos-sv-slip-meta">
+    <div class="pos-receipt-totals__row">
+      <dt>Account type:</dt>
+      <dd><%= @facts.account_type_label %></dd>
+    </div>
+    <div class="pos-receipt-totals__row">
+      <dt>Account</dt>
+      <dd><%= @facts.masked_account_number %></dd>
+    </div>
+  </dl>
+
+  <dl class="pos-receipt-totals">
+    <div class="pos-receipt-totals__row">
+      <dt><%= @facts.amount_label %></dt>
+      <dd class="amount"><%= pos_money(@facts.amount_cents) %></dd>
+    </div>
+    <div class="pos-receipt-totals__row">
+      <dt><%= @facts.balance_label %></dt>
+      <dd class="amount"><%= pos_money(@facts.balance_after_cents) %></dd>
+    </div>
+  </dl>
+
+  <div class="pos-receipt-store-text muted"><%= simple_format(@facts.footer_text) %></div>
+</article>

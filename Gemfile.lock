@@ -78,6 +78,7 @@ GEM
     addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     ast (2.4.3)
+    barby (0.7.0)
     base64 (0.3.0)
     bcrypt (3.1.22)
     bcrypt_pbkdf (1.1.2)
@@ -117,11 +118,9 @@ GEM
       tzinfo
     ffi (1.17.4)
     ffi (1.17.4-aarch64-linux-gnu)
-    ffi (1.17.4-aarch64-linux-musl)
     ffi (1.17.4-arm-linux-gnu)
-    ffi (1.17.4-arm-linux-musl)
+    ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x86_64-linux-gnu)
-    ffi (1.17.4-x86_64-linux-musl)
     fugit (1.13.0)
       et-orbi (~> 1.4)
       raabro (~> 1.4)
@@ -195,15 +194,11 @@ GEM
       racc (~> 1.4)
     nokogiri (1.19.4-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.4-aarch64-linux-musl)
-      racc (~> 1.4)
     nokogiri (1.19.4-arm-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.19.4-arm-linux-musl)
+    nokogiri (1.19.4-arm64-darwin)
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-gnu)
-      racc (~> 1.4)
-    nokogiri (1.19.4-x86_64-linux-musl)
       racc (~> 1.4)
     ostruct (0.6.3)
     pagy (43.6.1)
@@ -216,9 +211,8 @@ GEM
       racc
     pg (1.6.3)
     pg (1.6.3-aarch64-linux)
-    pg (1.6.3-aarch64-linux-musl)
+    pg (1.6.3-arm64-darwin)
     pg (1.6.3-x86_64-linux)
-    pg (1.6.3-x86_64-linux-musl)
     phonelib (0.10.22)
     pp (0.6.4)
       prettyprint
@@ -354,6 +348,7 @@ GEM
     thor (1.5.0)
     thruster (0.1.23)
     thruster (0.1.23-aarch64-linux)
+    thruster (0.1.23-arm64-darwin)
     thruster (0.1.23-x86_64-linux)
     timeout (0.6.1)
     tsort (0.2.0)
@@ -383,15 +378,13 @@ GEM
 
 PLATFORMS
   aarch64-linux-gnu
-  aarch64-linux-musl
   arm-linux-gnu
-  arm-linux-musl
+  arm64-darwin-25
   ruby
-  x86_64-linux
   x86_64-linux-gnu
-  x86_64-linux-musl
 
 DEPENDENCIES
+  barby
   bcrypt (~> 3.1.7)
   bootsnap
   brakeman
@@ -422,4 +415,4 @@ DEPENDENCIES
   web-console
 
 BUNDLED WITH
-   2.6.9
+   2.4.19

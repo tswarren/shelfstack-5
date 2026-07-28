@@ -663,9 +663,9 @@ The following remain planned Phase 11 work but may be deferred without preventin
 | Richer return / mixed / post-void presentation | **Partial** — document banners + original-receipt reference; fuller templates remain residual |
 | Expanded template formatting | **Partial beyond Must** — Must already includes minimal browser-print formatting (`layouts/pos_receipt`, hide toolbar on print, narrow receipt column, item/discount/net rows, totals). Residual is richer template variants / administration, not the absence of printable formatting |
 | Receipt header/footer administration UI | **Deferred** — fields render when set; admin UI remains [DWR-019](../deferred-work-register.md) |
-| Non-itemized gift receipt | **Re-registered** under [DWR-017](../deferred-work-register.md) |
+| Non-itemized gift receipt | **Absorbed by** [Phase 11.1](phase-11.1-pos-printed-documents-v1.md) / DWR-017 |
 | Dedicated SV issue/reload slip | **Re-registered** under DWR-017 |
-| Receipt-number barcode | **Re-registered** under DWR-017 |
+| Receipt-number barcode | **Absorbed by** Phase 11.1 / DWR-017 |
 | Persisted print-event audit (INV-POS-014) | **Re-registered** under DWR-017 (browser reprint remains functional) |
 
 Any Should item not delivered must be explicitly re-registered under DWR-017 rather than silently dropped.
@@ -692,7 +692,7 @@ Gate D is accepted when:
 * presentation or printing failure cannot reverse completion;
 * any undelivered Should scope is explicitly retained in DWR-017.
 
-**Implementation note:** Exit criteria met on `main` via [#146](https://github.com/tswarren/shelfstack-5/pull/146) / [#150](https://github.com/tswarren/shelfstack-5/pull/150). Undelivered Should items remain under §15.2 and DWR-017 (Phase 11.1 draft). Layout Gate L5/L7 reduced MVP Accepted separately from Gate D Must. Hygiene coverage includes reprint denial without `pos.receipt.reprint` (`phase_11d_customer_receipt_test`).
+**Implementation note:** Exit criteria met on `main` via [#146](https://github.com/tswarren/shelfstack-5/pull/146) / [#150](https://github.com/tswarren/shelfstack-5/pull/150). Undelivered Should items remain under §15.2 and DWR-017 — gift/barcode/mask/server-owned reprint/Post-Void print delivered in [Phase 11.1](phase-11.1-pos-printed-documents-v1.md). Layout Gate L5/L7 reduced MVP Accepted separately from Gate D Must.
 
 ---
 

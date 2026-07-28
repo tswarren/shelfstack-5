@@ -1,0 +1,30 @@
+<% content_for :title, "Post-Void #{@facts.pos_transaction.receipt_number}" %>
+
+<%= render "toolbar" %>
+
+<article class="pos-post-void-receipt pos-receipt-document" aria-label="Post-void receipt">
+  <%= render "status_notices", banner: "POST-VOID" %>
+
+  <%= render "store_header" %>
+  <%= render "meta" %>
+
+  <% if @facts.original_transaction.present? %>
+    <p class="pos-receipt-void-ref">
+      Original receipt <strong><%= @facts.original_transaction.receipt_number %></strong><br>
+      <span class="muted">Original completed <%= formatted_datetime(@facts.original_transaction.completed_at, format: :receipt) %></span>
+    </p>
+  <% end %>
+
+  <section class="pos-receipt-lines" aria-label="Reversing merchandise">
+    <% @facts.lines.each do |line| %>
+      <%= render "line", line: line %>
+    <% end %>
+  </section>
+
+  <%= render "totals" %>
+  <%= render "tenders" %>
+  <%= render "item_counts" %>
+  <%= render "tax_legend" %>
+  <%= render "receipt_number_barcode" %>
+  <%= render "store_footer" %>
+</article>

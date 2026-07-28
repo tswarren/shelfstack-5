@@ -1,0 +1,47 @@
+<% content_for :title, "Receipt #{@facts.pos_transaction.receipt_number}" %>
+<% document_banner = pos_receipt_document_banner(@facts.pos_transaction) %>
+<% voided = @facts.post_voided %>
+<% return_banner_shown = false %>
+
+<%= render "toolbar" %>
+
+<article class="pos-customer-receipt pos-receipt-document" aria-label="Customer receipt">
+  <%= render "status_notices",
+        voided: voided,
+        banner: (document_banner if document_banner.present? && document_banner != "RECEIPT" && !voided) %>
+
+  <%= render "store_header" %>
+  <%= render "meta" %>
+
+  <% if voided && @facts.reversing_transaction.present? %>
+    <p class="pos-receipt-void-ref" role="status">
+      Reversed by receipt <strong><%= @facts.reversing_transaction.receipt_number %></strong><br>
+      <span class="muted">Reversal completed <%= formatted_datetime(@facts.reversing_transaction.completed_at, format: :receipt) %></span>
+    </p>
+  <% end %>
+
+  <% if @facts.original_transaction.present? %>
+    <p class="muted">Original receipt <%= @facts.original_transaction.receipt_number %></p>
+  <% end %>
+
+  <% if @facts.masked_customer_label.present? %>
+    <p><%= @facts.masked_customer_label %></p>
+  <% end %>
+
+  <section class="pos-receipt-lines" aria-label="Merchandise">
+    <% @facts.lines.each do |line| %>
+      <% if line.return? && !return_banner_shown %>
+        <p class="pos-receipt-banner pos-receipt-section-banner" role="status"><strong>REFUND</strong></p>
+        <% return_banner_shown = true %>
+      <% end %>
+      <%= render "line", line: line %>
+    <% end %>
+  </section>
+
+  <%= render "totals" %>
+  <%= render "tenders" %>
+  <%= render "item_counts" %>
+  <%= render "tax_legend" %>
+  <%= render "receipt_number_barcode" %>
+  <%= render "store_footer" %>
+</article>

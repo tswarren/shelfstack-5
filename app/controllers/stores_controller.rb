@@ -58,7 +58,7 @@ class StoresController < ApplicationController
     params.require(:store).permit(
       :code, :store_number, :name, :legal_name, :address_line_1, :address_line_2,
       :city, :region, :postal_code, :country_code, :phone, :email, :san_number,
-      :timezone, :currency_code, :receipt_header, :receipt_footer, :active
+      :timezone, :currency_code, :receipt_header, :receipt_footer, :gift_receipt_footer, :active
     )
   end
 end

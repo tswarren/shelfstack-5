@@ -1,0 +1,10 @@
+<% store = @facts.store %>
+<header class="pos-receipt-header">
+  <h1><%= store.name %></h1>
+  <% pos_store_address_lines(store).each do |line| %>
+    <p class="muted"><%= line %></p>
+  <% end %>
+  <% if store.receipt_header.present? %>
+    <div class="pos-receipt-store-text"><%= simple_format(store.receipt_header) %></div>
+  <% end %>
+</header>

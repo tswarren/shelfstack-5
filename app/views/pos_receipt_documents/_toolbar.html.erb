@@ -1,0 +1,10 @@
+<div class="pos-receipt-toolbar no-print">
+  <p class="muted">Browser print path only — this window is reused for later print documents.</p>
+  <% if @facts.respond_to?(:barcode) && @facts.barcode&.error.present? %>
+    <p class="alert alert-warning no-print" role="status">Barcode could not be rendered. Receipt number is still printable below.</p>
+  <% end %>
+  <div class="action-group">
+    <button type="button" class="button button-primary" onclick="window.print()">Print again</button>
+    <button type="button" class="button button-outline" onclick="window.close()">Close</button>
+  </div>
+</div>

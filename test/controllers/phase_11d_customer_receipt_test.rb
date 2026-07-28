@@ -2,6 +2,7 @@
 
 require "test_helper"
 
+# Gate 11D residual coverage retained; Phase 11.1 owns original/reprint authority.
 class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
   include PosSetupHelper
 
@@ -18,26 +19,25 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
     )
   end
 
-  test "customer receipt is browser printable HTML from completed snapshots" do
+  test "customer receipt is browser printable HTML from completed snapshots via reprint" do
     post session_path, params: { username: "admin", password: "password123" }
     txn, = pos_complete_cash_sale(
       session: @session, variant: @variant, quantity: 1, actor: @admin,
       cash: @cash, key: "11d-receipt"
     )
 
-    get customer_receipt_pos_transaction_path(txn)
+    get customer_receipt_reprint_pos_transaction_path(txn)
     assert_response :success
-    assert_match(/Receipt #{Regexp.escape(txn.receipt_number)}/, response.body)
+    assert_select ".pos-receipt-barcode-text", text: txn.receipt_number
+    assert_select ".pos-receipt-meta", text: /Receipt/
     assert_match(/\b#{txn.completed_at.year}\b/, response.body)
     assert_match(/Browser print path only/, response.body)
-    assert_select "button", text: "Print"
-    refute_match(/REPRINT/, response.body)
+    assert_select "button", text: "Print again"
+    assert_match(/REPRINT/, response.body)
 
     status_before = txn.reload.status
-    get customer_receipt_pos_transaction_path(txn, reprint: true)
+    get customer_receipt_reprint_pos_transaction_path(txn)
     assert_response :success
-    assert_match(/REPRINT/, response.body)
-    assert_match(/Receipt #{Regexp.escape(txn.receipt_number)}/, response.body)
     assert_equal status_before, txn.reload.status
     assert_equal "completed", txn.status
   end
@@ -68,21 +68,21 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
     )
     assert complete.success?
 
-    get customer_receipt_pos_transaction_path(txn.reload)
+    get customer_receipt_reprint_pos_transaction_path(txn.reload)
     assert_response :success
-    assert_select ".pos-receipt-item__row", text: /1\s*×/
     assert_select ".pos-receipt-item__row--adjustment", text: /Discount/
     assert_select ".pos-receipt-item__row--net", text: /Net/
     assert_match(/#{Regexp.escape(format("%.2f", (extended - discount_amount) / 100.0))}/, response.body)
-    assert_select ".pos-totals", text: /Net merchandise/
-    assert_select ".pos-totals", text: /Discounts/
+    assert_select ".pos-receipt-totals", text: /Total Merchandise/
+    assert_select ".pos-receipt-totals", text: /Subtotal/
+    assert_select ".pos-receipt-savings", text: /Total Savings:.*2\.00/
   end
 
   test "customer receipt is unavailable for open transactions" do
     post session_path, params: { username: "admin", password: "password123" }
     txn = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
 
-    get customer_receipt_pos_transaction_path(txn)
+    get customer_receipt_reprint_pos_transaction_path(txn)
     assert_redirected_to pos_transaction_path(txn)
   end
 
@@ -128,7 +128,7 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
     assert_predicate original_name, :present?
 
     @variant.product.update!(name: "Renamed After Completion")
-    get customer_receipt_pos_transaction_path(txn)
+    get customer_receipt_reprint_pos_transaction_path(txn)
     assert_response :success
     assert_select ".pos-receipt-item__description", text: /#{Regexp.escape(original_name)}/
     refute_match(/Renamed After Completion/, response.body)
@@ -136,37 +136,20 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
 
   test "completed Receipt presentation uses dedicated composition" do
     post session_path, params: { username: "admin", password: "password123" }
-    txn, = pos_complete_cash_sale(
-      session: @session, variant: @variant, quantity: 1, actor: @admin,
-      cash: @cash, key: "11d-receipt-ui"
+    open = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    Pos::AddLine.call(pos_transaction: open, product_variant: @variant, quantity: 1, actor: @admin)
+    net = Pos::RecalculateTransaction.call(pos_transaction: open).net_total_cents
+    Pos::AddCashTender.call(
+      pos_transaction: open, tender_type: @cash, amount_tendered_cents: net, actor: @admin
     )
+    post complete_pos_transaction_path(open), params: { completion_idempotency_key: "11d-receipt-ui" }
+    follow_redirect!
 
-    get pos_transaction_path(txn)
     assert_response :success
     assert_select ".pos-shell[data-pos-presentation=receipt]"
     assert_select "section[aria-label='Completed transaction']", text: /Transaction complete/
     assert_select "a", text: "Next transaction"
-    assert_select "a", text: "Print"
-  end
-
-  test "reprint without pos.receipt.reprint is denied and does not mutate completion" do
-    post session_path, params: { username: "admin", password: "password123" }
-    txn, = pos_complete_cash_sale(
-      session: @session, variant: @variant, quantity: 1, actor: @admin,
-      cash: @cash, key: "11d-reprint-denied"
-    )
-    before = txn.reload.attributes.slice("status", "receipt_number", "net_total_cents")
-
-    delete session_path
-    post session_path, params: { username: "clerk", password: "password123" }
-
-    get customer_receipt_pos_transaction_path(txn, reprint: true)
-    assert_redirected_to root_path
-    assert_match(/not authorized/i, flash[:alert].to_s)
-    assert_equal before, txn.reload.attributes.slice("status", "receipt_number", "net_total_cents")
-
-    get customer_receipt_pos_transaction_path(txn)
-    assert_response :success
-    refute_match(/REPRINT/, response.body)
+    assert_select "a", text: "Print Receipt"
+    assert_select "a", text: "Print Gift Receipt"
   end
 end

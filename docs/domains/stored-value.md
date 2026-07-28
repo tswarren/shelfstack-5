@@ -173,10 +173,16 @@ stored_value.issue
 stored_value.reload
 stored_value.tender.redeem
 stored_value.tender.refund
+stored_value.activity.print
+stored_value.voucher.print
 stored_value.adjustment.create
 stored_value.adjustment.approve
 stored_value.adjustment.approve_self
 ```
+
+`stored_value.activity.print` covers browser Activity Slips for completed Ledger Entries (`issued`, `reloaded`, `refunded`). Account Numbers remain masked on slips.
+
+`stored_value.voucher.print` covers browser Credit Vouchers that expose the full canonical Account Number for active Accounts. Suspended Accounts must not print as ordinary redeemable vouchers.
 
 Replacement and transfer permissions remain deferred.
 

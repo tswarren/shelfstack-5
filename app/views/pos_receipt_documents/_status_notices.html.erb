@@ -1,0 +1,9 @@
+<% if @facts.reprint %>
+  <p class="pos-receipt-reprint" role="status"><strong>REPRINT</strong></p>
+<% end %>
+<% if local_assigns[:voided] %>
+  <p class="pos-receipt-banner pos-receipt-voided" role="status"><strong>VOIDED</strong></p>
+<% end %>
+<% if local_assigns[:banner].present? %>
+  <p class="pos-receipt-banner" role="status"><strong><%= local_assigns[:banner] %></strong></p>
+<% end %>

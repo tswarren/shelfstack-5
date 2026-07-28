@@ -1,0 +1,19 @@
+<dl class="pos-receipt-meta" aria-label="Receipt details">
+  <div class="pos-receipt-meta__row">
+    <dt>Date:</dt>
+    <dd><%= formatted_datetime(@facts.pos_transaction.completed_at, format: :receipt) %></dd>
+  </div>
+  <div class="pos-receipt-meta__row">
+    <dt>Receipt:</dt>
+    <dd><%= @facts.pos_transaction.receipt_number %></dd>
+  </div>
+  <% if @facts.cashier_label.present? %>
+    <div class="pos-receipt-meta__row">
+      <dt>Cashier:</dt>
+      <dd><%= @facts.cashier_label %></dd>
+    </div>
+  <% end %>
+</dl>
+<% if @facts.reprint && @facts.reprint_at.present? %>
+  <p class="muted pos-receipt-meta__reprint">Reprint <%= formatted_datetime(@facts.reprint_at, format: :receipt) %></p>
+<% end %>

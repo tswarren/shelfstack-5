@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_27_184000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_28_015925) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -685,7 +685,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_184000) do
     t.index ["tax_category_id"], name: "index_pos_line_items_on_tax_category_id"
     t.index ["tax_category_overridden_by_user_id"], name: "index_pos_line_items_on_tax_category_overridden_by_user_id"
     t.check_constraint "(line_kind::text = ANY (ARRAY['product'::character varying::text, 'open_ring'::character varying::text])) AND department_id IS NOT NULL OR line_kind::text = 'stored_value'::text AND department_id IS NULL", name: "pos_line_items_department_matches_kind"
-    t.check_constraint "cost_basis_type_snapshot IS NULL OR (cost_basis_type_snapshot::text = ANY (ARRAY['moving_average'::character varying::text, 'configured_estimate'::character varying::text]))", name: "pos_line_items_cost_basis_type_check"
+    t.check_constraint "cost_basis_type_snapshot IS NULL OR (cost_basis_type_snapshot::text = ANY (ARRAY['moving_average'::character varying, 'configured_estimate'::character varying]::text[]))", name: "pos_line_items_cost_basis_type_check"
     t.check_constraint "cost_confirmed_unit_cents IS NULL AND cost_confirmed_by_user_id IS NULL AND cost_confirmed_at IS NULL OR cost_confirmed_unit_cents IS NOT NULL AND cost_confirmed_by_user_id IS NOT NULL AND cost_confirmed_at IS NOT NULL", name: "pos_line_items_cost_confirmation_complete"
     t.check_constraint "cost_confirmed_unit_cents IS NULL OR cost_confirmed_unit_cents >= 0", name: "pos_line_items_cost_confirmed_unit_non_negative"
     t.check_constraint "cost_extended_cents IS NULL OR cost_extended_cents >= 0", name: "pos_line_items_cost_extended_non_negative"
@@ -704,7 +704,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_184000) do
     t.check_constraint "quantity > 0", name: "pos_line_items_quantity_positive"
     t.check_constraint "return_disposition IS NULL OR (return_disposition::text = ANY (ARRAY['return_to_stock'::character varying::text, 'inspection_required'::character varying::text, 'damaged'::character varying::text, 'return_to_vendor'::character varying::text, 'discard'::character varying::text, 'non_inventory'::character varying::text]))", name: "pos_line_items_return_disposition_check"
     t.check_constraint "status::text = ANY (ARRAY['pending'::character varying::text, 'completed'::character varying::text, 'removed'::character varying::text])", name: "pos_line_items_status_check"
-    t.check_constraint "tax_basis_snapshot IS NULL OR (tax_basis_snapshot::text = ANY (ARRAY['current_configured_rules'::character varying::text, 'external_receipt_tax'::character varying::text, 'no_tax_refund'::character varying::text]))", name: "pos_line_items_tax_basis_snapshot_check"
+    t.check_constraint "tax_basis_snapshot IS NULL OR (tax_basis_snapshot::text = ANY (ARRAY['current_configured_rules'::character varying, 'external_receipt_tax'::character varying, 'no_tax_refund'::character varying]::text[]))", name: "pos_line_items_tax_basis_snapshot_check"
     t.check_constraint "tax_basis_snapshot IS NULL OR tax_basis_confirmed_by_user_id IS NOT NULL AND tax_basis_confirmed_at IS NOT NULL", name: "pos_line_items_tax_basis_confirmation_complete"
     t.check_constraint "tax_basis_snapshot::text IS DISTINCT FROM 'external_receipt_tax'::text OR explicit_tax_amount_cents IS NOT NULL AND explicit_tax_amount_cents >= 0", name: "pos_line_items_external_tax_requires_amount"
     t.check_constraint "unit_price_cents >= 0", name: "pos_line_items_unit_price_non_negative"
@@ -1598,6 +1598,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_184000) do
     t.datetime "created_at", null: false
     t.string "currency_code", limit: 3, null: false
     t.string "email"
+    t.text "gift_receipt_footer"
     t.string "legal_name"
     t.string "name", null: false
     t.bigint "next_business_day_z_number", default: 1, null: false
