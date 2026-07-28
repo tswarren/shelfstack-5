@@ -1,12 +1,12 @@
 # Phase 11.1 — POS printed documents v1
 
-**Status:** In progress — gates 11.1A–D complete (epic [#151](https://github.com/tswarren/shelfstack-5/issues/151); [#152](https://github.com/tswarren/shelfstack-5/issues/152)–[#155](https://github.com/tswarren/shelfstack-5/issues/155)); reopened for 11.1E–F. Remains open until explicitly closed.
+**Status:** Complete — gates 11.1A–F delivered on `main` (via [#157](https://github.com/tswarren/shelfstack-5/pull/157); dedicated [#156](https://github.com/tswarren/shelfstack-5/pull/156) closed unmerged). Epic [#151](https://github.com/tswarren/shelfstack-5/issues/151) closed.
 **Depends on:** Phase 11 closed; Phase 6 post-void and corrections; Phase 9 Customer v1
-**Primary register item:** [DWR-017](../deferred-work-register.md), partially
+**Primary register item:** [DWR-017](../deferred-work-register.md) (MVP + SV print delivered; residuals remain)
 **Source design packet:** [00_pos_printing-simplified.md](../../temp_draft/phase-11.1/00_pos_printing-simplified.md) (receipt build contract); [typography.md](../../temp_draft/phase-11.1/typography.md); [stored-value-slip.md](../../temp_draft/phase-11.1/stored-value-slip.md) (Activity Slip); [stored-value-voucher.md](../../temp_draft/phase-11.1/stored-value-voucher.md) (Credit Voucher); longer drafts under [phase-11.1/](../../temp_draft/phase-11.1/) are background
 **Governing docs:** [Phase 11 — POS Shell and Workspace Revamp](phase-11-pos-shell-and-workspace-revamp.md); [Point of Sale](../../domains/point-of-sale.md); [Stored Value](../../domains/stored-value.md); [Authorization and Permissions](../../domains/authorization-permissions.md); ADR-0008; ADR-0009; ADR-0012
 **Epic:** [#151](https://github.com/tswarren/shelfstack-5/issues/151)
-**Gate issues:** [#152](https://github.com/tswarren/shelfstack-5/issues/152) (11.1A), [#153](https://github.com/tswarren/shelfstack-5/issues/153) (11.1B), [#154](https://github.com/tswarren/shelfstack-5/issues/154) (11.1C), [#155](https://github.com/tswarren/shelfstack-5/issues/155) (11.1D); 11.1E–F tracked under epic [#151](https://github.com/tswarren/shelfstack-5/issues/151)
+**Gate issues:** [#152](https://github.com/tswarren/shelfstack-5/issues/152) (11.1A), [#153](https://github.com/tswarren/shelfstack-5/issues/153) (11.1B), [#154](https://github.com/tswarren/shelfstack-5/issues/154) (11.1C), [#155](https://github.com/tswarren/shelfstack-5/issues/155) (11.1D); 11.1E–F under epic [#151](https://github.com/tswarren/shelfstack-5/issues/151)
 
 ---
 
@@ -21,8 +21,8 @@ Phase 11.1 delivers browser-printable POS documents:
 1. Customer Receipt *(delivered — gates 11.1A–D)*
 2. Gift Receipt *(delivered)*
 3. Post-Void Receipt *(delivered)*
-4. Stored-Value Activity Slip *(11.1E — in delivery)*
-5. Credit Voucher *(11.1F — in delivery)*
+4. Stored-Value Activity Slip *(delivered — 11.1E)*
+5. Credit Voucher *(delivered — 11.1F)*
 
 This phase is not a general document-generation framework.
 
@@ -73,7 +73,7 @@ Customer-facing reversing document: `POST-VOID` title, reversing Receipt Number 
 
 Historical reprint of a Post-Voided original shows `VOIDED`, reversing Receipt Number, and reversal completion timestamp.
 
-### 3.4 Stored-Value Activity Slip *(11.1E)*
+### 3.4 Stored-Value Activity Slip *(delivered — 11.1E)*
 
 Informational slip for one completed Ledger Entry (`issued`, `reloaded`, or `refunded`):
 
@@ -84,7 +84,7 @@ Informational slip for one completed Ledger Entry (`issued`, `reloaded`, or `ref
 
 Not a bearer credential. Never prints or barcodes the full Account Number.
 
-### 3.5 Credit Voucher *(11.1F)*
+### 3.5 Credit Voucher *(delivered — 11.1F)*
 
 Bearer instrument for one active Stored-Value Account:
 
@@ -200,13 +200,13 @@ Browser HTML/CSS targeting ~80 mm thermal; proportional system sans; CSS grid; `
 | **11.1B** | Customer hardening + Gift Receipt | [#153](https://github.com/tswarren/shelfstack-5/issues/153) *(complete)* |
 | **11.1C** | Post-Void Receipt + VOIDED original reprints | [#154](https://github.com/tswarren/shelfstack-5/issues/154) *(complete)* |
 | **11.1D** | Store config, print styling, tests, documentation | [#155](https://github.com/tswarren/shelfstack-5/issues/155) *(complete)* |
-| **11.1E** | Stored-Value Activity Slip (issue / reload / refunded) | under epic [#151](https://github.com/tswarren/shelfstack-5/issues/151) |
-| **11.1F** | Credit Voucher + permissions/docs exit for SV print reopen | under epic [#151](https://github.com/tswarren/shelfstack-5/issues/151) |
+| **11.1E** | Stored-Value Activity Slip (issue / reload / refunded) | under epic [#151](https://github.com/tswarren/shelfstack-5/issues/151) *(complete)* |
+| **11.1F** | Credit Voucher + permissions/docs exit for SV print reopen | under epic [#151](https://github.com/tswarren/shelfstack-5/issues/151) *(complete)* |
 
 ---
 
 ## 11. Phase exit
 
-Gates 11.1A–D exit criteria remain satisfied.
+**Satisfied.** Gates 11.1A–F delivered: Activity Slips for in-scope Entries; Credit Vouchers for active Accounts; dedicated permissions seeded; historical balances on slips and current balances on vouchers; suspended Accounts blocked from Voucher print; browser print only — without new financial records, document identity tables, or printer management.
 
-Phase 11.1 remains **open** until explicitly closed. When closing is directed, exit requires: Activity Slips for in-scope Entries; Credit Vouchers for active Accounts; dedicated permissions seeded; historical balances on slips and current balances on vouchers; suspended Accounts blocked from Voucher print; browser print only — without new financial records, document identity tables, or printer management.
+**Residuals** (not Phase 11.1 exit blockers): cash-movement slips, internal Post-Void copy, INV-POS-014, ESC/POS fleets — tracked on [DWR-017](../deferred-work-register.md).

@@ -25,7 +25,7 @@ Review them in that order. A technically clean partial hierarchy does not compen
 | --- | --- |
 | [visual-contract.md](visual-contract.md) | Supported viewports, shell geometry, density, scrolling, hierarchy, and visual invariants |
 | [presentation-matrix.md](presentation-matrix.md) | Required Ready, Transaction, Tender, Recovery, and Receipt scenarios |
-| [wireframes.md](wireframes.md) | Annotated low-fidelity compositions for the shell, presentations, and primary overlays |
+| [wireframes.md](wireframes.md) | Annotated low-fidelity compositions for the shell, presentations, primary overlays, Phase 11.2 workflows, and Phase 11.3 Operations |
 | [component-map.md](component-map.md) | Partials, forms, Turbo boundaries, Stimulus responsibilities, and current-to-target mapping |
 | [layout-completion-checklist.md](layout-completion-checklist.md) | Gate checklist mapping wireframe regions and current→target work for visual completion |
 | [layout-acceptance-status.md](layout-acceptance-status.md) | Delivery PR index and viewport acceptance / decision-promotion status |

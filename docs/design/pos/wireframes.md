@@ -1,15 +1,20 @@
 # POS annotated wireframes
 
-**Status:** Draft composition reference  
+**Status:** Draft composition reference — Phase 11 shell + Phase 11.2/11.3 workflow additions  
 **Parent:** [README.md](README.md)  
 **Visual contract:** [visual-contract.md](visual-contract.md)  
-**Decisions:** [decisions.md](decisions.md)
+**Decisions:** [decisions.md](decisions.md)  
+**Phase plans:** [phase-11.2…](../../implementation/phases/phase-11.2-register-workflow-refinement.md) · [phase-11.3…](../../implementation/phases/phase-11.3-pos-operations-workspace.md)
 
 ## Purpose
 
 These wireframes define information hierarchy and stable region placement before production markup is refactored.
 
 They are intentionally low fidelity. Typography, color, and exact spacing remain implementation details until reviewed through deterministic screenshots. The wireframes do not redefine server behavior.
+
+**Phase 11 (L0–L7):** shared shell through Receipt and primary overlays (below).  
+**Phase 11.2:** approval interrupt, return workflows, refund proposed plan, tender polish notes.  
+**Phase 11.3:** Register Operations / Store Operations / navigation.
 
 ## Shared shell
 
@@ -162,17 +167,39 @@ Ready launchers are not Transaction entry intents (POS-UI-033). There is no Read
 
 ## Tender — net refund
 
-Use the same composition, but replace payment language consistently:
+Use the same composition as positive balance, but replace payment language consistently and surface the **proposed refund plan** (Phase 11.2F) before recording tenders. Do not rely only on negative-number notation to communicate direction.
+
+See [Refund proposed plan](#refund-proposed-plan-overlay) for the plan review overlay that precedes recording.
 
 ```text
-Refund due $18.25
-[Cash refund] [Card refund] [Store Credit]
-Refunded $10.00
-REMAINING REFUND $8.25
-[Add refund $8.25]
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ... · TENDER · NET REFUND                                                     │
+├───────────────────────────────────────────────────┬──────────────────────────┤
+│ REFUND SETTLEMENT                                 │ TRANSACTION SUMMARY      │
+│ Refund due $18.25                                 │ Total (net)       -$18.25 │
+│                                                   │ Refunded           $10.00 │
+│ Proposed plan (SV-first)                          │ REMAINING REFUND    $8.25 │
+│  ✓ Stored value · original · $10.00  recorded     ├──────────────────────────┤
+│  ○ Cash refund · $8.25               pending      │ SETTLEMENT               │
+│                                                   │ Refund still required    │
+│ [Review / edit plan]                              │                          │
+│                                                   │ [Add refund $8.25]       │
+│ RECORDED REFUND TENDERS                           │                          │
+│ Stored value · refund · $10.00          [Remove]  │                          │
+│                                                   │                          │
+│ Compact read-only line review [View]              │                          │
+├───────────────────────────────────────────────────┴──────────────────────────┤
+│ [Return to Transaction] [Remove selected tender] [More]                    │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Do not rely only on negative-number notation to communicate direction.
+### Tender polish annotations (Phase 11.2C)
+
+1. Settlement hierarchy in the rail: Total → Tendered/Refunded → Remaining/Change → status → primary CTA.
+2. Primary CTA by state: **Add tender** / **Add refund tender** / **Complete transaction** / resolve blocker.
+3. Recorded-tender row actions match lifecycle: **Remove** (not externally processed), **Void** (externally processed while open), **Resolve void** (recovery), view-only when completed/voided.
+4. Do not treat edit / delete / remove / void as interchangeable labels.
+5. Optional focused **Add tender** modal may refine the active-form pattern; L3 method selector remains the base (not a stacked-form rebuild).
 
 ## Recovery — `void_required`
 
@@ -280,6 +307,390 @@ Receipt may use a focused completion composition rather than the ordinary operat
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+# Phase 11.2 — Register workflow compositions
+
+These frames support gates 11.2A–F. Ordinary forms must not show unused approval fields; approvals appear only after a server-side authority exception.
+
+## Approval interrupt overlay
+
+Reusable interrupt after `Pos::AuthorizeAction` returns requires-approval. Dims the workspace beneath; does not navigate away.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ... underlying Transaction / Tender / Ops workspace remains visible dimmed   │
+│ ┌──────────────────────────────────────────────────────────────────────────┐ │
+│ │ APPROVAL REQUIRED                                                 [Cancel]│ │
+│ ├──────────────────────────────────────────────────────────────────────────┤ │
+│ │ Action                                                                    │ │
+│ │  Price override on “Example Book”                                        │ │
+│ │                                                                          │ │
+│ │ Boundary                                                                 │ │
+│ │  Your authority limit for price override is $5.00                        │ │
+│ │                                                                          │ │
+│ │ Material values                                                          │ │
+│ │  Current $18.00 → Requested $12.00 · Difference $6.00                    │ │
+│ │                                                                          │ │
+│ │ Effect if approved                                                       │ │
+│ │  Line unit price becomes $12.00 for this transaction only                │ │
+│ │                                                                          │ │
+│ │ Approver username ┌──────────────────┐                                   │ │
+│ │ Approver PIN      ┌──────────────────┐                                   │ │
+│ │                                                                          │ │
+│ │                                            [Approve and continue]        │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Approval interrupt annotations
+
+1. No approval fields on the ordinary form until ShelfStack detects the exception.
+2. Prompt names the exact decision (line, tender, transaction, session, or business-day action).
+3. Cancel returns focus to the invoking control without applying the change.
+4. Approve resumes the original workflow; material changes invalidate the approval (re-prompt).
+5. Same composition for discount, tax, no-receipt return, refund exception, cash variance, etc. — only body copy changes.
+
+## Start Return chooser
+
+Launched from Ready **Start return** or Transaction **Return** intent. Branches to linked or unlinked paths.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ START RETURN                                                          [Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ How is this return starting?                                                 │
+│                                                                              │
+│ Receipt number                                                               │
+│ ┌────────────────────────────────────┐ [Look up]                             │
+│ └────────────────────────────────────┘                                       │
+│                                                                              │
+│ — or —                                                                       │
+│                                                                              │
+│ [ Begin unlinked return ]                                                    │
+│                                                                              │
+│ Unlinked returns require reason, disposition, and may require approval.      │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Start Return annotations
+
+1. Valid receipt lookup proceeds automatically to the multi-line selector.
+2. Unlinked path opens the guided step sequence (not one large form).
+3. Close restores Ready or Transaction focus.
+
+## Receipt-linked multi-line return selector
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ RETURN FROM RECEIPT 000184                                            [Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Store · completed 2026-07-28 14:22 · Register 2 · Alex                       │
+│                                                                              │
+│ Defaults for selected lines                                                  │
+│ Reason [Damaged            ▾]  Disposition [Return to stock ▾]               │
+│                                                                              │
+│ ┌──┬──────────────────────────┬────┬─────┬──────┬───────┬──────────────────┐ │
+│ │☑ │ Description              │Sold│Prev │Left  │Return │ Price            │ │
+│ ├──┼──────────────────────────┼────┼─────┼──────┼───────┼──────────────────┤ │
+│ │☑ │ Example Book · New HC    │  1 │  0  │  1   │ [1]   │ $18.00           │ │
+│ │  │ Reason/disp: use defaults · [Override]                                │ │
+│ ├──┼──────────────────────────┼────┼─────┼──────┼───────┼──────────────────┤ │
+│ │☐ │ Bookmark set             │  2 │  1  │  1   │ [1]   │ $4.00            │ │
+│ │☑ │ Example Guide · PB       │  1 │  0  │  1   │ [1]   │ $12.00           │ │
+│ └──┴──────────────────────────┴────┴─────┴──────┴───────┴──────────────────┘ │
+│                                                                              │
+│ Selected 2 lines · refund merchandise $30.00                                 │
+│                                                          [Add to transaction]│
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Linked return selector annotations
+
+1. Only returnable remaining quantity is selectable.
+2. Historical price/tax/department/cost facts come from the original transaction — cashier does not re-enter them.
+3. Shared reason/disposition defaults with per-line override.
+4. Add posts through existing linked-return services (one or more lines); returns to Transaction.
+
+## Unlinked return — guided steps
+
+One overlay/workspace advances through steps. Progress is visible. Do not show the full field set at once.
+
+### Step 1 — Identify
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ UNLINKED RETURN · Step 1 of 5 — Identify                              [Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Scan / ISBN / SKU ┌────────────────────────────┐ [Find]                      │
+│                   └────────────────────────────┘                             │
+│ [ Product search ]                                                           │
+│                                                                              │
+│ Or: [ Open-ring return instead ]                                             │
+│                                                                              │
+│ Individually tracked unit scan permitted when policy allows.                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Step 2 — Confirm item
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ UNLINKED RETURN · Step 2 of 5 — Confirm item                    [Back][Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Example Book                                                                 │
+│ Variant: New · Hardcover · 978… · SKU…                                       │
+│ Current selling price $18.00 · Available 3                                   │
+│                                                                              │
+│ [Use this item]                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Step 3 — Quantity and price
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ UNLINKED RETURN · Step 3 of 5 — Quantity & price                [Back][Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Example Book · New HC                                                        │
+│                                                                              │
+│ Quantity ┌────┐                                                              │
+│          └────┘                                                              │
+│ Proposed refund unit price ┌──────────┐  (from return policy / current price)│
+│                            └──────────┘                                      │
+│                                                                              │
+│                                                              [Continue]      │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Step 4 — Reason and disposition
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ UNLINKED RETURN · Step 4 of 5 — Reason & disposition            [Back][Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Return reason      [Customer changed mind ▾]                                 │
+│ Return disposition [Return to stock       ▾]                                 │
+│                                                                              │
+│                                                              [Continue]      │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Step 5 — Tax / policy review (then add)
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ UNLINKED RETURN · Step 5 of 5 — Review                          [Back][Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Example Book · Qty 1 · Refund $18.00                                         │
+│ Reason / disposition summarized                                              │
+│ Tax treatment summary (policy proposal — not a second commercial record)     │
+│                                                                              │
+│ If inventory-affecting cost requires review → cost-review step (existing)    │
+│ If authority exceeded → Approval interrupt (no fields shown here)            │
+│                                                                              │
+│                                                          [Add return line]   │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Open-ring return — department
+
+When **Open-ring return** is chosen from Step 1, replace identify/confirm with:
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ OPEN-RING RETURN · Department                                     [Back]     │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Search department ┌────────────────────────────┐                             │
+│                   └────────────────────────────┘                             │
+│ 110 Books / New General Trade                                                │
+│ 130 Books / Used & Collectible                                               │
+│ ...                                                                          │
+│ Description ┌──────────────────────────────────────────────┐                 │
+│             └──────────────────────────────────────────────┘                 │
+│ Then continue at Quantity & price → Reason → Review.                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Unlinked return annotations
+
+1. Cost-review remains a separate confirm when the existing service requires it.
+2. Approval interrupt appears only after Add fails authority — not as standing fields on every step.
+3. Successful Add replaces the workspace and clears the overlay.
+
+## Refund proposed plan overlay
+
+Shown when entering Tender with a net refund, or via **Review / edit plan**. Proposed lines are not tenders until confirmed. Ordering is **stored-value first**.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PROPOSED REFUND PLAN                                                  [Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Refund due $18.25                                                            │
+│ Policy: restore original stored value before cash / card / new credit        │
+│                                                                              │
+│ ┌──────────────────────────────────────────────────────────────────────────┐ │
+│ │ Destination              Capacity     Amount      Status                 │ │
+│ │ Stored value (original)  $10.00       $10.00      Recommended            │ │
+│ │ Cash                     —            $8.25       Recommended remainder  │ │
+│ │ Card (original)          $40.00       $0.00       Available              │ │
+│ └──────────────────────────────────────────────────────────────────────────┘ │
+│                                                                              │
+│ [Remove row] [Adjust amount] [Add permitted destination]                     │
+│ Deviation from recommendation may require Approval interrupt.                │
+│                                                                              │
+│                                              [Accept plan and record]        │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Refund plan annotations
+
+1. Accept records tenders through existing services under `RefundAllocationPolicy`.
+2. Cash-first draft ordering is not shown; SV-first is locked.
+3. Check→cash default remains OD-P11-01 (annotation only until decided).
+
+## Recorded-tender detail overlay
+
+Selecting a recorded tender opens lifecycle-correct actions (Phase 11.2C).
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TENDER DETAIL                                                         [Close]│
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Cash · payment · $20.00 · entered                                            │
+│                                                                              │
+│ Permitted for this state:                                                    │
+│  [Edit amount]  [Remove]                                                     │
+│                                                                              │
+│ Not shown here: Void (no external processing) · Delete (forbidden term)      │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+Alternate states (same chrome, different actions):
+
+```text
+Card · payment · $34.86 · authorized (external)
+[Void on terminal / Void confirmed] [Replace after void]
+
+Card · payment · $34.86 · void_required
+[Resolve void]  → Recovery
+
+Completed transaction tender
+View only — correct via return / post-void
+```
+
+---
+
+# Phase 11.3 — Operations workspace compositions
+
+Operations is a sibling of Register inside the focused POS environment. **Store Workspace** is the return label to normal ShelfStack — not a persistent rename of the back-office app.
+
+## Operations navigation chrome
+
+Header gains explicit workspace switches. Shared operating context stays visible.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SHELFSTACK POS · Main Store · Reg 2 · Drawer A · Alex · Day 2026-07-28 · OPEN│
+│ [Register] [Operations]                              [Store Workspace]       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Ops scope: ( Register Operations | Store Operations )                        │
+│ Session 104 · Device Reg 2 · Drawer A · Txn: none open                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Navigation annotations
+
+1. Moving Register ↔ Operations preserves store, day, session, device, drawer, user.
+2. **Store Workspace** exits the focused POS shell to normal ShelfStack with store context.
+3. Open-transaction rules (OD-P11-03): some switches allowed with txn preserved; others require suspend/complete/cancel — show disabled reason, do not silently drop the txn.
+
+## Register Operations
+
+Current session, device, and drawer only — not all-store tables.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SHELFSTACK POS · … · OPERATIONS · Register                                    │
+│ [Register] [Operations]                              [Store Workspace]       │
+├───────────────────────────────────────────────────┬──────────────────────────┤
+│ REGISTER OPERATIONS                               │ THIS SESSION             │
+│                                                   │ Session 104 · Open       │
+│ Session                                           │ Device Reg 2 · Drawer A  │
+│  Opened 09:02 · Cashier Alex                      │ Opening cash     $150.00 │
+│  [Close Session]                                  │ Expected cash      …     │
+│                                                   │                          │
+│ Quick actions                                     │ CLOSE / BLOCKERS         │
+│  [Cash Movement] [No Sale]                        │ (none) or list           │
+│                                                   │                          │
+│ Reports                                           │ [Session X]              │
+│  [Session X] [Session Z / close report]           │                          │
+│                                                   │                          │
+│ History (this session)                            │                          │
+│  Cash movements / no-sale list (scroll)           │                          │
+│  …                                                │                          │
+├───────────────────────────────────────────────────┴──────────────────────────┤
+│ Context preserved · open txn rules apply if a transaction is active          │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Register Operations annotations
+
+1. Quick actions vs history: OD-P11-02 — Cash Movement / No Sale may also remain on Register Ready; authoritative history lives here.
+2. Close Session is first-level (POS-UI-037), not buried under reports.
+3. Session X/Z appear only in this scope.
+
+## Store Operations
+
+Business day and all store sessions — not the current drawer’s private quick-action strip alone.
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SHELFSTACK POS · … · OPERATIONS · Store                                       │
+│ [Register] [Operations]                              [Store Workspace]       │
+├───────────────────────────────────────────────────┬──────────────────────────┤
+│ STORE OPERATIONS                                  │ BUSINESS DAY             │
+│                                                   │ 2026-07-28 · Open        │
+│ Business day                                      │ Sessions open: 2         │
+│  [Close Business Day]                             │                          │
+│                                                   │ DAY BLOCKERS             │
+│ All sessions                                      │ Session 105 still open   │
+│  Reg 1 · Sess 103 · Closed · Z…                   │                          │
+│  Reg 2 · Sess 104 · Open  · Alex                  │ [Day X]                  │
+│  Reg 3 · Sess 105 · Open  · Sam                   │                          │
+│                                                   │ Reconciliation           │
+│ Reports                                           │ Status: pending          │
+│  [Day X] [Day Z / close report]                   │ [Open reconciliation] →  │
+│                                                   │   ShelfStack (not embed) │
+├───────────────────────────────────────────────────┴──────────────────────────┤
+│ Permissions gate which sessions/reports/actions are visible                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Store Operations annotations
+
+1. Current-session and store-wide controls are not mixed without hierarchy (scope tabs or clear sections).
+2. Reconciliation: status + link only (OD-P11-04); full workflow remains normal ShelfStack.
+3. Day close blockers are visible and actionable.
+
+## Open-transaction navigation (blocked example)
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Cannot open Store Workspace while a transaction is open                      │
+│                                                                              │
+│ Transaction has 3 lines · tender not started                                 │
+│                                                                              │
+│ [Suspend and leave] [Return to Register] [Cancel]                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+Exact allow/deny matrix is OD-P11-03; this frame establishes the interruption pattern.
+
+---
+
 ## Review notes
 
 When refining these wireframes, annotate changes with decision IDs from [decisions.md](decisions.md). Do not replace this file with screenshots alone; screenshots show an implementation, while the wireframes preserve hierarchy and intent.
+
+Phase 11.4 does not add a new wireframe set; update frames here only when hardening discovers a hierarchy gap.

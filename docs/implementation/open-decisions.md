@@ -49,6 +49,11 @@ superseded
 | OD-P8-08 | Product-summary store context | accepted | Phase 8 | Catalog | Selected-store primary + optional all-stores — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 | OD-P8-09 | Import provenance representation | accepted | Phase 8 | Catalog | Dedicated `catalog_enrichment_events` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 | OD-P8-10 | Minimum persisted bibliographic fields | accepted | Phase 8 | Catalog | exact `publication_date`, curated ISO 639-2/T `language_code` (default eng), `edition_statement` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
+| OD-P11-R1 | Refund allocation priority (SV-first vs cash-first) | accepted | Phase 11.2 | POS / Stored Value | [phase-11.2-refund-allocation-sv-first.md](decisions/phase-11.2-refund-allocation-sv-first.md); [architectural-locks.md](architectural-locks.md#refund-allocation-priority-v1) |
+| OD-P11-01 | Check payment refund default (always cash vs store-configurable) | open | Phase 11.3 / 11.4 | POS | Draft § Check refund treatment; needed for refund UX completeness / 11.4 policy reconciliation |
+| OD-P11-02 | Register quick actions versus Operations history (cash movement, no-sale, session open/close) | open | Phase 11.3 | POS | Draft § Register quick actions versus Operations history |
+| OD-P11-03 | Open-transaction workspace navigation rules | open | Phase 11.3 | POS | Draft § Open-transaction navigation |
+| OD-P11-04 | Reconciliation placement in Operations (status/links only vs deeper surface) | open | Phase 11.3 | POS / Reporting | Draft § Reconciliation placement; full workflow remains ShelfStack |
 
 ## OD-013 role and store authority defaults
 
