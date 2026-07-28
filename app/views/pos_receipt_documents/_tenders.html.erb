@@ -1,0 +1,24 @@
+<% if @facts.tenders.any? %>
+  <dl class="pos-receipt-tenders" aria-label="Tenders">
+    <% @facts.tenders.each do |tender| %>
+      <% sv_tender = @facts.stored_value_tender_details_by_tender_id[tender.id] %>
+      <div class="pos-receipt-totals__row">
+        <dt><%= pos_receipt_tender_label(tender) %></dt>
+        <dd class="amount"><%= pos_money(pos_receipt_tender_amount_cents(tender)) %></dd>
+      </div>
+      <% if sv_tender&.key?(:remaining_balance_cents) %>
+        <p class="pos-receipt-tender-detail">Remaining Balance: <%= pos_money(sv_tender[:remaining_balance_cents]) %></p>
+      <% end %>
+    <% end %>
+    <% if @facts.change_due_cents.positive? %>
+      <div class="pos-receipt-totals__row pos-receipt-totals__row--total">
+        <dt>Change Due:</dt>
+        <dd class="amount"><%= pos_money(@facts.change_due_cents) %></dd>
+      </div>
+    <% end %>
+  </dl>
+<% end %>
+
+<% if @facts.total_savings_cents.positive? %>
+  <p class="pos-receipt-savings">Total Savings: <%= pos_money(@facts.total_savings_cents) %></p>
+<% end %>

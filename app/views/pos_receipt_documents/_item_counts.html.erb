@@ -1,0 +1,10 @@
+<% if @facts.items_sold_count.positive? || @facts.items_returned_count.positive? %>
+  <p class="pos-receipt-item-counts">
+    <% if @facts.items_sold_count.positive? %>
+      Items Sold: <%= @facts.items_sold_count %><% if @facts.items_returned_count.positive? %><br><% end %>
+    <% end %>
+    <% if @facts.items_returned_count.positive? %>
+      Items Returned: <%= @facts.items_returned_count %>
+    <% end %>
+  </p>
+<% end %>

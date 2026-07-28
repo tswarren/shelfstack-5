@@ -28,7 +28,8 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
 
     get customer_receipt_reprint_pos_transaction_path(txn)
     assert_response :success
-    assert_match(/Receipt #{Regexp.escape(txn.receipt_number)}/, response.body)
+    assert_select ".pos-receipt-barcode-text", text: txn.receipt_number
+    assert_select ".pos-receipt-meta", text: /Receipt/
     assert_match(/\b#{txn.completed_at.year}\b/, response.body)
     assert_match(/Browser print path only/, response.body)
     assert_select "button", text: "Print"
@@ -69,12 +70,12 @@ class Phase11dCustomerReceiptTest < ActionDispatch::IntegrationTest
 
     get customer_receipt_reprint_pos_transaction_path(txn.reload)
     assert_response :success
-    assert_select ".pos-receipt-item__row", text: /1\s*×/
     assert_select ".pos-receipt-item__row--adjustment", text: /Discount/
     assert_select ".pos-receipt-item__row--net", text: /Net/
     assert_match(/#{Regexp.escape(format("%.2f", (extended - discount_amount) / 100.0))}/, response.body)
-    assert_select ".pos-totals", text: /Net merchandise/
-    assert_select ".pos-totals", text: /Discounts/
+    assert_select ".pos-receipt-totals", text: /Total Merchandise/
+    assert_select ".pos-receipt-totals", text: /Subtotal/
+    assert_select ".pos-receipt-savings", text: /Total Savings:.*2\.00/
   end
 
   test "customer receipt is unavailable for open transactions" do

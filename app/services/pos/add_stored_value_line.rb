@@ -56,7 +56,7 @@ module Pos
           stored_value_operation: @operation,
           stored_value_account_type_snapshot: account.account_type,
           stored_value_account_number_snapshot: account.account_number,
-          description_snapshot: "#{@operation.titleize} gift card #{account.account_number}",
+          description_snapshot: @operation == "reload" ? "Gift Card Reload" : "Gift Card Sale",
           position: next_position(transaction),
           created_by_user: @actor
         )

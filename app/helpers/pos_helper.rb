@@ -43,12 +43,29 @@ module PosHelper
   end
 
   def pos_receipt_line_identifier(line)
+    if line.line_kind == "open_ring"
+      dept = line.department
+      return "Dept #{dept.department_number}" if dept&.department_number.present?
+      return "Dept #{dept.code}" if dept&.code.present?
+    end
+
     return line.identifier_snapshot if line.identifier_snapshot.present?
     return unless line.line_kind == "product" && !line.completed?
 
     # Open lines may still resolve live catalog; completed receipts use snapshots only.
     product = line.product_variant&.product
     product&.identifier.presence || line.product_variant&.sku
+  end
+
+  # Customer-facing line title. Stored-value descriptions never include the full account number.
+  def pos_receipt_line_description(line)
+    if line.line_kind == "stored_value"
+      return "Gift Card Reload" if line.stored_value_operation == "reload"
+
+      return "Gift Card Sale"
+    end
+
+    line.effective_description.presence || line.description_snapshot.presence || "Line"
   end
 
   def pos_receipt_document_banner(pos_transaction)
@@ -87,6 +104,45 @@ module PosHelper
     else
       "Discount"
     end
+  end
+
+  # Customer/Post-Void receipt totals tax row: "Tax T ($83.05 @ 6.000%)"
+  def pos_receipt_tax_component_label(component)
+    code = component[:code].presence || "Tax"
+    rate = component[:rate]
+    taxable = component[:taxable_amount_cents].to_i
+    return "Tax #{code}" if rate.blank? && taxable.zero?
+
+    rate_pct = rate.present? ? format("%.3f", rate.to_f * 100) : nil
+    detail =
+      if rate_pct.present?
+        "#{pos_money(taxable)} @ #{rate_pct}%"
+      else
+        pos_money(taxable)
+      end
+    "Tax #{code} (#{detail})"
+  end
+
+  def pos_receipt_mask_account(number)
+    text = number.to_s
+    return nil if text.blank?
+    return "****" if text.length < 4
+
+    "****#{text[-4, 4]}"
+  end
+
+  def pos_receipt_tender_label(tender)
+    name = tender.tender_type.name
+    account = tender.stored_value_account
+    return name if account.blank?
+
+    masked = pos_receipt_mask_account(account.account_number)
+    masked.present? ? "#{name} #{masked}" : name
+  end
+
+  def pos_receipt_tender_amount_cents(tender)
+    amount = tender.amount_cents.to_i
+    tender.direction == "refunded" ? -amount : amount
   end
 
   # Option label for selecting an original card tender when recording a refund.

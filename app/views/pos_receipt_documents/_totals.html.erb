@@ -1,0 +1,41 @@
+<dl class="pos-receipt-totals">
+  <% if @facts.merchandise_cents != 0 || (@facts.refund_cents.zero? && @facts.non_merchandise_cents.zero?) %>
+    <div class="pos-receipt-totals__row">
+      <dt>Total Merchandise:</dt>
+      <dd class="amount"><%= pos_money(@facts.merchandise_cents) %></dd>
+    </div>
+  <% end %>
+  <% if @facts.refund_cents != 0 %>
+    <div class="pos-receipt-totals__row">
+      <dt>Total Refund:</dt>
+      <dd class="amount"><%= pos_money(@facts.refund_cents) %></dd>
+    </div>
+  <% end %>
+  <% if @facts.non_merchandise_cents != 0 %>
+    <div class="pos-receipt-totals__row">
+      <dt>Total Non-Merchandise:</dt>
+      <dd class="amount"><%= pos_money(@facts.non_merchandise_cents) %></dd>
+    </div>
+  <% end %>
+  <div class="pos-receipt-totals__row">
+    <dt>Subtotal</dt>
+    <dd class="amount"><%= pos_money(@facts.subtotal_cents) %></dd>
+  </div>
+  <% if @facts.tax_components.present? %>
+    <% @facts.tax_components.each do |component| %>
+      <div class="pos-receipt-totals__row">
+        <dt><%= pos_receipt_tax_component_label(component) %></dt>
+        <dd class="amount"><%= pos_money(component[:amount_cents]) %></dd>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="pos-receipt-totals__row">
+      <dt>Tax</dt>
+      <dd class="amount"><%= pos_money(@facts.pos_transaction.tax_total_cents) %></dd>
+    </div>
+  <% end %>
+  <div class="pos-receipt-totals__row pos-receipt-totals__row--total">
+    <dt>Total Due:</dt>
+    <dd class="pos-balance amount"><%= pos_money(@facts.pos_transaction.net_total_cents) %></dd>
+  </div>
+</dl>

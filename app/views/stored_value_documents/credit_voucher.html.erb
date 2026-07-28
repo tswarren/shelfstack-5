@@ -1,0 +1,44 @@
+<% content_for :title, "Credit Voucher #{@facts.account_number}" %>
+
+<%= render "toolbar",
+      back_path: stored_value_account_path(@facts.account),
+      barcode_error: @facts.barcode.error %>
+
+<article class="pos-sv-credit-voucher pos-receipt-document" aria-label="Credit voucher">
+  <% if @facts.reprint %>
+    <p class="pos-receipt-reprint" role="status"><strong>REPRINT</strong></p>
+  <% end %>
+
+  <%= render "pos_receipt_documents/store_header" %>
+
+  <p class="pos-receipt-banner" role="status"><strong>CREDIT VOUCHER</strong></p>
+
+  <dl class="pos-sv-slip-meta">
+    <div class="pos-receipt-totals__row">
+      <dt>Account type:</dt>
+      <dd><%= @facts.account_type_label %></dd>
+    </div>
+  </dl>
+
+  <dl class="pos-receipt-totals">
+    <div class="pos-receipt-totals__row">
+      <dt>Current balance</dt>
+      <dd class="amount"><%= pos_money(@facts.current_balance_cents) %></dd>
+    </div>
+  </dl>
+  <p class="muted">Balance as of <%= formatted_datetime(@facts.balance_as_of, format: :receipt) %></p>
+
+  <p class="pos-sv-voucher-account">Account <%= @facts.account_number %></p>
+
+  <section class="pos-receipt-identity" aria-label="Account barcode">
+    <% if @facts.barcode.svg.present? %>
+      <div class="pos-receipt-barcode" aria-hidden="true">
+        <%= @facts.barcode.svg.html_safe %>
+      </div>
+    <% end %>
+    <p class="pos-receipt-barcode-text"><%= @facts.account_number %></p>
+  </section>
+
+  <div class="pos-receipt-store-text muted"><%= simple_format(@facts.bearer_warning) %></div>
+  <div class="pos-receipt-store-text muted"><%= simple_format(@facts.redemption_notice) %></div>
+</article>

@@ -261,6 +261,8 @@ Canonical keys for Stored Value. Domain lists must match this catalog. Policy: [
 | `stored_value.reload` | Reload gift-card value through POS | store | 6 | — | no | yes |
 | `stored_value.tender.redeem` | Redeem stored value as tender | store | 6 | — | no | yes |
 | `stored_value.tender.refund` | Refund to stored value | store | 6 | — | no | yes |
+| `stored_value.activity.print` | Print or reprint Stored-Value Activity Slips | store | 11.1 | — | no | no |
+| `stored_value.voucher.print` | Print or reprint Credit Vouchers for Stored-Value Accounts | store | 11.1 | — | no | no |
 | `stored_value.adjustment.create` | Create manual balance adjustments | store | 6 | — | yes | yes |
 | `stored_value.adjustment.approve` | Independently approve manual adjustments | store | 6 | — | — | yes |
 | `stored_value.adjustment.approve_self` | Authorize one’s own manual adjustment (still requires PIN re-auth and a recorded approval) | store | 6 | — | — | yes |

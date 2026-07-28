@@ -6,10 +6,9 @@
 <%= render "toolbar" %>
 
 <article class="pos-gift-receipt pos-receipt-document" aria-label="Gift receipt">
-  <%= render "status_notices", voided: voided, banner: "GIFT RECEIPT" %>
+  <%= render "status_notices", voided: voided, banner: nil %>
 
   <%= render "store_header" %>
-  <%= render "receipt_number_barcode" %>
   <%= render "meta" %>
 
   <% if voided && @facts.reversing_transaction.present? %>
@@ -19,10 +18,19 @@
     </p>
   <% end %>
 
-  <p class="muted">
-    Store <%= @facts.store.name %>
-    <% if @facts.register_label.present? %> · Register <%= @facts.register_label %><% end %>
-  </p>
+  <p class="pos-receipt-banner" role="status"><strong>GIFT RECEIPT</strong></p>
 
+  <dl class="pos-gift-fill-ins" aria-label="Gift fill-in lines">
+    <div class="pos-gift-fill-ins__row">
+      <dt>To:</dt>
+      <dd class="pos-gift-fill-ins__line" aria-hidden="true"></dd>
+    </div>
+    <div class="pos-gift-fill-ins__row">
+      <dt>From:</dt>
+      <dd class="pos-gift-fill-ins__line" aria-hidden="true"></dd>
+    </div>
+  </dl>
+
+  <%= render "receipt_number_barcode" %>
   <%= render "store_footer", footer_text: gift_footer %>
 </article>

@@ -71,6 +71,14 @@ Rails.application.routes.draw do
   resources :stored_value_accounts, only: %i[index show new create] do
     member do
       post :adjust
+      get :credit_voucher, to: "stored_value_documents#credit_voucher"
+      get "credit_voucher/reprint", to: "stored_value_documents#credit_voucher_reprint", as: :credit_voucher_reprint
+    end
+  end
+  resources :stored_value_entries, only: [] do
+    member do
+      get :activity_slip, to: "stored_value_documents#activity_slip"
+      get "activity_slip/reprint", to: "stored_value_documents#activity_slip_reprint", as: :activity_slip_reprint
     end
   end
   resources :stock_balances, only: %i[index show]

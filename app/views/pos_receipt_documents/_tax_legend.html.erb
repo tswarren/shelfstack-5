@@ -1,0 +1,9 @@
+<% if @facts.tax_legend.present? %>
+  <section class="pos-receipt-tax-legend" aria-label="Tax codes">
+    <ul class="pos-receipt-tax-legend__list">
+      <% @facts.tax_legend.each do |entry| %>
+        <li><%= entry[:code] %> - <%= entry[:name] %></li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

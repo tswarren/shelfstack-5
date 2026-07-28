@@ -442,6 +442,18 @@ stored_value_tender_refund:
   permission_group: stored_value
   active: true
 
+stored_value_activity_print:
+  code: stored_value.activity.print
+  name: Print stored-value activity slips
+  permission_group: stored_value
+  active: true
+
+stored_value_voucher_print:
+  code: stored_value.voucher.print
+  name: Print stored-value credit vouchers
+  permission_group: stored_value
+  active: true
+
 pos_return_refund_exception_approve:
   code: pos.return.refund_exception.approve
   name: Approve refund destination exceptions

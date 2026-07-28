@@ -38,7 +38,7 @@ class Phase111ReceiptDocumentsTest < ActionDispatch::IntegrationTest
     get customer_receipt_pos_transaction_path(open)
     assert_response :success
     refute_match(/REPRINT/, response.body)
-    assert_select ".pos-receipt-number-line", text: /Receipt/
+    assert_select ".pos-receipt-meta", text: /Receipt/
     assert_select ".pos-receipt-barcode-text", text: open.receipt_number
 
     get register_path
@@ -186,7 +186,9 @@ class Phase111ReceiptDocumentsTest < ActionDispatch::IntegrationTest
     assert_match(/#{Regexp.escape(original.receipt_number)}/, response.body)
     # Line-level tax rows store magnitudes; receipt display must sign returns negative.
     assert_operator reversing.tax_total_cents, :<, 0
-    assert_select ".pos-totals .amount", text: /-\$#{Regexp.escape(format("%.2f", reversing.tax_total_cents.abs / 100.0))}/
+    assert_select ".pos-receipt-totals .amount", text: /-\$#{Regexp.escape(format("%.2f", reversing.tax_total_cents.abs / 100.0))}/
+    assert_select ".pos-receipt-totals dt", text: /Tax .+ @ /
+    assert_select ".pos-receipt-tax-legend", text: / -/
 
     get gift_receipt_reprint_pos_transaction_path(reversing)
     assert_redirected_to pos_transaction_path(reversing)
@@ -214,5 +216,74 @@ class Phase111ReceiptDocumentsTest < ActionDispatch::IntegrationTest
     assert_nil barcode.error
     assert_equal txn.receipt_number, barcode.payload
     assert_includes barcode.svg, "<svg"
+  end
+
+  test "customer receipt shows tax markers totals format and legend" do
+    post session_path, params: { username: "admin", password: "password123" }
+    txn, = pos_complete_cash_sale(
+      session: @session, variant: @variant, quantity: 1, actor: @admin,
+      cash: @cash, key: "11-1-tax-layout"
+    )
+
+    get customer_receipt_reprint_pos_transaction_path(txn)
+    assert_response :success
+    assert_select ".pos-receipt-tax-markers", text: /G/
+    assert_select ".pos-receipt-totals dt", text: /Tax G \(\$.+ @ 13\.000%\)/
+    assert_select ".pos-receipt-totals", text: /Total Merchandise/
+    assert_select ".pos-receipt-totals", text: /Total Due/
+    assert_select ".pos-receipt-meta", text: /Receipt/
+    assert_select ".pos-receipt-tax-legend", text: /G - /
+    assert_select ".pos-receipt-tax-legend", text: /GST/
+    assert_select ".pos-receipt-item-counts", text: /Items Sold/
+  end
+
+  test "gift receipt shows fill-in lines and gift title after meta" do
+    post session_path, params: { username: "admin", password: "password123" }
+    txn, = pos_complete_cash_sale(
+      session: @session, variant: @variant, quantity: 1, actor: @admin,
+      cash: @cash, key: "11-1-gift-layout"
+    )
+
+    get gift_receipt_reprint_pos_transaction_path(txn)
+    assert_response :success
+    assert_select ".pos-receipt-banner", text: /GIFT RECEIPT/
+    assert_select ".pos-gift-fill-ins", text: /To:/
+    assert_select ".pos-gift-fill-ins", text: /From:/
+    assert_select ".pos-receipt-barcode-text", text: txn.receipt_number
+    assert_select ".pos-receipt-lines", count: 0
+    assert_select ".pos-receipt-totals", count: 0
+  end
+
+  test "customer receipt masks stored-value account numbers and never prints full number" do
+    post session_path, params: { username: "admin", password: "password123" }
+    IdentifierSequence.ensure_defaults!
+    account = StoredValue::CreateAccount.call(
+      organization: @store.organization, account_type: "gift_card", actor: @admin
+    ).account
+
+    open = Pos::OpenTransaction.call(pos_session: @session, actor: @admin).pos_transaction
+    line_result = Pos::AddStoredValueLine.call(
+      pos_transaction: open, account: account, operation: "issue",
+      amount_cents: 2500, actor: @admin
+    )
+    assert line_result.success?, line_result.error
+    # Legacy completed lines may still embed the full number in description_snapshot.
+    line_result.pos_line_item.update_columns(
+      description_snapshot: "Issue gift card #{account.account_number}"
+    )
+    Pos::AddCashTender.call(
+      pos_transaction: open, tender_type: @cash, amount_tendered_cents: 2500, actor: @admin
+    )
+    assert Pos::CompleteTransaction.call(
+      pos_transaction: open, pos_session: @session, actor: @admin,
+      completion_idempotency_key: "11-1-sv-mask"
+    ).success?
+
+    get customer_receipt_reprint_pos_transaction_path(open.reload)
+    assert_response :success
+    refute_includes response.body, account.account_number
+    assert_select ".pos-receipt-item__description", text: "Gift Card Sale"
+    assert_select ".pos-receipt-item__identifier", text: /#{Regexp.escape(account.account_number[-4, 4])}/
+    assert_select ".pos-receipt-item__identifier", text: /\*{4}/
   end
 end
