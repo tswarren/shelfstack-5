@@ -71,7 +71,8 @@ flowchart TD
 | 8 | Catalog refinement & enrichment | Complete — Must 8a–8d accepted; Should/Nice 8e–8g deferred | [phases/phase-08-catalog-refinement-and-enrichment.md](phases/phase-08-catalog-refinement-and-enrichment.md) |
 | 9 | Customer records (v1) | Complete — merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)); [ADR-0017](../adr/0017-customer-domain-and-namespace-22.md) | [phases/phase-09-customer-records.md](phases/phase-09-customer-records.md) |
 | 10 | Product record and form workflow refinement | Complete — Gates 10a–10e accepted (PR [#128](https://github.com/tswarren/shelfstack-5/pull/128)) | [phases/phase-10-product-record-and-form-refinement.md](phases/phase-10-product-record-and-form-refinement.md) |
-| 11 | POS shell and workspace revamp | Complete — [#146](https://github.com/tswarren/shelfstack-5/pull/146) + [#150](https://github.com/tswarren/shelfstack-5/pull/150) on `main` (`ddb85cb`); epic [#130](https://github.com/tswarren/shelfstack-5/issues/130) closed; DWR-017 Should → Phase 11.1 draft | [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md) |
+| 11 | POS shell and workspace revamp | Complete — [#146](https://github.com/tswarren/shelfstack-5/pull/146) + [#150](https://github.com/tswarren/shelfstack-5/pull/150) on `main` (`ddb85cb`); epic [#130](https://github.com/tswarren/shelfstack-5/issues/130) closed; DWR-017 Should → Phase 11.1 | [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md) |
+| 11.1 | POS printed documents v1 | Complete — epic [#151](https://github.com/tswarren/shelfstack-5/issues/151); gates [#152](https://github.com/tswarren/shelfstack-5/issues/152)–[#155](https://github.com/tswarren/shelfstack-5/issues/155) | [phases/phase-11.1-pos-printed-documents-v1.md](phases/phase-11.1-pos-printed-documents-v1.md) |
 
 ## Mapping to system-overview §1.8
 
@@ -106,17 +107,16 @@ Conceptual phases in the System Overview describe domain dependencies. Delivery 
 
 ## Near-term cadence
 
-**Active:** Between phases — Phase 11 closed; Phase 11.1 POS printed documents v1 in draft ([build contract](../temp_draft/phase-11.1/00_pos_printing-simplified.md); [current-phase.md](current-phase.md)).
+**Active:** Between phases — Phase 11.1 closed ([phase plan](phases/phase-11.1-pos-printed-documents-v1.md); [current-phase.md](current-phase.md); epic [#151](https://github.com/tswarren/shelfstack-5/issues/151)).
 
-Completed: Phases 0–11 core delivery. Phase 11 POS shell ([#146](https://github.com/tswarren/shelfstack-5/pull/146) + [#150](https://github.com/tswarren/shelfstack-5/pull/150); `ddb85cb`). Phase 10 product record/form refinement (Gates 10a–10e) in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Phase 9 Customer records merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)). Phase 8 Must 8a–8d closed; Should/Nice 8e–8g deferred. Phase 7 at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
+Completed: Phases 0–11.1 core delivery. Phase 11.1 POS printed documents (epic [#151](https://github.com/tswarren/shelfstack-5/issues/151)). Phase 11 POS shell ([#146](https://github.com/tswarren/shelfstack-5/pull/146) + [#150](https://github.com/tswarren/shelfstack-5/pull/150); `ddb85cb`). Phase 10 product record/form refinement (Gates 10a–10e) in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Phase 9 Customer records merged to `main` at `db6778d` (PR [#122](https://github.com/tswarren/shelfstack-5/pull/122)). Phase 8 Must 8a–8d closed; Should/Nice 8e–8g deferred. Phase 7 at `d27d666` (PR [#62](https://github.com/tswarren/shelfstack-5/pull/62); 7e partial [#94](https://github.com/tswarren/shelfstack-5/issues/94)). Phase 6.5 at `bd7fb9d` (PR [#54](https://github.com/tswarren/shelfstack-5/pull/54)). Phase 6 at `853ae3b` (PR [#39](https://github.com/tswarren/shelfstack-5/pull/39)). Phase 5 at `2e3e119` (PR #34).
 
-**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, Phase 10 follow-on DWR-066, DWR-017 Should / Phase 11.1 printing, DWR-020 purchasing/receiving picker residual, full CRM beyond Customer v1 (DWR-036), later extensions). DWR-021 (multi-variant) and DWR-029 (request-coverage extraction) remain unscheduled.
+**Carry-forward backlog:** [deferred-work-register.md](deferred-work-register.md) (open decisions, interim correction blocks, Phase 7 follow-ups [#89](https://github.com/tswarren/shelfstack-5/issues/89)–[#94](https://github.com/tswarren/shelfstack-5/issues/94), Phase 8 Should/Nice follow-on, Phase 10 follow-on DWR-066, DWR-017 residuals, DWR-020 purchasing/receiving picker residual, full CRM beyond Customer v1 (DWR-036), later extensions). DWR-021 (multi-variant) and DWR-029 (request-coverage extraction) remain unscheduled.
 
-1. Schedule Phase 11.1 from the printing v1 build contract; resolve DWR-066 before independent receipt/PO/cost roles without `stock_view`.
-2. Parallel design: Correction Integrity Design Packet (DWR-004–006); do not implement until accepted.
-3. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
-4. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
-5. Conditional: DWR-018/019 only if a scheduled gate is blocked.
+1. Parallel design: Correction Integrity Design Packet (DWR-004–006); do not implement until accepted. Resolve DWR-066 before independent receipt/PO/cost roles without `stock_view`.
+2. Retain OD-014 interim and return-txn post-void blocks until their follow-on algorithms land.
+3. Keep residual open decisions (OD-009, OD-010, OD-013) tracked; do not close OD-010 when adding aggregate `unavailable_delta`.
+4. Conditional: DWR-018/019 only if a scheduled gate is blocked.
 
 
 

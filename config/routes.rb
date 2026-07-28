@@ -180,7 +180,12 @@ Rails.application.routes.draw do
       post :complete
       post :start_linked_return
       get :tender
-      get :customer_receipt
+      get :customer_receipt, to: "pos_receipt_documents#customer_receipt"
+      get "customer_receipt/reprint", to: "pos_receipt_documents#customer_receipt_reprint", as: :customer_receipt_reprint
+      get :gift_receipt, to: "pos_receipt_documents#gift_receipt"
+      get "gift_receipt/reprint", to: "pos_receipt_documents#gift_receipt_reprint", as: :gift_receipt_reprint
+      get :post_void_receipt, to: "pos_receipt_documents#post_void_receipt"
+      get "post_void_receipt/reprint", to: "pos_receipt_documents#post_void_receipt_reprint", as: :post_void_receipt_reprint
       get :post_void_form
       post :approve_post_void
       post :clear_post_void_approval

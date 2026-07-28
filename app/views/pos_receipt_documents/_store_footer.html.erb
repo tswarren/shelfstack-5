@@ -1,0 +1,8 @@
+<% store = @facts.store %>
+<% footer = local_assigns[:footer_text] %>
+<% footer = store.receipt_footer if footer.nil? %>
+<% if footer.present? %>
+  <div class="pos-receipt-store-text muted"><%= simple_format(footer) %></div>
+<% else %>
+  <p class="muted pos-receipt-footer">Thank you.</p>
+<% end %>

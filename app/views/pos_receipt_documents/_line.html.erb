@@ -20,21 +20,21 @@
 
   <p class="pos-receipt-item__row">
     <span><%= line.quantity %> × <%= pos_money(line.unit_price_cents) %></span>
-    <span><%= pos_money(extended_cents) %></span>
+    <span class="amount"><%= pos_money(extended_cents) %></span>
   </p>
 
   <% allocations.each do |allocation| %>
     <% next unless allocation.allocated_amount_cents.to_i.positive? %>
     <p class="pos-receipt-item__row pos-receipt-item__row--adjustment">
       <span><%= pos_receipt_discount_label(allocation.pos_discount) %></span>
-      <span><%= pos_money(-allocation.allocated_amount_cents.to_i * sign) %></span>
+      <span class="amount"><%= pos_money(-allocation.allocated_amount_cents.to_i * sign) %></span>
     </p>
   <% end %>
 
   <% if discount_cents.positive? %>
     <p class="pos-receipt-item__row pos-receipt-item__row--net">
       <span>Net</span>
-      <span><%= pos_money(net_cents) %></span>
+      <span class="amount"><%= pos_money(net_cents) %></span>
     </p>
   <% end %>
 </article>

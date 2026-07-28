@@ -1,10 +1,10 @@
 # POS Printed Documents — v1 (Customer, Gift, Post-Void Receipts)
 
-**Status:** Draft — v1 build contract  
+**Status:** Background — superseded as governing plan by [phase-11.1-pos-printed-documents-v1.md](../../implementation/phases/phase-11.1-pos-printed-documents-v1.md)  
 **Scope:** Customer Receipt, Gift Receipt, Post-Void Receipt  
 **Not in this document:** Cash Movement Slips, Credit Vouchers / Stored-Value Activity Slips, X and Z Reports — see [§9 Deferred](#9-deferred).
 
-Longer research drafts in this folder (`customer-receipts.md`, `gift-receipts.md`, `fact-source-and-schema-gap-matrix.md`, common contract) remain background. **This file is the locked v1 build contract** until a Phase 11.1 plan promotes it.
+Longer research drafts in this folder remain background. Prefer the promoted phase plan for delivery status, gates, and issue links; this file retains the detailed build-contract language used during design.
 
 ---
 

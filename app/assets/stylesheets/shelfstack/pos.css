@@ -799,26 +799,42 @@
   margin-bottom: 1rem;
 }
 
-.pos-customer-receipt {
+.pos-receipt-document,
+.pos-customer-receipt,
+.pos-gift-receipt,
+.pos-post-void-receipt {
   background: #fff;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
   padding: 1.25rem 1rem;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  width: min(100%, 320px);
+  margin: 0 auto;
 }
 
 .pos-receipt-reprint,
-.pos-receipt-banner {
+.pos-receipt-banner,
+.pos-receipt-voided {
   letter-spacing: 0.08em;
   text-align: center;
   margin: 0 0 0.75rem;
+  font-weight: 700;
 }
 
 .pos-receipt-reprint {
   color: var(--danger-text, #b42318);
 }
 
-.pos-receipt-banner {
+.pos-receipt-banner,
+.pos-receipt-voided {
   color: var(--text-primary);
+}
+
+.pos-receipt-void-ref {
+  margin: 0.75rem 0;
+  text-align: center;
 }
 
 .pos-receipt-store-text {
@@ -833,6 +849,33 @@
 .pos-receipt-header h1 {
   margin: 0 0 0.25rem;
   font-size: 1.25rem;
+  text-align: center;
+}
+
+.pos-receipt-header {
+  text-align: center;
+}
+
+.pos-receipt-identity {
+  text-align: center;
+  margin: 0.75rem 0;
+}
+
+.pos-receipt-barcode {
+  margin: 0.5rem auto;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.pos-receipt-barcode svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.pos-receipt-barcode-text {
+  margin: 0.25rem 0 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 
 .pos-receipt-lines {
@@ -856,11 +899,18 @@
 }
 
 .pos-receipt-item__row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 0.75rem;
   margin: 0.15rem 0 0;
   font-variant-numeric: tabular-nums;
+}
+
+.pos-receipt-item__row .amount,
+.pos-totals .amount,
+.pos-tender-summary .amount {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .pos-receipt-item__row--adjustment {
@@ -870,6 +920,16 @@
 
 .pos-receipt-item__row--net {
   font-weight: 650;
+}
+
+.pos-receipt-return-refs {
+  margin: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.pos-receipt-return-refs ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
 }
 
 @media (max-width: 1023px) {

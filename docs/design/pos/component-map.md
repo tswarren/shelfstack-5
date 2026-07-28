@@ -489,7 +489,28 @@ app/views/pos/receipt/
   _overflow_commands.html.erb
 ```
 
-Printable customer document remains `pos_transactions/customer_receipt` on `layouts/pos_receipt` (not these interactive partials).
+Printable documents (Phase 11.1) live under `pos_receipt_documents` on `layouts/pos_receipt` — not the interactive Receipt partials:
+
+```text
+app/views/pos_receipt_documents/
+  customer_receipt.html.erb
+  gift_receipt.html.erb
+  post_void_receipt.html.erb
+  _toolbar.html.erb
+  _store_header.html.erb
+  _store_footer.html.erb
+  _status_notices.html.erb
+  _receipt_number_barcode.html.erb
+  _meta.html.erb
+  _line.html.erb
+
+app/controllers/pos_receipt_documents_controller.rb
+app/services/pos/receipt_document_facts.rb
+app/services/pos/receipt_barcode.rb
+app/controllers/concerns/pos_immediate_print_context.rb
+```
+
+Routes (member of `pos_transactions`): immediate `customer_receipt` / `gift_receipt` / `post_void_receipt` vs historical `*/reprint`. `_commands.html.erb` chooses immediate vs reprint actions from server-owned session context.
 
 Detailed completed lines may remain subordinate or disclosed. Next Transaction and Print remain visually dominant.
 

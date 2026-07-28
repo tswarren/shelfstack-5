@@ -46,6 +46,26 @@
     </div>
   </section>
 
+  <section class="form-section">
+    <h2 class="form-section-title">Receipt text</h2>
+    <p class="field-hint">Printed on browser receipts. Changing these fields affects later prints only — not completed transaction amounts.</p>
+    <div class="form-stack">
+      <div class="field">
+        <%= form.label :receipt_header, class: "field-label" %>
+        <%= form.text_area :receipt_header, class: "input", rows: 3 %>
+      </div>
+      <div class="field">
+        <%= form.label :receipt_footer, class: "field-label" %>
+        <%= form.text_area :receipt_footer, class: "input", rows: 3 %>
+      </div>
+      <div class="field">
+        <%= form.label :gift_receipt_footer, "Gift receipt footer", class: "field-label" %>
+        <%= form.text_area :gift_receipt_footer, class: "input", rows: 3 %>
+        <p class="field-hint">Shown on Gift Receipts. Leave blank to use a short default message.</p>
+      </div>
+    </div>
+  </section>
+
   <div class="form-actions">
     <%= form.submit store.persisted? ? "Update store" : "Create store", class: "button button-primary" %>
     <%= link_to "Cancel", store.persisted? ? store_path(store) : stores_path, class: "button button-outline" %>

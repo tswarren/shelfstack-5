@@ -1,0 +1,28 @@
+<% content_for :title, "Gift Receipt #{@facts.pos_transaction.receipt_number}" %>
+<% voided = @facts.post_voided %>
+<% gift_footer = @facts.store.gift_receipt_footer.presence ||
+      "This Gift Receipt may be used to locate the original Transaction. Returns remain subject to Store policy and verification." %>
+
+<%= render "toolbar" %>
+
+<article class="pos-gift-receipt pos-receipt-document" aria-label="Gift receipt">
+  <%= render "status_notices", voided: voided, banner: "GIFT RECEIPT" %>
+
+  <%= render "store_header" %>
+  <%= render "receipt_number_barcode" %>
+  <%= render "meta" %>
+
+  <% if voided && @facts.reversing_transaction.present? %>
+    <p class="pos-receipt-void-ref" role="status">
+      Reversed by receipt <strong><%= @facts.reversing_transaction.receipt_number %></strong><br>
+      <span class="muted">Reversal completed <%= formatted_datetime(@facts.reversing_transaction.completed_at, format: :receipt) %></span>
+    </p>
+  <% end %>
+
+  <p class="muted">
+    Store <%= @facts.store.name %>
+    <% if @facts.register_label.present? %> · Register <%= @facts.register_label %><% end %>
+  </p>
+
+  <%= render "store_footer", footer_text: gift_footer %>
+</article>

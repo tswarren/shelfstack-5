@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PosSessionsController < ApplicationController
+  include PosImmediatePrintContext
+
   layout "pos"
 
   before_action -> { require_permission!("pos.session.open") }, only: %i[new create]
@@ -66,6 +68,7 @@ class PosSessionsController < ApplicationController
     )
     if result.success?
       @session.reload
+      clear_immediate_print_context!
       notice = if result.replayed
         "Session already closed."
       elsif @session.cash_enabled?

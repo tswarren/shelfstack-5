@@ -1,0 +1,13 @@
+<p class="muted">
+  <%= formatted_datetime(@facts.pos_transaction.completed_at, format: :receipt) %>
+</p>
+<% if @facts.reprint && @facts.reprint_at.present? %>
+  <p class="muted">Reprint <%= formatted_datetime(@facts.reprint_at, format: :receipt) %></p>
+<% end %>
+<% if @facts.register_label.present? || @facts.cashier_label.present? %>
+  <p class="muted">
+    <% if @facts.register_label.present? %>Register <%= @facts.register_label %><% end %>
+    <% if @facts.register_label.present? && @facts.cashier_label.present? %> · <% end %>
+    <% if @facts.cashier_label.present? %>Cashier: <%= @facts.cashier_label %><% end %>
+  </p>
+<% end %>

@@ -1,0 +1,58 @@
+<% content_for :title, "Post-Void #{@facts.pos_transaction.receipt_number}" %>
+<% net_merchandise_cents = @facts.pos_transaction.subtotal_cents.to_i - @facts.pos_transaction.discount_total_cents.to_i %>
+
+<%= render "toolbar" %>
+
+<article class="pos-post-void-receipt pos-receipt-document" aria-label="Post-void receipt">
+  <%= render "status_notices", banner: "POST-VOID" %>
+
+  <%= render "store_header" %>
+  <%= render "receipt_number_barcode" %>
+  <%= render "meta" %>
+
+  <% if @facts.original_transaction.present? %>
+    <p class="pos-receipt-void-ref">
+      Original receipt <strong><%= @facts.original_transaction.receipt_number %></strong><br>
+      <span class="muted">Original completed <%= formatted_datetime(@facts.original_transaction.completed_at, format: :receipt) %></span>
+    </p>
+  <% end %>
+
+  <section class="pos-receipt-lines" aria-label="Reversing merchandise">
+    <% @facts.lines.each do |line| %>
+      <%= render "line", line: line %>
+    <% end %>
+  </section>
+
+  <dl class="definition-grid pos-totals">
+    <div class="definition-item"><dt>Merchandise</dt><dd class="amount"><%= pos_money(@facts.pos_transaction.subtotal_cents) %></dd></div>
+    <% if @facts.pos_transaction.discount_total_cents.to_i.positive? %>
+      <div class="definition-item"><dt>Discounts</dt><dd class="amount"><%= pos_money(-@facts.pos_transaction.discount_total_cents) %></dd></div>
+      <div class="definition-item"><dt>Net merchandise</dt><dd class="amount"><%= pos_money(net_merchandise_cents) %></dd></div>
+    <% end %>
+    <% if @facts.tax_components.present? %>
+      <% @facts.tax_components.each do |component| %>
+        <div class="definition-item">
+          <dt><%= component[:label] %></dt>
+          <dd class="amount"><%= pos_money(component[:amount_cents]) %></dd>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="definition-item"><dt>Tax</dt><dd class="amount"><%= pos_money(@facts.pos_transaction.tax_total_cents) %></dd></div>
+    <% end %>
+    <div class="definition-item"><dt>Total</dt><dd class="pos-balance amount"><%= pos_money(@facts.pos_transaction.net_total_cents) %></dd></div>
+  </dl>
+
+  <% if @facts.tenders.any? %>
+    <h2>Tenders</h2>
+    <ul class="pos-tender-summary">
+      <% @facts.tenders.each do |tender| %>
+        <li>
+          <%= tender.tender_type.name %> · <%= tender.direction.humanize %> ·
+          <span class="amount"><%= pos_money(tender.amount_cents) %></span>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%= render "store_footer" %>
+</article>

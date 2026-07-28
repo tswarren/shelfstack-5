@@ -1,0 +1,84 @@
+<% content_for :title, "Receipt #{@facts.pos_transaction.receipt_number}" %>
+<% net_merchandise_cents = @facts.pos_transaction.subtotal_cents.to_i - @facts.pos_transaction.discount_total_cents.to_i %>
+<% document_banner = pos_receipt_document_banner(@facts.pos_transaction) %>
+<% voided = @facts.post_voided %>
+
+<%= render "toolbar" %>
+
+<article class="pos-customer-receipt pos-receipt-document" aria-label="Customer receipt">
+  <%= render "status_notices",
+        voided: voided,
+        banner: (document_banner if document_banner.present? && document_banner != "RECEIPT" && !voided) %>
+
+  <%= render "store_header" %>
+  <%= render "receipt_number_barcode" %>
+  <%= render "meta" %>
+
+  <% if voided && @facts.reversing_transaction.present? %>
+    <p class="pos-receipt-void-ref" role="status">
+      Reversed by receipt <strong><%= @facts.reversing_transaction.receipt_number %></strong><br>
+      <span class="muted">Reversal completed <%= formatted_datetime(@facts.reversing_transaction.completed_at, format: :receipt) %></span>
+    </p>
+  <% end %>
+
+  <% if @facts.original_transaction.present? %>
+    <p class="muted">Original receipt <%= @facts.original_transaction.receipt_number %></p>
+  <% end %>
+
+  <% if @facts.masked_customer_label.present? %>
+    <p><%= @facts.masked_customer_label %></p>
+  <% end %>
+
+  <section class="pos-receipt-lines" aria-label="Merchandise">
+    <% @facts.lines.each do |line| %>
+      <%= render "line", line: line %>
+    <% end %>
+  </section>
+
+  <% if @facts.linked_return_receipt_numbers.any? %>
+    <section class="pos-receipt-return-refs" aria-label="Returned merchandise sources">
+      <p>Returned merchandise from:</p>
+      <ul>
+        <% @facts.linked_return_receipt_numbers.each do |number| %>
+          <li>Receipt <%= number %></li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <dl class="definition-grid pos-totals">
+    <div class="definition-item"><dt>Merchandise</dt><dd class="amount"><%= pos_money(@facts.pos_transaction.subtotal_cents) %></dd></div>
+    <% if @facts.pos_transaction.discount_total_cents.to_i.positive? %>
+      <div class="definition-item"><dt>Discounts</dt><dd class="amount"><%= pos_money(-@facts.pos_transaction.discount_total_cents) %></dd></div>
+      <div class="definition-item"><dt>Net merchandise</dt><dd class="amount"><%= pos_money(net_merchandise_cents) %></dd></div>
+    <% end %>
+    <% if @facts.tax_components.present? %>
+      <% @facts.tax_components.each do |component| %>
+        <div class="definition-item">
+          <dt><%= component[:label] %></dt>
+          <dd class="amount"><%= pos_money(component[:amount_cents]) %></dd>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="definition-item"><dt>Tax</dt><dd class="amount"><%= pos_money(@facts.pos_transaction.tax_total_cents) %></dd></div>
+    <% end %>
+    <div class="definition-item"><dt>Total</dt><dd class="pos-balance amount"><%= pos_money(@facts.pos_transaction.net_total_cents) %></dd></div>
+  </dl>
+
+  <% if @facts.tenders.any? %>
+    <h2>Tenders</h2>
+    <ul class="pos-tender-summary">
+      <% @facts.tenders.each do |tender| %>
+        <li>
+          <%= tender.tender_type.name %> · <%= tender.direction.humanize %> ·
+          <span class="amount"><%= pos_money(tender.amount_cents) %></span>
+          <% if tender.change_due_cents.to_i.positive? %>
+            <span class="muted">(change <%= pos_money(tender.change_due_cents) %>)</span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <%= render "store_footer" %>
+</article>

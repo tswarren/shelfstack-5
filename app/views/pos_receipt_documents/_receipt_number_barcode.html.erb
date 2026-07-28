@@ -1,0 +1,13 @@
+<% receipt_number = local_assigns.fetch(:receipt_number) { @facts.pos_transaction.receipt_number } %>
+<% barcode = local_assigns.fetch(:barcode) { @facts.barcode } %>
+<section class="pos-receipt-identity" aria-label="Receipt number">
+  <p class="pos-receipt-number-line">
+    Receipt <strong><%= receipt_number %></strong>
+  </p>
+  <% if barcode.svg.present? %>
+    <div class="pos-receipt-barcode" aria-hidden="true">
+      <%= barcode.svg.html_safe %>
+    </div>
+  <% end %>
+  <p class="pos-receipt-barcode-text"><%= receipt_number %></p>
+</section>

@@ -2,6 +2,14 @@
       pos_overlay_receipt_detail_path(pos_transaction_id: @pos_transaction.id),
       class: "button button-ghost button-small",
       data: pos_overlay_turbo %>
+<% if @pos_transaction.reverses_pos_transaction.present? %>
+  <%= link_to "View original", pos_transaction_path(@pos_transaction.reverses_pos_transaction),
+        class: "button button-ghost button-small", data: { turbo_frame: "_top" } %>
+<% end %>
+<% if @pos_transaction.post_void_transaction&.completed? %>
+  <%= link_to "View reversing transaction", pos_transaction_path(@pos_transaction.post_void_transaction),
+        class: "button button-ghost button-small", data: { turbo_frame: "_top" } %>
+<% end %>
 <% returnable = @pos_transaction.pos_line_items
      .where(status: "completed", direction: "sale")
      .where.not(line_kind: "stored_value")

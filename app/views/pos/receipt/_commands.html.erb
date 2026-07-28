@@ -1,6 +1,25 @@
-<%= link_to "Print", customer_receipt_pos_transaction_path(@pos_transaction),
-      class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
-<% if Current.user.can?("pos.receipt.reprint", store: Current.store) %>
-  <%= link_to "Reprint", customer_receipt_pos_transaction_path(@pos_transaction, reprint: true),
+<% reversing = @pos_transaction.reverses_pos_transaction_id.present? %>
+<% immediate = immediate_print_available?(@pos_transaction) %>
+<% can_reprint = Current.user.can?("pos.receipt.reprint", store: Current.store) %>
+
+<% if immediate %>
+  <%= link_to "Print Receipt", customer_receipt_pos_transaction_path(@pos_transaction),
+        class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+  <% if reversing %>
+    <%= link_to "Print Post-Void Receipt", post_void_receipt_pos_transaction_path(@pos_transaction),
+          class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+  <% else %>
+    <%= link_to "Print Gift Receipt", gift_receipt_pos_transaction_path(@pos_transaction),
+          class: "button button-outline button-small", target: "_blank", rel: "noopener" %>
+  <% end %>
+<% elsif can_reprint %>
+  <%= link_to "Reprint Receipt", customer_receipt_reprint_pos_transaction_path(@pos_transaction),
         class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+  <% if reversing %>
+    <%= link_to "Reprint Post-Void Receipt", post_void_receipt_reprint_pos_transaction_path(@pos_transaction),
+          class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+  <% else %>
+    <%= link_to "Reprint Gift Receipt", gift_receipt_reprint_pos_transaction_path(@pos_transaction),
+          class: "button button-ghost button-small", target: "_blank", rel: "noopener" %>
+  <% end %>
 <% end %>

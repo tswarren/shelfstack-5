@@ -453,6 +453,18 @@ Shared variance authority for recon accept: membership `cash_variance_review_thr
 - Phone store-country context is passed through Customer services; the model validates stored E.164 only.
 - POS attachment does not recalculate price, tax, discounts, or tenders.
 
+## Phase 11.1 — POS printed documents v1
+
+| Service | Domain owner | Introduced | Transactional? | Idempotent? | Locks | Input | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `Pos::ReceiptDocumentFacts` | Point of Sale | 11.1 | No | Yes | None | Completed txn, store, reprint flag | Read-only presentation facts from completed records/snapshots (lines, tax, tenders, mask, barcode, post-void links). Never calls pricing/tax/inventory services |
+| `Pos::ReceiptBarcode` | Point of Sale | 11.1 | No | Yes | None | `receipt_number` string | Code 128 SVG (or nil + error); payload always the public receipt number |
+
+### Phase 11.1 notes
+
+- Original vs reprint authority is session-owned (`PosImmediatePrintContext`), not a service write.
+- Document GET routes are commercially inert (no DB writes).
+
 ## Later phases (add when implemented)
 
 - Phase 8.5+: named multi-variant unlock after cross-domain packet
