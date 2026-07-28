@@ -29,9 +29,10 @@
   <p class="pos-sv-voucher-account">Account <%= @facts.account_number %></p>
 
   <section class="pos-receipt-identity" aria-label="Account barcode">
-    <% if @facts.barcode.svg.present? %>
+    <% barcode = @facts.barcode %>
+    <% if barcode.svg.present? %>
       <div class="pos-receipt-barcode" aria-hidden="true">
-        <%= @facts.barcode.svg.html_safe %>
+        <%= pos_barcode_svg(barcode.svg) %>
       </div>
     <% end %>
     <p class="pos-receipt-barcode-text"><%= @facts.account_number %></p>

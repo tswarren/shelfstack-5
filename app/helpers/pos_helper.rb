@@ -5,6 +5,21 @@ module PosHelper
     format_money(cents)
   end
 
+  # Barby SVG is generated from ShelfStack identifiers (Code 128 / EAN-13), not free-form HTML.
+  # Sanitize so the markup is safe for browsers and so Brakeman does not treat it as XSS.
+  def pos_barcode_svg(svg)
+    return if svg.blank?
+
+    sanitize(
+      svg.to_s,
+      tags: %w[svg title g rect path],
+      attributes: %w[
+        xmlns xmlns:xlink width height viewBox version preserveAspectRatio
+        x y fill stroke stroke-width d id transform
+      ]
+    )
+  end
+
   def pos_discount_summary(discount)
     method_text = case discount.method
     when "percentage"
