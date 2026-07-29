@@ -444,34 +444,39 @@ The printable customer receipt remains a separate print layout.
 **Reason:** Change due, receipt identity, printing, and Next Transaction should dominate the completed state.  
 **Confirmation:** Review cash, split-tender, return, and long-transaction receipts.
 
-### POS-UI-037 — Ready and Store Operations boundary
+### POS-UI-037 — Ready and Operations boundary
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Decision:** Keep the following directly reachable from Ready:
 
 - Cash Movement;
 - No Sale;
-- Store Operations.
+- Operations (sibling workspace).
 
 Ready also displays compact current-session identity and status.
 
-Move the following into the dedicated Store Operations surface:
+**Register Operations** (current session / device / drawer) owns:
 
-- Session X detail;
-- Close Session;
+- Session X / Session Z;
+- Close Session (first-level);
+- detailed cash-movement and no-sale history;
+- session recon status/links;
+- session close blockers.
+
+**Store Operations** (business day / all sessions) owns:
+
 - Day X and Day Z;
-- Session Z history;
 - other-session tables;
-- business-day close;
-- detailed cash-movement history;
-- operational diagnostics.
+- business-day open/close administration;
+- day recon status/links;
+- day close blockers.
 
-Store Operations is one obvious action from Ready. For an authorized user, Close Session is a prominent first-level action inside Store Operations and does not require navigating through an additional report or administration menu.
+Cash Movement / No Sale create actions stay on Ready only; their authoritative history lives in Register Operations ([OD-P11-02](../../implementation/decisions/phase-11.3-operations-workspace-boundaries.md)).
 
 Review path:
 
 ```text
-Ready → Store Operations → Close Session
+Ready → Operations → Register Operations → Close Session
 ```
 
 No additional navigation layer should be required.

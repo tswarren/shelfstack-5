@@ -39,15 +39,81 @@ class RegisterController < ApplicationController
     )
   end
 
-  # POS-UI-037: session/day close and X/Z reports live here, not on Ready.
-  def store_operations
+  # Phase 11.3: sibling Operations workspace (Register Ops | Store Ops).
+  def operations
     load_register_context!
+    guard = Pos::LeaveRegisterGuard.evaluate(user: Current.user, store: Current.store)
+    return render_leave_guard!(guard, destination: "operations", scope: ops_scope_param) unless guard.status == :allow
+
     load_register_reporting!
+    load_operations_reconciliation!
+    @ops_scope = ops_scope_param
     @workspace = Pos::WorkspacePresentation.for(
       pos_transaction: nil,
       open_session: @open_session
     )
     @presentation_state = "ready"
+  end
+
+  # Compatibility redirect for pre-11.3 links.
+  def store_operations
+    redirect_to register_operations_path(scope: "store"), status: :see_other
+  end
+
+  # OD-P11-03: leave Register for Operations or Store Workspace.
+  def leave
+    destination = leave_destination_param
+    load_register_context!
+    guard = Pos::LeaveRegisterGuard.evaluate(user: Current.user, store: Current.store)
+    case guard.status
+    when :allow
+      redirect_to leave_redirect_path(destination, scope: params[:scope]), allow_other_host: false
+    when :block
+      redirect_to pos_transaction_path(guard.pos_transaction), alert: guard.message
+    else
+      @leave_destination = destination
+      @leave_scope = params[:scope].presence
+      @pos_transaction = guard.pos_transaction
+      @leave_message = guard.message
+      render :leave_interrupt, layout: "pos"
+    end
+  end
+
+  def leave_continue
+    load_register_context!
+    txn = Pos::CurrentOpenTransaction.for(user: Current.user, store_id: Current.store.id)
+    destination = leave_destination_param
+    choice = params[:choice].to_s
+
+    case choice
+    when "return"
+      return redirect_to(txn ? pos_transaction_path(txn) : register_path)
+    when "suspend"
+      unless txn
+        return redirect_to leave_redirect_path(destination, scope: params[:scope])
+      end
+      require_permission!("pos.transaction.suspend")
+      result = Pos::SuspendTransaction.call(pos_transaction: txn, actor: Current.user)
+      unless result.success?
+        return redirect_to pos_transaction_path(txn), alert: result.error
+      end
+    when "cancel"
+      unless txn
+        return redirect_to leave_redirect_path(destination, scope: params[:scope])
+      end
+      require_permission!("pos.transaction.cancel")
+      result = Pos::CancelTransaction.call(
+        pos_transaction: txn, actor: Current.user, reason: params[:reason].presence || "Left Register for Operations"
+      )
+      unless result.success?
+        return redirect_to pos_transaction_path(txn), alert: result.error
+      end
+    else
+      return redirect_to register_path, alert: "Choose Suspend, Cancel, or Return to Register."
+    end
+
+    redirect_to leave_redirect_path(destination, scope: params[:scope]),
+                notice: (choice == "suspend" ? "Transaction suspended." : "Transaction cancelled.")
   end
 
   def scan_to_start
@@ -362,5 +428,63 @@ class RegisterController < ApplicationController
 
     # Ready keeps session/day actions and report links only — not live sales/tender/cash KPIs.
     @day_sessions = @business_day.pos_sessions.includes(:pos_device, :cashier_user, :pos_session_z_report).order(:id)
+  end
+
+  def load_operations_reconciliation!
+    @can_reconcile_session = Current.user.can?("reporting.reconcile_session", store: Current.store)
+    @can_reconcile_business_day = Current.user.can?("reporting.reconcile_business_day", store: Current.store)
+
+    @session_recon_required = false
+    @session_reconciliation = nil
+    if @open_session&.closed?
+      @session_recon_required = Reporting::SessionReconciliationRequirement.required?(@open_session)
+      @session_reconciliation = Reconciliation.find_by(pos_session_id: @open_session.id) if @session_recon_required
+    elsif @open_session&.open?
+      @session_recon_required = @open_session.cash_enabled? ||
+        (Current.store.card_reconciliation_grain == "session")
+    end
+
+    @day_reconciliation = @business_day && Reconciliation.find_by(business_day_id: @business_day.id)
+    @sessions_awaiting_recon = []
+    return if @business_day.blank? || !@can_reconcile_session
+
+    closed = @business_day.pos_sessions.select(&:closed?)
+    @sessions_awaiting_recon = closed.select { |s|
+      Reporting::SessionReconciliationRequirement.required?(s) &&
+        !Reconciliation.exists?(pos_session_id: s.id, status: "finalized")
+    }
+  end
+
+  def ops_scope_param
+    params[:scope].to_s == "store" ? "store" : "register"
+  end
+
+  def leave_destination_param
+    case params[:to].to_s
+    when "store_workspace" then "store_workspace"
+    when "operations_store" then "operations_store"
+    else "operations_register"
+    end
+  end
+
+  def leave_redirect_path(destination, scope: nil)
+    case destination
+    when "store_workspace" then root_path
+    when "operations_store" then register_operations_path(scope: "store")
+    else register_operations_path(scope: scope.presence || "register")
+    end
+  end
+
+  def render_leave_guard!(guard, destination:, scope:)
+    case guard.status
+    when :block
+      redirect_to pos_transaction_path(guard.pos_transaction), alert: guard.message
+    else
+      @leave_destination = destination == "operations" ? (scope == "store" ? "operations_store" : "operations_register") : destination
+      @leave_scope = scope
+      @pos_transaction = guard.pos_transaction
+      @leave_message = guard.message
+      render :leave_interrupt, layout: "pos"
+    end
   end
 end

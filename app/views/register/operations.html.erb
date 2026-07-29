@@ -1,0 +1,55 @@
+<% content_for :title, "Operations" %>
+<%
+  presentation = "ready"
+  presentation_label = @ops_scope == "store" ? "Store Operations" : "Register Operations"
+  pos_shell_session = @open_session
+%>
+
+<% primary = capture do %>
+  <section class="pos-ops-chrome" aria-label="Operations workspace">
+    <div class="pos-ops-chrome__nav" role="tablist" aria-label="Operations scope">
+      <%= link_to "Register Operations", register_operations_path(scope: "register"),
+            class: "button button-small #{@ops_scope == 'register' ? 'button-primary' : 'button-outline'}",
+            role: "tab",
+            "aria-selected": (@ops_scope == "register"),
+            data: { turbo_frame: "_top" } %>
+      <%= link_to "Store Operations", register_operations_path(scope: "store"),
+            class: "button button-small #{@ops_scope == 'store' ? 'button-primary' : 'button-outline'}",
+            role: "tab",
+            "aria-selected": (@ops_scope == "store"),
+            data: { turbo_frame: "_top" } %>
+    </div>
+    <p class="pos-ops-chrome__context muted">
+      <%= Current.store.name %>
+      <% if @business_day %>
+        · Day <%= @business_day.reporting_date %> (<%= @business_day.status %>)
+      <% else %>
+        · No business day open
+      <% end %>
+      <% if @open_session %>
+        · Session <%= @open_session.id %>
+        <% if @open_session.pos_device %>· <%= @open_session.pos_device.name %><% end %>
+        <% if @open_session.cash_drawer %>· <%= @open_session.cash_drawer.name %><% end %>
+      <% else %>
+        · No session open
+      <% end %>
+      · <%= Current.user.username %>
+      · Txn: <%= @open_transaction.present? ? "##{@open_transaction.id} open" : "none open" %>
+    </p>
+  </section>
+
+  <% if @ops_scope == "store" %>
+    <%= render "register/store_operations_scope" %>
+  <% else %>
+    <%= render "register/register_operations_scope" %>
+  <% end %>
+<% end %>
+
+<%= render "pos/shell",
+      presentation: presentation,
+      presentation_label: presentation_label,
+      session: pos_shell_session,
+      primary: primary,
+      summary: "",
+      hide_summary: true,
+      hide_commands: true %>

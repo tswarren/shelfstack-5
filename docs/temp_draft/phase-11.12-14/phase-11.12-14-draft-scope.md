@@ -32,7 +32,7 @@ Phase 11 is not intended to replace the existing POS domain model or rewrite pos
 | **11.0** | POS Baseline | Complete | Establish the operational and financial foundation of the register |
 | **11.1** | Transaction Documents | Complete | Produce receipts, gift receipts, stored-value vouchers, and activity slips |
 | **11.2** | Register Workflow Refinement | Active | Repair approvals, tendering, returns, and refund settlement workflows |
-| **11.3** | POS Operations Workspace | Scheduled | Separate Register Operations from Store Operations and establish clear workspace navigation |
+| **11.3** | POS Operations Workspace | Active | Separate Register Operations from Store Operations and establish clear workspace navigation — plan: [phase-11.3-pos-operations-workspace.md](../../implementation/phases/phase-11.3-pos-operations-workspace.md) |
 | **11.4** | POS Policy and Lifecycle Hardening | Scheduled | Close the remaining known Phase 11 gaps and verify the complete operating lifecycle |
 
 ---
@@ -932,11 +932,7 @@ without losing the operating context or accidentally creating a second session o
 
 ### Open transaction restrictions
 
-Navigation must account for an active transaction.
-
-Some workspace switches may be allowed while preserving the transaction; others may need to be disabled or require the user to suspend, complete, or cancel the transaction.
-
-The rule should be explicit and tested rather than dependent on individual links.
+**Accepted (OD-P11-03):** [phase-11.3-operations-workspace-boundaries.md](../../implementation/decisions/phase-11.3-operations-workspace-boundaries.md). Active transactions remain in Register; leave Operations / Store Workspace only after complete, explicit suspend, or explicit cancel. Soft “preserve open txn while switching” language above is superseded.
 
 ---
 

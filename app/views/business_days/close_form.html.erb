@@ -41,6 +41,6 @@
 
   <div class="page-actions">
     <%= submit_tag "Close business day", class: "button button-danger" %>
-    <%= link_to "Cancel", register_store_operations_path, class: "button button-outline" %>
+    <%= link_to "Cancel", register_operations_path(scope: "store"), class: "button button-outline" %>
   </div>
 <% end %>

@@ -620,15 +620,12 @@ Current session, device, and drawer only — not all-store tables.
 │  Opened 09:02 · Cashier Alex                      │ Opening cash     $150.00 │
 │  [Close Session]                                  │ Expected cash      …     │
 │                                                   │                          │
-│ Quick actions                                     │ CLOSE / BLOCKERS         │
-│  [Cash Movement] [No Sale]                        │ (none) or list           │
-│                                                   │                          │
-│ Reports                                           │ [Session X]              │
-│  [Session X] [Session Z / close report]           │                          │
-│                                                   │                          │
+│ Reports                                           │ CLOSE / BLOCKERS         │
+│  [Session X] [Session Z / close report]           │ (none) or list           │
+│                                                   │ [Session X]              │
 │ History (this session)                            │                          │
-│  Cash movements / no-sale list (scroll)           │                          │
-│  …                                                │                          │
+│  Cash movements / no-sale list (scroll)           │ Reconciliation           │
+│  …                                                │ Status + link → ShelfStack│
 ├───────────────────────────────────────────────────┴──────────────────────────┤
 │ Context preserved · open txn rules apply if a transaction is active          │
 └──────────────────────────────────────────────────────────────────────────────┘
@@ -636,7 +633,7 @@ Current session, device, and drawer only — not all-store tables.
 
 ### Register Operations annotations
 
-1. Quick actions vs history (OD-P11-02 accepted): Cash Movement / No Sale remain on Register Ready; authoritative current-session history lives here.
+1. Quick actions vs history (OD-P11-02 accepted): Cash Movement / No Sale remain on Register Ready only; authoritative current-session history lives here (no duplicate quick-action strip).
 2. Close Session is first-level (POS-UI-037), not buried under reports.
 3. Session X/Z appear only in this scope.
 

@@ -172,8 +172,9 @@ Catalog / Phase 8 follow-on:   DWR-020 residual (purchasing/receiving) … DWR-0
 Phase 10 follow-on:            DWR-066 (triggered invariant — before independent receipt/PO/cost roles)
 Phase 11 (closed):             DWR-067 resolved
 Phase 11.1 (closed):           DWR-017 print MVP + SV slips/vouchers delivered; residual cash-movement/audit/ESC/POS remain
-Phase 11.2 (active):           Contextual approvals, tender polish, guided returns, refund UX — epic [#158](https://github.com/tswarren/shelfstack-5/issues/158)
-Phase 11.3 / 11.4 (scheduled): [#165](https://github.com/tswarren/shelfstack-5/issues/165) / [#166](https://github.com/tswarren/shelfstack-5/issues/166); OD-P11-01–04 accepted
+Phase 11.2 (closed):           [#168](https://github.com/tswarren/shelfstack-5/pull/168); epic [#158](https://github.com/tswarren/shelfstack-5/issues/158)
+Phase 11.3 (active):           Operations workspace — epic [#165](https://github.com/tswarren/shelfstack-5/issues/165); gates [#169](https://github.com/tswarren/shelfstack-5/issues/169)–[#173](https://github.com/tswarren/shelfstack-5/issues/173); OD-P11-02–04 accepted
+Phase 11.4 (scheduled):        [#166](https://github.com/tswarren/shelfstack-5/issues/166); OD-P11-01 accepted for check refund
 Parallel design:               DWR-004 … DWR-006 (Correction Integrity Design Packet)
 Later extensions:              DWR-030 … DWR-052, DWR-068  (= deferred-capabilities.md)
 Doc hygiene:                   DWR-060 … DWR-063

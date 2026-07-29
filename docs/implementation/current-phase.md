@@ -1,16 +1,19 @@
 # Current Phase
 
-**Active delivery phase:** Phase 11.2 — Register workflow refinement  
-**Status:** **Active** — contextual approvals, tender settlement polish, guided returns, refund recommendation UX (SV-first). Epic [#158](https://github.com/tswarren/shelfstack-5/issues/158).
+**Active delivery phase:** Phase 11.3 — POS Operations workspace  
+**Status:** **Active** — sibling Register / Operations workspaces; Register Ops vs Store Ops scopes; open-transaction navigation; recon status/links. Epic [#165](https://github.com/tswarren/shelfstack-5/issues/165).
 
-**Phase document:** [phases/phase-11.2-register-workflow-refinement.md](phases/phase-11.2-register-workflow-refinement.md)  
+**Phase document:** [phases/phase-11.3-pos-operations-workspace.md](phases/phase-11.3-pos-operations-workspace.md)  
+**Boundaries:** [decisions/phase-11.3-operations-workspace-boundaries.md](decisions/phase-11.3-operations-workspace-boundaries.md)  
 **Background draft:** [../temp_draft/phase-11.12-14/phase-11.12-14-draft-scope.md](../temp_draft/phase-11.12-14/phase-11.12-14-draft-scope.md)
+
+**Phase 11.2 closed:** Gates 11.2A–F on `main` (via [#168](https://github.com/tswarren/shelfstack-5/pull/168)); epic [#158](https://github.com/tswarren/shelfstack-5/issues/158).
 
 **Phase 11.1 closed:** Gates 11.1A–F on `main` (via [#157](https://github.com/tswarren/shelfstack-5/pull/157)); epic [#151](https://github.com/tswarren/shelfstack-5/issues/151) closed. Residuals on [DWR-017](deferred-work-register.md).
 
 **Phase 11 closed:** Gates 11A–11E + layout L0–L7 (reduced MVP) delivered in [#146](https://github.com/tswarren/shelfstack-5/pull/146) and [#150](https://github.com/tswarren/shelfstack-5/pull/150).
 
-**Scheduled follow-ons:** Phase 11.3 Operations workspace ([#165](https://github.com/tswarren/shelfstack-5/issues/165)); Phase 11.4 policy/lifecycle hardening ([#166](https://github.com/tswarren/shelfstack-5/issues/166)).
+**Scheduled follow-ons:** Phase 11.4 policy/lifecycle hardening ([#166](https://github.com/tswarren/shelfstack-5/issues/166)).
 
 **Phase 10 closed:** Gates 10a–10e delivered in PR [#128](https://github.com/tswarren/shelfstack-5/pull/128). Follow-on: DWR-066 (triggered invariant — revisit before roles grant receipt / purchasing / cost visibility independently of `stock_view`).
 
@@ -24,7 +27,7 @@
 
 ## Immediate next work
 
-1. Deliver Phase 11.2 gates **11.2A–F** in order ([#159](https://github.com/tswarren/shelfstack-5/issues/159)–[#164](https://github.com/tswarren/shelfstack-5/issues/164)) — start with contextual approval interrupt.
+1. Deliver Phase 11.3 gates **11.3A–E** in order ([#169](https://github.com/tswarren/shelfstack-5/issues/169)–[#173](https://github.com/tswarren/shelfstack-5/issues/173)) — start with Operations chrome.
 2. Parallel design (not implementation): Correction Integrity Design Packet for DWR-004 / DWR-005 / DWR-006 (scratch under `docs/temp_draft/phase-11/`).
 3. Conditional enablers only if a gate is blocked: DWR-001 / DWR-018 / DWR-019.
 4. Triggered invariant: resolve DWR-066 before any role grants receipt / PO / cost visibility without `stock_view`.
@@ -39,8 +42,7 @@
 ## Program spine (preference)
 
 ```text
-Phase 11.2 (Register workflow refinement)
-  → Phase 11.3 (POS Operations workspace)
+Phase 11.3 (POS Operations workspace)
   → Phase 11.4 (Policy and lifecycle hardening)
   → Correction workflows (after DWR-004–006 design packet accepted)
 ```
@@ -53,14 +55,16 @@ Archived prioritization matrix: [../archive/phase-11-drafts-2026-07-26/00-pre-ph
 - Implementing DWR-004–006 before the Correction Integrity Design Packet is accepted.
 - Full CRM beyond flat Customer v1 (DWR-036 remainder).
 - PWA / offline POS; integrated payments; full ESC/POS fleets.
-- Phase 11.3 / 11.4 implementation before those phases are activated.
+- Phase 11.4 implementation before that phase is activated.
 - Scaffolding later_extensions from [deferred-capabilities.md](deferred-capabilities.md).
 - Reopening cash-first refund allocation (SV-first is locked).
+- Reopening OD-P11-01–04 without a superseding decision.
 
 ## Pointers
 
-- Phase 11.2 plan (active): [phases/phase-11.2-register-workflow-refinement.md](phases/phase-11.2-register-workflow-refinement.md)
-- Phase 11.3 / 11.4 (scheduled): [phases/phase-11.3-pos-operations-workspace.md](phases/phase-11.3-pos-operations-workspace.md), [phases/phase-11.4-pos-policy-and-lifecycle-hardening.md](phases/phase-11.4-pos-policy-and-lifecycle-hardening.md)
+- Phase 11.3 plan (active): [phases/phase-11.3-pos-operations-workspace.md](phases/phase-11.3-pos-operations-workspace.md)
+- Phase 11.4 (scheduled): [phases/phase-11.4-pos-policy-and-lifecycle-hardening.md](phases/phase-11.4-pos-policy-and-lifecycle-hardening.md)
+- Phase 11.2 plan (closed): [phases/phase-11.2-register-workflow-refinement.md](phases/phase-11.2-register-workflow-refinement.md)
 - Phase 11.1 plan (closed): [phases/phase-11.1-pos-printed-documents-v1.md](phases/phase-11.1-pos-printed-documents-v1.md)
 - Phase 11 plan (closed): [phases/phase-11-pos-shell-and-workspace-revamp.md](phases/phase-11-pos-shell-and-workspace-revamp.md)
 - Carry-forward backlog: [deferred-work-register.md](deferred-work-register.md)

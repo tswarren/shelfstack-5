@@ -3,6 +3,7 @@
 <% device = session&.pos_device %>
 <% drawer = session&.cash_drawer %>
 <% active_txn = (@pos_transaction if @pos_transaction&.open?) || (@open_transaction if @open_transaction&.open?) %>
+<% on_operations = controller_name == "register" && %w[operations leave leave_continue].include?(action_name) %>
 <header class="pos-register-header" role="banner">
   <div class="pos-register-header__brand">
     <%= link_to register_path, class: "pos-register-header__brand-link",
@@ -10,6 +11,15 @@
       ShelfStack <span class="muted">POS</span>
     <% end %>
   </div>
+  <nav class="pos-register-header__workspaces" aria-label="POS workspaces">
+    <%= link_to "Register", register_path,
+          class: "button button-small #{on_operations ? 'button-outline' : 'button-primary'}",
+          data: { turbo_frame: "_top" } %>
+    <%= link_to "Operations",
+          (active_txn ? register_leave_path(to: "operations_register") : register_operations_path(scope: "register")),
+          class: "button button-small #{on_operations ? 'button-primary' : 'button-outline'}",
+          data: { turbo_frame: "_top" } %>
+  </nav>
   <div class="pos-register-header__context" aria-label="Register context">
     <span class="pos-register-header__item">
       <strong><%= Current.store.name %></strong>
@@ -32,7 +42,8 @@
     </span>
   </div>
   <div class="pos-register-header__actions">
-    <%= link_to "Store Operations", register_store_operations_path,
+    <%= link_to "Store Workspace",
+          (active_txn ? register_leave_path(to: "store_workspace") : root_path),
           class: "button button-small button-outline", data: { turbo_frame: "_top" } %>
     <% show_switch = effective_memberships_for(Current.user).many? %>
     <% if show_switch && !active_txn %>

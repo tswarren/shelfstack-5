@@ -160,12 +160,39 @@
   white-space: nowrap;
 }
 
+.pos-register-header__workspaces {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+}
+
 .pos-register-header__actions {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.3rem;
   flex: 0 0 auto;
+}
+
+.pos-ops-chrome {
+  margin-bottom: 0.75rem;
+}
+
+.pos-ops-chrome__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+.pos-ops-chrome__context {
+  font-size: 0.9rem;
+}
+
+.pos-leave-interrupt .form-actions {
+  margin-top: 1rem;
 }
 
 .pos-shell__workspace {
