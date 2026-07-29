@@ -10,7 +10,10 @@
   <% if @business_day.blank? %>
     <section class="pos-panel" aria-label="Open business day">
       <h2>Open a business day</h2>
-      <p class="muted">No business day is open for this store.</p>
+      <p class="muted">
+        No business day is open for this store.
+        Opening is a Store Operations workflow; it is available here as the next required action.
+      </p>
       <% if Current.user.can?("pos.business_day.open", store: Current.store) %>
         <div class="action-group">
           <%= link_to "Open business day", new_business_day_path, class: "button button-primary button-large",
@@ -23,7 +26,8 @@
       <h2>Open a session</h2>
       <p class="muted">
         Business day open since <strong><%= formatted_datetime(@business_day.opened_at, format: :short) %></strong>
-        · reporting date <%= @business_day.reporting_date %>
+        · reporting date <%= @business_day.reporting_date %>.
+        Session open is a Register Operations workflow; it is available here as the next required action.
       </p>
       <% if Current.user.can?("pos.session.open", store: Current.store) %>
         <div class="action-group">
@@ -190,7 +194,7 @@
 <% end %>
 
 <% overflow_commands = capture do %>
-  <%= link_to "Store Operations", register_store_operations_path,
+  <%= link_to "Operations", register_operations_path(scope: "register"),
         class: "button button-outline button-small", data: { turbo_frame: "_top" } %>
 <% end %>
 

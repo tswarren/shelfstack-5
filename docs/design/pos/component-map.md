@@ -184,9 +184,9 @@ Commands:
 
 - Cash Movement;
 - No Sale;
-- Store Operations.
+- Operations.
 
-Close Session and day/session administration are first-level actions inside Store Operations, not ordinary Ready command-bar items.
+Close Session is a first-level action inside Register Operations. Day/session-wide administration belongs in Store Operations. Neither is an ordinary Ready command-bar item.
 
 ### Transaction
 
@@ -354,7 +354,7 @@ app/views/pos/ready/
 
 No-business-day, no-session, active-transaction, and insufficient-permission conditions are Ready substates. They remain inside the POS shell.
 
-Detailed day/session tables, Close Session, and cash-movement history belong in Store Operations, not the normal Ready composition.
+Close Session and cash-movement / no-sale history belong in Register Operations. Day/session tables and business-day administration belong in Store Operations. None of these belong in the normal Ready composition.
 
 ## Line components
 

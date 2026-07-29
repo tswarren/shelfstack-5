@@ -48,6 +48,6 @@
         hint: (@closing_count ? "Submitting a different amount records a manager recount, then closes." : nil) %>
   <div class="form-actions">
     <%= form.submit(@closing_count ? "Close session" : "Record count and close", class: "button button-primary") %>
-    <%= link_to "Cancel", register_store_operations_path, class: "button button-ghost" %>
+    <%= link_to "Cancel", register_operations_path(scope: "register"), class: "button button-ghost" %>
   </div>
 <% end %>

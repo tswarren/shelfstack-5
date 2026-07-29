@@ -11,7 +11,7 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     @variant = product_variants(:sample_book_standard)
   end
 
-  test "register Ready omits day session tables and offers Store Operations" do
+  test "register Ready omits day session tables and offers Operations sibling" do
     post session_path, params: { username: "admin", password: "password123" }
     post business_days_path, params: { business_day: { reporting_date: Date.current } }
     business_day = BusinessDay.order(:id).last
@@ -27,19 +27,57 @@ class RegisterFlowTest < ActionDispatch::IntegrationTest
     get register_path
     assert_response :success
     assert_select ".pos-shell"
-    assert_select "a[href=?]", register_store_operations_path, text: "Store Operations"
+    assert_select "a[href=?]", register_operations_path(scope: "register"), text: "Operations"
+    assert_select "a", text: "Store Workspace"
     assert_select "a", text: "Day X", count: 0
     assert_select "a", text: "Close business day", count: 0
     refute_match(/Net sales/, response.body)
     refute_match(/cash variance/i, response.body)
 
-    get register_store_operations_path
+    get register_operations_path(scope: "register")
     assert_response :success
     assert_select "a[href=?]", close_form_pos_session_path(PosSession.open_sessions.order(:id).last),
                   text: "Close Session"
+    assert_select "h2", text: "Register Operations"
+    assert_select "h2", text: "Cash movements this session"
+    assert_select "h2", text: "No Sale this session"
+
+    get register_operations_path(scope: "store")
+    assert_response :success
+    assert_select "h2", text: "Store Operations"
     assert_select "a", text: "Day X"
     assert_select "a", text: "Close business day"
-    assert_select "a", text: "Session X"
+    assert_select "h2", text: "Cash movements this session", count: 0
+
+    get register_store_operations_path
+    assert_redirected_to register_operations_path(scope: "store")
+  end
+
+  test "open transaction interrupts leave to Operations" do
+    post session_path, params: { username: "admin", password: "password123" }
+    post business_days_path, params: { business_day: { reporting_date: Date.current } }
+    business_day = BusinessDay.order(:id).last
+    post pos_sessions_path, params: {
+      pos_session: {
+        business_day_id: business_day.id,
+        pos_device_id: @device.id,
+        cash_drawer_id: @drawer.id,
+        opening_cash_cents: 0
+      }
+    }
+    open_inventory(@variant, quantity: 5, unit_cost_cents: 500)
+    post register_scan_to_start_path, params: { query: @variant.sku, quantity: 1 }
+    txn = PosTransaction.order(:id).last
+
+    get register_operations_path(scope: "register")
+    assert_response :success
+    assert_select "h2", text: /Cannot leave Register/
+    assert_select "input[name=choice][value=suspend]"
+    assert_select "input[name=choice][value=return]"
+
+    post register_leave_continue_path, params: { to: "operations_register", choice: "suspend" }
+    assert_redirected_to register_operations_path(scope: "register")
+    assert_equal "suspended", txn.reload.status
   end
 
   test "admin can open day/session, add lines, suspend, and recall" do

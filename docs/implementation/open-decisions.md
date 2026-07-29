@@ -50,10 +50,10 @@ superseded
 | OD-P8-09 | Import provenance representation | accepted | Phase 8 | Catalog | Dedicated `catalog_enrichment_events` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 | OD-P8-10 | Minimum persisted bibliographic fields | accepted | Phase 8 | Catalog | exact `publication_date`, curated ISO 639-2/T `language_code` (default eng), `edition_statement` — [phase-08…v1](decisions/phase-08-catalog-refinement-and-enrichment-v1.md) |
 | OD-P11-R1 | Refund allocation priority (SV-first vs cash-first) | accepted | Phase 11.2 | POS / Stored Value | [phase-11.2-refund-allocation-sv-first.md](decisions/phase-11.2-refund-allocation-sv-first.md); [architectural-locks.md](architectural-locks.md#refund-allocation-priority-v1) |
-| OD-P11-01 | Check payment refund default (always cash vs store-configurable) | open | Phase 11.3 / 11.4 | POS | Draft § Check refund treatment; needed for refund UX completeness / 11.4 policy reconciliation |
-| OD-P11-02 | Register quick actions versus Operations history (cash movement, no-sale, session open/close) | open | Phase 11.3 | POS | Draft § Register quick actions versus Operations history |
-| OD-P11-03 | Open-transaction workspace navigation rules | open | Phase 11.3 | POS | Draft § Open-transaction navigation |
-| OD-P11-04 | Reconciliation placement in Operations (status/links only vs deeper surface) | open | Phase 11.3 | POS / Reporting | Draft § Reconciliation placement; full workflow remains ShelfStack |
+| OD-P11-01 | Check payment refund default (always cash vs store-configurable) | accepted | Phase 11.4 | POS | [phase-11.4-check-refund-treatment.md](decisions/phase-11.4-check-refund-treatment.md); [architectural-locks.md](architectural-locks.md#check-refund-treatment-mvp) — check remainder → new store credit; cash needs exception; store config deferred (DWR-068) |
+| OD-P11-02 | Register quick actions versus Operations history (cash movement, no-sale, session open/close) | accepted | Phase 11.3 | POS | [phase-11.3-operations-workspace-boundaries.md](decisions/phase-11.3-operations-workspace-boundaries.md); [architectural-locks.md](architectural-locks.md#phase-113-operations-workspace-boundaries) |
+| OD-P11-03 | Open-transaction workspace navigation rules | accepted | Phase 11.3 | POS | [phase-11.3-operations-workspace-boundaries.md](decisions/phase-11.3-operations-workspace-boundaries.md); [architectural-locks.md](architectural-locks.md#phase-113-operations-workspace-boundaries) |
+| OD-P11-04 | Reconciliation placement in Operations (status/links only vs deeper surface) | accepted | Phase 11.3 | POS / Reporting | [phase-11.3-operations-workspace-boundaries.md](decisions/phase-11.3-operations-workspace-boundaries.md); [architectural-locks.md](architectural-locks.md#phase-113-operations-workspace-boundaries) |
 
 ## OD-013 role and store authority defaults
 

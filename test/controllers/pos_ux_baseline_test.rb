@@ -143,7 +143,7 @@ class PosUxBaselineTest < ActionDispatch::IntegrationTest
     assert_select "#pos-primary input.button-primary[value=?]", "Scan to start"
     assert_select "#pos-primary", text: /empty transaction is never opened/i
     assert_select "a", text: "New transaction", count: 0
-    assert_select "a[href=?]", register_store_operations_path, text: "Store Operations"
+    assert_select "a[href=?]", register_operations_path(scope: "register"), text: "Operations"
   end
 
   test "open-ring fields appear in department price quantity description order" do

@@ -1,0 +1,51 @@
+<% content_for :title, "Leave Register" %>
+<%
+  presentation = "transaction"
+  presentation_label = "Open transaction"
+  pos_shell_session = @open_session
+%>
+
+<% primary = capture do %>
+  <section class="pos-region pos-leave-interrupt" aria-label="Cannot leave Register">
+    <h2>Cannot leave Register while a transaction is open</h2>
+    <p><%= @leave_message %></p>
+    <% if @pos_transaction %>
+      <p class="muted">
+        Transaction #<%= @pos_transaction.id %>
+        · <%= @pos_transaction.pos_line_items.where.not(status: "removed").count %> lines
+        <% if @pos_transaction.unresolved_tenders? %>
+          · unresolved tenders present
+        <% else %>
+          · tender not started / cleared
+        <% end %>
+      </p>
+    <% end %>
+
+    <%= form_with url: register_leave_continue_path, method: :post, class: "form",
+          data: { turbo_frame: "_top" } do %>
+      <%= hidden_field_tag :to, @leave_destination %>
+      <%= hidden_field_tag :scope, @leave_scope if @leave_scope.present? %>
+      <div class="form-actions action-group">
+        <% if Current.user.can?("pos.transaction.suspend", store: Current.store) %>
+          <%= submit_tag "Suspend and continue", name: "choice", value: "suspend",
+                class: "button button-primary" %>
+        <% end %>
+        <% if Current.user.can?("pos.transaction.cancel", store: Current.store) %>
+          <%= submit_tag "Cancel and continue", name: "choice", value: "cancel",
+                class: "button button-outline" %>
+        <% end %>
+        <%= submit_tag "Return to Register", name: "choice", value: "return",
+              class: "button button-ghost" %>
+      </div>
+    <% end %>
+  </section>
+<% end %>
+
+<%= render "pos/shell",
+      presentation: presentation,
+      presentation_label: presentation_label,
+      session: pos_shell_session,
+      primary: primary,
+      summary: "",
+      hide_summary: true,
+      hide_commands: true %>

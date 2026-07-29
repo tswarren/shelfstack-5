@@ -178,6 +178,24 @@ Accepted delivery choices for Phase 6 (detail in decision notes):
 - Decision note: [phase-11.2-refund-allocation-sv-first.md](decisions/phase-11.2-refund-allocation-sv-first.md).
 - Draft cash-first ordering in the Phase 11.2–11.4 scope draft is **superseded**.
 
+## Check refund treatment (MVP)
+
+**Lock for MVP / Phase 11.4:** check-funded remainder does **not** default to cash.
+
+- After accepted original-tender and stored-value allocations are satisfied, check-funded remainder defaults to **new store credit**.
+- Cash refund of that remainder requires the existing refund-exception approval path.
+- No check-clearance inference and no configurable check-holding period in Phase 11.
+- Store-configurable check-refund policy remains deferred (DWR-068) until Check is an ordinary tender.
+- Decision note: [phase-11.4-check-refund-treatment.md](decisions/phase-11.4-check-refund-treatment.md).
+
+## Phase 11.3 Operations workspace boundaries
+
+Accepted delivery choices for Phase 11.3 (detail in [phase-11.3-operations-workspace-boundaries.md](decisions/phase-11.3-operations-workspace-boundaries.md)):
+
+- **Quick actions vs history (OD-P11-02):** Cash Movement and No Sale remain Register Ready quick actions; authoritative current-session history lives in Register Operations. Close Session → Register Operations; Close Business Day → Store Operations. Quick actions unavailable during active transaction, tendering, or Recovery.
+- **Open-transaction navigation (OD-P11-03):** Active transactions stay in Register. Leave for Operations / Store Workspace only after complete, explicit suspend, or explicit cancel. Editable transactions without unresolved tender get an interruption (Suspend / Cancel / Return); never silent abandon. Unsafe tender or Recovery blocks navigation away.
+- **Reconciliation placement (OD-P11-04):** Operations shows session/day reconciliation status, blockers, and permission-gated links only. Full comparison / evidence / findings / resolutions / finalization remain in ShelfStack Reporting and Reconciliation. Close may offer Reconcile now / Review later; recon is not part of atomic close.
+
 ## Reporting sources
 
 Reports must not reinterpret completed history or modify source records.

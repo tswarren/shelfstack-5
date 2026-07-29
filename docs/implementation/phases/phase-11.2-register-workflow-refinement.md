@@ -1,6 +1,6 @@
 # Phase 11.2 — Register Workflow Refinement
 
-**Status:** Active — scheduled after Phase 11.1 close  
+**Status:** Closed — delivered on `main` via [#168](https://github.com/tswarren/shelfstack-5/pull/168)  
 **Depends on:** Phase 11 closed; Phase 11.1 printed documents complete on `main`  
 **Primary register items:** Contextual approval UX; tender settlement polish; guided returns; refund recommendation UX  
 **Source design packet:** [phase-11.12-14-draft-scope.md](../../temp_draft/phase-11.12-14/phase-11.12-14-draft-scope.md) (§ Phase 11.2) — background only; this plan is authoritative  
